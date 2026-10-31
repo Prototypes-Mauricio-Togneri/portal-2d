@@ -1,5 +1,6 @@
 import gameMusicUrl from '@/assets/audio/music/game.mp3'
 import menuMusicUrl from '@/assets/audio/music/menu.mp3'
+import {createAudioPlayer} from '@/game/audio_sources'
 
 /**
  * Background music, looping quietly under the sound effects.
@@ -13,7 +14,7 @@ export class Music {
    * @param volume - Playback volume from 0 to 1
    */
   constructor(url: string, volume: number) {
-    this.audio = new Audio(url)
+    this.audio = createAudioPlayer(url)
     this.volume = volume
   }
 

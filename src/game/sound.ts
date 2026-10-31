@@ -1,4 +1,5 @@
 import boxUrl from '@/assets/audio/sound/box.mp3'
+import {createAudioPlayer} from '@/game/audio_sources'
 import buttonOffUrl from '@/assets/audio/sound/button_off.mp3'
 import buttonOnUrl from '@/assets/audio/sound/button_on.mp3'
 import crossUrl from '@/assets/audio/sound/cross.mp3'
@@ -35,7 +36,7 @@ export class Sound {
    * @param url - Address of the audio file
    */
   constructor(url: string) {
-    this.audio = new Audio(url)
+    this.audio = createAudioPlayer(url)
   }
 
   /**
