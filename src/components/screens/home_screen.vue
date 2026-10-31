@@ -3,9 +3,11 @@
  * Home screen: pick a chamber to play, or open the settings.
  * The left and right arrow keys move between the chamber cards.
  */
-import {computed, onBeforeUnmount, onMounted, useTemplateRef} from 'vue'
+import {computed, useTemplateRef} from 'vue'
 import ChamberCard from '@/components/chamber_card.vue'
 import PortalLogo from '@/components/portal_logo.vue'
+import SectionHeading from '@/components/section_heading.vue'
+import {useArrowFocus} from '@/composables/use_arrow_focus'
 import {CHAMBERS} from '@/services/chamber_catalogue'
 import {completedChambers} from '@/services/progress'
 
@@ -13,68 +15,14 @@ const completedCount = computed(() => CHAMBERS.filter((chamber) => completedCham
 
 const chamberList = useTemplateRef<HTMLElement>('chamberList')
 
-/**
- * Lists the chamber cards in visual order.
- * @returns The card links inside the chamber list
- */
-function chamberCards(): HTMLElement[] {
-  return Array.from(chamberList.value?.querySelectorAll<HTMLElement>('.chamber-card') ?? [])
-}
-
-/**
- * Moves focus to the card at the given offset from the focused one, wrapping around.
- * With no card focused, starts from the first card (forwards) or the last (backwards).
- * @param offset - +1 for next, -1 for previous
- */
-function moveFocus(offset: number): void {
-  const cards = chamberCards()
-  if (cards.length === 0) {
-    return
-  }
-  const currentIndex = cards.findIndex((card) => card === document.activeElement)
-  if (currentIndex === -1) {
-    cards[offset > 0 ? 0 : cards.length - 1]?.focus()
-    return
-  }
-  const nextIndex = (currentIndex + offset + cards.length) % cards.length
-  cards[nextIndex]?.focus()
-}
-
-/**
- * Left and right arrows move between the chamber cards.
- * @param event - Keyboard event
- */
-function handleKeydown(event: KeyboardEvent): void {
-  // With a modifier the arrows are browser shortcuts (Alt+Left goes back), so leave them alone
-  if (event.altKey || event.ctrlKey || event.metaKey) {
-    return
-  }
-  switch (event.key) {
-    case 'ArrowRight':
-      event.preventDefault()
-      moveFocus(1)
-      break
-    case 'ArrowLeft':
-      event.preventDefault()
-      moveFocus(-1)
-      break
-  }
-}
-
-onMounted(() => {
-  window.addEventListener('keydown', handleKeydown)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleKeydown)
-})
+useArrowFocus(chamberList, '.chamber-card')
 </script>
 
 <template>
   <main class="home-screen room">
     <div class="home-inner room-inner">
-      <header class="home-header">
-        <h1 class="home-title">
+      <header class="room-header">
+        <h1 class="room-title">
           <PortalLogo size="large" />
         </h1>
         <RouterLink
@@ -91,15 +39,9 @@ onBeforeUnmount(() => {
       </header>
 
       <section class="chambers" aria-labelledby="chambers-heading">
-        <div class="chambers-intro">
-          <span class="chambers-mark" aria-hidden="true">
-            <span class="chambers-mark-blue"></span>
-            <span class="chambers-mark-orange"></span>
-          </span>
-          <h2 id="chambers-heading" class="chambers-heading">Choose a chamber</h2>
-          <span class="chambers-rule" aria-hidden="true"></span>
+        <SectionHeading heading-id="chambers-heading" title="Choose a chamber">
           <p class="chambers-progress">{{ completedCount }} of {{ CHAMBERS.length }} completed</p>
-        </div>
+        </SectionHeading>
         <ol ref="chamberList" class="chamber-list">
           <li v-for="chamber in CHAMBERS" :key="chamber.number">
             <ChamberCard :chamber="chamber" :completed="completedChambers.includes(chamber.number)" />
@@ -116,18 +58,6 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 2.5rem;
   min-height: 100%;
-}
-
-/* Wordmark and settings */
-.home-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
-}
-
-.home-title {
-  font-size: inherit;
 }
 
 /* The gear sits close to the frame */
@@ -148,50 +78,6 @@ onBeforeUnmount(() => {
   flex: 1;
   flex-direction: column;
   gap: 2rem;
-}
-
-.chambers-intro {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-}
-
-/* Blue and orange slashes, the portal pair as a heading mark */
-.chambers-mark {
-  display: inline-flex;
-  gap: 0.3rem;
-  margin-right: -0.25rem;
-}
-
-.chambers-mark-blue,
-.chambers-mark-orange {
-  width: 0.45rem;
-  height: 1.875rem;
-  transform: skewX(-24deg);
-}
-
-.chambers-mark-blue {
-  background: var(--color-blue);
-}
-
-.chambers-mark-orange {
-  background: var(--color-orange);
-}
-
-.chambers-heading {
-  font-family: var(--font-display);
-  font-size: 2.25rem;
-  font-style: italic;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.chambers-rule {
-  flex: 1;
-  height: 1px;
-  background: rgba(var(--color-ink-rgb), 0.45);
 }
 
 .chambers-progress {

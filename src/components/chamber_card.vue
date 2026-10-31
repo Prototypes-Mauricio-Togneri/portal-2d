@@ -50,7 +50,7 @@ onBeforeUnmount(() => {
 
 <template>
   <RouterLink
-    class="chamber-card"
+    class="chamber-card sign-card"
     :to="{
       name: 'chamber',
       params: {
@@ -59,10 +59,10 @@ onBeforeUnmount(() => {
     }"
     :aria-label="`Chamber ${chamber.number}, ${chamber.subtitle}${completed ? ', completed' : ''}`"
   >
-    <span class="card-head">
+    <span class="sign-card-head">
       <span class="card-number">{{ chamber.number }}</span>
-      <span class="card-name">
-        <span class="card-title">Chamber {{ chamber.number }}</span>
+      <span class="sign-card-name">
+        <span class="sign-card-title">Chamber {{ chamber.number }}</span>
         <span class="card-subtitle">{{ chamber.subtitle }}</span>
       </span>
       <svg v-if="completed" class="card-check" viewBox="0 0 16 16" aria-hidden="true">
@@ -77,68 +77,20 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* Frosted panel on the room's wall */
+/* Sign card (styles.css): header strip on top, preview filling the rest */
 .chamber-card {
   display: grid;
   grid-template-rows: auto 1fr;
   height: 100%;
-  border: 1px solid var(--color-rule);
-  border-radius: 0.5rem;
-  background: rgba(var(--color-panel-rgb), 0.78);
-  box-shadow: var(--shadow-panel);
-  backdrop-filter: blur(0.375rem);
-  overflow: hidden;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
-/* Selected card glows blue; the glow is also the keyboard focus ring */
-.chamber-card:hover,
-.chamber-card:focus-visible {
-  border-color: var(--color-blue);
-  box-shadow:
-    0 0 0 0.125rem var(--color-blue),
-    0 0 1.75rem rgba(var(--color-blue-rgb), 0.55);
-}
-
-/* Transparent outline: hidden normally, but high-contrast mode paints it after dropping the glow */
-.chamber-card:focus-visible {
-  outline-color: transparent;
-}
-
-/* Sign header: large number, then name and subtitle */
-.card-head {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--color-rule);
-  background: var(--color-panel);
-}
-
+/* Large chamber number in the header strip */
 .card-number {
   font-family: var(--font-display);
   font-size: 4.5rem;
   font-weight: 700;
   line-height: 0.85;
   font-variant-numeric: tabular-nums;
-}
-
-.card-name {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-  min-width: 0;
-  padding: 0.25rem 0 0.25rem 1.25rem;
-  border-left: 1px solid rgba(var(--color-ink-rgb), 0.35);
-}
-
-.card-title {
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
 }
 
 .card-subtitle {

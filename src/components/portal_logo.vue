@@ -1,21 +1,24 @@
 <script setup lang="ts">
 /**
- * The "Portal 2D" wordmark set between a blue and an orange portal.
+ * A sign title set between a blue and an orange portal: the "Portal 2D"
+ * wordmark, or a screen's title in the same place and size.
  * The large size opens its portals once when it first appears.
  */
 export interface PortalLogoProps {
   size?: 'large' | 'small'
+  text?: string
 }
 
 withDefaults(defineProps<PortalLogoProps>(), {
   size: 'large',
+  text: 'Portal 2D',
 })
 </script>
 
 <template>
   <span class="portal-logo" :class="`portal-logo-${size}`">
     <span class="portal portal-blue" aria-hidden="true"></span>
-    <span class="wordmark">Portal 2D</span>
+    <span class="wordmark">{{ text }}</span>
     <span class="portal portal-orange" aria-hidden="true"></span>
   </span>
 </template>

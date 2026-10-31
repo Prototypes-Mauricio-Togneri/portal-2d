@@ -1,14 +1,22 @@
 <script setup lang="ts">
 /**
- * Settings screen: sound effects and music on/off.
+ * Settings screen: sound effects and music on/off, laid out like the home
+ * screen so its button sits where the home screen's Settings button does.
+ * The left and right arrow keys move between the setting cards.
  */
-import {onBeforeUnmount, onMounted} from 'vue'
+import {onBeforeUnmount, onMounted, useTemplateRef} from 'vue'
 import {useRouter} from 'vue-router'
 import PortalLogo from '@/components/portal_logo.vue'
+import SectionHeading from '@/components/section_heading.vue'
 import SettingsSwitch from '@/components/settings_switch.vue'
+import {useArrowFocus} from '@/composables/use_arrow_focus'
 import {musicEnabled, soundEnabled} from '@/services/settings'
 
 const router = useRouter()
+
+const settingList = useTemplateRef<HTMLElement>('settingList')
+
+useArrowFocus(settingList, '.settings-switch')
 
 /**
  * Returns to the home screen.
@@ -41,61 +49,58 @@ onBeforeUnmount(() => {
 <template>
   <main class="settings-screen room">
     <div class="settings-inner room-inner">
-      <header class="settings-header">
-        <PortalLogo size="small" />
-        <button class="button button-sign" type="button" @click="goHome">Back to chambers</button>
+      <header class="room-header">
+        <h1 class="room-title">
+          <PortalLogo class="settings-title" size="large" text="Settings" />
+        </h1>
+        <button class="button button-sign" type="button" @click="goHome">Back to main menu</button>
       </header>
 
-      <section class="settings-panel" aria-labelledby="settings-heading">
-        <h1 id="settings-heading" class="settings-heading">Settings</h1>
-        <SettingsSwitch
-          v-model="soundEnabled"
-          label="Sound effects"
-          description="Portals, doors, buttons and the other sounds inside a chamber"
-        />
-        <SettingsSwitch
-          v-model="musicEnabled"
-          label="Music"
-          description="Background music, starting with your first chamber"
-        />
+      <section class="settings-section" aria-labelledby="audio-heading">
+        <SectionHeading heading-id="audio-heading" title="Audio" />
+        <div ref="settingList" class="setting-list">
+          <SettingsSwitch
+            v-model="soundEnabled"
+            label="Sound effects"
+            description="Portals, doors, buttons and the other sounds inside a chamber"
+            icon="sound"
+          />
+          <SettingsSwitch
+            v-model="musicEnabled"
+            label="Music"
+            description="Background music, starting with your first chamber"
+            icon="music"
+          />
+        </div>
       </section>
     </div>
   </main>
 </template>
 
 <style scoped>
+/* Same rhythm as the home screen */
 .settings-inner {
   display: flex;
   flex-direction: column;
-  gap: 3.5rem;
+  gap: 2.5rem;
 }
 
-.settings-header {
+/* Screen title in capitals, unlike the wordmark it stands in for */
+.settings-title {
+  text-transform: uppercase;
+}
+
+.settings-section {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 2rem;
 }
 
-/* Settings sign */
-.settings-panel {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 40rem;
-  padding: 1.5rem 2rem 0.75rem;
-  border: 1px solid var(--color-rule);
-  border-radius: 0.5rem;
-  background: var(--color-panel);
-  box-shadow: var(--shadow-panel);
-}
-
-.settings-heading {
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--color-rule);
-  font-family: var(--font-display);
-  font-size: 2.5rem;
-  font-weight: 700;
-  line-height: 1;
+/* Same columns as the three chamber cards, so the two screens line up: three across, two when
+   a column would drop under 18rem (1px of slack stops rounding from losing the third column) */
+.setting-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(max(18rem, calc((100% - 4rem) / 3 - 1px)), 1fr));
+  gap: 2rem;
 }
 </style>
