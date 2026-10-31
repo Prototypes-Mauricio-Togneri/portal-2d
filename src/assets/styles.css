@@ -6,6 +6,7 @@
   /* Facility surfaces */
   --color-wall: rgba(226, 230, 233, 1);
   --color-panel: rgba(247, 248, 249, 1);
+  --color-panel-rgb: 247, 248, 249;
   --color-rule: rgba(194, 201, 206, 1);
   --color-white: rgba(255, 255, 255, 1);
 

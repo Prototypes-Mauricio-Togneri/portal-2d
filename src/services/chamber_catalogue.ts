@@ -8,20 +8,24 @@ import type {ChamberData} from '@/game/chamber_data'
 
 export type ChamberEntry = {
   number: number // 1-based position, shown to the player and used in the address
+  subtitle: string // What the chamber tests, shown under its name on the home screen
   data: ChamberData // Layout loaded into the game
 }
 
 export const CHAMBERS: ChamberEntry[] = [
   {
     number: 1,
+    subtitle: 'Basic mechanics',
     data: chamberOneData,
   },
   {
     number: 2,
+    subtitle: 'Portal logic',
     data: chamberTwoData,
   },
   {
     number: 3,
+    subtitle: 'Advanced testing',
     data: chamberThreeData,
   },
 ]

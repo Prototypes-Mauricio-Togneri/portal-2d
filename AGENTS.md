@@ -11,6 +11,7 @@ src/
   main.ts, app.vue, router.ts     entry, desktop-only gate, routes (/, /settings, /chamber/:number)
   assets/styles.css               design tokens and shared classes (.wall, .button-*, .keycap)
   assets/audio/                   music and sound effects, imported so Vite fingerprints them
+  assets/images/                  the home screen's test-room photo (WebP)
   chambers/chamber_N.json         chamber layouts (format: docs/elements.md)
   components/screens/             home_screen, settings_screen, chamber_screen
   components/                     chamber card, legend, dialogs (dialog_frame is the shared shell), logo, settings switch, desktop-only notice
@@ -25,9 +26,9 @@ public/                           favicon only
 - **After completing code changes**: Run `npm run lint:fix` and fix remaining errors, run `npm run build` (type-checks first) and fix any failures, then run `/delta-review` before responding.
 - **Game/Vue boundary**: `src/game/` is plain TypeScript and never imports Vue, vue-router, `src/components/`, `src/services/` or `src/chambers/` (enforced in `eslint.config.js`). Screens drive it, not the other way around: `chamber_screen.vue` creates a `Level` on its canvas, calls `load` (also used for reset), `resize`, `dispose`, toggles `paused`, and gets `onCompleted` back. Services may import from `src/game/` (settings flips `Sound.enabled` and plays/pauses `music`). Game objects are never made reactive and per-frame data never passes through a `ref`.
 - **Game behaviour is frozen**: The game was translated line by line from the original JavaScript, keeping its rules, update order, sounds and drawing exactly. Do not change rules, drawing, colours or sizes unless explicitly asked. Its colours are hex literals inside `src/game/`; leave them until the chamber visuals are reworked.
-- **Keyboard ownership**: The game's `Input` owns the arrows, A, D, Space and Ctrl, and calls `preventDefault` on arrows and Space only while playing. Screens own Escape. While any dialog is open the game is paused, its input is ignored, and the dialog's buttons get the keyboard (`dialog_frame.vue`: first action focused, arrow keys and Tab move between actions).
+- **Keyboard ownership**: The game's `Input` owns the arrows, A, D, Space and Ctrl, and calls `preventDefault` on arrows and Space only while playing. Screens own Escape. On the home screen, which has no game running, the left and right arrows move between the chamber cards. While any dialog is open the game is paused, its input is ignored, and the dialog's buttons get the keyboard (`dialog_frame.vue`: first action focused, arrow keys and Tab move between actions).
 - **Desktop only**: Touch-first devices (`pointer: coarse`) get the desktop-only notice instead of the app. Do not add mobile layouts or touch controls.
-- **Chambers**: A chamber is a JSON file in `src/chambers/` plus an entry in `src/services/chamber_catalogue.ts`. `ChamberData` (`src/game/chamber_data.ts`) must accept the JSON import without a cast, so the type checker validates every chamber file.
+- **Chambers**: A chamber is a JSON file in `src/chambers/` plus an entry (number and subtitle) in `src/services/chamber_catalogue.ts`. `ChamberData` (`src/game/chamber_data.ts`) must accept the JSON import without a cast, so the type checker validates every chamber file.
 - **Persistence**: `localStorage` keys are prefixed `portal-2d.` and every access is wrapped in `try`/`catch` (storage can be blocked). Stored: sound on/off, music on/off, completed chambers.
 - **Assets**: Import assets from `src/assets/` so Vite fingerprints them; nothing new goes in `public/`. Fonts come from Google Fonts via `<link>` in `index.html`.
 - **No test suite**: This project has no tests by design. TypeScript and the type-aware lint rules are the safety net — do not weaken `strict` or `noUncheckedIndexedAccess`, and do not add `any` to silence an error.
@@ -51,11 +52,11 @@ public/                           favicon only
 ## UI
 
 - Always use the `frontend-design` skill when changing the UI.
-- Direction: test-facility signage. Cool light panels on a seamed wall, thin rules, chamber numbers as large sign numerals, and the game's own portal colours as the only accents: blue marks interaction and completion, orange marks caution (actions that discard progress). Keep both meanings consistent.
+- Direction: test-facility signage. Cool light panels on a seamed wall (the home screen sits on a photo of a test room instead; its content stays on the room's back wall, clear of the side walls, window and floor), thin rules, chamber numbers as large sign numerals, and the game's own portal colours as the only accents: blue marks interaction and completion, orange marks caution (actions that discard progress). Keep both meanings consistent.
 - Tokens live on `:root` in `src/assets/styles.css` (`--color-wall`, `--color-panel`, `--color-rule`, `--color-ink`, `--color-ink-muted`, `--color-blue`, `--color-blue-deep`, `--color-orange`, `--color-chamber`, plus `-rgb` triplets for alpha). Use tokens, not new colours.
 - Type: `Barlow Condensed` for display (wordmark, sign numerals, titles), `Barlow` for everything else.
 - CSS colours are always `rgba()`, never hex (the game's canvas colours are the exception, see above). `border-radius` in `rem` (exception: `50%` for circles).
 - Repeated CSS goes to `src/assets/styles.css`; component-specific styles stay in scoped `<style>` blocks.
 - Accessibility floor: visible keyboard focus, keyboard-operable dialogs and switches, and `prefers-reduced-motion` respected (global rule in `styles.css`).
-- Copy is sentence case, plain verbs; a button says what it does ("Reset chamber", not "OK").
+- Copy is sentence case, plain verbs; a button says what it does ("Reset chamber", not "OK"). Signage labels may be shown in capitals with `text-transform`; the text itself stays sentence case.
 - CSS comments: `/* ==== */` block dividers for major sections, a short phrase above a rule for its purpose.
