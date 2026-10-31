@@ -46,6 +46,3 @@ Collect data:
 Enable multiple links to activate
 Clean barrier -> walls
 Chamber template table
-
-https://www.youtube.com/watch?v=i8_nBPNK_HA
-https://www.youtube.com/watch?v=Tw7KgG8oZys
