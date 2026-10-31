@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * A chamber sign on the home screen: its number, name and subtitle, a live
- * preview drawn by the game's own renderer, and whether the player has
- * completed it.
+ * A chamber sign on the home screen: its name and subtitle on the left, its
+ * number on the right, a live preview drawn by the game's own renderer, and
+ * whether the player has completed it.
  */
 import {onBeforeUnmount, onMounted, useTemplateRef} from 'vue'
 import {drawChamberPreview} from '@/game/chamber_preview'
@@ -60,7 +60,6 @@ onBeforeUnmount(() => {
     :aria-label="`Chamber ${chamber.number}, ${chamber.subtitle}${completed ? ', completed' : ''}`"
   >
     <span class="sign-card-head">
-      <span class="card-number">{{ chamber.number }}</span>
       <span class="sign-card-name">
         <span class="sign-card-title">Chamber {{ chamber.number }}</span>
         <span class="card-subtitle">{{ chamber.subtitle }}</span>
@@ -69,10 +68,12 @@ onBeforeUnmount(() => {
         <title>Completed</title>
         <path d="M3 8.5l3.2 3.2L13 4.8" />
       </svg>
+      <span class="card-number sign-card-mark">{{ chamber.number }}</span>
     </span>
     <span ref="previewFrame" class="card-preview">
       <canvas ref="previewCanvas"></canvas>
     </span>
+    <span class="sign-card-frame" aria-hidden="true"></span>
   </RouterLink>
 </template>
 
@@ -84,7 +85,7 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
-/* Large chamber number in the header strip */
+/* Large chamber number at the header strip's right edge */
 .card-number {
   font-family: var(--font-display);
   font-size: 4.5rem;
@@ -102,12 +103,11 @@ onBeforeUnmount(() => {
   text-transform: uppercase;
 }
 
-/* Completion mark at the sign's right edge */
+/* Completion mark just before the number */
 .card-check {
   flex: none;
   width: 2rem;
   height: 2rem;
-  margin-left: auto;
   fill: none;
   stroke: var(--color-blue-deep);
   stroke-width: 2;
@@ -129,34 +129,5 @@ onBeforeUnmount(() => {
   inset: 0;
   display: block;
   margin: auto;
-}
-
-/* Portal pair opens around the preview on hover and focus */
-.card-preview::before,
-.card-preview::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 0.3125rem;
-  transform: scaleY(0);
-  transition: transform 180ms var(--ease-out);
-}
-
-.card-preview::before {
-  left: 0;
-  background: var(--color-blue);
-}
-
-.card-preview::after {
-  right: 0;
-  background: var(--color-orange);
-}
-
-.chamber-card:hover .card-preview::before,
-.chamber-card:hover .card-preview::after,
-.chamber-card:focus-visible .card-preview::before,
-.chamber-card:focus-visible .card-preview::after {
-  transform: scaleY(1);
 }
 </style>

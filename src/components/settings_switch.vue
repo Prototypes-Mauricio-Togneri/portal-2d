@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * One on/off setting as a sign card: an icon, its name, what it controls, and
- * a switch. The whole card is the switch, so a click, Space or Enter anywhere
+ * One on/off setting as a sign card: its name and an icon, what it controls,
+ * and a switch. The whole card is the switch, so a click, Space or Enter anywhere
  * on it flips the setting.
  */
 import {useId} from 'vue'
@@ -36,19 +36,21 @@ const descriptionId = useId()
     @click="enabled = !enabled"
   >
     <span class="sign-card-head">
-      <svg class="switch-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <template v-if="icon === 'sound'">
-          <path class="icon-fill" d="M3 9h4l5-4v14l-5-4H3z" />
-          <path class="icon-stroke" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />
-        </template>
-        <template v-else>
-          <path class="icon-fill" d="M7.5 6L20.5 3V15H18.5V6.46L9.5 8.54V18H7.5Z" />
-          <circle class="icon-fill" cx="6.5" cy="18" r="3" />
-          <circle class="icon-fill" cx="17.5" cy="15" r="3" />
-        </template>
-      </svg>
       <span class="sign-card-name">
         <span :id="labelId" class="sign-card-title">{{ label }}</span>
+      </span>
+      <span class="sign-card-mark">
+        <svg class="switch-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <template v-if="icon === 'sound'">
+            <path class="icon-fill" d="M3 9h4l5-4v14l-5-4H3z" />
+            <path class="icon-stroke" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />
+          </template>
+          <template v-else>
+            <path class="icon-fill" d="M7.5 6L20.5 3V15H18.5V6.46L9.5 8.54V18H7.5Z" />
+            <circle class="icon-fill" cx="6.5" cy="18" r="3" />
+            <circle class="icon-fill" cx="17.5" cy="15" r="3" />
+          </template>
+        </svg>
       </span>
     </span>
     <span class="switch-body">
@@ -60,6 +62,7 @@ const descriptionId = useId()
         </span>
       </span>
     </span>
+    <span class="sign-card-frame" aria-hidden="true"></span>
   </button>
 </template>
 

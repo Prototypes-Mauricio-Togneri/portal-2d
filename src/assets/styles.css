@@ -31,9 +31,6 @@
 
   /* Motion */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-
-  /* Panels lifted off the test-room wall */
-  --shadow-panel: 0 0.75rem 2rem rgba(var(--color-ink-rgb), 0.12);
 }
 
 /* ============================================
@@ -147,24 +144,102 @@ a {
    Sign cards
    ============================================ */
 
-/* Frosted panel on the test-room wall */
+/* Panel with its four corners cut, drawn in layers: a shadow and a frosted panel behind the
+   content, and a frame (.sign-card-frame) over it. Clipping a layer to the cut shape also clips
+   its glow, and a glowing ancestor stops the frosting from blurring the wall, so each effect gets
+   its own layer. The transparent border is what high-contrast mode paints as the card's edge */
 .sign-card {
-  border: 1px solid var(--color-rule);
-  border-radius: 0.5rem;
-  background: rgba(var(--color-panel-rgb), 0.78);
-  box-shadow: var(--shadow-panel);
-  backdrop-filter: blur(0.375rem);
-  overflow: hidden;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  --sign-card-cut: 1rem;
+  --sign-card-line: 1px;
+  --sign-card-outline:
+    var(--sign-card-cut) 0,
+    calc(100% - var(--sign-card-cut)) 0,
+    100% var(--sign-card-cut),
+    100% calc(100% - var(--sign-card-cut)),
+    calc(100% - var(--sign-card-cut)) 100%,
+    var(--sign-card-cut) 100%,
+    0 calc(100% - var(--sign-card-cut)),
+    0 var(--sign-card-cut);
+
+  position: relative;
+  isolation: isolate;
+  border: 1px solid transparent;
+  background: none;
 }
 
-/* Selected card glows blue; the glow is also the keyboard focus ring */
+/* Soft shadow lifting the card off the wall */
+.sign-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  pointer-events: none;
+  background: rgba(var(--color-ink-rgb), 0.12);
+  filter: blur(1rem);
+  transform: translateY(0.75rem);
+}
+
+/* Frosted panel, cut to the card's shape */
+.sign-card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  clip-path: polygon(var(--sign-card-outline));
+  background: rgba(var(--color-panel-rgb), 0.78);
+  backdrop-filter: blur(0.375rem);
+}
+
+/* Frame over the card's edge, free to glow past the cut shape */
+.sign-card-frame {
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  transition: filter 160ms ease;
+}
+
+/* The frame's line: the cut shape minus the same shape inset by the line's thickness.
+   Each inner corner moves 0.4142 (√2 − 1) line widths along its edge so the cuts keep that thickness */
+.sign-card-frame::before {
+  --sign-card-inner-cut: calc(var(--sign-card-cut) + 0.4142 * var(--sign-card-line));
+
+  content: '';
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(
+    evenodd,
+    var(--sign-card-outline),
+    var(--sign-card-cut) 0,
+    var(--sign-card-inner-cut) var(--sign-card-line),
+    calc(100% - var(--sign-card-inner-cut)) var(--sign-card-line),
+    calc(100% - var(--sign-card-line)) var(--sign-card-inner-cut),
+    calc(100% - var(--sign-card-line)) calc(100% - var(--sign-card-inner-cut)),
+    calc(100% - var(--sign-card-inner-cut)) calc(100% - var(--sign-card-line)),
+    var(--sign-card-inner-cut) calc(100% - var(--sign-card-line)),
+    var(--sign-card-line) calc(100% - var(--sign-card-inner-cut)),
+    var(--sign-card-line) var(--sign-card-inner-cut),
+    var(--sign-card-inner-cut) var(--sign-card-line)
+  );
+  background: var(--color-rule);
+  transition: background-color 160ms ease, clip-path 160ms ease;
+}
+
+/* Selected card: the frame thickens, turns blue and glows; the glow is also the keyboard focus ring */
 .sign-card:hover,
 .sign-card:focus-visible {
-  border-color: var(--color-blue);
-  box-shadow:
-    0 0 0 0.125rem var(--color-blue),
-    0 0 1.75rem rgba(var(--color-blue-rgb), 0.55);
+  --sign-card-line: 0.1875rem;
+}
+
+.sign-card:hover .sign-card-frame,
+.sign-card:focus-visible .sign-card-frame {
+  filter:
+    drop-shadow(0 0 0.125rem rgba(var(--color-blue-rgb), 1))
+    drop-shadow(0 0 0.625rem rgba(var(--color-blue-rgb), 0.75));
+}
+
+.sign-card:hover .sign-card-frame::before,
+.sign-card:focus-visible .sign-card-frame::before {
+  background: var(--color-blue);
 }
 
 /* Transparent outline: hidden normally, but high-contrast mode paints it after dropping the glow */
@@ -172,22 +247,60 @@ a {
   outline-color: transparent;
 }
 
-/* Header strip: a large mark, a thin divider, then the name */
+/* Header strip: the name, then a thin divider and a large mark; its top corners follow the card's cut */
 .sign-card-head {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 1.25rem;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--color-rule);
   background: var(--color-panel);
+  clip-path: polygon(
+    var(--sign-card-cut) 0,
+    calc(100% - var(--sign-card-cut)) 0,
+    100% var(--sign-card-cut),
+    100% 100%,
+    0 100%,
+    0 var(--sign-card-cut)
+  );
 }
 
+/* Slanted blue tab on the strip's bottom edge, under the mark, sliding in with the highlight */
+.sign-card-head::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  width: 4.5rem;
+  height: 0.25rem;
+  background: var(--color-blue);
+  clip-path: polygon(0.25rem 0, 100% 0, 100% 100%, 0 100%);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 160ms var(--ease-out);
+}
+
+.sign-card:hover .sign-card-head::after,
+.sign-card:focus-visible .sign-card-head::after {
+  transform: scaleX(1);
+}
+
+/* Name on the left, taking the space the mark leaves */
 .sign-card-name {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 0.375rem;
   min-width: 0;
-  padding: 0.25rem 0 0.25rem 1.25rem;
+}
+
+/* Large mark at the right edge, set off by a thin divider */
+.sign-card-mark {
+  display: flex;
+  flex: none;
+  align-items: center;
+  padding-left: 1.25rem;
   border-left: 1px solid rgba(var(--color-ink-rgb), 0.35);
 }
 
