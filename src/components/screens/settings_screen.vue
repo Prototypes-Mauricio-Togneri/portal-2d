@@ -82,7 +82,7 @@ onBeforeUnmount(() => {
 .settings-inner {
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
+  gap: 5.5rem;
 }
 
 /* Screen title in capitals, unlike the wordmark it stands in for */

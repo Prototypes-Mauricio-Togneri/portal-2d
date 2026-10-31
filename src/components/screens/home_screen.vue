@@ -56,7 +56,7 @@ useArrowFocus(chamberList, '.chamber-card')
 .home-inner {
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
+  gap: 5.5rem;
   min-height: 100%;
 }
 
@@ -72,10 +72,9 @@ useArrowFocus(chamberList, '.chamber-card')
   fill-rule: evenodd;
 }
 
-/* Chamber selection, stretched down to the floor */
+/* Chamber selection */
 .chambers {
   display: flex;
-  flex: 1;
   flex-direction: column;
   gap: 2rem;
 }
@@ -92,7 +91,6 @@ useArrowFocus(chamberList, '.chamber-card')
 
 .chamber-list {
   display: grid;
-  flex: 1;
   grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
   gap: 2rem;
 }

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * A chamber sign on the home screen: its name and subtitle on the left, its
- * number on the right behind a test-subject figure that turns green once the
- * player has completed it, and a live preview drawn by the game's own renderer.
+ * A chamber sign on the home screen: its name on the left, a test-subject
+ * figure on the right that turns green once the player has completed it, and a
+ * live preview drawn by the game's own renderer.
  */
 import {onBeforeUnmount, onMounted, useTemplateRef} from 'vue'
 import {drawChamberPreview} from '@/game/chamber_preview'
@@ -57,12 +57,11 @@ onBeforeUnmount(() => {
         number: String(chamber.number),
       },
     }"
-    :aria-label="`Chamber ${chamber.number}, ${chamber.subtitle}${completed ? ', completed' : ''}`"
+    :aria-label="`Chamber ${chamber.number}${completed ? ', completed' : ''}`"
   >
     <span class="sign-card-head">
       <span class="sign-card-name">
         <span class="sign-card-title">Chamber {{ chamber.number }}</span>
-        <span class="card-subtitle">{{ chamber.subtitle }}</span>
       </span>
       <span
         class="card-subject"
@@ -71,7 +70,6 @@ onBeforeUnmount(() => {
         }"
         aria-hidden="true"
       ></span>
-      <span class="card-number">{{ chamber.number }}</span>
     </span>
     <span ref="previewFrame" class="card-preview">
       <canvas ref="previewCanvas"></canvas>
@@ -88,32 +86,22 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
-/* Large chamber number at the header strip's right edge */
-.card-number {
-  flex: none;
-  font-family: var(--font-display);
-  font-size: 4.5rem;
-  font-weight: 700;
-  line-height: 0.85;
-  font-variant-numeric: tabular-nums;
+/* Slimmer header strip than the shared sign card's, with the chamber name larger than its title */
+.sign-card-head {
+  padding-block: 0.75rem;
 }
 
-.card-subtitle {
-  color: var(--color-ink-muted);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  line-height: 1.2;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+.sign-card-title {
+  font-size: 2rem;
 }
 
-/* Test subject peeking out beside the number, as tall as the number: grey until the chamber is
-   completed, then a glowing green. The figure is a mask on the layer inside, since a mask would also
-   cut off a glow set on the same element */
+/* Test subject at the header strip's right edge: grey until the chamber is completed, then a
+   glowing green. The figure is a mask on the layer inside, since a mask would also cut off a glow
+   set on the same element */
 .card-subject {
   position: relative;
   flex: none;
-  height: 3.825rem;
+  height: 2.5rem;
   aspect-ratio: 157 / 380;
 }
 
@@ -135,10 +123,11 @@ onBeforeUnmount(() => {
   background: var(--color-subject);
 }
 
-/* Live chamber preview, filling the rest of the card */
+/* Live chamber preview, its shape setting the card's height: 4:3 fits the wide chambers closely
+   and shows the square one a little smaller */
 .card-preview {
   position: relative;
-  min-height: 12rem;
+  aspect-ratio: 4 / 3;
   margin: 1.25rem;
   overflow: hidden;
 }
