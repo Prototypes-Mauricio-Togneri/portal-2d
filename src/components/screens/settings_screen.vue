@@ -39,11 +39,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="settings-screen wall">
-    <div class="settings-inner">
+  <main class="settings-screen room">
+    <div class="settings-inner room-inner">
       <header class="settings-header">
         <PortalLogo size="small" />
-        <button class="button button-quiet" type="button" @click="goHome">Back to chambers</button>
+        <button class="button button-sign" type="button" @click="goHome">Back to chambers</button>
       </header>
 
       <section class="settings-panel" aria-labelledby="settings-heading">
@@ -64,18 +64,10 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.settings-screen {
-  height: 100%;
-  overflow-y: auto;
-}
-
 .settings-inner {
   display: flex;
   flex-direction: column;
   gap: 3.5rem;
-  max-width: 80rem;
-  margin: 0 auto;
-  padding: 3.5rem 4rem 4rem;
 }
 
 .settings-header {
@@ -93,8 +85,9 @@ onBeforeUnmount(() => {
   max-width: 40rem;
   padding: 1.5rem 2rem 0.75rem;
   border: 1px solid var(--color-rule);
-  border-radius: 0.25rem;
+  border-radius: 0.5rem;
   background: var(--color-panel);
+  box-shadow: var(--shadow-panel);
 }
 
 .settings-heading {

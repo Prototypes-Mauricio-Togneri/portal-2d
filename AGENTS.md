@@ -9,9 +9,9 @@ Portal 2D — a desktop-only, keyboard-driven puzzle game: the player crosses gr
 ```
 src/
   main.ts, app.vue, router.ts     entry, desktop-only gate, routes (/, /settings, /chamber/:number)
-  assets/styles.css               design tokens and shared classes (.wall, .button-*, .keycap)
+  assets/styles.css               design tokens and shared classes (.wall, .room, .button-*, .keycap)
   assets/audio/                   music and sound effects, imported so Vite fingerprints them
-  assets/images/                  the home screen's test-room photo (WebP)
+  assets/images/                  the test-room photo behind the home and settings screens (WebP)
   chambers/chamber_N.json         chamber layouts (format: docs/elements.md)
   components/screens/             home_screen, settings_screen, chamber_screen
   components/                     chamber card, legend, dialogs (dialog_frame is the shared shell), logo, settings switch, desktop-only notice
@@ -52,7 +52,7 @@ public/                           favicon only
 ## UI
 
 - Always use the `frontend-design` skill when changing the UI.
-- Direction: test-facility signage. Cool light panels on a seamed wall (the home screen sits on a photo of a test room instead; its content stays on the room's back wall, clear of the side walls, window and floor), thin rules, chamber numbers as large sign numerals, and the game's own portal colours as the only accents: blue marks interaction and completion, orange marks caution (actions that discard progress). Keep both meanings consistent.
+- Direction: test-facility signage. Cool light panels on a seamed wall (the home and settings screens sit on a photo of a test room instead, via `.room` and `.room-inner`, which keep their content on the room's back wall, clear of the side walls, window and floor), thin rules, chamber numbers as large sign numerals, and the game's own portal colours as the only accents: blue marks interaction and completion, orange marks caution (actions that discard progress). Keep both meanings consistent.
 - Tokens live on `:root` in `src/assets/styles.css` (`--color-wall`, `--color-panel`, `--color-rule`, `--color-ink`, `--color-ink-muted`, `--color-blue`, `--color-blue-deep`, `--color-orange`, `--color-chamber`, plus `-rgb` triplets for alpha). Use tokens, not new colours.
 - Type: `Barlow Condensed` for display (wordmark, sign numerals, titles), `Barlow` for everything else.
 - CSS colours are always `rgba()`, never hex (the game's canvas colours are the exception, see above). `border-radius` in `rem` (exception: `50%` for circles).

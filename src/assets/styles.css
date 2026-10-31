@@ -31,6 +31,9 @@
 
   /* Motion */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Panels lifted off the test-room wall */
+  --shadow-panel: 0 0.75rem 2rem rgba(var(--color-ink-rgb), 0.12);
 }
 
 /* ============================================
@@ -110,6 +113,24 @@ a {
 }
 
 /* ============================================
+   Test room
+   ============================================ */
+
+/* Photo of a test room behind the menus; it stays put while the content scrolls over it */
+.room {
+  height: 100%;
+  overflow-y: auto;
+  background: var(--color-wall) url('@/assets/images/facility_room.webp') center / cover no-repeat;
+}
+
+/* Padding keeps the content on the room's back wall, clear of the side walls, window and floor */
+.room-inner {
+  max-width: calc(90rem + 20vw);
+  margin: 0 auto;
+  padding: 3.5rem 10vw 12vh;
+}
+
+/* ============================================
    Buttons
    ============================================ */
 
@@ -159,6 +180,26 @@ a {
 
 .button-quiet:hover {
   border-color: var(--color-ink);
+}
+
+/* Navigation between the test-room screens: condensed capitals in a heavy frame */
+.button-sign {
+  min-height: 3.25rem;
+  padding: 0 1.5rem;
+  border-width: 0.125rem;
+  border-color: var(--color-ink);
+  background: var(--color-panel);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.button-sign:hover {
+  border-color: var(--color-blue-deep);
+  color: var(--color-blue-deep);
 }
 
 /* ============================================

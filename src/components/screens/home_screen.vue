@@ -71,14 +71,14 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="home-screen">
-    <div class="home-inner">
+  <main class="home-screen room">
+    <div class="home-inner room-inner">
       <header class="home-header">
         <h1 class="home-title">
           <PortalLogo size="large" />
         </h1>
         <RouterLink
-          class="button button-quiet settings-link"
+          class="button button-sign settings-link"
           :to="{
             name: 'settings',
           }"
@@ -111,22 +111,11 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* Test room photo; it stays put while the content scrolls over it */
-.home-screen {
-  height: 100%;
-  overflow-y: auto;
-  background: var(--color-wall) url('@/assets/images/facility_room.webp') center / cover no-repeat;
-}
-
-/* Padding keeps the content on the room's back wall, clear of the side walls, window and floor */
 .home-inner {
   display: flex;
   flex-direction: column;
   gap: 2.5rem;
   min-height: 100%;
-  max-width: calc(90rem + 20vw);
-  margin: 0 auto;
-  padding: 3.5rem 10vw 12vh;
 }
 
 /* Wordmark and settings */
@@ -141,21 +130,9 @@ onBeforeUnmount(() => {
   font-size: inherit;
 }
 
+/* The gear sits close to the frame */
 .settings-link {
-  min-height: 3.25rem;
-  padding: 0 1.5rem 0 1.25rem;
-  border-width: 0.125rem;
-  border-color: var(--color-ink);
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.settings-link:hover {
-  border-color: var(--color-blue-deep);
-  color: var(--color-blue-deep);
+  padding-left: 1.25rem;
 }
 
 .settings-icon {

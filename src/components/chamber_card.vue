@@ -85,7 +85,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--color-rule);
   border-radius: 0.5rem;
   background: rgba(var(--color-panel-rgb), 0.78);
-  box-shadow: 0 0.75rem 2rem rgba(var(--color-ink-rgb), 0.12);
+  box-shadow: var(--shadow-panel);
   backdrop-filter: blur(0.375rem);
   overflow: hidden;
   transition: border-color 160ms ease, box-shadow 160ms ease;
