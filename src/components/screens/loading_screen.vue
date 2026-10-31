@@ -12,18 +12,60 @@ const emit = defineEmits<{
   start: []
 }>()
 
-const progress = ref(0) // Share of the assets downloaded, from 0 to 1
+// Milliseconds the bar takes at the least: 2 s in development only, where local files arrive
+// almost at once, so the loading state can be seen; no minimum in the built game
+const MINIMUM_LOADING_TIME = import.meta.env.DEV ? 2000 : 0
+
+const progress = ref(0) // Share of the assets the bar shows, from 0 to 1
 const loaded = ref(false) // True once every asset has downloaded or failed
 
 const startButton = useTemplateRef<HTMLButtonElement>('startButton')
+
+let downloadedShare = 0 // Share of the assets actually downloaded, from 0 to 1
+let loadingStartedAt = 0 // When the preload started, in milliseconds from performance.now()
+
+/**
+ * Shows the downloaded share on the bar, held back so it never runs ahead of the minimum loading time.
+ */
+function showProgress(): void {
+  const elapsed = performance.now() - loadingStartedAt
+  const timeShare = MINIMUM_LOADING_TIME === 0 ? 1 : elapsed / MINIMUM_LOADING_TIME
+  progress.value = Math.min(downloadedShare, timeShare)
+}
+
+/**
+ * Keeps the bar moving with the clock until the minimum loading time has passed.
+ * @returns Resolves once the minimum loading time has passed
+ */
+function waitMinimumLoadingTime(): Promise<void> {
+  return new Promise((resolve) => {
+    /**
+     * Updates the bar once per frame until the time is up.
+     */
+    const tick = (): void => {
+      showProgress()
+      if (performance.now() - loadingStartedAt >= MINIMUM_LOADING_TIME) {
+        resolve()
+      } else {
+        requestAnimationFrame(tick)
+      }
+    }
+    tick()
+  })
+}
 
 /**
  * Downloads the assets, then shows Start and gives it the keyboard.
  */
 async function preload(): Promise<void> {
-  await preloadAssets((share) => {
-    progress.value = share
-  })
+  loadingStartedAt = performance.now()
+  await Promise.all([
+    preloadAssets((share) => {
+      downloadedShare = share
+      showProgress()
+    }),
+    waitMinimumLoadingTime(),
+  ])
   progress.value = 1
   loaded.value = true
   await nextTick()
@@ -38,15 +80,18 @@ onMounted(() => {
 <template>
   <main class="loading-screen wall">
     <div class="loading-content">
-      <span class="emblem" aria-hidden="true">
-        <span class="emblem-portal emblem-portal-blue"></span>
-        <span class="emblem-subject"></span>
-        <span class="emblem-portal emblem-portal-orange"></span>
-      </span>
+      <span class="emblem" aria-hidden="true"></span>
       <h1 class="loading-title">
         <PortalLogo size="large" />
       </h1>
-      <p class="loading-status" role="status">{{ loaded ? 'Ready' : 'Loading...' }}</p>
+      <p
+        class="loading-status"
+        :class="{
+          'loading-status-done': loaded,
+        }"
+      >
+        Loading...
+      </p>
       <div
         class="loading-bar"
         role="progressbar"
@@ -84,7 +129,7 @@ onMounted(() => {
 
 /* Larger panels than the other walls, centred so the sign sits in the middle of one */
 .loading-screen {
-  --panel-size: 20rem;
+  --panel-size: 12rem;
 
   position: relative;
   isolation: isolate;
@@ -130,53 +175,13 @@ onMounted(() => {
   width: min(36rem, 100%);
 }
 
-/* Round facility sign: the test subject standing between the two portals, kept quiet so the title leads */
+/* Aperture Science logo, muted so the title leads; drawn as a mask so it takes the wall's ink */
 .emblem {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.875rem;
-  width: 7.5rem;
+  width: 8rem;
   aspect-ratio: 1;
-  margin-bottom: 3rem;
-  border: 0.375rem solid rgba(var(--color-ink-rgb), 0.3);
-  border-radius: 50%;
-}
-
-.emblem-portal {
-  width: 0.375rem;
-  height: 3.75rem;
-  border-radius: 0.25rem;
-}
-
-.emblem-portal-blue {
-  background: var(--color-blue);
-}
-
-.emblem-portal-orange {
-  background: var(--color-orange);
-}
-
-/* The subject's body, with the head above it */
-.emblem-subject {
-  position: relative;
-  width: 1.75rem;
-  height: 2.75rem;
-  margin-top: 1.5rem;
-  border-radius: 0.875rem 0.875rem 0.25rem 0.25rem;
-  background: rgba(var(--color-ink-rgb), 0.3);
-}
-
-.emblem-subject::before {
-  content: '';
-  position: absolute;
-  bottom: calc(100% + 0.25rem);
-  left: 50%;
-  width: 1.25rem;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: rgba(var(--color-ink-rgb), 0.3);
-  transform: translateX(-50%);
+  margin-bottom: 2.5rem;
+  background: rgba(var(--color-ink-rgb), 0.32);
+  mask: url('@/assets/images/aperture_science.svg') center / contain no-repeat;
 }
 
 .loading-title {
@@ -197,17 +202,21 @@ onMounted(() => {
   text-transform: uppercase;
 }
 
+/* Gone once loading finishes, still holding its space so nothing below moves */
+.loading-status-done {
+  visibility: hidden;
+}
+
 /* ============================================
    Progress bar
    ============================================ */
 
-/* Pale channel with a light rim, glowing faintly blue */
+/* Pale channel, glowing faintly blue */
 .loading-bar {
   width: 100%;
   height: 2.25rem;
   margin-top: 1.75rem;
   padding: 0.3125rem;
-  border: 0.1875rem solid var(--color-panel);
   border-radius: 2rem;
   background: rgba(var(--color-ink-rgb), 0.14);
   box-shadow:
