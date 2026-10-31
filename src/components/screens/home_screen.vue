@@ -3,19 +3,24 @@
  * Home screen: pick a chamber to play, or open the settings.
  * The left and right arrow keys move between the chamber cards.
  */
-import {computed, useTemplateRef} from 'vue'
+import {computed, onMounted, useTemplateRef} from 'vue'
 import ChamberCard from '@/components/chamber_card.vue'
 import PortalLogo from '@/components/portal_logo.vue'
 import SectionHeading from '@/components/section_heading.vue'
 import {useArrowFocus} from '@/composables/use_arrow_focus'
 import {CHAMBERS} from '@/services/chamber_catalogue'
 import {completedChambers} from '@/services/progress'
+import {playMusic} from '@/services/settings'
 
 const completedCount = computed(() => CHAMBERS.filter((chamber) => completedChambers.value.includes(chamber.number)).length)
 
 const chamberList = useTemplateRef<HTMLElement>('chamberList')
 
 useArrowFocus(chamberList, '.chamber-card')
+
+onMounted(() => {
+  playMusic('menu')
+})
 </script>
 
 <template>

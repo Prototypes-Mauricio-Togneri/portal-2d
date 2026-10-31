@@ -1,27 +1,35 @@
-import musicUrl from '@/assets/audio/music/music.mp3'
+import gameMusicUrl from '@/assets/audio/music/game.mp3'
+import menuMusicUrl from '@/assets/audio/music/menu.mp3'
 
 /**
  * Background music, looping quietly under the sound effects.
  */
 export class Music {
   private readonly audio: HTMLAudioElement // The element that plays the track
+  private readonly volume: number // Playback volume from 0 to 1, set per track so every track sounds equally loud
 
   /**
    * @param url - Address of the audio file
+   * @param volume - Playback volume from 0 to 1
    */
-  constructor(url: string) {
+  constructor(url: string, volume: number) {
     this.audio = new Audio(url)
+    this.volume = volume
   }
 
   /**
-   * Starts or resumes the track on a loop at low volume.
+   * Starts or resumes the track on a loop at its volume.
+   * @returns Whether the track started; false while the browser refuses to play until the user has interacted with the page
    */
-  play(): void {
+  async play(): Promise<boolean> {
     this.audio.loop = true
-    this.audio.volume = 0.05
-    this.audio.play().catch(() => {
-      // The browser refuses to play until the user has interacted with the page
-    })
+    this.audio.volume = this.volume
+    try {
+      await this.audio.play()
+      return true
+    } catch (_error) {
+      return false
+    }
   }
 
   /**
@@ -33,6 +41,11 @@ export class Music {
 }
 
 /**
- * The single background music instance.
+ * Music for the home and settings screens. The file is mastered quietly, so it plays louder.
  */
-export const music = new Music(musicUrl)
+export const menuMusic = new Music(menuMusicUrl, 0.19)
+
+/**
+ * Music inside a chamber. The file is mastered loudly, so it plays quieter.
+ */
+export const gameMusic = new Music(gameMusicUrl, 0.025)

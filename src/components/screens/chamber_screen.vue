@@ -16,7 +16,7 @@ import PortalLogo from '@/components/portal_logo.vue'
 import {Level} from '@/game/level'
 import {findChamber} from '@/services/chamber_catalogue'
 import {markChamberCompleted} from '@/services/progress'
-import {startMusic} from '@/services/settings'
+import {playMusic} from '@/services/settings'
 
 /** Which dialog is open over the chamber. */
 type ChamberDialog = 'none' | 'pause' | 'confirm-reset' | 'confirm-exit' | 'completed'
@@ -191,7 +191,7 @@ onMounted(() => {
   resizeObserver.observe(stageElement)
 
   window.addEventListener('keydown', handleKeydown)
-  startMusic()
+  playMusic('game')
 })
 
 onBeforeUnmount(() => {

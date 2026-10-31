@@ -2,13 +2,22 @@
  * Sound and music preferences, kept in localStorage and applied to the game audio.
  */
 import {ref, watch} from 'vue'
-import {music} from '@/game/music'
+import {gameMusic, menuMusic} from '@/game/music'
+import type {Music} from '@/game/music'
 import {Sound} from '@/game/sound'
+
+/** Which background track a screen plays. */
+export type MusicTrack = 'menu' | 'game'
 
 const SOUND_STORAGE_KEY = 'portal-2d.sound-enabled'
 const MUSIC_STORAGE_KEY = 'portal-2d.music-enabled'
 
-let musicStarted = false // Music waits for the first chamber, then loops on every screen
+const MUSIC_TRACKS: Record<MusicTrack, Music> = {
+  menu: menuMusic,
+  game: gameMusic,
+}
+
+let currentTrack: MusicTrack | null = null // Track of the open screen; none until a screen opens
 
 /**
  * Reads an on/off preference. Missing or unreadable values count as on.
@@ -37,15 +46,30 @@ function writePreference(key: string, value: boolean): void {
 }
 
 /**
- * Plays or pauses the music to match the preference.
+ * Plays the open screen's track if music is on, and pauses every other track.
  * Safe to call repeatedly; playing music that is already playing is a no-op.
  */
 function applyMusic(): void {
-  if (musicStarted && musicEnabled.value) {
-    music.play()
-  } else {
-    music.pause()
+  const playingMusic = musicEnabled.value && currentTrack !== null ? MUSIC_TRACKS[currentTrack] : null
+  for (const music of Object.values(MUSIC_TRACKS)) {
+    if (music === playingMusic) {
+      void music.play().then((started) => {
+        if (started) {
+          stopRetryingMusic()
+        }
+      })
+    } else {
+      music.pause()
+    }
   }
+}
+
+/**
+ * Stops retrying the music on key presses and clicks, once a track has started.
+ */
+function stopRetryingMusic(): void {
+  window.removeEventListener('keydown', applyMusic)
+  window.removeEventListener('pointerdown', applyMusic)
 }
 
 export const soundEnabled = ref(readPreference(SOUND_STORAGE_KEY))
@@ -64,17 +88,16 @@ watch(musicEnabled, (enabled) => {
 })
 
 /**
- * Starts the music when the first chamber opens.
- * Browsers block audio until the page gets a key press or click, so after a
- * reload straight into a chamber the music retries on the next one.
+ * Switches the background music to a screen's track, which loops while the
+ * screen is open and resumes where it left off when the screen opens again.
+ * Browsers block audio until the page gets a key press or click, so on a fresh
+ * visit every key press and click retries the track until it starts; some keys,
+ * such as Escape, don't count as interacting with the page.
+ * @param track - The track the opening screen plays
  */
-export function startMusic(): void {
-  musicStarted = true
+export function playMusic(track: MusicTrack): void {
+  currentTrack = track
   applyMusic()
-  window.addEventListener('keydown', applyMusic, {
-    once: true,
-  })
-  window.addEventListener('pointerdown', applyMusic, {
-    once: true,
-  })
+  window.addEventListener('keydown', applyMusic)
+  window.addEventListener('pointerdown', applyMusic)
 }

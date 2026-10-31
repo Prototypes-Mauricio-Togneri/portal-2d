@@ -10,7 +10,7 @@ import PortalLogo from '@/components/portal_logo.vue'
 import SectionHeading from '@/components/section_heading.vue'
 import SettingsSwitch from '@/components/settings_switch.vue'
 import {useArrowFocus} from '@/composables/use_arrow_focus'
-import {musicEnabled, soundEnabled} from '@/services/settings'
+import {musicEnabled, playMusic, soundEnabled} from '@/services/settings'
 
 const router = useRouter()
 
@@ -39,6 +39,7 @@ function handleKeydown(event: KeyboardEvent): void {
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
+  playMusic('menu')
 })
 
 onBeforeUnmount(() => {
@@ -68,7 +69,7 @@ onBeforeUnmount(() => {
           <SettingsSwitch
             v-model="musicEnabled"
             label="Music"
-            description="Background music, starting with your first chamber"
+            description="Background music in the menus and the chambers"
             icon="music"
           />
         </div>
