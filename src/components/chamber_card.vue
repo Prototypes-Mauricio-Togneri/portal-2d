@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * A chamber sign on the home screen: its name and subtitle on the left, its
- * number on the right, a live preview drawn by the game's own renderer, and
- * whether the player has completed it.
+ * number on the right behind a test-subject figure that turns green once the
+ * player has completed it, and a live preview drawn by the game's own renderer.
  */
 import {onBeforeUnmount, onMounted, useTemplateRef} from 'vue'
 import {drawChamberPreview} from '@/game/chamber_preview'
@@ -64,11 +64,14 @@ onBeforeUnmount(() => {
         <span class="sign-card-title">Chamber {{ chamber.number }}</span>
         <span class="card-subtitle">{{ chamber.subtitle }}</span>
       </span>
-      <svg v-if="completed" class="card-check" viewBox="0 0 16 16" aria-hidden="true">
-        <title>Completed</title>
-        <path d="M3 8.5l3.2 3.2L13 4.8" />
-      </svg>
-      <span class="card-number sign-card-mark">{{ chamber.number }}</span>
+      <span
+        class="card-subject"
+        :class="{
+          'card-subject-completed': completed,
+        }"
+        aria-hidden="true"
+      ></span>
+      <span class="card-number">{{ chamber.number }}</span>
     </span>
     <span ref="previewFrame" class="card-preview">
       <canvas ref="previewCanvas"></canvas>
@@ -87,6 +90,7 @@ onBeforeUnmount(() => {
 
 /* Large chamber number at the header strip's right edge */
 .card-number {
+  flex: none;
   font-family: var(--font-display);
   font-size: 4.5rem;
   font-weight: 700;
@@ -103,16 +107,32 @@ onBeforeUnmount(() => {
   text-transform: uppercase;
 }
 
-/* Completion mark just before the number */
-.card-check {
+/* Test subject peeking out beside the number, as tall as the number: grey until the chamber is
+   completed, then a glowing green. The figure is a mask on the layer inside, since a mask would also
+   cut off a glow set on the same element */
+.card-subject {
+  position: relative;
   flex: none;
-  width: 2rem;
-  height: 2rem;
-  fill: none;
-  stroke: var(--color-blue-deep);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  height: 3.825rem;
+  aspect-ratio: 157 / 380;
+}
+
+.card-subject::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(var(--color-ink-rgb), 0.35);
+  mask: url('@/assets/images/level_indicator.png') center / contain no-repeat;
+}
+
+.card-subject-completed {
+  filter:
+    drop-shadow(0 0 0.25rem rgba(var(--color-subject-rgb), 0.7))
+    drop-shadow(0 0 0.75rem rgba(var(--color-subject-rgb), 0.45));
+}
+
+.card-subject-completed::before {
+  background: var(--color-subject);
 }
 
 /* Live chamber preview, filling the rest of the card */

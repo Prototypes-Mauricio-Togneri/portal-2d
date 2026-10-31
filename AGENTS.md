@@ -11,7 +11,7 @@ src/
   main.ts, app.vue, router.ts     entry, desktop-only gate, routes (/, /settings, /chamber/:number)
   assets/styles.css               design tokens and shared classes (.wall, .room, .sign-card, .button-*, .keycap)
   assets/audio/                   music and sound effects, imported so Vite fingerprints them
-  assets/images/                  the test-room photo behind the home and settings screens (WebP)
+  assets/images/                  the test-room photo behind the home and settings screens (WebP), the test-subject figure on chamber cards
   chambers/chamber_N.json         chamber layouts (format: docs/elements.md)
   components/screens/             home_screen, settings_screen, chamber_screen
   components/                     chamber card, settings switch (both sign cards), section heading, legend, dialogs (dialog_frame is the shared shell), logo, desktop-only notice
@@ -53,8 +53,8 @@ public/                           favicon only
 ## UI
 
 - Always use the `frontend-design` skill when changing the UI.
-- Direction: test-facility signage. Cool light panels on a seamed wall (the home and settings screens sit on a photo of a test room instead, via `.room` and `.room-inner`, which keep their content on the room's back wall, clear of the side walls, window and floor; both share `.room-header`, so the sign title and the navigation button sit in the same place on each), sign cards with cut corners whose frame glows blue when hovered or focused (name on the left, a divider and the chamber number or icon on the right), thin rules, chamber numbers as large sign numerals, and the game's own portal colours as the only accents: blue marks interaction and completion, orange marks caution (actions that discard progress). Keep both meanings consistent.
-- Tokens live on `:root` in `src/assets/styles.css` (`--color-wall`, `--color-panel`, `--color-rule`, `--color-ink`, `--color-ink-muted`, `--color-blue`, `--color-blue-deep`, `--color-orange`, `--color-chamber`, plus `-rgb` triplets for alpha). Use tokens, not new colours.
+- Direction: test-facility signage. Cool light panels on a seamed wall (the home and settings screens sit on a photo of a test room instead, via `.room` and `.room-inner`, which keep their content on the room's back wall, clear of the side walls and floor; both share `.room-header`, so the sign title and the navigation button sit in the same place on each), sign cards with cut corners whose frame glows blue when hovered or focused (name on the left; on the right, a settings card shows a divider and its icon, and a chamber card shows the test-subject figure and its number, the figure grey until the chamber is completed and green after), thin rules, chamber numbers as large sign numerals, and the game's own colours as the only accents: blue marks interaction and success (the chamber-complete dialog), orange marks caution (actions that discard progress), and the test subject's green marks a completed chamber on its card. Keep these meanings consistent.
+- Tokens live on `:root` in `src/assets/styles.css` (`--color-wall`, `--color-panel`, `--color-rule`, `--color-ink`, `--color-ink-muted`, `--color-blue`, `--color-blue-deep`, `--color-orange`, `--color-subject`, `--color-chamber`, plus `-rgb` triplets for alpha). Use tokens, not new colours.
 - Type: `Barlow Condensed` for display (wordmark, sign numerals, titles), `Barlow` for everything else.
 - CSS colours are always `rgba()`, never hex (the game's canvas colours are the exception, see above). `border-radius` in `rem` (exception: `50%` for circles).
 - Repeated CSS goes to `src/assets/styles.css`; component-specific styles stay in scoped `<style>` blocks.
