@@ -20,24 +20,17 @@ const settingList = useTemplateRef<HTMLElement>('settingList')
 useArrowFocus(settingList, '.settings-switch')
 
 /**
- * Returns to the home screen.
+ * Clicks, then returns to the home screen.
  */
 function goHome(): void {
+  Sound.MENU_BUTTON.play()
   void router.push({
     name: 'home',
   })
 }
 
 /**
- * Main menu button: clicks, then returns to the home screen.
- */
-function pressMainMenu(): void {
-  Sound.MENU_BUTTON.play()
-  goHome()
-}
-
-/**
- * Escape goes back to the home screen.
+ * Escape goes back to the home screen, like the Main menu button.
  * @param event - Keyboard event
  */
 function handleKeydown(event: KeyboardEvent): void {
@@ -63,7 +56,7 @@ onBeforeUnmount(() => {
         <h1 class="room-title">
           <PortalLogo class="settings-title" size="large" text="Settings" />
         </h1>
-        <button class="button button-sign" type="button" @click="pressMainMenu">
+        <button class="button button-sign" type="button" @click="goHome">
           <svg class="button-sign-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 2L23 11.5H20.5V22H14.5V15.5H9.5V22H3.5V11.5H1Z" />
           </svg>
