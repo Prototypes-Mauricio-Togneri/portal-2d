@@ -301,6 +301,8 @@ onBeforeUnmount(() => {
 
 /* Stage holding the game canvas, on the room's back wall */
 .chamber-stage {
+  position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -308,6 +310,18 @@ onBeforeUnmount(() => {
   min-height: 0;
   padding: 2rem;
   overflow: hidden;
+}
+
+/* The room, blurred so the eye stays on the chamber; it reaches past the stage so the blur's
+   faded edges are clipped away */
+.chamber-stage::before {
+  content: '';
+  position: absolute;
+  inset: -2rem;
+  z-index: -1;
+  pointer-events: none;
+  background: inherit;
+  filter: blur(0.25rem);
 }
 
 .chamber-canvas {
