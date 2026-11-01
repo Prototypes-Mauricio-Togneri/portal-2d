@@ -137,7 +137,7 @@ onMounted(() => {
 
 /* Top band carries the dialog's meaning */
 .dialog-panel-caution {
-  border-top-color: var(--color-orange);
+  border-top-color: var(--color-red);
 }
 
 .dialog-panel-success {
