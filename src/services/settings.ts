@@ -89,14 +89,18 @@ watch(musicEnabled, (enabled) => {
 
 /**
  * Switches the background music to a screen's track, which loops while the
- * screen is open and resumes where it left off when the screen opens again.
- * Browsers block audio until the page gets a key press or click, so on a fresh
- * visit every key press and click retries the track until it starts; some keys,
- * such as Escape, don't count as interacting with the page.
+ * screen is open and, unless told to start over, resumes where it left off when
+ * the screen opens again. Browsers block audio until the page gets a key press
+ * or click, so on a fresh visit every key press and click retries the track
+ * until it starts; some keys, such as Escape, don't count as interacting with the page.
  * @param track - The track the opening screen plays
+ * @param fromStart - True to play the track from its beginning instead of where it left off
  */
-export function playMusic(track: MusicTrack): void {
+export function playMusic(track: MusicTrack, fromStart = false): void {
   currentTrack = track
+  if (fromStart) {
+    MUSIC_TRACKS[track].rewind()
+  }
   applyMusic()
   window.addEventListener('keydown', applyMusic)
   window.addEventListener('pointerdown', applyMusic)

@@ -90,12 +90,13 @@ function resume(): void {
 }
 
 /**
- * Rebuilds the chamber from its starting layout and resumes play.
+ * Rebuilds the chamber from its starting layout, starts the music over and resumes play.
  */
 function restartChamber(): void {
   if (level !== null && chamber.value !== undefined) {
     level.load(chamber.value.data)
   }
+  playMusic('game', true)
   resume()
 }
 
@@ -197,7 +198,8 @@ onMounted(() => {
   resizeObserver.observe(stageElement)
 
   window.addEventListener('keydown', handleKeydown)
-  playMusic('game')
+  // Every chamber starts its music from the beginning
+  playMusic('game', true)
 })
 
 onBeforeUnmount(() => {

@@ -39,6 +39,13 @@ export class Music {
   pause(): void {
     this.audio.pause()
   }
+
+  /**
+   * Moves the track back to its beginning, whether it is playing or paused.
+   */
+  rewind(): void {
+    this.audio.currentTime = 0
+  }
 }
 
 /**

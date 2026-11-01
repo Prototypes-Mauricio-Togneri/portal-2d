@@ -1,5 +1,6 @@
 # TODO
 
+- Normalize audio
 - Show timer whie playing
 - Analytics
   - Chamber started/quit/completed
