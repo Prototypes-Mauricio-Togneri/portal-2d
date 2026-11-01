@@ -11,7 +11,7 @@ import {Sound} from '@/game/sound'
 export interface DialogFrameProps {
   title: string
   layout?: 'stack' | 'row'
-  tone?: 'neutral' | 'caution' | 'success'
+  tone?: 'neutral' | 'interaction' | 'caution' | 'success'
 }
 
 withDefaults(defineProps<DialogFrameProps>(), {
@@ -140,6 +140,7 @@ onMounted(() => {
   border-top-color: var(--color-red);
 }
 
+.dialog-panel-interaction,
 .dialog-panel-success {
   border-top-color: var(--color-blue);
 }

@@ -18,10 +18,10 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <DialogFrame title="Paused">
+  <DialogFrame title="Paused" tone="interaction">
     <p>Chamber {{ chamberNumber }}</p>
     <template #actions>
-      <button class="button button-primary" type="button" @click="emit('continue')">
+      <button class="button button-interaction" type="button" @click="emit('continue')">
         Continue
         <span class="action-hint">Esc</span>
       </button>
@@ -34,7 +34,7 @@ const emit = defineEmits<{
 <style scoped>
 .action-hint {
   margin-left: auto;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.875rem;
   font-weight: 500;
 }

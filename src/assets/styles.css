@@ -226,6 +226,16 @@ a {
   background: var(--color-blue-deep);
 }
 
+/* Main action in the game's blue, which marks interaction */
+.button-interaction {
+  background: var(--color-blue);
+  color: var(--color-white);
+}
+
+.button-interaction:hover {
+  background: var(--color-blue-deep);
+}
+
 /* Action that discards something */
 .button-caution {
   background: var(--color-red);
