@@ -1,19 +1,18 @@
 <script setup lang="ts">
 /**
- * Home screen: a menu in three columns on one sign panel. The first picks a
- * section (Play or Settings), the second lists that section's chambers or
- * settings, and the third shows the highlighted chamber's map or what the
- * highlighted setting controls. Up and Down move the highlight in the column
- * that has the keyboard, Right and Enter step into the second column, Left and
- * Escape step back out.
+ * Home screen: a menu in up to three columns on the room's wall. The first
+ * lists the sections (Play and Settings); moving through it changes nothing
+ * else. Opening a section with Enter, Right or a click shows its chambers or
+ * settings in the second column, starting level with the section's row, and
+ * for Play the third shows the highlighted chamber's map. Up and Down move the
+ * highlight in the column that has the keyboard, Left and Escape close the
+ * section again. Every move of the highlight clicks.
  */
-import {computed, onBeforeUnmount, onMounted, ref, useId, useTemplateRef} from 'vue'
+import {computed, nextTick, onBeforeUnmount, onMounted, ref, useId, useTemplateRef} from 'vue'
 import type {Ref} from 'vue'
 import ChamberMap from '@/components/chamber_map.vue'
 import ChamberRow from '@/components/chamber_row.vue'
 import PortalLogo from '@/components/portal_logo.vue'
-import SettingDetail from '@/components/setting_detail.vue'
-import type {SettingDetailProps} from '@/components/setting_detail.vue'
 import SettingsSwitch from '@/components/settings_switch.vue'
 import {Sound} from '@/game/sound'
 import {CHAMBERS} from '@/services/chamber_catalogue'
@@ -24,7 +23,7 @@ import {musicEnabled, playMusic, soundEnabled} from '@/services/settings'
 /** A section listed in the first column. */
 type MenuSection = 'play' | 'settings'
 
-/** The column that has the keyboard: the sections, or the chosen section's items. */
+/** The column that has the keyboard: the sections, or the open section's items. */
 type MenuColumn = 'sections' | 'items'
 
 /** A section's row in the first column. */
@@ -36,10 +35,7 @@ type SectionEntry = {
 /** An on/off setting listed under Settings. */
 type SettingEntry = {
   label: string // Name on the row
-  description: string // What the setting controls, shown in the third column
-  icon: SettingDetailProps['icon'] // Pictogram above the description
   enabled: Ref<boolean> // The preference the row switches
-  descriptionId: string // Links the row to its description for screen readers
 }
 
 const SECTIONS: SectionEntry[] = [
@@ -56,44 +52,56 @@ const SECTIONS: SectionEntry[] = [
 const settings: SettingEntry[] = [
   {
     label: 'Sound effects',
-    description: 'Menu clicks, plus the portals, doors, buttons and other sounds inside a chamber',
-    icon: 'sound',
     enabled: soundEnabled,
-    descriptionId: useId(),
   },
   {
     label: 'Music',
-    description: 'Background music in the menus and the chambers',
-    icon: 'music',
     enabled: musicEnabled,
-    descriptionId: useId(),
   },
 ]
 
 const menuId = useId()
-const itemPanelId = `${menuId}-items`
+const itemColumnId = `${menuId}-items`
 
-// Back from a chamber, that chamber is highlighted with the keyboard in the second column
+// Back from a chamber, Play is open with that chamber highlighted and the keyboard in the second
+// column; on the first arrival only the sections show, with Play highlighted and nothing open
 const rememberedChamber = CHAMBERS.findIndex((chamber) => chamber.number === lastChamber())
+const returning = rememberedChamber !== -1
 
-const selectedSection = ref<MenuSection>('play')
-const activeColumn = ref<MenuColumn>(rememberedChamber === -1 ? 'sections' : 'items')
+const highlightedSection = ref<MenuSection>('play')
+const openSection = ref<MenuSection | null>(returning ? 'play' : null)
+const activeColumn = ref<MenuColumn>(returning ? 'items' : 'sections')
 const highlightedChamber = ref(Math.max(rememberedChamber, 0))
 const highlightedSetting = ref(0)
+
+let pointerSection: MenuSection | null = null // Section row under the pointer, so only moving onto a row takes the keyboard
 
 const sectionColumn = useTemplateRef<HTMLElement>('sectionColumn')
 const itemColumn = useTemplateRef<HTMLElement>('itemColumn')
 
-const itemCount = computed(() => (selectedSection.value === 'play' ? CHAMBERS.length : settings.length))
-const highlightedItem = computed(() => (selectedSection.value === 'play' ? highlightedChamber.value : highlightedSetting.value))
+const highlightedItem = computed(() => (openSection.value === 'play' ? highlightedChamber.value : highlightedSetting.value))
 const highlightedChamberEntry = computed(() => CHAMBERS[highlightedChamber.value])
+
+/**
+ * Counts the rows of the open section.
+ * @returns How many chambers or settings it lists, or 0 with no section open
+ */
+function itemCount(): number {
+  if (openSection.value === 'play') {
+    return CHAMBERS.length
+  }
+  if (openSection.value === 'settings') {
+    return settings.length
+  }
+  return 0
+}
 
 /**
  * Builds the id of a section's row, which its item column is labelled by.
  * @param section - The section
  * @returns The row's id
  */
-function sectionTabId(section: MenuSection): string {
+function sectionRowId(section: MenuSection): string {
   return `${menuId}-${section}`
 }
 
@@ -107,11 +115,11 @@ function sectionIndex(section: MenuSection): number {
 }
 
 /**
- * Highlights an item of the chosen section.
+ * Highlights an item of the open section.
  * @param index - The item's index in the second column
  */
 function highlightItem(index: number): void {
-  if (selectedSection.value === 'play') {
+  if (openSection.value === 'play') {
     highlightedChamber.value = index
   } else {
     highlightedSetting.value = index
@@ -141,100 +149,148 @@ function focusRow(column: MenuColumn, index: number, preventScroll = false): voi
 }
 
 /**
- * Gives the keyboard to the highlighted row of the active column.
- */
-function focusActiveRow(): void {
-  if (activeColumn.value === 'sections') {
-    focusRow('sections', sectionIndex(selectedSection.value))
-  } else {
-    focusRow('items', highlightedItem.value)
-  }
-}
-
-/**
- * Moves the highlight up or down the active column, wrapping around. In the
- * first column this also swaps the second column to the newly highlighted section.
+ * Moves the highlight up or down the active column, wrapping around, with a
+ * click. In the first column the other columns stay as they are.
  * @param offset - +1 for down, -1 for up
  */
 function moveHighlight(offset: number): void {
   if (activeColumn.value === 'sections') {
-    const nextIndex = (sectionIndex(selectedSection.value) + offset + SECTIONS.length) % SECTIONS.length
+    const nextIndex = (sectionIndex(highlightedSection.value) + offset + SECTIONS.length) % SECTIONS.length
     const nextSection = SECTIONS[nextIndex]
     if (nextSection === undefined) {
       return
     }
-    selectedSection.value = nextSection.section
+    if (nextSection.section !== highlightedSection.value) {
+      highlightedSection.value = nextSection.section
+      Sound.MENU_BUTTON.play()
+    }
     focusRow('sections', nextIndex)
     return
   }
-  if (itemCount.value === 0) {
+  const count = itemCount()
+  if (count === 0) {
     return
   }
-  const nextIndex = (highlightedItem.value + offset + itemCount.value) % itemCount.value
-  highlightItem(nextIndex)
+  const nextIndex = (highlightedItem.value + offset + count) % count
+  if (nextIndex !== highlightedItem.value) {
+    highlightItem(nextIndex)
+    Sound.MENU_BUTTON.play()
+  }
   focusRow('items', nextIndex)
 }
 
 /**
- * Steps from the first column into the chosen section's items, with a click.
+ * Opens the highlighted section and steps into its items, with a click. Does
+ * nothing with the keyboard already in the items.
  */
-function stepIn(): void {
+function openHighlightedSection(): void {
   if (activeColumn.value === 'items') {
     return
   }
+  openSection.value = highlightedSection.value
   activeColumn.value = 'items'
   Sound.MENU_BUTTON.play()
-  focusRow('items', highlightedItem.value)
+  // The item rows are only drawn once the section is open
+  void nextTick(() => {
+    focusRow('items', highlightedItem.value)
+  })
 }
 
 /**
- * Steps back from the items to the first column, with a click.
+ * Closes the open section, hiding the second and third columns, and gives the
+ * keyboard back to its row in the first column, with a click.
  */
-function stepOut(): void {
-  if (activeColumn.value === 'sections') {
+function closeSection(): void {
+  if (openSection.value === null) {
     return
   }
+  openSection.value = null
   activeColumn.value = 'sections'
   Sound.MENU_BUTTON.play()
-  focusRow('sections', sectionIndex(selectedSection.value))
+  focusRow('sections', sectionIndex(highlightedSection.value))
 }
 
 /**
- * Opens a section picked with the mouse (or Space), clicking only when that
- * changes the section or brings the keyboard back to the first column.
+ * Opens a section picked with the mouse (or Space), just like Enter.
  * @param section - The section picked
  */
 function chooseSection(section: MenuSection): void {
-  const changed = section !== selectedSection.value || activeColumn.value !== 'sections'
-  selectedSection.value = section
+  highlightedSection.value = section
   activeColumn.value = 'sections'
-  if (changed) {
-    Sound.MENU_BUTTON.play()
-  }
-  focusRow('sections', sectionIndex(section))
+  openHighlightedSection()
 }
 
 /**
- * Keeps the state in step when a section row gets the keyboard, such as through Tab.
+ * Keeps the state in step when a section row gets the keyboard, such as through
+ * Tab, clicking when that moves the highlight.
  * @param section - The row's section
  */
 function handleSectionFocus(section: MenuSection): void {
-  selectedSection.value = section
+  if (activeColumn.value === 'sections' && highlightedSection.value === section) {
+    return
+  }
+  highlightedSection.value = section
   activeColumn.value = 'sections'
+  Sound.MENU_BUTTON.play()
 }
 
 /**
- * Keeps the state in step when an item row gets the keyboard, such as through Tab or a click.
+ * Keeps the state in step when an item row gets the keyboard, such as through
+ * Tab, clicking when that moves the highlight.
  * @param index - The row's index in the second column
  */
 function handleItemFocus(index: number): void {
+  if (activeColumn.value === 'items' && highlightedItem.value === index) {
+    return
+  }
   activeColumn.value = 'items'
   highlightItem(index)
+  Sound.MENU_BUTTON.play()
 }
 
 /**
- * Highlights the item under a moving pointer. Only real movement counts, so a
- * list that swaps under a still pointer never pulls the keyboard into it.
+ * Highlights the section under a moving pointer, with a click. Only real
+ * movement onto a row counts, so moving off a row just clicked, on the way to
+ * its items, leaves the keyboard there. The open section, if any, stays open.
+ * @param section - The row's section
+ * @param event - Pointer event
+ */
+function handleSectionPointerMove(section: MenuSection, event: PointerEvent): void {
+  if (event.movementX === 0 && event.movementY === 0) {
+    return
+  }
+  if (pointerSection === section) {
+    return
+  }
+  pointerSection = section
+  if (activeColumn.value === 'sections' && highlightedSection.value === section) {
+    return
+  }
+  highlightedSection.value = section
+  activeColumn.value = 'sections'
+  Sound.MENU_BUTTON.play()
+  focusRow('sections', sectionIndex(section), true)
+}
+
+/**
+ * Remembers the section row a press lands on, even one that appeared under a
+ * still pointer, so moving off it after the click leaves the keyboard in its items.
+ * @param section - The row's section
+ */
+function handleSectionPointerDown(section: MenuSection): void {
+  pointerSection = section
+}
+
+/**
+ * Forgets the section row the pointer was on, so moving back onto it takes the keyboard again.
+ */
+function handleSectionPointerLeave(): void {
+  pointerSection = null
+}
+
+/**
+ * Highlights the item under a moving pointer, with a click. Only real movement
+ * counts, so a list that opens under a still pointer never pulls the keyboard into it.
  * @param index - The row's index in the second column
  * @param event - Pointer event
  */
@@ -247,13 +303,14 @@ function handleItemPointerMove(index: number, event: PointerEvent): void {
   }
   activeColumn.value = 'items'
   highlightItem(index)
+  Sound.MENU_BUTTON.play()
   focusRow('items', index, true)
 }
 
 /**
- * Enter steps into the second column from the first. In the second column the
- * focused row handles it (starting the chamber or flipping the setting); if the
- * keyboard has left the rows, the highlighted row is pressed instead.
+ * Enter opens the highlighted section from the first column. In the second
+ * column the focused row handles it (starting the chamber or flipping the
+ * setting); if the keyboard has left the rows, the highlighted row is pressed instead.
  * @param event - Keyboard event
  */
 function handleEnter(event: KeyboardEvent): void {
@@ -264,7 +321,7 @@ function handleEnter(event: KeyboardEvent): void {
   }
   if (activeColumn.value === 'sections') {
     event.preventDefault()
-    stepIn()
+    openHighlightedSection()
     return
   }
   const row = rowElements('items')[highlightedItem.value]
@@ -294,21 +351,21 @@ function handleKeydown(event: KeyboardEvent): void {
       break
     case 'ArrowRight':
       event.preventDefault()
-      stepIn()
+      openHighlightedSection()
       break
     case 'ArrowLeft':
       event.preventDefault()
-      stepOut()
+      closeSection()
       break
     case 'Escape':
-      stepOut()
+      closeSection()
       break
     case 'Enter':
       handleEnter(event)
       break
     case ' ':
       // A chamber row is a link, which Space doesn't press; keep it from scrolling the room instead
-      if (activeColumn.value === 'items' && selectedSection.value === 'play') {
+      if (activeColumn.value === 'items' && openSection.value === 'play') {
         event.preventDefault()
       }
       break
@@ -318,7 +375,12 @@ function handleKeydown(event: KeyboardEvent): void {
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
   playMusic('menu')
-  focusActiveRow()
+  // The focus handlers find the state already set, so arriving makes no click
+  if (activeColumn.value === 'items') {
+    focusRow('items', highlightedItem.value)
+  } else {
+    focusRow('sections', sectionIndex(highlightedSection.value))
+  }
 })
 
 onBeforeUnmount(() => {
@@ -333,52 +395,57 @@ onBeforeUnmount(() => {
         <PortalLogo size="large" />
       </h1>
 
-      <div class="home-panel sign-card">
+      <div class="home-menu">
         <div
           ref="sectionColumn"
           class="home-column home-sections"
-          role="tablist"
-          aria-orientation="vertical"
+          role="group"
           aria-label="Main menu"
         >
+          <!-- The active bar is declared after the faint one in styles.css, so it wins on a row with both -->
           <button
             v-for="entry in SECTIONS"
-            :id="sectionTabId(entry.section)"
+            :id="sectionRowId(entry.section)"
             :key="entry.section"
-            class="menu-row sign-card"
+            class="menu-row"
             :class="{
-              'menu-row-highlighted': entry.section === selectedSection,
-              'sign-card-glowing': entry.section === selectedSection && activeColumn === 'sections',
+              'menu-row-selected': entry.section === openSection,
+              'menu-row-active': entry.section === highlightedSection && activeColumn === 'sections',
             }"
             type="button"
-            role="tab"
-            :aria-selected="entry.section === selectedSection"
-            :aria-controls="itemPanelId"
-            :tabindex="entry.section === selectedSection ? 0 : -1"
+            :aria-expanded="entry.section === openSection"
+            :aria-controls="entry.section === openSection ? itemColumnId : undefined"
+            :tabindex="entry.section === highlightedSection ? 0 : -1"
+            @pointerdown="handleSectionPointerDown(entry.section)"
             @mousedown.prevent
             @click="chooseSection(entry.section)"
             @focus="handleSectionFocus(entry.section)"
+            @pointermove="handleSectionPointerMove(entry.section, $event)"
+            @pointerleave="handleSectionPointerLeave"
           >
             <span class="menu-row-label">{{ entry.label }}</span>
-            <span class="sign-card-frame" aria-hidden="true"></span>
           </button>
         </div>
 
-        <div
-          :id="itemPanelId"
+        <section
+          v-if="openSection !== null"
+          :id="itemColumnId"
           ref="itemColumn"
+          :key="`items-${openSection}`"
           class="home-column home-items"
-          role="tabpanel"
-          :aria-labelledby="sectionTabId(selectedSection)"
+          :style="{
+            '--menu-cascade-rows': sectionIndex(openSection),
+          }"
+          :aria-labelledby="sectionRowId(openSection)"
         >
-          <ol v-if="selectedSection === 'play'" class="home-row-list">
+          <ol v-if="openSection === 'play'" class="home-row-list">
             <li v-for="(chamber, index) in CHAMBERS" :key="chamber.number">
               <ChamberRow
                 :chamber="chamber"
                 :completed="completedChambers.includes(chamber.number)"
                 :class="{
-                  'menu-row-highlighted': index === highlightedChamber,
-                  'sign-card-glowing': index === highlightedChamber && activeColumn === 'items',
+                  'menu-row-selected': index === highlightedChamber,
+                  'menu-row-active': index === highlightedChamber && activeColumn === 'items',
                 }"
                 :tabindex="index === highlightedChamber ? 0 : -1"
                 @focus="handleItemFocus(index)"
@@ -391,10 +458,9 @@ onBeforeUnmount(() => {
               <SettingsSwitch
                 v-model="setting.enabled.value"
                 :label="setting.label"
-                :description-id="setting.descriptionId"
                 :class="{
-                  'menu-row-highlighted': index === highlightedSetting,
-                  'sign-card-glowing': index === highlightedSetting && activeColumn === 'items',
+                  'menu-row-selected': index === highlightedSetting,
+                  'menu-row-active': index === highlightedSetting && activeColumn === 'items',
                 }"
                 :tabindex="index === highlightedSetting ? 0 : -1"
                 @focus="handleItemFocus(index)"
@@ -402,63 +468,78 @@ onBeforeUnmount(() => {
               />
             </li>
           </ul>
-        </div>
+        </section>
 
-        <div class="home-column home-detail">
+        <div v-if="openSection === 'play'" class="home-column home-detail">
           <div class="home-detail-frame">
-            <ChamberMap v-if="selectedSection === 'play' && highlightedChamberEntry !== undefined" :chamber="highlightedChamberEntry" />
-            <template v-else-if="selectedSection === 'settings'">
-              <SettingDetail
-                v-for="(setting, index) in settings"
-                v-show="index === highlightedSetting"
-                :key="setting.label"
-                :icon="setting.icon"
-                :description="setting.description"
-                :description-id="setting.descriptionId"
-              />
-            </template>
+            <ChamberMap v-if="highlightedChamberEntry !== undefined" :chamber="highlightedChamberEntry" />
           </div>
         </div>
-
-        <span class="sign-card-frame" aria-hidden="true"></span>
       </div>
     </div>
   </main>
 </template>
 
 <style scoped>
+/* The wordmark well clear of the menu below it */
 .home-inner {
   display: flex;
   flex-direction: column;
-  gap: 3.5rem;
+  gap: 8.5rem;
   min-height: 100%;
 }
 
-/* One sign split into three columns: the sections, the chosen section's items (wide enough for
-   the longest setting name beside its switch) and, widest, the highlighted item's map or description */
-.home-panel {
+/* Three fixed tracks, so the sections stay put when the open section's items (wide enough for the
+   longest setting name beside its switch) and, widest, Play's chamber map appear beside them */
+.home-menu {
+  --menu-row-gap: 0.25rem;
+
   display: grid;
   grid-template-columns: minmax(13rem, 1fr) minmax(28rem, 1.7fr) 2.6fr;
+  align-items: start;
+  column-gap: 3rem;
 }
 
 .home-column {
   min-width: 0;
-  padding: 1.5rem;
 }
 
-/* Thin rules between the columns, running the panel's full height */
-.home-column + .home-column {
-  border-left: 1px solid var(--color-rule);
+.home-sections {
+  grid-column: 1;
+}
+
+/* Cascade: the open section's first item starts level with the section's own row, pushed down by
+   one row and gap for every section above it (the index comes from the template) */
+.home-items {
+  grid-column: 2;
+  padding-top: calc(var(--menu-cascade-rows, 0) * (var(--menu-row-height) + var(--menu-row-gap)));
+}
+
+.home-detail {
+  grid-column: 3;
 }
 
 .home-sections,
 .home-row-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--menu-row-gap);
 }
 
-/* A fixed 4:3 frame, so the panel keeps its height whether it shows a map or a description.
+/* An opened section's columns slide out from the sections, showing where they came from */
+.home-items,
+.home-detail {
+  animation: home-column-in 180ms var(--ease-out);
+}
+
+@keyframes home-column-in {
+  from {
+    opacity: 0;
+    transform: translateX(-0.75rem);
+  }
+}
+
+/* A fixed 4:3 frame, so the column keeps its height whichever chamber it shows.
    4:3 fits the wide chambers closely and shows the square one a little smaller */
 .home-detail-frame {
   position: relative;

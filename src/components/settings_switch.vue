@@ -2,14 +2,13 @@
 /**
  * One on/off setting in the home menu: a row with its name and a switch. The
  * whole row is the switch, so a click, Space or Enter anywhere on it flips the
- * setting. What the setting controls is shown beside the menu and linked by id.
+ * setting.
  */
 import {nextTick, useId} from 'vue'
 import {Sound} from '@/game/sound'
 
 export interface SettingsSwitchProps {
   label: string
-  descriptionId: string
 }
 
 defineProps<SettingsSwitchProps>()
@@ -34,7 +33,7 @@ function toggle(): void {
 
 <template>
   <button
-    class="settings-switch menu-row sign-card"
+    class="settings-switch menu-row"
     :class="{
       'switch-on': enabled,
     }"
@@ -42,7 +41,6 @@ function toggle(): void {
     role="switch"
     :aria-checked="enabled"
     :aria-labelledby="labelId"
-    :aria-describedby="descriptionId"
     @click="toggle"
   >
     <span :id="labelId" class="menu-row-label">{{ label }}</span>
@@ -52,7 +50,6 @@ function toggle(): void {
         <span class="switch-thumb"></span>
       </span>
     </span>
-    <span class="sign-card-frame" aria-hidden="true"></span>
   </button>
 </template>
 
@@ -79,6 +76,15 @@ function toggle(): void {
 
 .switch-on .switch-state {
   color: var(--color-ink);
+}
+
+/* White lettering on the dark bar of the row with the keyboard */
+.menu-row-active .switch-state {
+  color: rgba(var(--color-white-rgb), 0.75);
+}
+
+.menu-row-active.switch-on .switch-state {
+  color: var(--color-white);
 }
 
 .switch-track {

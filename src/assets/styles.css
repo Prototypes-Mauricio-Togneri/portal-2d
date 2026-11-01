@@ -9,6 +9,7 @@
   --color-panel-rgb: 247, 248, 249;
   --color-rule: rgba(194, 201, 206, 1);
   --color-white: rgba(255, 255, 255, 1);
+  --color-white-rgb: 255, 255, 255;
 
   /* Text */
   --color-ink: rgba(29, 35, 39, 1);
@@ -35,6 +36,9 @@
 
   /* Motion */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Home menu: every row is this tall, which the cascade between its columns relies on */
+  --menu-row-height: 4rem;
 }
 
 /* ============================================
@@ -137,161 +141,42 @@ a {
 }
 
 /* ============================================
-   Sign cards
-   ============================================ */
-
-/* Panel with its four corners cut, drawn in layers: a shadow and a frosted panel behind the
-   content, and a frame (.sign-card-frame) over it. Clipping a layer to the cut shape also clips
-   its glow, and a glowing ancestor stops the frosting from blurring the wall, so each effect gets
-   its own layer. The transparent border is what high-contrast mode paints as the card's edge */
-.sign-card {
-  --sign-card-cut: 1rem;
-  --sign-card-line: 1px;
-  --sign-card-outline:
-    var(--sign-card-cut) 0,
-    calc(100% - var(--sign-card-cut)) 0,
-    100% var(--sign-card-cut),
-    100% calc(100% - var(--sign-card-cut)),
-    calc(100% - var(--sign-card-cut)) 100%,
-    var(--sign-card-cut) 100%,
-    0 calc(100% - var(--sign-card-cut)),
-    0 var(--sign-card-cut);
-
-  position: relative;
-  isolation: isolate;
-  border: 1px solid transparent;
-  background: none;
-}
-
-/* Soft shadow lifting the card off the wall */
-.sign-card::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  z-index: -1;
-  pointer-events: none;
-  background: rgba(var(--color-ink-rgb), 0.12);
-  filter: blur(1rem);
-  transform: translateY(0.75rem);
-}
-
-/* Frosted panel, cut to the card's shape */
-.sign-card::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  z-index: -1;
-  clip-path: polygon(var(--sign-card-outline));
-  background: rgba(var(--color-panel-rgb), 0.78);
-  backdrop-filter: blur(0.375rem);
-}
-
-/* Frame over the card's edge, free to glow past the cut shape */
-.sign-card-frame {
-  position: absolute;
-  inset: -1px;
-  pointer-events: none;
-  transition: filter 160ms ease;
-}
-
-/* The frame's line: the cut shape minus the same shape inset by the line's thickness.
-   Each inner corner moves 0.4142 (√2 − 1) line widths along its edge so the cuts keep that thickness */
-.sign-card-frame::before {
-  --sign-card-inner-cut: calc(var(--sign-card-cut) + 0.4142 * var(--sign-card-line));
-
-  content: '';
-  position: absolute;
-  inset: 0;
-  clip-path: polygon(
-    evenodd,
-    var(--sign-card-outline),
-    var(--sign-card-cut) 0,
-    var(--sign-card-inner-cut) var(--sign-card-line),
-    calc(100% - var(--sign-card-inner-cut)) var(--sign-card-line),
-    calc(100% - var(--sign-card-line)) var(--sign-card-inner-cut),
-    calc(100% - var(--sign-card-line)) calc(100% - var(--sign-card-inner-cut)),
-    calc(100% - var(--sign-card-inner-cut)) calc(100% - var(--sign-card-line)),
-    var(--sign-card-inner-cut) calc(100% - var(--sign-card-line)),
-    var(--sign-card-line) calc(100% - var(--sign-card-inner-cut)),
-    var(--sign-card-line) var(--sign-card-inner-cut),
-    var(--sign-card-inner-cut) var(--sign-card-line)
-  );
-  background: var(--color-rule);
-  transition: background-color 160ms ease, clip-path 160ms ease;
-}
-
-/* Glowing card, set by the screen that owns the selection: the frame thickens, turns blue and
-   glows; the glow is also the keyboard focus ring. Child selectors keep a glowing card from
-   lighting up the cards inside it */
-.sign-card-glowing {
-  --sign-card-line: 0.1875rem;
-}
-
-.sign-card-glowing > .sign-card-frame {
-  filter:
-    drop-shadow(0 0 0.125rem rgba(var(--color-blue-rgb), 1))
-    drop-shadow(0 0 0.625rem rgba(var(--color-blue-rgb), 0.75));
-}
-
-.sign-card-glowing > .sign-card-frame::before {
-  background: var(--color-blue);
-}
-
-/* Transparent outline: hidden normally, but high-contrast mode paints it after dropping the glow */
-.sign-card-glowing:focus-visible {
-  outline-color: transparent;
-}
-
-/* ============================================
    Menu rows
    ============================================ */
 
-/* One choice in the home menu: sign lettering across the full width of its column, on sign-card
-   layers (above) that stay hidden until the row is highlighted. Also resets the button and link look */
+/* One choice in the home menu: sign lettering straight on the room's wall, across the full width
+   of its column. Also resets the button and link look */
 .menu-row {
-  --sign-card-cut: 0.625rem;
-
   display: flex;
   align-items: center;
   gap: 1rem;
   width: 100%;
-  min-height: 4.5rem;
+  min-height: var(--menu-row-height);
+  margin: 0;
   padding: 0.5rem 1.25rem;
+  border: 0;
+  background: transparent;
   color: var(--color-ink);
   text-align: left;
   cursor: pointer;
+  transition: background-color 90ms ease, color 90ms ease;
 }
 
-/* No shadow under a row: the panel it sits in already lifts off the wall */
-.menu-row::before {
-  content: none;
+/* Chosen but without the keyboard (the open section, or the highlighted item while the keyboard is
+   in the first column): a faint bar */
+.menu-row-selected {
+  background: rgba(var(--color-ink-rgb), 0.14);
 }
 
-/* No bar until the row is highlighted */
-.menu-row::after {
-  background: transparent;
-  backdrop-filter: none;
-  transition: background-color 160ms ease;
+/* The row with the keyboard: a see-through dark bar with white lettering, which is also its focus mark */
+.menu-row-active {
+  background: rgba(var(--color-ink-rgb), 0.62);
+  color: var(--color-white);
 }
 
-.menu-row > .sign-card-frame {
-  opacity: 0;
-  transition: opacity 160ms ease, filter 160ms ease;
-}
-
-/* A faint bar under the pointer */
-.menu-row:hover:not(.menu-row-highlighted)::after {
-  background: rgba(var(--color-panel-rgb), 0.6);
-}
-
-/* Highlighted row: a solid bar in a thin frame. In the column that has the keyboard, the frame
-   also glows blue (.sign-card-glowing) */
-.menu-row-highlighted::after {
-  background: var(--color-white);
-}
-
-.menu-row-highlighted > .sign-card-frame {
-  opacity: 1;
+/* Transparent outline: hidden normally, but high-contrast mode, which drops the bar, paints it */
+.menu-row-active:focus-visible {
+  outline-color: transparent;
 }
 
 /* Row name in sign capitals, taking the space the row's extras leave */

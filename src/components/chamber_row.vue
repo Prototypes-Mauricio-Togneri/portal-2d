@@ -17,7 +17,7 @@ defineProps<ChamberRowProps>()
 
 <template>
   <RouterLink
-    class="chamber-row menu-row sign-card"
+    class="chamber-row menu-row"
     :to="{
       name: 'chamber',
       params: {
@@ -35,7 +35,6 @@ defineProps<ChamberRowProps>()
       }"
       aria-hidden="true"
     ></span>
-    <span class="sign-card-frame" aria-hidden="true"></span>
   </RouterLink>
 </template>
 
@@ -56,6 +55,11 @@ defineProps<ChamberRowProps>()
   inset: 0;
   background: rgba(var(--color-ink-rgb), 0.35);
   mask: url('@/assets/images/level_indicator.png') center / contain no-repeat;
+}
+
+/* Lighter grey on the dark bar of the row with the keyboard; a completed figure stays green */
+.menu-row-active .chamber-row-subject:not(.chamber-row-subject-completed)::before {
+  background: rgba(var(--color-white-rgb), 0.5);
 }
 
 .chamber-row-subject-completed {

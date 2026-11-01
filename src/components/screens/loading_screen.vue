@@ -6,15 +6,16 @@
  */
 import {nextTick, onMounted, ref, useTemplateRef} from 'vue'
 import PortalLogo from '@/components/portal_logo.vue'
+import {Sound} from '@/game/sound'
 import {preloadAssets} from '@/services/asset_preloader'
 
 const emit = defineEmits<{
   start: []
 }>()
 
-// Milliseconds the bar takes at the least: 2 s in development only, where local files arrive
-// almost at once, so the loading state can be seen; no minimum in the built game
-const MINIMUM_LOADING_TIME = import.meta.env.DEV ? 2000 : 0
+// Milliseconds the bar takes at the least: half a second in development only, where local files
+// arrive almost at once, so the loading state can be seen; no minimum in the built game
+const MINIMUM_LOADING_TIME = import.meta.env.DEV ? 500 : 0
 
 const progress = ref(0) // Share of the assets the bar shows, from 0 to 1
 const loaded = ref(false) // True once every asset has downloaded or failed
@@ -72,6 +73,15 @@ async function preload(): Promise<void> {
   startButton.value?.focus()
 }
 
+/**
+ * Clicks, then hands over to the screen that opens next. Runs once: the
+ * press removes this screen before another click or key can reach Start.
+ */
+function start(): void {
+  Sound.MENU_BUTTON.play()
+  emit('start')
+}
+
 onMounted(() => {
   void preload()
 })
@@ -113,7 +123,7 @@ onMounted(() => {
           ref="startButton"
           class="button button-sign start-button"
           type="button"
-          @click="emit('start')"
+          @click="start"
         >
           Start
         </button>
