@@ -5,7 +5,7 @@
  * The large size opens its portals once when it first appears.
  */
 export interface PortalLogoProps {
-  size?: 'large' | 'small'
+  size?: 'large' | 'medium' | 'small'
   text?: string
 }
 
@@ -56,6 +56,10 @@ withDefaults(defineProps<PortalLogoProps>(), {
 /* Sizes */
 .portal-logo-large {
   font-size: clamp(3.5rem, 7vw, 6rem);
+}
+
+.portal-logo-medium {
+  font-size: 4rem;
 }
 
 .portal-logo-small {

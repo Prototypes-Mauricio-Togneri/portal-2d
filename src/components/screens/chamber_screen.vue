@@ -41,6 +41,7 @@ const router = useRouter()
 const stage = useTemplateRef<HTMLElement>('stage')
 const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
 const chamber = computed(() => findChamber(props.chamberNumber))
+const signNumber = computed(() => String(props.chamberNumber).padStart(2, '0')) // Two digits, as on a test chamber sign
 const dialog = ref<ChamberDialog>('none')
 
 let level: Level | null = null // Running game; created on mount, disposed on unmount
@@ -210,15 +211,15 @@ onBeforeUnmount(() => {
 <template>
   <main class="chamber-screen">
     <aside class="chamber-rail">
-      <PortalLogo size="small" />
+      <PortalLogo size="medium" />
       <h1 class="chamber-sign">
-        <span class="sign-label">Chamber</span>
-        <span class="sign-number">{{ chamberNumber }}</span>
+        <span class="sign-label ruled-label">Chamber</span>
+        <span class="sign-number">{{ signNumber }}</span>
       </h1>
       <ChamberLegend />
     </aside>
 
-    <div ref="stage" class="chamber-stage">
+    <div ref="stage" class="chamber-stage room">
       <canvas ref="canvas" class="chamber-canvas"></canvas>
     </div>
 
@@ -257,42 +258,48 @@ onBeforeUnmount(() => {
 <style scoped>
 .chamber-screen {
   display: grid;
-  grid-template-columns: 19rem 1fr;
+  grid-template-columns: 23rem 1fr;
   height: 100%;
 }
 
-/* Side rail: chamber sign and controls */
+/* Side rail: wordmark, chamber sign and controls on a light panel, casting a soft shadow on the room */
 .chamber-rail {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
-  padding: 2rem 2rem;
+  gap: 3rem;
+  padding: 1.75rem 1.375rem;
   border-right: 1px solid var(--color-rule);
   background: var(--color-panel);
+  box-shadow: 0.25rem 0 1.5rem rgba(var(--color-ink-rgb), 0.12);
   overflow-y: auto;
 }
 
+/* Extra room under the number sets the sign apart from the controls */
 .chamber-sign {
   display: flex;
   flex-direction: column;
-  font-family: var(--font-display);
-  line-height: 1;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .sign-label {
-  font-size: 1.5rem;
-  font-weight: 600;
   color: var(--color-ink-muted);
+  font-size: 0.9375rem;
+  font-style: italic;
+  letter-spacing: 0.35em;
 }
 
 .sign-number {
-  font-size: 7.5rem;
+  font-family: var(--font-display);
+  font-size: 8rem;
   font-weight: 700;
-  line-height: 0.85;
+  line-height: 0.8;
   font-variant-numeric: tabular-nums;
 }
 
-/* Stage holding the game canvas */
+/* Stage holding the game canvas, on the room's back wall */
 .chamber-stage {
   display: flex;
   align-items: center;

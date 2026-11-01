@@ -37,6 +37,8 @@ const FONT_FACES = [
   '400 1rem "Barlow"',
   '500 1rem "Barlow"',
   '600 1rem "Barlow"',
+  'italic 400 1rem "Barlow"',
+  'italic 600 1rem "Barlow"',
 ]
 
 /**
