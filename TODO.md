@@ -1,12 +1,5 @@
 # TODO
 
-- Use hierarchical menu
-  - About
-    - Changelog
-    - More games
-    - Feedback
-    - Link Valve's Portal
-    - Version
 - Show timer whie playing
 - Analytics
   - Chamber started/quit/completed
@@ -18,9 +11,8 @@
 ## Future
 
 - Upload custom chamber
-  - name
-  - author
-  - date
-  - rate
-  - thumbnail
-  - disqus
+  - Name
+  - Author
+  - Date
+  - Rate
+  - Thumbnail
