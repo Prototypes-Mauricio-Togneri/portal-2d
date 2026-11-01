@@ -1,10 +1,6 @@
 # TODO
 
 - Use hierarchical menu
-  - Settings
-    - Sound
-    - Music
-    - Reset progress
   - About
     - Changelog
     - More games
