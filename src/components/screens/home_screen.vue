@@ -6,18 +6,21 @@
  * settings in the second column, starting level with the section's row, and
  * for Play the third shows the highlighted chamber's map. Up and Down move the
  * highlight in the column that has the keyboard, Left and Escape close the
- * section again. Every move of the highlight clicks.
+ * section again. Every move of the highlight clicks. Settings ends with Reset
+ * progress, which asks first in a dialog; while it is open the menu ignores the
+ * keyboard and Escape closes it.
  */
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, useId, useTemplateRef} from 'vue'
 import type {Ref} from 'vue'
 import ChamberMap from '@/components/chamber_map.vue'
 import ChamberRow from '@/components/chamber_row.vue'
+import ConfirmDialog from '@/components/confirm_dialog.vue'
 import PortalLogo from '@/components/portal_logo.vue'
 import SettingsSwitch from '@/components/settings_switch.vue'
 import {Sound} from '@/game/sound'
 import {CHAMBERS} from '@/services/chamber_catalogue'
 import {lastChamber} from '@/services/last_chamber'
-import {completedChambers} from '@/services/progress'
+import {completedChambers, resetProgress} from '@/services/progress'
 import {musicEnabled, playMusic, soundEnabled} from '@/services/settings'
 
 /** A section listed in the first column. */
@@ -60,6 +63,8 @@ const settings: SettingEntry[] = [
   },
 ]
 
+const RESET_PROGRESS_INDEX = settings.length // The Reset progress row comes after the switches
+
 const menuId = useId()
 const itemColumnId = `${menuId}-items`
 
@@ -73,6 +78,7 @@ const openSection = ref<MenuSection | null>(returning ? 'play' : null)
 const activeColumn = ref<MenuColumn>(returning ? 'items' : 'sections')
 const highlightedChamber = ref(Math.max(rememberedChamber, 0))
 const highlightedSetting = ref(0)
+const resetDialogOpen = ref(false)
 
 let pointerSection: MenuSection | null = null // Section row under the pointer, so only moving onto a row takes the keyboard
 
@@ -84,14 +90,14 @@ const highlightedChamberEntry = computed(() => CHAMBERS[highlightedChamber.value
 
 /**
  * Counts the rows of the open section.
- * @returns How many chambers or settings it lists, or 0 with no section open
+ * @returns How many chambers or settings (with Reset progress) it lists, or 0 with no section open
  */
 function itemCount(): number {
   if (openSection.value === 'play') {
     return CHAMBERS.length
   }
   if (openSection.value === 'settings') {
-    return settings.length
+    return settings.length + 1
   }
   return 0
 }
@@ -308,9 +314,34 @@ function handleItemPointerMove(index: number, event: PointerEvent): void {
 }
 
 /**
+ * Asks whether to reset the progress, with a click, as opening the pause menu does.
+ */
+function openResetDialog(): void {
+  resetDialogOpen.value = true
+  Sound.MENU_BUTTON.play()
+}
+
+/**
+ * Closes the reset confirmation and gives the keyboard back to the Reset progress row.
+ */
+function closeResetDialog(): void {
+  resetDialogOpen.value = false
+  focusRow('items', RESET_PROGRESS_INDEX)
+}
+
+/**
+ * Marks every chamber as not completed again, then closes the confirmation.
+ */
+function confirmResetProgress(): void {
+  resetProgress()
+  closeResetDialog()
+}
+
+/**
  * Enter opens the highlighted section from the first column. In the second
- * column the focused row handles it (starting the chamber or flipping the
- * setting); if the keyboard has left the rows, the highlighted row is pressed instead.
+ * column the focused row handles it (starting the chamber, flipping the setting
+ * or asking to reset progress); if the keyboard has left the rows, the
+ * highlighted row is pressed instead.
  * @param event - Keyboard event
  */
 function handleEnter(event: KeyboardEvent): void {
@@ -336,6 +367,13 @@ function handleEnter(event: KeyboardEvent): void {
  * @param event - Keyboard event
  */
 function handleKeydown(event: KeyboardEvent): void {
+  // While the reset confirmation is open its buttons have the keyboard, and Escape closes it
+  if (resetDialogOpen.value) {
+    if (event.key === 'Escape') {
+      closeResetDialog()
+    }
+    return
+  }
   // With a modifier the keys are browser shortcuts (Alt+Left goes back), so leave them alone
   if (event.altKey || event.ctrlKey || event.metaKey) {
     return
@@ -358,7 +396,10 @@ function handleKeydown(event: KeyboardEvent): void {
       closeSection()
       break
     case 'Escape':
-      closeSection()
+      // A held Escape that just closed the reset confirmation must not close the section too
+      if (!event.repeat) {
+        closeSection()
+      }
       break
     case 'Enter':
       handleEnter(event)
@@ -467,6 +508,23 @@ onBeforeUnmount(() => {
                 @pointermove="handleItemPointerMove(index, $event)"
               />
             </li>
+            <li>
+              <button
+                class="menu-row"
+                :class="{
+                  'menu-row-selected': highlightedSetting === RESET_PROGRESS_INDEX,
+                  'menu-row-active': highlightedSetting === RESET_PROGRESS_INDEX && activeColumn === 'items',
+                }"
+                type="button"
+                aria-haspopup="dialog"
+                :tabindex="highlightedSetting === RESET_PROGRESS_INDEX ? 0 : -1"
+                @click="openResetDialog"
+                @focus="handleItemFocus(RESET_PROGRESS_INDEX)"
+                @pointermove="handleItemPointerMove(RESET_PROGRESS_INDEX, $event)"
+              >
+                <span class="menu-row-label">Reset progress</span>
+              </button>
+            </li>
           </ul>
         </section>
 
@@ -477,6 +535,15 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
+
+    <ConfirmDialog
+      v-if="resetDialogOpen"
+      title="Reset progress?"
+      message="Every chamber goes back to not completed, and its figure turns grey again."
+      confirm-label="Reset progress"
+      @confirm="confirmResetProgress"
+      @cancel="closeResetDialog"
+    />
   </main>
 </template>
 

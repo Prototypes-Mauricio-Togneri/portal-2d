@@ -42,3 +42,15 @@ export function markChamberCompleted(chamberNumber: number): void {
     // Storage blocked: progress lasts for this visit only
   }
 }
+
+/**
+ * Marks every chamber as not completed again and forgets the stored progress.
+ */
+export function resetProgress(): void {
+  completedChambers.value = []
+  try {
+    localStorage.removeItem(COMPLETED_STORAGE_KEY)
+  } catch (_error) {
+    // Storage blocked: nothing was stored to forget
+  }
+}

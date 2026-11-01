@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * Asks the player to confirm an action that discards their progress in the chamber.
+ * Asks the player to confirm an action that discards their progress, in a
+ * chamber or across the game.
  * Cancel takes focus first, so a stray Enter never discards anything.
  */
 import DialogFrame from '@/components/dialog_frame.vue'
