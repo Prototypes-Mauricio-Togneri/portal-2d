@@ -1,20 +1,25 @@
 <script setup lang="ts">
 /**
  * Home screen: a menu in up to three columns on the room's wall. The first
- * lists the sections (Play and Settings); moving through it changes nothing
- * else. Opening a section with Enter, Right or a click shows its chambers or
- * settings in the second column, starting level with the section's row, and
- * for Play the third shows the highlighted chamber's map. Up and Down move the
- * highlight in the column that has the keyboard, Left and Escape close the
- * section again. Every move of the highlight clicks. Settings ends with Reset
- * progress, which asks first in a dialog; while it is open the menu ignores the
- * keyboard and Escape closes it.
+ * lists the sections (Play, Settings and About); moving through it changes
+ * nothing else. Opening a section with Enter, Right or a click shows its
+ * chambers, settings or About rows in the second column, starting level with
+ * the section's row. The third follows the highlight there: Play shows the
+ * chamber's map, About shows a list of pages or the changelog.
+ * Right, Enter or a click steps from an About row into its pages or changelog.
+ * Up and Down move the highlight (or scroll the changelog) in the column that
+ * has the keyboard, Left and Escape step back a column, closing the section
+ * from the second. Every move of the highlight clicks. Settings ends with
+ * Reset progress, which asks first in a dialog; while it is open the menu
+ * ignores the keyboard and Escape closes it.
  */
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, useId, useTemplateRef} from 'vue'
 import type {Ref} from 'vue'
 import ChamberMap from '@/components/chamber_map.vue'
 import ChamberRow from '@/components/chamber_row.vue'
+import ChangelogList from '@/components/changelog_list.vue'
 import ConfirmDialog from '@/components/confirm_dialog.vue'
+import LinkRow from '@/components/link_row.vue'
 import PortalLogo from '@/components/portal_logo.vue'
 import SettingsSwitch from '@/components/settings_switch.vue'
 import {Sound} from '@/game/sound'
@@ -24,10 +29,10 @@ import {completedChambers, resetProgress} from '@/services/progress'
 import {musicEnabled, playMusic, soundEnabled} from '@/services/settings'
 
 /** A section listed in the first column. */
-type MenuSection = 'play' | 'settings'
+type MenuSection = 'play' | 'settings' | 'about'
 
-/** The column that has the keyboard: the sections, or the open section's items. */
-type MenuColumn = 'sections' | 'items'
+/** The column that has the keyboard: the sections, the open section's items, or About's third column. */
+type MenuColumn = 'sections' | 'items' | 'details'
 
 /** A section's row in the first column. */
 type SectionEntry = {
@@ -41,6 +46,29 @@ type SettingEntry = {
   enabled: Ref<boolean> // The preference the row switches
 }
 
+/** A page outside the game, listed in the third column and opened in a new tab. */
+type LinkEntry = {
+  label: string // Name on the row
+  url: string // Address the row opens
+}
+
+/** A row listed under About: what the third column shows while it is highlighted, or what picking it does. */
+type AboutEntry =
+  | {
+    kind: 'changelog' // Shows the changelog
+    label: string // Name on the row
+  }
+  | {
+    kind: 'links' // Lists pages to open
+    label: string
+    links: LinkEntry[] // The pages, in the order listed
+  }
+  | {
+    kind: 'mail' // Opens the player's mail app
+    label: string
+    url: string // The mailto: address
+  }
+
 const SECTIONS: SectionEntry[] = [
   {
     section: 'play',
@@ -50,7 +78,72 @@ const SECTIONS: SectionEntry[] = [
     section: 'settings',
     label: 'Settings',
   },
+  {
+    section: 'about',
+    label: 'About',
+  },
 ]
+
+const ABOUT: AboutEntry[] = [
+  {
+    kind: 'links',
+    label: 'More games',
+    links: [
+      {
+        label: 'Tension Tunnel',
+        url: 'https://tensiontunnel.com/',
+      },
+      {
+        label: 'Hextrategic',
+        url: 'https://hextrategic.com/',
+      },
+      {
+        label: 'Tension Grid',
+        url: 'https://tensiongrid.com/',
+      },
+      {
+        label: 'Coliseum',
+        url: 'https://coliseum-game.web.app/',
+      },
+      {
+        label: 'Meme IQ',
+        url: 'https://meme-iq.web.app/',
+      },
+      {
+        label: 'God Luck With That',
+        url: 'https://god-luck-with-that.web.app/',
+      },
+    ],
+  },
+  {
+    kind: 'changelog',
+    label: 'Changelog',
+  },
+  {
+    kind: 'links',
+    label: 'Original game',
+    links: [
+      {
+        label: 'Portal',
+        url: 'https://store.steampowered.com/app/400/Portal/',
+      },
+      {
+        label: 'Portal 2',
+        url: 'https://store.steampowered.com/app/620/Portal_2/',
+      },
+    ],
+  },
+  {
+    kind: 'mail',
+    label: 'Feedback',
+    url: 'mailto:contact@atomicinstinct.com',
+  },
+]
+
+// The changelog may run as far down as the longest list of pages, which reaches below the About rows
+const ABOUT_DETAIL_END = Math.max(...ABOUT.map((entry, index) => index + (entry.kind === 'links' ? entry.links.length : 1)))
+
+const CHANGELOG_SCROLL_PIXELS = 48 // How far Up or Down scrolls the changelog
 
 const settings: SettingEntry[] = [
   {
@@ -67,6 +160,7 @@ const RESET_PROGRESS_INDEX = settings.length // The Reset progress row comes aft
 
 const menuId = useId()
 const itemColumnId = `${menuId}-items`
+const detailColumnId = `${menuId}-details`
 
 // Back from a chamber, Play is open with that chamber highlighted and the keyboard in the second
 // column; on the first arrival only the sections show, with Play highlighted and nothing open
@@ -78,19 +172,43 @@ const openSection = ref<MenuSection | null>(returning ? 'play' : null)
 const activeColumn = ref<MenuColumn>(returning ? 'items' : 'sections')
 const highlightedChamber = ref(Math.max(rememberedChamber, 0))
 const highlightedSetting = ref(0)
+const highlightedAbout = ref(0)
+const highlightedLink = ref(0)
 const resetDialogOpen = ref(false)
 
 let pointerSection: MenuSection | null = null // Section row under the pointer, so only moving onto a row takes the keyboard
+let pointerItem: number | null = null // Item row under the pointer, so moving within an About row just clicked leaves the keyboard in its third column
 
 const sectionColumn = useTemplateRef<HTMLElement>('sectionColumn')
 const itemColumn = useTemplateRef<HTMLElement>('itemColumn')
+const detailColumn = useTemplateRef<HTMLElement>('detailColumn')
+const changelogScroller = useTemplateRef<HTMLElement>('changelogScroller')
 
-const highlightedItem = computed(() => (openSection.value === 'play' ? highlightedChamber.value : highlightedSetting.value))
+const highlightedItem = computed(() => {
+  if (openSection.value === 'play') {
+    return highlightedChamber.value
+  }
+  if (openSection.value === 'about') {
+    return highlightedAbout.value
+  }
+  return highlightedSetting.value
+})
 const highlightedChamberEntry = computed(() => CHAMBERS[highlightedChamber.value])
+const highlightedAboutEntry = computed(() => ABOUT[highlightedAbout.value])
+
+// The third column takes the keyboard only for About's pages and changelog; Play's map is just shown
+const detailTakesKeyboard = computed(() => {
+  const kind = highlightedAboutEntry.value?.kind
+  return openSection.value === 'about' && (kind === 'links' || kind === 'changelog')
+})
+const highlightedLinks = computed(() => {
+  const entry = highlightedAboutEntry.value
+  return openSection.value === 'about' && entry?.kind === 'links' ? entry.links : []
+})
 
 /**
  * Counts the rows of the open section.
- * @returns How many chambers or settings (with Reset progress) it lists, or 0 with no section open
+ * @returns How many chambers, settings (with Reset progress) or About rows it lists, or 0 with no section open
  */
 function itemCount(): number {
   if (openSection.value === 'play') {
@@ -98,6 +216,9 @@ function itemCount(): number {
   }
   if (openSection.value === 'settings') {
     return settings.length + 1
+  }
+  if (openSection.value === 'about') {
+    return ABOUT.length
   }
   return 0
 }
@@ -109,6 +230,15 @@ function itemCount(): number {
  */
 function sectionRowId(section: MenuSection): string {
   return `${menuId}-${section}`
+}
+
+/**
+ * Builds the id of an About row, which its third column is labelled by.
+ * @param index - The row's index in the second column
+ * @returns The row's id
+ */
+function aboutRowId(index: number): string {
+  return `${menuId}-about-${index}`
 }
 
 /**
@@ -127,6 +257,12 @@ function sectionIndex(section: MenuSection): number {
 function highlightItem(index: number): void {
   if (openSection.value === 'play') {
     highlightedChamber.value = index
+  } else if (openSection.value === 'about') {
+    // Another About row brings another list into the third column, which starts at its top
+    if (index !== highlightedAbout.value) {
+      highlightedLink.value = 0
+    }
+    highlightedAbout.value = index
   } else {
     highlightedSetting.value = index
   }
@@ -138,8 +274,12 @@ function highlightItem(index: number): void {
  * @returns Its rows
  */
 function rowElements(column: MenuColumn): HTMLElement[] {
-  const container = column === 'sections' ? sectionColumn.value : itemColumn.value
-  return Array.from(container?.querySelectorAll<HTMLElement>('.menu-row') ?? [])
+  const containers: Record<MenuColumn, HTMLElement | null> = {
+    sections: sectionColumn.value,
+    items: itemColumn.value,
+    details: detailColumn.value,
+  }
+  return Array.from(containers[column]?.querySelectorAll<HTMLElement>('.menu-row') ?? [])
 }
 
 /**
@@ -155,11 +295,42 @@ function focusRow(column: MenuColumn, index: number, preventScroll = false): voi
 }
 
 /**
+ * Gives the third column the keyboard: the highlighted page, or the changelog.
+ */
+function focusDetail(): void {
+  if (highlightedAboutEntry.value?.kind === 'changelog') {
+    changelogScroller.value?.focus()
+  } else {
+    focusRow('details', highlightedLink.value)
+  }
+}
+
+/**
  * Moves the highlight up or down the active column, wrapping around, with a
- * click. In the first column the other columns stay as they are.
+ * click. In the first column the other columns stay as they are; in the
+ * changelog Up and Down scroll it instead, silently.
  * @param offset - +1 for down, -1 for up
  */
 function moveHighlight(offset: number): void {
+  if (activeColumn.value === 'details') {
+    if (highlightedAboutEntry.value?.kind === 'changelog') {
+      changelogScroller.value?.scrollBy({
+        top: offset * CHANGELOG_SCROLL_PIXELS,
+      })
+      return
+    }
+    const linkCount = highlightedLinks.value.length
+    if (linkCount === 0) {
+      return
+    }
+    const nextLink = (highlightedLink.value + offset + linkCount) % linkCount
+    if (nextLink !== highlightedLink.value) {
+      highlightedLink.value = nextLink
+      Sound.MENU_BUTTON.play()
+    }
+    focusRow('details', nextLink)
+    return
+  }
   if (activeColumn.value === 'sections') {
     const nextIndex = (sectionIndex(highlightedSection.value) + offset + SECTIONS.length) % SECTIONS.length
     const nextSection = SECTIONS[nextIndex]
@@ -187,14 +358,16 @@ function moveHighlight(offset: number): void {
 
 /**
  * Opens the highlighted section and steps into its items, with a click. Does
- * nothing with the keyboard already in the items.
+ * nothing with the keyboard already in the items or the third column.
  */
 function openHighlightedSection(): void {
-  if (activeColumn.value === 'items') {
+  if (activeColumn.value !== 'sections') {
     return
   }
   openSection.value = highlightedSection.value
   activeColumn.value = 'items'
+  // The item rows are new, so none has had the pointer on it yet
+  pointerItem = null
   Sound.MENU_BUTTON.play()
   // The item rows are only drawn once the section is open
   void nextTick(() => {
@@ -214,6 +387,58 @@ function closeSection(): void {
   activeColumn.value = 'sections'
   Sound.MENU_BUTTON.play()
   focusRow('sections', sectionIndex(highlightedSection.value))
+}
+
+/**
+ * Steps from the highlighted About row into its pages or changelog in the
+ * third column, with a click. Does nothing anywhere else, or for Feedback,
+ * which has nothing there.
+ */
+function openDetail(): void {
+  if (activeColumn.value !== 'items' || !detailTakesKeyboard.value) {
+    return
+  }
+  activeColumn.value = 'details'
+  Sound.MENU_BUTTON.play()
+  // A row clicked has only just been highlighted, so its third column may not be drawn yet
+  void nextTick(focusDetail)
+}
+
+/**
+ * Steps into the third column of an About row picked with the mouse (or Space),
+ * just like Right. The row is highlighted first, since some browsers (Safari)
+ * don't focus a clicked button, which would otherwise have done it.
+ * @param index - The row's index in the second column
+ */
+function chooseAboutRow(index: number): void {
+  handleItemFocus(index)
+  openDetail()
+}
+
+/**
+ * Right opens the highlighted section from the first column, or steps into the
+ * third column from an About row that has pages or the changelog there.
+ */
+function stepIn(): void {
+  if (activeColumn.value === 'sections') {
+    openHighlightedSection()
+  } else {
+    openDetail()
+  }
+}
+
+/**
+ * Left and Escape step back from the third column to its About row, with a
+ * click, or close the open section.
+ */
+function stepBack(): void {
+  if (activeColumn.value !== 'details') {
+    closeSection()
+    return
+  }
+  activeColumn.value = 'items'
+  Sound.MENU_BUTTON.play()
+  focusRow('items', highlightedItem.value)
 }
 
 /**
@@ -296,7 +521,9 @@ function handleSectionPointerLeave(): void {
 
 /**
  * Highlights the item under a moving pointer, with a click. Only real movement
- * counts, so a list that opens under a still pointer never pulls the keyboard into it.
+ * counts, so a list that opens under a still pointer never pulls the keyboard
+ * into it, and only movement onto a row once the keyboard is in the third
+ * column, so moving off an About row just clicked leaves it there.
  * @param index - The row's index in the second column
  * @param event - Pointer event
  */
@@ -304,6 +531,10 @@ function handleItemPointerMove(index: number, event: PointerEvent): void {
   if (event.movementX === 0 && event.movementY === 0) {
     return
   }
+  if (pointerItem === index && activeColumn.value === 'details') {
+    return
+  }
+  pointerItem = index
   if (activeColumn.value === 'items' && highlightedItem.value === index) {
     return
   }
@@ -311,6 +542,67 @@ function handleItemPointerMove(index: number, event: PointerEvent): void {
   highlightItem(index)
   Sound.MENU_BUTTON.play()
   focusRow('items', index, true)
+}
+
+/**
+ * Remembers the item row a press lands on, even one that appeared under a
+ * still pointer, so moving off it after the click leaves the keyboard in its third column.
+ * @param index - The row's index in the second column
+ */
+function handleItemPointerDown(index: number): void {
+  pointerItem = index
+}
+
+/**
+ * Forgets the item row the pointer was on, so moving back onto it takes the keyboard again.
+ */
+function handleItemPointerLeave(): void {
+  pointerItem = null
+}
+
+/**
+ * Keeps the state in step when a page row in the third column gets the
+ * keyboard, such as through Tab, clicking when that moves the highlight.
+ * @param index - The row's index in the third column
+ */
+function handleLinkFocus(index: number): void {
+  if (activeColumn.value === 'details' && highlightedLink.value === index) {
+    return
+  }
+  activeColumn.value = 'details'
+  highlightedLink.value = index
+  Sound.MENU_BUTTON.play()
+}
+
+/**
+ * Highlights the page row under a moving pointer, with a click. Only real
+ * movement counts, so pages shown under a still pointer never pull the keyboard into them.
+ * @param index - The row's index in the third column
+ * @param event - Pointer event
+ */
+function handleLinkPointerMove(index: number, event: PointerEvent): void {
+  if (event.movementX === 0 && event.movementY === 0) {
+    return
+  }
+  if (activeColumn.value === 'details' && highlightedLink.value === index) {
+    return
+  }
+  activeColumn.value = 'details'
+  highlightedLink.value = index
+  Sound.MENU_BUTTON.play()
+  focusRow('details', index, true)
+}
+
+/**
+ * Keeps the state in step when the changelog gets the keyboard, through Tab or
+ * a click on it, with a click.
+ */
+function handleChangelogFocus(): void {
+  if (activeColumn.value === 'details') {
+    return
+  }
+  activeColumn.value = 'details'
+  Sound.MENU_BUTTON.play()
 }
 
 /**
@@ -339,9 +631,10 @@ function confirmResetProgress(): void {
 
 /**
  * Enter opens the highlighted section from the first column. In the second
- * column the focused row handles it (starting the chamber, flipping the setting
- * or asking to reset progress); if the keyboard has left the rows, the
- * highlighted row is pressed instead.
+ * and third columns the focused row handles it (starting the chamber, flipping
+ * the setting, asking to reset progress, stepping into About's third column or
+ * opening a page); if the keyboard has left the rows, the highlighted row is
+ * pressed instead.
  * @param event - Keyboard event
  */
 function handleEnter(event: KeyboardEvent): void {
@@ -355,7 +648,9 @@ function handleEnter(event: KeyboardEvent): void {
     openHighlightedSection()
     return
   }
-  const row = rowElements('items')[highlightedItem.value]
+  const row = activeColumn.value === 'items'
+    ? rowElements('items')[highlightedItem.value]
+    : rowElements('details')[highlightedLink.value]
   if (row !== undefined && document.activeElement !== row) {
     event.preventDefault()
     row.click()
@@ -389,24 +684,24 @@ function handleKeydown(event: KeyboardEvent): void {
       break
     case 'ArrowRight':
       event.preventDefault()
-      openHighlightedSection()
+      stepIn()
       break
     case 'ArrowLeft':
       event.preventDefault()
-      closeSection()
+      stepBack()
       break
     case 'Escape':
       // A held Escape that just closed the reset confirmation must not close the section too
       if (!event.repeat) {
-        closeSection()
+        stepBack()
       }
       break
     case 'Enter':
       handleEnter(event)
       break
     case ' ':
-      // A chamber row is a link, which Space doesn't press; keep it from scrolling the room instead
-      if (activeColumn.value === 'items' && openSection.value === 'play') {
+      // Chamber, Feedback and page rows are links, which Space doesn't press; keep it from scrolling the room instead
+      if ((activeColumn.value === 'items' && openSection.value === 'play') || document.activeElement instanceof HTMLAnchorElement) {
         event.preventDefault()
       }
       break
@@ -491,10 +786,11 @@ onBeforeUnmount(() => {
                 :tabindex="index === highlightedChamber ? 0 : -1"
                 @focus="handleItemFocus(index)"
                 @pointermove="handleItemPointerMove(index, $event)"
+                @pointerleave="handleItemPointerLeave"
               />
             </li>
           </ol>
-          <ul v-else class="home-row-list">
+          <ul v-else-if="openSection === 'settings'" class="home-row-list">
             <li v-for="(setting, index) in settings" :key="setting.label">
               <SettingsSwitch
                 v-model="setting.enabled.value"
@@ -506,6 +802,7 @@ onBeforeUnmount(() => {
                 :tabindex="index === highlightedSetting ? 0 : -1"
                 @focus="handleItemFocus(index)"
                 @pointermove="handleItemPointerMove(index, $event)"
+                @pointerleave="handleItemPointerLeave"
               />
             </li>
             <li>
@@ -521,8 +818,49 @@ onBeforeUnmount(() => {
                 @click="openResetDialog"
                 @focus="handleItemFocus(RESET_PROGRESS_INDEX)"
                 @pointermove="handleItemPointerMove(RESET_PROGRESS_INDEX, $event)"
+                @pointerleave="handleItemPointerLeave"
               >
                 <span class="menu-row-label">Reset progress</span>
+              </button>
+            </li>
+          </ul>
+          <ul v-else class="home-row-list">
+            <li v-for="(entry, index) in ABOUT" :key="entry.label">
+              <a
+                v-if="entry.kind === 'mail'"
+                :id="aboutRowId(index)"
+                class="menu-row"
+                :class="{
+                  'menu-row-selected': index === highlightedAbout,
+                  'menu-row-active': index === highlightedAbout && activeColumn === 'items',
+                }"
+                :href="entry.url"
+                :tabindex="index === highlightedAbout ? 0 : -1"
+                @focus="handleItemFocus(index)"
+                @pointerdown="handleItemPointerDown(index)"
+                @pointermove="handleItemPointerMove(index, $event)"
+                @pointerleave="handleItemPointerLeave"
+              >
+                <span class="menu-row-label">{{ entry.label }}</span>
+              </a>
+              <button
+                v-else
+                :id="aboutRowId(index)"
+                class="menu-row"
+                :class="{
+                  'menu-row-selected': index === highlightedAbout,
+                  'menu-row-active': index === highlightedAbout && activeColumn === 'items',
+                }"
+                type="button"
+                :aria-controls="index === highlightedAbout ? detailColumnId : undefined"
+                :tabindex="index === highlightedAbout ? 0 : -1"
+                @click="chooseAboutRow(index)"
+                @focus="handleItemFocus(index)"
+                @pointerdown="handleItemPointerDown(index)"
+                @pointermove="handleItemPointerMove(index, $event)"
+                @pointerleave="handleItemPointerLeave"
+              >
+                <span class="menu-row-label">{{ entry.label }}</span>
               </button>
             </li>
           </ul>
@@ -531,6 +869,54 @@ onBeforeUnmount(() => {
         <div v-if="openSection === 'play'" class="home-column home-detail">
           <div class="home-detail-frame">
             <ChamberMap v-if="highlightedChamberEntry !== undefined" :chamber="highlightedChamberEntry" />
+          </div>
+        </div>
+
+        <!-- About's third column follows the highlighted row, starting level with it, and is
+             drawn anew for each row so it slides out again -->
+        <div
+          v-else-if="openSection === 'about' && highlightedAboutEntry !== undefined && highlightedAboutEntry.kind !== 'mail'"
+          :id="detailColumnId"
+          ref="detailColumn"
+          :key="`about-${highlightedAbout}`"
+          class="home-column home-detail home-about-detail"
+          :style="{
+            '--menu-cascade-rows': sectionIndex('about') + highlightedAbout,
+            '--menu-detail-rows': ABOUT_DETAIL_END - highlightedAbout,
+          }"
+        >
+          <ul
+            v-if="highlightedAboutEntry.kind === 'links'"
+            class="home-row-list home-link-list"
+            :aria-labelledby="aboutRowId(highlightedAbout)"
+          >
+            <li v-for="(link, index) in highlightedAboutEntry.links" :key="link.url">
+              <LinkRow
+                :label="link.label"
+                :url="link.url"
+                :class="{
+                  'menu-row-selected': index === highlightedLink,
+                  'menu-row-active': index === highlightedLink && activeColumn === 'details',
+                }"
+                :tabindex="index === highlightedLink ? 0 : -1"
+                @focus="handleLinkFocus(index)"
+                @pointermove="handleLinkPointerMove(index, $event)"
+              />
+            </li>
+          </ul>
+          <div
+            v-else
+            ref="changelogScroller"
+            class="home-changelog"
+            :class="{
+              'home-changelog-active': activeColumn === 'details',
+            }"
+            role="region"
+            :aria-labelledby="aboutRowId(highlightedAbout)"
+            tabindex="0"
+            @focus="handleChangelogFocus"
+          >
+            <ChangelogList />
           </div>
         </div>
       </div>
@@ -575,15 +961,20 @@ onBeforeUnmount(() => {
   grid-column: 1;
 }
 
-/* Cascade: the open section's first item starts level with the section's own row, pushed down by
-   one row and gap for every section above it (the index comes from the template) */
 .home-items {
   grid-column: 2;
-  padding-top: calc(var(--menu-cascade-rows, 0) * (var(--menu-row-height) + var(--menu-row-gap)));
 }
 
 .home-detail {
   grid-column: 3;
+}
+
+/* Cascade: the open section's first item starts level with the section's own row, pushed down by
+   one row and gap for every row above it (the count comes from the template); About's third
+   column starts level with the About row it shows */
+.home-items,
+.home-about-detail {
+  padding-top: calc(var(--menu-cascade-rows, 0) * (var(--menu-row-height) + var(--menu-row-gap)));
 }
 
 .home-sections,
@@ -611,5 +1002,41 @@ onBeforeUnmount(() => {
 .home-detail-frame {
   position: relative;
   aspect-ratio: 4 / 3;
+}
+
+/* Page rows as wide as the second column's narrowest, so their arrows stay near the names */
+.home-link-list {
+  max-width: 28rem;
+}
+
+/* The changelog: text on the wall beside a thin rule, reaching at most as far down as the longest
+   list of pages (the count comes from the template), then it scrolls (with Up and Down once it has
+   the keyboard). The padding sets the first release number level with the Changelog row's name */
+.home-changelog {
+  max-width: 40rem;
+  max-height: calc(var(--menu-detail-rows, 1) * (var(--menu-row-height) + var(--menu-row-gap)) - var(--menu-row-gap));
+  padding: 0.875rem 1.25rem 0.5rem;
+  border-left: 0.25rem solid rgba(var(--color-ink-rgb), 0.14);
+  overflow-y: auto;
+  scrollbar-color: rgba(var(--color-ink-rgb), 0.35) transparent;
+  scrollbar-width: thin;
+  scroll-behavior: smooth;
+  transition: border-color 90ms ease;
+}
+
+/* With the keyboard the rule darkens like a row's bar, and is the focus mark */
+.home-changelog-active {
+  border-left-color: rgba(var(--color-ink-rgb), 0.5);
+}
+
+/* Transparent outline: hidden normally, but high-contrast mode, which paints both rules alike, shows it */
+.home-changelog-active:focus-visible {
+  outline-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-changelog {
+    scroll-behavior: auto;
+  }
 }
 </style>
