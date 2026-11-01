@@ -389,6 +389,16 @@ a {
   color: var(--color-blue-deep);
 }
 
+/* Pictogram before the label, set a little closer to the frame */
+.button-sign-icon {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: -0.25rem;
+  fill: currentColor;
+  fill-rule: evenodd;
+}
+
 /* ============================================
    Keycaps
    ============================================ */

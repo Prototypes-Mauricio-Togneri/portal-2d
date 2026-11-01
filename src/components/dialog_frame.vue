@@ -3,9 +3,10 @@
  * Shared shell for the chamber dialogs: backdrop, panel, title and actions.
  * Keyboard-driven: the first action takes focus, the arrow keys move between
  * actions and Tab stays inside the dialog. Escape is left to the screen, which
- * knows what it means in each state.
+ * knows what it means in each state. Every action clicks when pressed.
  */
 import {onMounted, useId, useTemplateRef} from 'vue'
+import {Sound} from '@/game/sound'
 
 export interface DialogFrameProps {
   title: string
@@ -66,6 +67,16 @@ function handleKeydown(event: KeyboardEvent): void {
   }
 }
 
+/**
+ * Clicks when any action button is pressed, by mouse or keyboard.
+ * @param event - Click anywhere in the actions row
+ */
+function handleActionClick(event: MouseEvent): void {
+  if (event.target instanceof Element && event.target.closest('button') !== null) {
+    Sound.MENU_BUTTON.play()
+  }
+}
+
 onMounted(() => {
   actionButtons()[0]?.focus()
 })
@@ -89,6 +100,7 @@ onMounted(() => {
       <div
         class="dialog-actions"
         :class="`dialog-actions-${layout}`"
+        @click="handleActionClick"
       >
         <slot name="actions"></slot>
       </div>

@@ -4,7 +4,8 @@
  * and a switch. The whole card is the switch, so a click, Space or Enter anywhere
  * on it flips the setting.
  */
-import {useId} from 'vue'
+import {nextTick, useId} from 'vue'
+import {Sound} from '@/game/sound'
 
 export interface SettingsSwitchProps {
   label: string
@@ -20,6 +21,17 @@ const enabled = defineModel<boolean>({
 
 const labelId = useId()
 const descriptionId = useId()
+
+/**
+ * Flips the setting, then clicks once the change has been applied, so turning
+ * sound effects on is heard and turning them off stays silent.
+ */
+function toggle(): void {
+  enabled.value = !enabled.value
+  void nextTick(() => {
+    Sound.MENU_BUTTON.play()
+  })
+}
 </script>
 
 <template>
@@ -33,7 +45,7 @@ const descriptionId = useId()
     :aria-checked="enabled"
     :aria-labelledby="labelId"
     :aria-describedby="descriptionId"
-    @click="enabled = !enabled"
+    @click="toggle"
   >
     <span class="sign-card-head">
       <span class="sign-card-name">

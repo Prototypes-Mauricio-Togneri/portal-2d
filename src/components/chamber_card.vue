@@ -6,6 +6,7 @@
  */
 import {onBeforeUnmount, onMounted, useTemplateRef} from 'vue'
 import {drawChamberPreview} from '@/game/chamber_preview'
+import {Sound} from '@/game/sound'
 import type {ChamberEntry} from '@/services/chamber_catalogue'
 
 export interface ChamberCardProps {
@@ -58,6 +59,7 @@ onBeforeUnmount(() => {
       },
     }"
     :aria-label="`Chamber ${chamber.number}${completed ? ', completed' : ''}`"
+    @click="Sound.START.play()"
   >
     <span class="sign-card-head">
       <span class="sign-card-name">

@@ -10,6 +10,7 @@ import PortalLogo from '@/components/portal_logo.vue'
 import SectionHeading from '@/components/section_heading.vue'
 import SettingsSwitch from '@/components/settings_switch.vue'
 import {useArrowFocus} from '@/composables/use_arrow_focus'
+import {Sound} from '@/game/sound'
 import {musicEnabled, playMusic, soundEnabled} from '@/services/settings'
 
 const router = useRouter()
@@ -25,6 +26,14 @@ function goHome(): void {
   void router.push({
     name: 'home',
   })
+}
+
+/**
+ * Main menu button: clicks, then returns to the home screen.
+ */
+function pressMainMenu(): void {
+  Sound.MENU_BUTTON.play()
+  goHome()
 }
 
 /**
@@ -54,7 +63,12 @@ onBeforeUnmount(() => {
         <h1 class="room-title">
           <PortalLogo class="settings-title" size="large" text="Settings" />
         </h1>
-        <button class="button button-sign" type="button" @click="goHome">Back to main menu</button>
+        <button class="button button-sign" type="button" @click="pressMainMenu">
+          <svg class="button-sign-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2L23 11.5H20.5V22H14.5V15.5H9.5V22H3.5V11.5H1Z" />
+          </svg>
+          Main menu
+        </button>
       </header>
 
       <section class="settings-section" aria-labelledby="audio-heading">
@@ -63,7 +77,7 @@ onBeforeUnmount(() => {
           <SettingsSwitch
             v-model="soundEnabled"
             label="Sound effects"
-            description="Portals, doors, buttons and the other sounds inside a chamber"
+            description="Menu clicks, plus the portals, doors, buttons and other sounds inside a chamber"
             icon="sound"
           />
           <SettingsSwitch

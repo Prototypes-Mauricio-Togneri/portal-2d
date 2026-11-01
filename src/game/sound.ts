@@ -7,8 +7,10 @@ import doorCloseUrl from '@/assets/audio/sound/door_close.mp3'
 import doorOpenUrl from '@/assets/audio/sound/door_open.mp3'
 import errorUrl from '@/assets/audio/sound/error.mp3'
 import fizzlerUrl from '@/assets/audio/sound/fizzler.mp3'
+import menuButtonUrl from '@/assets/audio/sound/menu_button.mp3'
 import portalBlueUrl from '@/assets/audio/sound/portal_blue.mp3'
 import portalOrangeUrl from '@/assets/audio/sound/portal_orange.mp3'
+import startUrl from '@/assets/audio/sound/start.mp3'
 import switchUrl from '@/assets/audio/sound/switch.mp3'
 
 /**
@@ -29,6 +31,8 @@ export class Sound {
   static readonly DOOR_CLOSE = new Sound(doorCloseUrl) // Door or exit closed
   static readonly ERROR = new Sound(errorUrl) // Action refused
   static readonly SWITCH = new Sound(switchUrl) // Switch used
+  static readonly MENU_BUTTON = new Sound(menuButtonUrl) // Menu or dialog button pressed, setting changed or pause menu opened; played by the screens, not the game
+  static readonly START = new Sound(startUrl) // Chamber picked on the home screen; played by the screens, not the game
 
   private readonly audio: HTMLAudioElement // The element that plays this effect
 

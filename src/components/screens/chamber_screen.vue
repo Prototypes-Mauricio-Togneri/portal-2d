@@ -14,6 +14,7 @@ import ConfirmDialog from '@/components/confirm_dialog.vue'
 import PauseDialog from '@/components/pause_dialog.vue'
 import PortalLogo from '@/components/portal_logo.vue'
 import {Level} from '@/game/level'
+import {Sound} from '@/game/sound'
 import {findChamber} from '@/services/chamber_catalogue'
 import {markChamberCompleted} from '@/services/progress'
 import {playMusic} from '@/services/settings'
@@ -70,11 +71,12 @@ function setPaused(paused: boolean): void {
 }
 
 /**
- * Pauses the game and opens the pause dialog.
+ * Pauses the game and opens the pause dialog with a click.
  */
 function openPause(): void {
   setPaused(true)
   dialog.value = 'pause'
+  Sound.MENU_BUTTON.play()
 }
 
 /**
