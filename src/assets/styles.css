@@ -22,7 +22,7 @@
   --color-orange: rgba(255, 160, 30, 1);
   --color-orange-rgb: 255, 160, 30;
 
-  /* Test subject's body colour from the game, lightened: marks a completed chamber on its card */
+  /* Test subject's body colour from the game, lightened: marks a completed chamber on its row */
   --color-subject: rgba(40, 200, 130, 1);
   --color-subject-rgb: 40, 200, 130;
 
@@ -131,14 +131,6 @@ a {
   padding: 3.5rem 10vw 12vh;
 }
 
-/* Sign title on the left, navigation on the right; shared so the buttons line up across screens */
-.room-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
-}
-
 /* Lets the sign title inside set its own size */
 .room-title {
   font-size: inherit;
@@ -228,93 +220,91 @@ a {
   transition: background-color 160ms ease, clip-path 160ms ease;
 }
 
-/* Selected card: the frame thickens, turns blue and glows; the glow is also the keyboard focus ring */
-.sign-card:hover,
-.sign-card:focus-visible {
+/* Glowing card, set by the screen that owns the selection: the frame thickens, turns blue and
+   glows; the glow is also the keyboard focus ring. Child selectors keep a glowing card from
+   lighting up the cards inside it */
+.sign-card-glowing {
   --sign-card-line: 0.1875rem;
 }
 
-.sign-card:hover .sign-card-frame,
-.sign-card:focus-visible .sign-card-frame {
+.sign-card-glowing > .sign-card-frame {
   filter:
     drop-shadow(0 0 0.125rem rgba(var(--color-blue-rgb), 1))
     drop-shadow(0 0 0.625rem rgba(var(--color-blue-rgb), 0.75));
 }
 
-.sign-card:hover .sign-card-frame::before,
-.sign-card:focus-visible .sign-card-frame::before {
+.sign-card-glowing > .sign-card-frame::before {
   background: var(--color-blue);
 }
 
 /* Transparent outline: hidden normally, but high-contrast mode paints it after dropping the glow */
-.sign-card:focus-visible {
+.sign-card-glowing:focus-visible {
   outline-color: transparent;
 }
 
-/* Header strip: the name, then a thin divider and a large mark; its top corners follow the card's cut */
-.sign-card-head {
-  position: relative;
+/* ============================================
+   Menu rows
+   ============================================ */
+
+/* One choice in the home menu: sign lettering across the full width of its column, on sign-card
+   layers (above) that stay hidden until the row is highlighted. Also resets the button and link look */
+.menu-row {
+  --sign-card-cut: 0.625rem;
+
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--color-rule);
-  background: var(--color-panel);
-  clip-path: polygon(
-    var(--sign-card-cut) 0,
-    calc(100% - var(--sign-card-cut)) 0,
-    100% var(--sign-card-cut),
-    100% 100%,
-    0 100%,
-    0 var(--sign-card-cut)
-  );
+  gap: 1rem;
+  width: 100%;
+  min-height: 4.5rem;
+  padding: 0.5rem 1.25rem;
+  color: var(--color-ink);
+  text-align: left;
+  cursor: pointer;
 }
 
-/* Slanted blue tab on the strip's bottom edge, under the mark, sliding in with the highlight */
-.sign-card-head::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  bottom: -1px;
-  width: 4.5rem;
-  height: 0.25rem;
-  background: var(--color-blue);
-  clip-path: polygon(0.25rem 0, 100% 0, 100% 100%, 0 100%);
-  transform: scaleX(0);
-  transform-origin: right;
-  transition: transform 160ms var(--ease-out);
+/* No shadow under a row: the panel it sits in already lifts off the wall */
+.menu-row::before {
+  content: none;
 }
 
-.sign-card:hover .sign-card-head::after,
-.sign-card:focus-visible .sign-card-head::after {
-  transform: scaleX(1);
+/* No bar until the row is highlighted */
+.menu-row::after {
+  background: transparent;
+  backdrop-filter: none;
+  transition: background-color 160ms ease;
 }
 
-/* Name on the left, taking the space the mark leaves */
-.sign-card-name {
-  display: flex;
+.menu-row > .sign-card-frame {
+  opacity: 0;
+  transition: opacity 160ms ease, filter 160ms ease;
+}
+
+/* A faint bar under the pointer */
+.menu-row:hover:not(.menu-row-highlighted)::after {
+  background: rgba(var(--color-panel-rgb), 0.6);
+}
+
+/* Highlighted row: a solid bar in a thin frame. In the column that has the keyboard, the frame
+   also glows blue (.sign-card-glowing) */
+.menu-row-highlighted::after {
+  background: var(--color-white);
+}
+
+.menu-row-highlighted > .sign-card-frame {
+  opacity: 1;
+}
+
+/* Row name in sign capitals, taking the space the row's extras leave */
+.menu-row-label {
   flex: 1;
-  flex-direction: column;
-  gap: 0.375rem;
   min-width: 0;
-}
-
-/* Large mark at the right edge, set off by a thin divider */
-.sign-card-mark {
-  display: flex;
-  flex: none;
-  align-items: center;
-  padding-left: 1.25rem;
-  border-left: 1px solid rgba(var(--color-ink-rgb), 0.35);
-}
-
-.sign-card-title {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 2.25rem;
   font-weight: 700;
   line-height: 1;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* ============================================
@@ -369,7 +359,7 @@ a {
   border-color: var(--color-ink);
 }
 
-/* Navigation between the test-room screens: condensed capitals in a heavy frame */
+/* Sign button: condensed capitals in a heavy frame */
 .button-sign {
   min-height: 3.25rem;
   padding: 0 1.5rem;
@@ -387,16 +377,6 @@ a {
 .button-sign:hover {
   border-color: var(--color-blue-deep);
   color: var(--color-blue-deep);
-}
-
-/* Pictogram before the label, set a little closer to the frame */
-.button-sign-icon {
-  flex: none;
-  width: 1.5rem;
-  height: 1.5rem;
-  margin-left: -0.25rem;
-  fill: currentColor;
-  fill-rule: evenodd;
 }
 
 /* ============================================

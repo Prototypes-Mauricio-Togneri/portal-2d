@@ -5,7 +5,6 @@
 import {createRouter, createWebHistory} from 'vue-router'
 import ChamberScreen from '@/components/screens/chamber_screen.vue'
 import HomeScreen from '@/components/screens/home_screen.vue'
-import SettingsScreen from '@/components/screens/settings_screen.vue'
 import {findChamber} from '@/services/chamber_catalogue'
 
 const router = createRouter({
@@ -15,11 +14,6 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeScreen,
-    },
-    {
-      path: '/settings',
-      name: 'settings',
-      component: SettingsScreen,
     },
     {
       path: '/chamber/:number(\\d+)',

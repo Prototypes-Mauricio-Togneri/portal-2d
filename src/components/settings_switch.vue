@@ -1,16 +1,15 @@
 <script setup lang="ts">
 /**
- * One on/off setting as a sign card: its name and an icon, what it controls,
- * and a switch. The whole card is the switch, so a click, Space or Enter anywhere
- * on it flips the setting.
+ * One on/off setting in the home menu: a row with its name and a switch. The
+ * whole row is the switch, so a click, Space or Enter anywhere on it flips the
+ * setting. What the setting controls is shown beside the menu and linked by id.
  */
 import {nextTick, useId} from 'vue'
 import {Sound} from '@/game/sound'
 
 export interface SettingsSwitchProps {
   label: string
-  description: string
-  icon: 'sound' | 'music'
+  descriptionId: string
 }
 
 defineProps<SettingsSwitchProps>()
@@ -20,7 +19,6 @@ const enabled = defineModel<boolean>({
 })
 
 const labelId = useId()
-const descriptionId = useId()
 
 /**
  * Flips the setting, then clicks once the change has been applied, so turning
@@ -36,7 +34,7 @@ function toggle(): void {
 
 <template>
   <button
-    class="settings-switch sign-card"
+    class="settings-switch menu-row sign-card"
     :class="{
       'switch-on': enabled,
     }"
@@ -47,31 +45,11 @@ function toggle(): void {
     :aria-describedby="descriptionId"
     @click="toggle"
   >
-    <span class="sign-card-head">
-      <span class="sign-card-name">
-        <span :id="labelId" class="sign-card-title">{{ label }}</span>
-      </span>
-      <span class="sign-card-mark">
-        <svg class="switch-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <template v-if="icon === 'sound'">
-            <path class="icon-fill" d="M3 9h4l5-4v14l-5-4H3z" />
-            <path class="icon-stroke" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />
-          </template>
-          <template v-else>
-            <path class="icon-fill" d="M7.5 6L20.5 3V15H18.5V6.46L9.5 8.54V18H7.5Z" />
-            <circle class="icon-fill" cx="6.5" cy="18" r="3" />
-            <circle class="icon-fill" cx="17.5" cy="15" r="3" />
-          </template>
-        </svg>
-      </span>
-    </span>
-    <span class="switch-body">
-      <span :id="descriptionId" class="switch-description">{{ description }}</span>
-      <span class="switch-control">
-        <span class="switch-state">{{ enabled ? 'On' : 'Off' }}</span>
-        <span class="switch-track" aria-hidden="true">
-          <span class="switch-thumb"></span>
-        </span>
+    <span :id="labelId" class="menu-row-label">{{ label }}</span>
+    <span class="switch-control">
+      <span class="switch-state">{{ enabled ? 'On' : 'Off' }}</span>
+      <span class="switch-track" aria-hidden="true">
+        <span class="switch-thumb"></span>
       </span>
     </span>
     <span class="sign-card-frame" aria-hidden="true"></span>
@@ -79,53 +57,11 @@ function toggle(): void {
 </template>
 
 <style scoped>
-/* Sign card (styles.css) that is itself the switch */
-.settings-switch {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: 0;
-  color: var(--color-ink);
-  text-align: left;
-  cursor: pointer;
-}
-
-/* Icon in the header strip, where a chamber card shows its number */
-.switch-icon {
-  flex: none;
-  width: 3rem;
-  height: 3rem;
-}
-
-.icon-fill {
-  fill: currentColor;
-}
-
-.icon-stroke {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-}
-
-/* What the setting controls, with the switch pinned to the bottom right */
-.switch-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 1.5rem;
-  padding: 1.25rem;
-}
-
-.switch-description {
-  color: var(--color-ink-muted);
-}
-
+/* State word and track at the row's right edge */
 .switch-control {
   display: inline-flex;
+  flex: none;
   align-items: center;
-  align-self: flex-end;
   gap: 0.75rem;
 }
 

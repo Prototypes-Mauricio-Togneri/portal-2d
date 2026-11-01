@@ -16,6 +16,7 @@ import PortalLogo from '@/components/portal_logo.vue'
 import {Level} from '@/game/level'
 import {Sound} from '@/game/sound'
 import {findChamber} from '@/services/chamber_catalogue'
+import {rememberChamber} from '@/services/last_chamber'
 import {markChamberCompleted} from '@/services/progress'
 import {playMusic} from '@/services/settings'
 
@@ -175,6 +176,8 @@ onBeforeRouteLeave(guardExit)
 onBeforeRouteUpdate(guardExit)
 
 onMounted(() => {
+  // The home screen picks this chamber out again on the way back
+  rememberChamber(props.chamberNumber)
   const stageElement = stage.value
   const canvasElement = canvas.value
   if (stageElement === null || canvasElement === null || chamber.value === undefined) {
