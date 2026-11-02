@@ -20,27 +20,29 @@ import switchUrl from '@/assets/audio/sound/switch.mp3'
 export class Sound {
   static enabled = true // When false, play() does nothing
 
-  static readonly PORTAL_BLUE = new Sound(portalBlueUrl) // Blue portal opened
-  static readonly PORTAL_ORANGE = new Sound(portalOrangeUrl) // Orange portal opened
-  static readonly BUTTON_ON = new Sound(buttonOnUrl) // Button pressed down
-  static readonly BUTTON_OFF = new Sound(buttonOffUrl) // Button released
-  static readonly BOX = new Sound(boxUrl) // Box picked up
-  static readonly FIZZLER = new Sound(fizzlerUrl) // Subject entered an active fizzler
-  static readonly CROSS = new Sound(crossUrl) // Subject went through a portal
-  static readonly DOOR_OPEN = new Sound(doorOpenUrl) // Door or exit opened
-  static readonly DOOR_CLOSE = new Sound(doorCloseUrl) // Door or exit closed
-  static readonly ERROR = new Sound(errorUrl) // Action refused
-  static readonly SWITCH = new Sound(switchUrl) // Switch used
-  static readonly MENU_BUTTON = new Sound(menuButtonUrl) // Menu or dialog button pressed, setting changed or pause menu opened; played by the screens, not the game
-  static readonly START = new Sound(startUrl) // Chamber picked on the home screen; played by the screens, not the game
+  static readonly PORTAL_BLUE = new Sound(portalBlueUrl, 0.27) // Blue portal opened
+  static readonly PORTAL_ORANGE = new Sound(portalOrangeUrl, 0.24) // Orange portal opened
+  static readonly BUTTON_ON = new Sound(buttonOnUrl, 0.27) // Button pressed down
+  static readonly BUTTON_OFF = new Sound(buttonOffUrl, 0.56) // Button released
+  static readonly BOX = new Sound(boxUrl, 0.05) // Box picked up
+  static readonly FIZZLER = new Sound(fizzlerUrl, 0.27) // Subject entered an active fizzler
+  static readonly CROSS = new Sound(crossUrl, 0.35) // Subject went through a portal
+  static readonly DOOR_OPEN = new Sound(doorOpenUrl, 0.15) // Door or exit opened
+  static readonly DOOR_CLOSE = new Sound(doorCloseUrl, 0.15) // Door or exit closed
+  static readonly ERROR = new Sound(errorUrl, 0.13) // Action refused
+  static readonly SWITCH = new Sound(switchUrl, 0.72) // Switch used
+  static readonly MENU_BUTTON = new Sound(menuButtonUrl, 0.17) // Menu or dialog button pressed, setting changed or pause menu opened; played by the screens, not the game
+  static readonly START = new Sound(startUrl, 0.31) // Chamber picked on the home screen; played by the screens, not the game
 
   private readonly audio: HTMLAudioElement // The element that plays this effect
 
   /**
    * @param url - Address of the audio file
+   * @param volume - Playback volume from 0 to 1, set per effect so every effect sounds about equally loud, a little above the music
    */
-  constructor(url: string) {
+  constructor(url: string, volume: number) {
     this.audio = createAudioPlayer(url)
+    this.audio.volume = volume
   }
 
   /**
