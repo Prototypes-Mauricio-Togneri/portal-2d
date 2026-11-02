@@ -11,9 +11,23 @@ import {Subject} from '@/game/subject'
  * previous frame and redraws only when the state reports a change.
  */
 export class Level {
+  /** Keys that start the clock: moving, turning, both portals and interacting */
+  private static readonly CLOCK_START_KEYS: readonly number[] = [
+    Input.LEFT,
+    Input.UP,
+    Input.RIGHT,
+    Input.DOWN,
+    Input.KEY_A,
+    Input.KEY_D,
+    Input.SPACE,
+    Input.CTRL,
+  ]
+
   onCompleted: (() => void) | null = null // Called once per load when the subject reaches the exit
 
   private state: State | null = null // The chamber being played, null before the first load
+  private clockStarted = false // Whether a game key has been pressed since the last load
+  private elapsedSeconds = 0 // Play time since the clock started; only grows while unpaused
   private readonly renderer: Renderer // Draws the state
   private readonly input = new Input() // The keyboard, listening from construction until dispose()
   private initialized = false // Whether the frame loop has started
@@ -30,15 +44,19 @@ export class Level {
    */
   constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number) {
     this.renderer = new Renderer(canvas, screenWidth, screenHeight)
+    document.addEventListener('visibilitychange', this.onVisibilityChange)
   }
 
   /**
-   * Builds the chamber from scratch and draws it; loading again resets it.
-   * The first load starts the frame loop, running its first frame at once.
+   * Builds the chamber from scratch and draws it; loading again resets it
+   * and its clock. The first load starts the frame loop, running its first
+   * frame at once.
    * @param chamberData - The chamber JSON, which is only read
    */
   load(chamberData: ChamberData): void {
     this.renderer.setSize(chamberData.size.width, chamberData.size.height)
+    this.clockStarted = false
+    this.elapsedSeconds = 0
 
     const chamber = new Chamber(chamberData)
     const subject = new Subject(chamberData.subject)
@@ -78,6 +96,23 @@ export class Level {
   }
 
   /**
+   * Whether the clock is running, that is, a game key has been pressed since
+   * the last load. It keeps this value once the game pauses.
+   */
+  get started(): boolean {
+    return this.clockStarted
+  }
+
+  /**
+   * Play time since the clock started, in whole hundredths of a second.
+   * Frames that ran while the game was paused or the tab was hidden are not
+   * counted.
+   */
+  get elapsedHundredths(): number {
+    return Math.floor(this.elapsedSeconds * 100)
+  }
+
+  /**
    * Fits the current chamber to a new screen area and redraws it.
    * @param screenWidth - Width available to the chamber, in pixels
    * @param screenHeight - Height available to the chamber, in pixels
@@ -96,6 +131,7 @@ export class Level {
    */
   dispose(): void {
     this.disposed = true
+    document.removeEventListener('visibilitychange', this.onVisibilityChange)
 
     if (this.frameId !== null) {
       cancelAnimationFrame(this.frameId)
@@ -123,6 +159,13 @@ export class Level {
   private update(delta: number, input: Input): boolean {
     let updated = false
 
+    // The clock counts from the frame after the first key, so the wait before it is not included
+    if (this.clockStarted) {
+      this.elapsedSeconds += delta
+    } else if (Level.CLOCK_START_KEYS.some((keyCode) => input.isPressed(keyCode))) {
+      this.clockStarted = true
+    }
+
     if (this.state !== null) {
       updated = this.state.update(delta, input)
     }
@@ -138,6 +181,16 @@ export class Level {
   private run(): void {
     this.startTime = Date.now()
     this.onFrame()
+  }
+
+  /**
+   * Starts the next frame's time from now when the tab comes back, so the
+   * time it spent hidden is not counted as one long frame.
+   */
+  private readonly onVisibilityChange = (): void => {
+    if (!document.hidden) {
+      this.startTime = Date.now()
+    }
   }
 
   /**

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * Chamber screen: plays one chamber on the game canvas, with the controls
- * legend beside it and the pause, confirmation and completion dialogs on top.
- * The game objects live outside Vue's reactivity; this screen only creates,
- * pauses, reloads and disposes them.
+ * Chamber screen: plays one chamber on the game canvas, with the timer and the
+ * controls legend beside it and the pause, confirmation and completion dialogs
+ * on top. The game objects live outside Vue's reactivity; this screen only
+ * creates, pauses, reloads and disposes them, and reads the game's clock.
  */
 import {computed, onBeforeUnmount, onMounted, ref, useTemplateRef} from 'vue'
 import {onBeforeRouteLeave, onBeforeRouteUpdate, useRouter} from 'vue-router'
@@ -16,12 +16,20 @@ import PortalLogo from '@/components/portal_logo.vue'
 import {Level} from '@/game/level'
 import {Sound} from '@/game/sound'
 import {findChamber} from '@/services/chamber_catalogue'
+import {formatTime} from '@/services/format_time'
 import {rememberChamber} from '@/services/last_chamber'
-import {markChamberCompleted} from '@/services/progress'
+import {bestTimes, markChamberCompleted, recordTime} from '@/services/progress'
 import {playMusic} from '@/services/settings'
 
 /** Which dialog is open over the chamber. */
 type ChamberDialog = 'none' | 'pause' | 'confirm-reset' | 'confirm-exit' | 'completed'
+
+/** How a finished run went, for the completion dialog. */
+type CompletedRun = {
+  time: number // The run's time, in hundredths of a second
+  bestTime: number // The chamber's best time after the run, in hundredths of a second
+  newBest: boolean // Whether the run set the best time
+}
 
 /** Space available to the chamber, in pixels. */
 type StageSize = {
@@ -43,11 +51,16 @@ const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
 const chamber = computed(() => findChamber(props.chamberNumber))
 const signNumber = computed(() => String(props.chamberNumber).padStart(2, '0')) // Two digits, as on a test chamber sign
 const dialog = ref<ChamberDialog>('none')
+const timeReadout = useTemplateRef<HTMLElement>('timeReadout')
+const timerStarted = ref(false) // Whether the clock has started; changes only on the first key and on reset
+const completedRun = ref<CompletedRun | null>(null) // The run the completion dialog reports
 
 let level: Level | null = null // Running game; created on mount, disposed on unmount
 let resizeObserver: ResizeObserver | null = null // Refits the chamber when the window changes size
 let leaveConfirmed = false // Set once the player has confirmed leaving, so the route guard lets them go
 let pendingRoute: string | null = null // Where browser Back was heading when the exit confirmation opened
+let readoutFrameId: number | null = null // The pending animation frame request that refreshes the timer
+let shownTime = '' // The text now in the timer, so the element is only written when it changes
 
 /**
  * Measures the space the chamber may fill inside the stage.
@@ -60,6 +73,22 @@ function availableSize(element: HTMLElement): StageSize {
     width: element.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - CANVAS_BORDER_PIXELS * 2,
     height: element.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - CANVAS_BORDER_PIXELS * 2,
   }
+}
+
+/**
+ * Writes the game's clock into the timer, then asks for the next frame. The
+ * text goes straight into the element because it changes every frame.
+ */
+function refreshTimer(): void {
+  if (level !== null) {
+    const text = formatTime(level.elapsedHundredths)
+    if (text !== shownTime && timeReadout.value !== null) {
+      timeReadout.value.textContent = text
+      shownTime = text
+    }
+    timerStarted.value = level.started
+  }
+  readoutFrameId = requestAnimationFrame(refreshTimer)
 }
 
 /**
@@ -122,7 +151,14 @@ function cancelExit(): void {
  * Called by the game when the subject reaches the exit.
  */
 function handleCompleted(): void {
+  const time = level?.elapsedHundredths ?? 0
   markChamberCompleted(props.chamberNumber)
+  const newBest = recordTime(props.chamberNumber, time)
+  completedRun.value = {
+    time: time,
+    bestTime: bestTimes.value[props.chamberNumber] ?? time,
+    newBest: newBest,
+  }
   setPaused(true)
   dialog.value = 'completed'
 }
@@ -190,6 +226,7 @@ onMounted(() => {
   level = new Level(canvasElement, size.width, size.height)
   level.onCompleted = handleCompleted
   level.load(chamber.value.data)
+  refreshTimer()
 
   resizeObserver = new ResizeObserver(() => {
     const resized = availableSize(stageElement)
@@ -204,6 +241,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown)
+  if (readoutFrameId !== null) {
+    cancelAnimationFrame(readoutFrameId)
+    readoutFrameId = null
+  }
   resizeObserver?.disconnect()
   level?.dispose()
   level = null
@@ -214,10 +255,38 @@ onBeforeUnmount(() => {
   <main class="chamber-screen">
     <aside class="chamber-rail">
       <PortalLogo size="medium" />
-      <h1 class="chamber-sign">
-        <span class="sign-label ruled-label">Chamber</span>
-        <span class="sign-number">{{ signNumber }}</span>
-      </h1>
+      <div class="chamber-sign">
+        <h1 class="sign-title">
+          <span class="sign-label ruled-label">Chamber</span>
+          <span class="sign-number">{{ signNumber }}</span>
+        </h1>
+        <div
+          class="sign-time"
+          :class="{
+            'sign-time-idle': !timerStarted,
+          }"
+          role="timer"
+          aria-labelledby="sign-time-label"
+        >
+          <svg
+            class="sign-time-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M9.5 2.5h5M12 2.5v3M18.5 6.5l1.25-1.25M12 10v4.25" />
+            <circle cx="12" cy="14" r="7.5" />
+          </svg>
+          <span class="sign-time-reading">
+            <span id="sign-time-label" class="sign-time-label">Time</span>
+            <span ref="timeReadout" class="sign-time-value">00:00.00</span>
+          </span>
+        </div>
+      </div>
       <ChamberLegend />
     </aside>
 
@@ -251,6 +320,9 @@ onBeforeUnmount(() => {
     <CompletionDialog
       v-else-if="dialog === 'completed'"
       :chamber-number="chamberNumber"
+      :time="completedRun?.time ?? 0"
+      :best-time="completedRun?.bestTime ?? 0"
+      :new-best="completedRun?.newBest ?? false"
       @menu="leaveChamber"
       @replay="restartChamber"
     />
@@ -278,15 +350,24 @@ onBeforeUnmount(() => {
   overflow-y: auto;
 }
 
-/* Extra room under the number sets the sign apart from the controls */
+/* Label and timer share the top row, the number runs below; the heading's own box is dropped so
+   its two spans can sit in the grid. Extra room under the number sets the sign apart from the controls */
 .chamber-sign {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 1rem;
+  row-gap: 1.25rem;
   margin-bottom: 1rem;
 }
 
+.sign-title {
+  display: contents;
+}
+
 .sign-label {
+  grid-column: 1;
+  grid-row: 1;
   color: var(--color-ink-muted);
   font-size: 0.9375rem;
   font-style: italic;
@@ -294,11 +375,62 @@ onBeforeUnmount(() => {
 }
 
 .sign-number {
+  grid-column: 1 / -1;
+  grid-row: 2;
   font-family: var(--font-display);
   font-size: 8rem;
   font-weight: 700;
   line-height: 0.8;
   font-variant-numeric: tabular-nums;
+}
+
+/* The clock: stopwatch, small caption and tabular digits so the readout never shifts; dimmed
+   until the first key starts it. Caption and digits share a baseline, the stopwatch is centred on the digits */
+.sign-time {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: opacity 160ms ease;
+}
+
+.sign-time-idle {
+  opacity: 0.55;
+}
+
+.sign-time-icon {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-ink-muted);
+}
+
+.sign-time-reading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  line-height: 1;
+}
+
+.sign-time-label {
+  position: relative;
+  top: -0.09375rem; /* Lifts the shorter capitals from the shared baseline to the middle of the digits */
+  color: var(--color-ink-muted);
+  font-size: 0.8125rem;
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.sign-time-value {
+  position: relative;
+  top: -0.0625rem; /* A hair above the baseline so the digits sit centred beside the stopwatch */
+  font-size: 1.125rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 /* Stage holding the game canvas, on the room's back wall */

@@ -25,7 +25,7 @@ import SettingsSwitch from '@/components/settings_switch.vue'
 import {Sound} from '@/game/sound'
 import {CHAMBERS} from '@/services/chamber_catalogue'
 import {lastChamber} from '@/services/last_chamber'
-import {completedChambers, resetProgress} from '@/services/progress'
+import {bestTimes, completedChambers, resetProgress} from '@/services/progress'
 import {musicEnabled, playMusic, soundEnabled} from '@/services/settings'
 
 /** A section listed in the first column. */
@@ -779,6 +779,7 @@ onBeforeUnmount(() => {
               <ChamberRow
                 :chamber="chamber"
                 :completed="completedChambers.includes(chamber.number)"
+                :best-time="bestTimes[chamber.number] ?? null"
                 :class="{
                   'menu-row-selected': index === highlightedChamber,
                   'menu-row-active': index === highlightedChamber && activeColumn === 'items',

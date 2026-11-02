@@ -1,11 +1,16 @@
 <script setup lang="ts">
 /**
- * Shown when the player reaches the exit of a chamber.
+ * Shown when the player reaches the exit of a chamber, with the run's time
+ * and how it compares with the chamber's best.
  */
 import DialogFrame from '@/components/dialog_frame.vue'
+import {formatTime} from '@/services/format_time'
 
 export interface CompletionDialogProps {
   chamberNumber: number
+  time: number // This run's time, in hundredths of a second
+  bestTime: number // The chamber's best time after this run, in hundredths of a second
+  newBest: boolean // Whether this run set the best time
 }
 
 defineProps<CompletionDialogProps>()
@@ -19,9 +24,57 @@ const emit = defineEmits<{
 <template>
   <DialogFrame tone="success" :title="`Chamber ${chamberNumber} complete`">
     <p>You reached the exit.</p>
+    <p class="completion-time">
+      <span class="completion-time-label">Your time</span>
+      <span class="completion-time-value">{{ formatTime(time) }}</span>
+    </p>
+    <p
+      class="completion-best"
+      :class="{
+        'completion-best-new': newBest,
+      }"
+    >
+      {{ newBest ? 'New best time' : `Best time ${formatTime(bestTime)}` }}
+    </p>
     <template #actions>
       <button class="button button-primary" type="button" @click="emit('menu')">Back to menu</button>
       <button class="button button-quiet" type="button" @click="emit('replay')">Play again</button>
     </template>
   </DialogFrame>
 </template>
+
+<style scoped>
+/* The run's time as a large sign numeral under a small caption */
+.completion-time {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+}
+
+.completion-time-label {
+  font-size: 0.875rem;
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.completion-time-value {
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* A new record is blue, the colour of success */
+.completion-best {
+  font-weight: 600;
+}
+
+.completion-best-new {
+  color: var(--color-blue-deep);
+}
+</style>
