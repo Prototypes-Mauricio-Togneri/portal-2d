@@ -23,6 +23,7 @@ import LinkRow from '@/components/link_row.vue'
 import PortalLogo from '@/components/portal_logo.vue'
 import SettingsSwitch from '@/components/settings_switch.vue'
 import {Sound} from '@/game/sound'
+import {trackChangelogOpen, trackFeedbackOpen, trackLinkOpen, trackProgressReset} from '@/services/analytics'
 import {CHAMBERS} from '@/services/chamber_catalogue'
 import {lastChamber} from '@/services/last_chamber'
 import {bestTimes, completedChambers, resetProgress} from '@/services/progress'
@@ -400,6 +401,9 @@ function openDetail(): void {
   }
   activeColumn.value = 'details'
   Sound.MENU_BUTTON.play()
+  if (highlightedAboutEntry.value?.kind === 'changelog') {
+    trackChangelogOpen()
+  }
   // A row clicked has only just been highlighted, so its third column may not be drawn yet
   void nextTick(focusDetail)
 }
@@ -603,6 +607,7 @@ function handleChangelogFocus(): void {
   }
   activeColumn.value = 'details'
   Sound.MENU_BUTTON.play()
+  trackChangelogOpen()
 }
 
 /**
@@ -626,6 +631,7 @@ function closeResetDialog(): void {
  */
 function confirmResetProgress(): void {
   resetProgress()
+  trackProgressReset()
   closeResetDialog()
 }
 
@@ -837,6 +843,7 @@ onBeforeUnmount(() => {
                 }"
                 :href="entry.url"
                 :tabindex="index === highlightedAbout ? 0 : -1"
+                @click="trackFeedbackOpen"
                 @focus="handleItemFocus(index)"
                 @pointerdown="handleItemPointerDown(index)"
                 @pointermove="handleItemPointerMove(index, $event)"
@@ -900,6 +907,7 @@ onBeforeUnmount(() => {
                   'menu-row-active': index === highlightedLink && activeColumn === 'details',
                 }"
                 :tabindex="index === highlightedLink ? 0 : -1"
+                @click="trackLinkOpen(link.label, link.url)"
                 @focus="handleLinkFocus(index)"
                 @pointermove="handleLinkPointerMove(index, $event)"
               />

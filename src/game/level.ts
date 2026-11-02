@@ -28,6 +28,7 @@ export class Level {
   private state: State | null = null // The chamber being played, null before the first load
   private clockStarted = false // Whether a game key has been pressed since the last load
   private elapsedSeconds = 0 // Play time since the clock started; only grows while unpaused
+  private stepCount = 0 // Tiles the subject has stepped onto since the last load
   private readonly renderer: Renderer // Draws the state
   private readonly input = new Input() // The keyboard, listening from construction until dispose()
   private initialized = false // Whether the frame loop has started
@@ -57,6 +58,7 @@ export class Level {
     this.renderer.setSize(chamberData.size.width, chamberData.size.height)
     this.clockStarted = false
     this.elapsedSeconds = 0
+    this.stepCount = 0
 
     const chamber = new Chamber(chamberData)
     const subject = new Subject(chamberData.subject)
@@ -110,6 +112,22 @@ export class Level {
    */
   get elapsedHundredths(): number {
     return Math.floor(this.elapsedSeconds * 100)
+  }
+
+  /**
+   * Tiles the subject has stepped onto since the last load. Turning in place
+   * and walking into something solid don't count; walking through a portal
+   * counts as one step.
+   */
+  get moves(): number {
+    return this.stepCount
+  }
+
+  /**
+   * Portals opened on a wall since the last load, misses not counted.
+   */
+  get portalsPlaced(): number {
+    return this.state?.portalsPlaced ?? 0
   }
 
   /**
@@ -167,7 +185,16 @@ export class Level {
     }
 
     if (this.state !== null) {
+      const subject = this.state.subject
+      const startX = subject.x
+      const startY = subject.y
+
       updated = this.state.update(delta, input)
+
+      // Only the arrow keys move the subject, so a new tile is one step
+      if ((subject.x !== startX) || (subject.y !== startY)) {
+        this.stepCount++
+      }
     }
 
     input.clear()

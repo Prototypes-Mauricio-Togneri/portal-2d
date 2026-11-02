@@ -33,6 +33,7 @@ export class State {
   insideFizzler = false // Whether the subject has entered an active fizzler and not yet left every fizzler
   chamberCompleted = false // Whether the subject has reached the exit
   private readonly onChamberCompleted: (() => void) | null // Called once when the subject reaches the exit
+  private placedPortals = 0 // Portals opened on a wall so far, misses not counted
 
   /**
    * @param chamber - The chamber to play, freshly built
@@ -45,6 +46,14 @@ export class State {
     this.onChamberCompleted = onChamberCompleted
 
     this.chamber.setGateway(this.gateway)
+  }
+
+  /**
+   * Portals opened on a wall since the chamber was built; a shot that misses
+   * doesn't count, and moving a portal counts again.
+   */
+  get portalsPlaced(): number {
+    return this.placedPortals
   }
 
   /**
@@ -138,6 +147,10 @@ export class State {
       } else if (input.isPressed(Input.KEY_D)) {
         portalCreated = this.shootPortal(Portal.ORANGE)
       }
+    }
+
+    if (portalCreated) {
+      this.placedPortals++
     }
 
     return portalCreated

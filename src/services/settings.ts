@@ -5,6 +5,7 @@ import {ref, watch} from 'vue'
 import {gameMusic, menuMusic} from '@/game/music'
 import type {Music} from '@/game/music'
 import {Sound} from '@/game/sound'
+import {trackSettingChange} from '@/services/analytics'
 
 /** Which background track a screen plays. */
 export type MusicTrack = 'menu' | 'game'
@@ -80,11 +81,13 @@ Sound.enabled = soundEnabled.value
 watch(soundEnabled, (enabled) => {
   Sound.enabled = enabled
   writePreference(SOUND_STORAGE_KEY, enabled)
+  trackSettingChange('sound', enabled)
 })
 
 watch(musicEnabled, (enabled) => {
   writePreference(MUSIC_STORAGE_KEY, enabled)
   applyMusic()
+  trackSettingChange('music', enabled)
 })
 
 /**

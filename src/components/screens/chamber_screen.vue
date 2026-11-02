@@ -15,6 +15,8 @@ import PauseDialog from '@/components/pause_dialog.vue'
 import PortalLogo from '@/components/portal_logo.vue'
 import {Level} from '@/game/level'
 import {Sound} from '@/game/sound'
+import {trackChamberComplete, trackChamberQuit, trackChamberRestart, trackChamberStart} from '@/services/analytics'
+import type {RunProgress} from '@/services/analytics'
 import {findChamber} from '@/services/chamber_catalogue'
 import {formatTime} from '@/services/format_time'
 import {rememberChamber} from '@/services/last_chamber'
@@ -119,6 +121,17 @@ function resume(): void {
 }
 
 /**
+ * Reads how far the current run has got, for analytics.
+ * @returns The run's time and moves so far
+ */
+function runProgress(): RunProgress {
+  return {
+    hundredths: level?.elapsedHundredths ?? 0,
+    moves: level?.moves ?? 0,
+  }
+}
+
+/**
  * Rebuilds the chamber from its starting layout, starts the music over and resumes play.
  */
 function restartChamber(): void {
@@ -130,6 +143,26 @@ function restartChamber(): void {
 }
 
 /**
+ * Starts the chamber over once the player has confirmed Reset chamber.
+ */
+function confirmReset(): void {
+  if (chamber.value !== undefined) {
+    trackChamberRestart(chamber.value, runProgress())
+  }
+  restartChamber()
+}
+
+/**
+ * Starts a new run of the chamber just completed.
+ */
+function playAgain(): void {
+  restartChamber()
+  if (chamber.value !== undefined) {
+    trackChamberStart(chamber.value)
+  }
+}
+
+/**
  * Leaves the chamber for the home screen, or for wherever browser Back was heading.
  */
 function leaveChamber(): void {
@@ -137,6 +170,16 @@ function leaveChamber(): void {
   void router.push(pendingRoute ?? {
     name: 'home',
   })
+}
+
+/**
+ * Leaves the chamber unfinished once the player has confirmed Exit chamber or browser Back.
+ */
+function confirmExit(): void {
+  if (chamber.value !== undefined) {
+    trackChamberQuit(chamber.value, runProgress())
+  }
+  leaveChamber()
 }
 
 /**
@@ -152,6 +195,9 @@ function cancelExit(): void {
  */
 function handleCompleted(): void {
   const time = level?.elapsedHundredths ?? 0
+  if (chamber.value !== undefined) {
+    trackChamberComplete(chamber.value, runProgress(), level?.portalsPlaced ?? 0)
+  }
   markChamberCompleted(props.chamberNumber)
   const newBest = recordTime(props.chamberNumber, time)
   completedRun.value = {
@@ -225,6 +271,8 @@ onMounted(() => {
   // Stored before the first load, which runs a frame straight away and can already complete the chamber
   level = new Level(canvasElement, size.width, size.height)
   level.onCompleted = handleCompleted
+  // Sent before the load, whose first frame could already report the chamber completed
+  trackChamberStart(chamber.value)
   level.load(chamber.value.data)
   refreshTimer()
 
@@ -306,7 +354,7 @@ onBeforeUnmount(() => {
       :title="`Reset chamber ${chamberNumber}?`"
       message="You'll start again from the entrance. Portals, boxes, buttons and switches go back to how they began."
       confirm-label="Reset chamber"
-      @confirm="restartChamber"
+      @confirm="confirmReset"
       @cancel="dialog = 'pause'"
     />
     <ConfirmDialog
@@ -314,7 +362,7 @@ onBeforeUnmount(() => {
       :title="`Exit chamber ${chamberNumber}?`"
       message="You'll go back to the chamber list. Your progress in this chamber won't be kept."
       confirm-label="Exit chamber"
-      @confirm="leaveChamber"
+      @confirm="confirmExit"
       @cancel="cancelExit"
     />
     <CompletionDialog
@@ -324,7 +372,7 @@ onBeforeUnmount(() => {
       :best-time="completedRun?.bestTime ?? 0"
       :new-best="completedRun?.newBest ?? false"
       @menu="leaveChamber"
-      @replay="restartChamber"
+      @replay="playAgain"
     />
   </main>
 </template>
