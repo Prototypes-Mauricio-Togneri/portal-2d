@@ -2,7 +2,8 @@
 /**
  * Shown when the player reaches the exit of a chamber, with the run's time
  * and how it compares with the chamber's best. Its main action opens the next
- * chamber, or goes back to the menu after the last one.
+ * chamber, or goes back to the menu after the last one. In development it also
+ * offers to download the run as the chamber's recorded solution.
  */
 import DialogFrame from '@/components/dialog_frame.vue'
 import {formatTime} from '@/services/format_time'
@@ -13,6 +14,7 @@ export interface CompletionDialogProps {
   bestTime: number // The chamber's best time after this run, in hundredths of a second
   newBest: boolean // Whether this run set the best time
   hasNextChamber: boolean // Whether a chamber follows this one
+  solutionFailed: boolean // Whether the last download was refused because the run doesn't replay the same way
 }
 
 defineProps<CompletionDialogProps>()
@@ -21,7 +23,12 @@ const emit = defineEmits<{
   next: []
   menu: []
   replay: []
+  'download-solution': []
 }>()
+
+// Recording solutions is an authoring tool, left out of production builds. The
+// comparison makes Vue treat the flag as a constant, so the build drops the button
+const canDownloadSolution = import.meta.env.DEV === true
 </script>
 
 <template>
@@ -37,6 +44,9 @@ const emit = defineEmits<{
       }"
     >
       {{ newBest ? 'New best time' : `Best time ${formatTime(bestTime)}` }}
+    </p>
+    <p v-if="canDownloadSolution && solutionFailed" class="completion-solution-failed" role="alert">
+      Not saved: this run doesn't replay the same way. The console says where it differs.
     </p>
     <template #actions>
       <button
@@ -56,6 +66,14 @@ const emit = defineEmits<{
         Back to menu
       </button>
       <button class="button button-quiet" type="button" @click="emit('replay')">Play again</button>
+      <button
+        v-if="canDownloadSolution"
+        class="button button-quiet completion-solution"
+        type="button"
+        @click="emit('download-solution')"
+      >
+        Download solution
+      </button>
     </template>
   </DialogFrame>
 </template>
@@ -92,5 +110,16 @@ const emit = defineEmits<{
 
 .completion-best-new {
   color: var(--color-blue-deep);
+}
+
+/* The development-only download sits apart from the player's actions */
+.completion-solution {
+  margin-top: 0.75rem;
+}
+
+/* No accent colour: a refused download is neither a success nor a loss of progress */
+.completion-solution-failed {
+  color: var(--color-ink);
+  font-size: 0.9375rem;
 }
 </style>

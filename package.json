@@ -10,8 +10,10 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "check": "npm run lint:fix && npm run build",
-    "verify": "npm run lint && npm run build && npm run smoke:engine",
+    "verify": "npm run lint && npm run build && npm run smoke:engine && npm run replay:check && npm run random:walk",
     "smoke:engine": "tsx --tsconfig tsconfig.scripts.json scripts/smoke_engine.ts",
+    "replay:check": "tsx --tsconfig tsconfig.scripts.json scripts/check_replays.ts",
+    "random:walk": "tsx --tsconfig tsconfig.scripts.json scripts/random_walk.ts",
     "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {

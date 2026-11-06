@@ -1,3 +1,4 @@
+import {FRAME_KEYS, type FrameInput} from '@/game/frame_input'
 import {GameKey} from '@/game/game_key'
 
 /**
@@ -65,6 +66,17 @@ export class Input {
   reset(): void {
     this.pressed.clear()
     this.pressing.clear()
+  }
+
+  /**
+   * What the rules read this frame: the keys pressed since the last clear(),
+   * in the fixed order, and whether the turn key is held.
+   */
+  get frameInput(): FrameInput {
+    return {
+      keys: FRAME_KEYS.filter((key) => this.pressed.has(key)),
+      turnHeld: this.pressing.has(GameKey.TURN),
+    }
   }
 
   /**

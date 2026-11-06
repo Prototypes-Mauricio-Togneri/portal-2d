@@ -1,6 +1,7 @@
 import type {Direction} from '@/game/direction'
 import type {Portal} from '@/game/classic/portal'
 import type {State} from '@/game/classic/state'
+import {formatHash, hashText} from '@/game/text_hash'
 
 /**
  * The subject's tile, facing and carried box.
@@ -49,15 +50,6 @@ export type StateSnapshot = {
   readonly insideFizzler: boolean // Whether the subject has entered an active fizzler and not yet left every fizzler
   readonly chamberCompleted: boolean // Whether the subject has reached the exit
 }
-
-/** FNV-1a 32-bit offset basis */
-const FNV_OFFSET_BASIS = 0x811c9dc5
-
-/** FNV-1a 32-bit prime */
-const FNV_PRIME = 0x01000193
-
-/** Turns the text form into the UTF-8 bytes that are hashed */
-const TEXT_ENCODER = new TextEncoder()
 
 /**
  * Reads every value of the state that changes during play. The state is
@@ -129,12 +121,15 @@ export function getSnapshotText(snapshot: StateSnapshot): string {
  * @returns The hash, as an unsigned 32-bit integer
  */
 export function getSnapshotHash(snapshot: StateSnapshot): number {
-  let hash = FNV_OFFSET_BASIS
+  return hashText(getSnapshotText(snapshot))
+}
 
-  for (const byte of TEXT_ENCODER.encode(getSnapshotText(snapshot))) {
-    hash ^= byte
-    hash = Math.imul(hash, FNV_PRIME)
-  }
-
-  return hash >>> 0
+/**
+ * The hash of the state as it is now, written the way replays and the engine
+ * scripts show it.
+ * @param state - The rules playing a chamber
+ * @returns Eight hexadecimal digits
+ */
+export function getStateHash(state: State): string {
+  return formatHash(getSnapshotHash(takeSnapshot(state)))
 }

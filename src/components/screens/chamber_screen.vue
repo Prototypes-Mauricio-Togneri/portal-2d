@@ -14,6 +14,7 @@ import ConfirmDialog from '@/components/confirm_dialog.vue'
 import PauseDialog from '@/components/pause_dialog.vue'
 import PortalLogo from '@/components/portal_logo.vue'
 import {Level} from '@/game/level'
+import type {SolutionData} from '@/game/replay_data'
 import {Sound} from '@/game/sound'
 import {trackChamberAbandon, trackChamberComplete, trackChamberQuit, trackChamberRestart, trackChamberStart} from '@/services/analytics'
 import type {RunProgress} from '@/services/analytics'
@@ -46,6 +47,7 @@ export interface ChamberScreenProps {
 const props = defineProps<ChamberScreenProps>()
 
 const CANVAS_BORDER_PIXELS = 1 // Matches the canvas border in the styles below
+const SOLUTION_ADDRESS_LIFETIME = 10_000 // Milliseconds a downloaded solution's temporary address stays valid
 
 const router = useRouter()
 const stage = useTemplateRef<HTMLElement>('stage')
@@ -57,6 +59,7 @@ const dialog = ref<ChamberDialog>('none')
 const timeReadout = useTemplateRef<HTMLElement>('timeReadout')
 const timerStarted = ref(false) // Whether the clock has started; changes only on the first key and on reset
 const completedRun = ref<CompletedRun | null>(null) // The run the completion dialog reports
+const solutionFailed = ref(false) // Whether the last solution download was refused because the run doesn't replay the same way
 
 let level: Level | null = null // Running game; created on mount, disposed on unmount
 let resizeObserver: ResizeObserver | null = null // Refits the chamber when the window changes size
@@ -289,8 +292,52 @@ function handleCompleted(): void {
     bestTime: chamberBest,
     newBest: newBest,
   }
+  solutionFailed.value = false
   setPaused(true)
   dialog.value = 'completed'
+}
+
+/**
+ * Development only: saves the run just completed as the chamber's recorded
+ * solution, chamber_N.solution.json, named after the chamber's file (whose
+ * number is its permanent id). Refuses, and says so, when the run doesn't
+ * replay the same way.
+ */
+function downloadSolution(): void {
+  // Also lets the production build drop the rest of this function
+  if (!import.meta.env.DEV || level === null || chamber.value === undefined) {
+    return
+  }
+  let solution: SolutionData
+  try {
+    const replay = level.createReplay()
+    // Written in the order the file lists them
+    solution = {
+      format: replay.format,
+      ruleset: replay.ruleset,
+      chamberId: chamber.value.id,
+      chamberHash: replay.chamberHash,
+      frames: replay.frames,
+      expected: replay.expected,
+    }
+  } catch (error) {
+    console.error('Solution not saved:', error)
+    solutionFailed.value = true
+    return
+  }
+  solutionFailed.value = false
+  const file = new Blob([`${JSON.stringify(solution, null, 4)}\n`], {
+    type: 'application/json',
+  })
+  const address = URL.createObjectURL(file)
+  const link = document.createElement('a')
+  link.href = address
+  link.download = `chamber_${chamber.value.id}.solution.json`
+  link.click()
+  // Some browsers read the file after the click returns, so it is released a little later
+  window.setTimeout(() => {
+    URL.revokeObjectURL(address)
+  }, SOLUTION_ADDRESS_LIFETIME)
 }
 
 /**
@@ -476,9 +523,11 @@ onBeforeUnmount(() => {
       :best-time="completedRun?.bestTime ?? 0"
       :new-best="completedRun?.newBest ?? false"
       :has-next-chamber="nextChamber !== undefined"
+      :solution-failed="solutionFailed"
       @next="openNextChamber"
       @menu="leaveChamber"
       @replay="playAgain"
+      @download-solution="downloadSolution"
     />
   </main>
 </template>
