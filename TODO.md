@@ -1,6 +1,5 @@
 # TODO
 
-- Ask for improvements and new features
 - Create tutorial chambers
 
 ## Future
