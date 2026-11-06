@@ -51,6 +51,7 @@ const router = useRouter()
 const stage = useTemplateRef<HTMLElement>('stage')
 const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
 const chamber = computed(() => findChamber(props.chamberNumber))
+const nextChamber = computed(() => findChamber(props.chamberNumber + 1)) // The chamber after this one; undefined after the last
 const signNumber = computed(() => String(props.chamberNumber).padStart(2, '0')) // Two digits, as on a test chamber sign
 const dialog = ref<ChamberDialog>('none')
 const timeReadout = useTemplateRef<HTMLElement>('timeReadout')
@@ -160,6 +161,22 @@ function playAgain(): void {
   if (chamber.value !== undefined) {
     trackChamberStart(chamber.value)
   }
+}
+
+/**
+ * Opens the chamber after the one just completed. It takes this chamber's
+ * place in the browser history, so Back from there goes where Back from here would.
+ */
+function openNextChamber(): void {
+  if (nextChamber.value === undefined) {
+    return
+  }
+  void router.replace({
+    name: 'chamber',
+    params: {
+      number: String(nextChamber.value.number),
+    },
+  })
 }
 
 /**
@@ -371,6 +388,8 @@ onBeforeUnmount(() => {
       :time="completedRun?.time ?? 0"
       :best-time="completedRun?.bestTime ?? 0"
       :new-best="completedRun?.newBest ?? false"
+      :has-next-chamber="nextChamber !== undefined"
+      @next="openNextChamber"
       @menu="leaveChamber"
       @replay="playAgain"
     />

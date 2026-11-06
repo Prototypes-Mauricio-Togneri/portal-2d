@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Shown when the player reaches the exit of a chamber, with the run's time
- * and how it compares with the chamber's best.
+ * and how it compares with the chamber's best. Its main action opens the next
+ * chamber, or goes back to the menu after the last one.
  */
 import DialogFrame from '@/components/dialog_frame.vue'
 import {formatTime} from '@/services/format_time'
@@ -11,11 +12,13 @@ export interface CompletionDialogProps {
   time: number // This run's time, in hundredths of a second
   bestTime: number // The chamber's best time after this run, in hundredths of a second
   newBest: boolean // Whether this run set the best time
+  hasNextChamber: boolean // Whether a chamber follows this one
 }
 
 defineProps<CompletionDialogProps>()
 
 const emit = defineEmits<{
+  next: []
   menu: []
   replay: []
 }>()
@@ -23,7 +26,6 @@ const emit = defineEmits<{
 
 <template>
   <DialogFrame tone="success" :title="`Chamber ${chamberNumber} complete`">
-    <p>You reached the exit.</p>
     <p class="completion-time">
       <span class="completion-time-label">Your time</span>
       <span class="completion-time-value">{{ formatTime(time) }}</span>
@@ -37,7 +39,22 @@ const emit = defineEmits<{
       {{ newBest ? 'New best time' : `Best time ${formatTime(bestTime)}` }}
     </p>
     <template #actions>
-      <button class="button button-primary" type="button" @click="emit('menu')">Back to menu</button>
+      <button
+        v-if="hasNextChamber"
+        class="button button-interaction"
+        type="button"
+        @click="emit('next')"
+      >
+        Next chamber
+      </button>
+      <button
+        class="button"
+        :class="hasNextChamber ? 'button-quiet' : 'button-interaction'"
+        type="button"
+        @click="emit('menu')"
+      >
+        Back to menu
+      </button>
       <button class="button button-quiet" type="button" @click="emit('replay')">Play again</button>
     </template>
   </DialogFrame>
@@ -49,7 +66,6 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  margin-top: 0.75rem;
 }
 
 .completion-time-label {

@@ -216,17 +216,7 @@ a {
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
-/* Main action */
-.button-primary {
-  background: var(--color-ink);
-  color: var(--color-white);
-}
-
-.button-primary:hover {
-  background: var(--color-blue-deep);
-}
-
-/* Main action in the game's blue, which marks interaction */
+/* Main action in the game's blue, which marks interaction and success */
 .button-interaction {
   background: var(--color-blue);
   color: var(--color-white);
