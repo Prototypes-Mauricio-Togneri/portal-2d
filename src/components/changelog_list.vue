@@ -55,7 +55,7 @@ function formatDate(date: string): string {
 
 .changelog-version {
   font-family: var(--font-display);
-  font-size: 2.25rem;
+  font-size: 2rem;
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;

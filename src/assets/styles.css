@@ -41,7 +41,7 @@
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* Home menu: every row is this tall, which the cascade between its columns relies on */
-  --menu-row-height: 4rem;
+  --menu-row-height: 3.5rem;
 }
 
 /* ============================================
@@ -187,7 +187,7 @@ a {
   flex: 1;
   min-width: 0;
   font-family: var(--font-display);
-  font-size: 2.25rem;
+  font-size: 2rem;
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.03em;

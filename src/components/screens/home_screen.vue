@@ -1024,7 +1024,7 @@ onBeforeUnmount(() => {
 .home-changelog {
   max-width: 40rem;
   max-height: calc(var(--menu-detail-rows, 1) * (var(--menu-row-height) + var(--menu-row-gap)) - var(--menu-row-gap));
-  padding: 0.875rem 1.25rem 0.5rem;
+  padding: 0.75rem 1.25rem 0.5rem;
   border-left: 0.25rem solid rgba(var(--color-ink-rgb), 0.14);
   overflow-y: auto;
   scrollbar-color: rgba(var(--color-ink-rgb), 0.35) transparent;
