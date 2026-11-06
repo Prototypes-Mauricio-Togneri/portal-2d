@@ -5,11 +5,12 @@ import chamber3 from '@/chambers/chamber_3.json'
 import type {ChamberData} from '@/game/chamber_data'
 import {Chamber} from '@/game/classic/chamber'
 import {State} from '@/game/classic/state'
+import {getSnapshotHash, takeSnapshot} from '@/game/classic/state_snapshot'
 import {Subject} from '@/game/classic/subject'
 
 // Loads every chamber with today's rules under Node and runs empty frames on
-// it, proving the rules need no browser. Prints one line per chamber and
-// exits non-zero on any failure
+// it, proving the rules need no browser. Prints one line per chamber, with
+// the hash of its starting state, and exits non-zero on any failure
 
 /** Every chamber file, by file name; a chamber file missing here fails the check */
 const CHAMBERS: Readonly<Record<string, ChamberData>> = {
@@ -33,13 +34,17 @@ const NO_KEYS = {
 /**
  * Builds a chamber with today's rules and runs empty frames on it.
  * @param data - The chamber JSON
+ * @returns The hash of the starting state, before any frame runs
  */
-function runChamber(data: ChamberData): void {
+function runChamber(data: ChamberData): number {
   const state = new State(new Chamber(data), new Subject(data.subject))
+  const startHash = getSnapshotHash(takeSnapshot(state))
 
   for (let i = 0; i < FRAMES; i++) {
     state.update(0, NO_KEYS)
   }
+
+  return startHash
 }
 
 /**
@@ -64,8 +69,8 @@ function runAll(): boolean {
     }
 
     try {
-      runChamber(data)
-      console.log(`${file} OK`)
+      const startHash = runChamber(data)
+      console.log(`${file} OK, start hash ${startHash.toString(16).padStart(8, '0')}`)
     } catch (error) {
       console.error(`${file} FAILED: ${String(error)}`)
       passed = false

@@ -2,7 +2,7 @@
 
 Portal 2D — a desktop-only, keyboard-driven puzzle game: the player crosses grid-based test chambers using a pair of portals (Vite + Vue 3, TypeScript, Composition API with `<script setup>`, vue-router, ESLint + @stylistic + type-aware typescript-eslint via @vue/eslint-config-typescript). It is a static site on Firebase Hosting; there is no backend.
 
-`todo/` holds the author's roadmap: an overview (`README.md`) and one file per stage (`00_fixes.md` to `05_creator_platform.md`). They are not planned work; do not build any of it unless asked, and only tick a stage's checkboxes for steps you were asked to do and finished.
+`todo/` holds the author's roadmap: an overview (`README.md`) and one file per stage (`01_engine_v2.md` to `05_creator_platform.md`; stage 00 is done and its file removed). They are not planned work; do not build any of it unless asked, and only tick a stage's checkboxes for steps you were asked to do and finished.
 
 ## Layout
 
