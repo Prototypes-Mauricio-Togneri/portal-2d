@@ -2,15 +2,20 @@ import {parseArgs} from 'node:util'
 import type {ChamberData} from '@/game/chamber_data'
 import {Chamber} from '@/game/classic/chamber'
 import {State} from '@/game/classic/state'
+import {getSnapshotHash, getStateHash, restoreSnapshot, type StateSnapshot, takeSnapshot} from '@/game/classic/state_snapshot'
 import {stepClassic} from '@/game/classic/step_classic'
 import {Subject} from '@/game/classic/subject'
 import {FRAME_KEYS, type FrameInput, type FrameKey} from '@/game/frame_input'
+import {formatHash} from '@/game/text_hash'
 import {CHAMBER_FILES, listChamberFiles} from '@scripts/chamber_files'
 
 // Plays seeded random inputs on every chamber with today's rules as a step
 // function under Node. Every step must settle within the cap and nothing may
-// throw. Reports steps per second, the speed baseline for the solver (stage
-// 02). Prints one line per chamber and exits non-zero on any failure.
+// throw. Every RESTORE_CHECK_INTERVAL steps it also checks that a snapshot
+// restores the state exactly, as undo relies on. Reports steps per second,
+// the speed baseline for the solver (stage 02), leaving out the time the
+// restore checks take. Prints one line per chamber and exits non-zero on any
+// failure.
 // Options: --seed=<number> (default 1), --steps=<number> per chamber (default 100000)
 
 /** Steps per chamber unless --steps says otherwise */
@@ -24,6 +29,29 @@ const SECOND_KEY_CHANCE = 0.1
 
 /** How often the turn key is held during a step */
 const TURN_HELD_CHANCE = 0.2
+
+/** Steps between the starts of two restore checks */
+const RESTORE_CHECK_INTERVAL = 1_000
+
+/** Steps a restore check walks on before going back to its snapshot */
+const RESTORE_CHECK_LENGTH = 50
+
+/**
+ * A restore check under way: the state when it began and the inputs walked
+ * since.
+ */
+type RestoreCheck = {
+  readonly snapshot: StateSnapshot // The state when the check began
+  readonly inputs: FrameInput[] // The inputs walked since, in order
+}
+
+/**
+ * How a walk went.
+ */
+type WalkResult = {
+  readonly milliseconds: number // Time spent walking, restore checks left out
+  readonly restoreChecks: number // Restore checks that ran and passed
+}
 
 /**
  * A seeded source of random numbers (mulberry32), so a failing walk can be
@@ -84,34 +112,94 @@ function createState(data: ChamberData): State {
 }
 
 /**
+ * Goes back to a restore check's snapshot and walks its inputs again: the
+ * restored state must hash as the snapshot does, and must end where the walk
+ * did. The state is left where the walk was, so the walk carries on unchanged.
+ * @param state - The rules, where the walk now is
+ * @param check - The snapshot and the inputs walked since
+ * @throws Error saying which hash differs
+ */
+function checkRestore(state: State, check: RestoreCheck): void {
+  const walkedHash = getStateHash(state)
+
+  restoreSnapshot(state, check.snapshot)
+
+  const restoredHash = getStateHash(state)
+  const snapshotHash = formatHash(getSnapshotHash(check.snapshot))
+
+  if (restoredHash !== snapshotHash) {
+    throw new Error(`the restored state hashes ${restoredHash}, its snapshot ${snapshotHash}`)
+  }
+
+  for (const input of check.inputs) {
+    stepClassic(state, input)
+  }
+
+  const replayedHash = getStateHash(state)
+
+  if (replayedHash !== walkedHash) {
+    throw new Error(`walking the ${check.inputs.length} inputs again from the restored state ends at ${replayedHash}, the walk at ${walkedHash}`)
+  }
+}
+
+/**
  * Walks a chamber with random inputs, starting over whenever it is
- * completed, as live play stops at the exit.
+ * completed, as live play stops at the exit. Restore checks run alongside,
+ * without changing the walk.
  * @param data - The chamber JSON
  * @param steps - How many steps to take
  * @param seed - The seed for the inputs
- * @returns How long the walk took, in milliseconds
+ * @returns How long the walk took and how many restore checks ran
  * @throws Error naming the step that failed
  */
-function walkChamber(data: ChamberData, steps: number, seed: number): number {
+function walkChamber(data: ChamberData, steps: number, seed: number): WalkResult {
   const random = createRandom(seed)
   const startTime = performance.now()
+  let checkMilliseconds = 0
+  let restoreChecks = 0
+  let check: RestoreCheck | null = null
   let state = createState(data)
 
   for (let step = 1; step <= steps; step++) {
+    const input = randomInput(random)
+
     try {
-      stepClassic(state, randomInput(random))
+      stepClassic(state, input)
+      check?.inputs.push(input)
+
+      if (state.chamberCompleted) {
+        state = createState(data)
+        // The walk started over, so the check has nothing to go back to
+        check = null
+      }
+
+      const checkStart = performance.now()
+
+      if ((check !== null) && (check.inputs.length === RESTORE_CHECK_LENGTH)) {
+        checkRestore(state, check)
+        restoreChecks++
+        check = null
+      }
+
+      if ((step % RESTORE_CHECK_INTERVAL) === 0) {
+        check = {
+          snapshot: takeSnapshot(state),
+          inputs: [],
+        }
+      }
+
+      checkMilliseconds += performance.now() - checkStart
     } catch (error) {
       throw new Error(`step ${step}: ${error instanceof Error ? error.message : String(error)}`, {
         cause: error,
       })
     }
-
-    if (state.chamberCompleted) {
-      state = createState(data)
-    }
   }
 
-  return performance.now() - startTime
+  return {
+    milliseconds: performance.now() - startTime - checkMilliseconds,
+    restoreChecks: restoreChecks,
+  }
 }
 
 /**
@@ -167,9 +255,9 @@ function runAll(): boolean {
     }
 
     try {
-      const milliseconds = walkChamber(data, steps, seed)
-      const perSecond = Math.round(steps / (milliseconds / 1000))
-      console.log(`${file} OK: ${steps} steps in ${(milliseconds / 1000).toFixed(2)} s, ${perSecond} steps per second`)
+      const result = walkChamber(data, steps, seed)
+      const perSecond = Math.round(steps / (result.milliseconds / 1000))
+      console.log(`${file} OK: ${steps} steps in ${(result.milliseconds / 1000).toFixed(2)} s, ${perSecond} steps per second, ${result.restoreChecks} restore checks`)
     } catch (error) {
       console.error(`${file} FAILED: ${error instanceof Error ? error.message : String(error)}`)
       passed = false

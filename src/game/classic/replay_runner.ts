@@ -1,11 +1,13 @@
 import type {ChamberData} from '@/game/chamber_data'
 import {Chamber} from '@/game/classic/chamber'
 import {State} from '@/game/classic/state'
-import {getStateHash} from '@/game/classic/state_snapshot'
+import {getStateHash, takeSnapshot} from '@/game/classic/state_snapshot'
 import {runFrame, settleClassic} from '@/game/classic/step_classic'
 import {Subject} from '@/game/classic/subject'
+import {UndoHistory} from '@/game/classic/undo_history'
 import {EMPTY_FRAME_INPUT, type FrameInput} from '@/game/frame_input'
 import {GameEvent} from '@/game/game_event'
+import {GameKey} from '@/game/game_key'
 import {parseReplayFrame} from '@/game/replay_data'
 
 /**
@@ -52,7 +54,8 @@ function runCountedFrame(state: State, input: FrameInput, counters: ReplayCounte
 /**
  * Replays recorded frames on a freshly built chamber with today's rules:
  * each frame's gap of empty frames, then the frame itself; at the end, empty
- * frames until the state settles.
+ * frames until the state settles. Frames with keys are recorded in an undo
+ * history, and undo and redo frames step through it, as the live game does.
  * @param chamberData - The chamber JSON, which is only read
  * @param frames - The key frames, in their text form
  * @returns What the replay gave
@@ -60,6 +63,7 @@ function runCountedFrame(state: State, input: FrameInput, counters: ReplayCounte
  */
 export function runReplay(chamberData: ChamberData, frames: readonly string[]): ReplayResult {
   const state = new State(new Chamber(chamberData), new Subject(chamberData.subject))
+  const history = new UndoHistory(chamberData)
   const keyFrameHashes: string[] = []
   const counters: ReplayCounters = {
     moves: 0,
@@ -73,7 +77,17 @@ export function runReplay(chamberData: ChamberData, frames: readonly string[]): 
       runCountedFrame(state, EMPTY_FRAME_INPUT, counters)
     }
 
-    runCountedFrame(state, frame.input, counters)
+    if (frame.input === GameKey.UNDO) {
+      history.undo(state)
+    } else if (frame.input === GameKey.REDO) {
+      history.redo(state)
+    } else {
+      const before = takeSnapshot(state)
+
+      runCountedFrame(state, frame.input, counters)
+      history.record(before, state)
+    }
+
     keyFrameHashes.push(getStateHash(state))
   }
 

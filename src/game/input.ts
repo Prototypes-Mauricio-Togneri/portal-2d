@@ -19,6 +19,8 @@ export class Input {
   static readonly KEY_D = 68 // Shoots the orange portal
   static readonly SPACE = 32 // Interact
   static readonly CTRL = 17 // Held to turn without moving
+  static readonly KEY_Z = 90 // Undo
+  static readonly KEY_X = 88 // Redo
 
   /** Keys whose browser default (scrolling, pressing a focused button) is suppressed while enabled */
   private static readonly GAME_KEYS: ReadonlySet<number> = new Set([
@@ -39,6 +41,8 @@ export class Input {
     [Input.KEY_D]: GameKey.ORANGE,
     [Input.SPACE]: GameKey.INTERACT,
     [Input.CTRL]: GameKey.TURN,
+    [Input.KEY_Z]: GameKey.UNDO,
+    [Input.KEY_X]: GameKey.REDO,
   }
 
   enabled = true // When false, keydown is ignored entirely; keyup is still tracked

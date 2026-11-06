@@ -8,9 +8,11 @@ import portalOntoFizzler from '@scripts/fixtures/portal_onto_fizzler.json'
 import portalOntoLaser from '@scripts/fixtures/portal_onto_laser.json'
 
 // Short replays that pin today's odd behaviour, each on a tiny chamber made
-// for it (the JSON files next to this one), outside the catalogue. The replay
-// check runs them; phase F of stage 01 uses each as evidence for the intended
-// change it pins
+// for it (the JSON files next to this one), outside the catalogue, and a few
+// that pin how undo and redo replay. The replay check runs them; phase F of
+// stage 01 uses each odd-behaviour fixture as evidence for the intended change
+// it pins (undo and redo live outside the rules, so the undo fixtures are not
+// among them)
 
 /**
  * How a fixture ends when the rules throw, as live play does when its frame
@@ -25,7 +27,7 @@ export type FixtureFailure = {
  */
 export type Fixture = {
   readonly name: string // Short id, used in the replay check's report
-  readonly behaviour: string // The odd behaviour it pins, in plain words
+  readonly behaviour: string // The behaviour it pins, in plain words
   readonly chamber: ChamberData // The tiny chamber it is played on
   readonly frames: readonly string[] // The key frames, in the replay text form
   readonly expected: ReplayExpectation | FixtureFailure // What replaying the frames gives
@@ -137,6 +139,79 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 2,
       portals: 0,
       finalHash: '68dd897f',
+    },
+  },
+  {
+    name: 'undo_back_to_start',
+    behaviour: 'Undo takes back every step, through a portal crossing and a box carried off a button, to the settled start (the hash of replaying no frames). One more undo changes nothing, and undone moves and portals still count.',
+    chamber: buttonBehindCarriedBox,
+    frames: [
+      '2:interact',
+      '2:^up',
+      '2:blue',
+      '2:right',
+      '2:^down',
+      '2:orange',
+      '2:down',
+      '2:undo',
+      '2:undo',
+      '2:undo',
+      '2:undo',
+      '2:undo',
+      '2:undo',
+      '2:undo',
+      '2:undo',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 2,
+      finalHash: '9e8ac45a',
+    },
+  },
+  {
+    name: 'redo_until_a_new_step',
+    behaviour: 'Redo takes undone steps again until a new step, which forgets the rest: the run ends where the first five steps alone end, and redo then changes nothing. Redo counts no moves or portals.',
+    chamber: buttonBehindCarriedBox,
+    frames: [
+      '2:interact',
+      '2:^up',
+      '2:blue',
+      '2:right',
+      '2:^down',
+      '2:orange',
+      '2:down',
+      '2:undo',
+      '2:undo',
+      '2:undo',
+      '2:undo',
+      '2:undo',
+      '2:redo',
+      '2:redo',
+      '2:^down',
+      '2:redo',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 2,
+      finalHash: '60db926f',
+    },
+  },
+  {
+    name: 'undo_before_a_late_effect',
+    behaviour: 'Undo on the frame after carrying a box off a button, before the button releases, goes back to the settled state before the step, so the door it holds open never closes.',
+    chamber: buttonBehindCarriedBox,
+    frames: [
+      '2:interact',
+      '2:right',
+      '0:undo',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: 'ee0ec821',
     },
   },
   {

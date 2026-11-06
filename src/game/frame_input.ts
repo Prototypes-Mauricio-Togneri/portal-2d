@@ -1,10 +1,11 @@
-import {GameKey} from '@/game/game_key'
+import {GameKey, type HistoryKey} from '@/game/game_key'
 
 /**
  * A game key the rules read as pressed. The turn key is only ever read as
- * held, so it is not one of them.
+ * held, and undo and redo are handled by the level instead, so they are not
+ * among them.
  */
-export type FrameKey = Exclude<GameKey, typeof GameKey.TURN>
+export type FrameKey = Exclude<GameKey, typeof GameKey.TURN | HistoryKey>
 
 /**
  * Every key the rules read as pressed, in a fixed order, so a frame's keys

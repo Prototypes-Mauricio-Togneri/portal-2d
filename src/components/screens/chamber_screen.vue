@@ -175,12 +175,13 @@ function resume(): void {
 
 /**
  * Reads how far the current run has got, for analytics.
- * @returns The run's time and moves so far
+ * @returns The run's time, moves and undos so far
  */
 function runProgress(): RunProgress {
   return {
     hundredths: level?.elapsedHundredths ?? 0,
     moves: level?.moves ?? 0,
+    undos: level?.undos ?? 0,
   }
 }
 

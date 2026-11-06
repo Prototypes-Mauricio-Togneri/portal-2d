@@ -2,7 +2,7 @@ import {Chamber} from '@/game/classic/chamber'
 import type {ChamberData} from '@/game/chamber_data'
 import {createFrameInputReader, type FrameInput} from '@/game/frame_input'
 import {GameEvent} from '@/game/game_event'
-import {GameKey} from '@/game/game_key'
+import {GameKey, type HistoryKey} from '@/game/game_key'
 import {Input} from '@/game/input'
 import {formatReplayFrame, getChamberHash, type ReplayData} from '@/game/replay_data'
 import {Renderer} from '@/game/renderer'
@@ -10,15 +10,17 @@ import {runReplay} from '@/game/classic/replay_runner'
 import {SETTLE_CAP} from '@/game/classic/step_classic'
 import {Sound} from '@/game/sound'
 import {State} from '@/game/classic/state'
-import {getStateHash} from '@/game/classic/state_snapshot'
+import {getStateHash, takeSnapshot} from '@/game/classic/state_snapshot'
 import {Subject} from '@/game/classic/subject'
+import {UndoHistory} from '@/game/classic/undo_history'
 
 /**
  * Plays chambers on a canvas: owns the keyboard input, the renderer and the
  * frame loop. Each frame advances the state with the keys pressed since the
  * previous frame, plays a sound for each thing that happened in it, and
- * redraws only when the state reports a change. Frames with keys are logged,
- * so the run since the last load can be replayed without a browser.
+ * redraws only when the state reports a change. A frame with undo or redo
+ * steps through the run's history instead, silently. Frames with keys are
+ * logged, so the run since the last load can be replayed without a browser.
  */
 export class Level {
   /** Keys that start the clock: moving, turning, both portals and interacting */
@@ -54,6 +56,7 @@ export class Level {
 
   private state: State | null = null // The chamber being played, null before the first load
   private chamberData: ChamberData | null = null // The layout of the chamber being played, null before the first load
+  private history: UndoHistory | null = null // Undo and redo for the run since the last load, null before the first load
   private frameLog: string[] = [] // Every frame with keys since the last load, in the replay text form
   private keyFrameHashes: string[] = [] // Hash of the state right after each logged frame
   private emptyFrames = 0 // Frames without keys since the last logged frame or the load
@@ -61,6 +64,7 @@ export class Level {
   private elapsedSeconds = 0 // Play time since the clock started; only grows while unpaused
   private stepCount = 0 // Tiles the subject has stepped onto since the last load
   private portalCount = 0 // Portals opened on a wall since the last load, misses not counted
+  private undoCount = 0 // Steps taken back with undo since the last load
   private readonly renderer: Renderer // Draws the state
   private readonly input = new Input() // The keyboard, listening from construction until dispose()
   private initialized = false // Whether the frame loop has started
@@ -82,9 +86,9 @@ export class Level {
   }
 
   /**
-   * Builds the chamber from scratch and draws it; loading again resets it
-   * and its clock. The first load starts the frame loop, running its first
-   * frame at once.
+   * Builds the chamber from scratch and draws it; loading again resets it,
+   * its clock, its counters and its undo history. The first load starts the
+   * frame loop, running its first frame at once.
    * @param chamberData - The chamber JSON, which is only read
    */
   load(chamberData: ChamberData): void {
@@ -93,7 +97,9 @@ export class Level {
     this.elapsedSeconds = 0
     this.stepCount = 0
     this.portalCount = 0
+    this.undoCount = 0
     this.chamberData = chamberData
+    this.history = new UndoHistory(chamberData)
     this.frameLog = []
     this.keyFrameHashes = []
     this.emptyFrames = 0
@@ -155,7 +161,7 @@ export class Level {
   /**
    * Tiles the subject has stepped onto since the last load. Turning in place
    * and walking into something solid don't count; walking through a portal
-   * counts as one step.
+   * counts as one step. Undo takes none of them back.
    */
   get moves(): number {
     return this.stepCount
@@ -163,10 +169,18 @@ export class Level {
 
   /**
    * Portals opened on a wall since the last load; a shot that misses doesn't
-   * count, and moving a portal counts again.
+   * count, and moving a portal counts again. Undo takes none of them back.
    */
   get portalsPlaced(): number {
     return this.portalCount
+  }
+
+  /**
+   * Steps taken back with undo since the last load. An undo with nothing to
+   * take back doesn't count, and redo counts nothing.
+   */
+  get undos(): number {
+    return this.undoCount
   }
 
   /**
@@ -248,8 +262,8 @@ export class Level {
   }
 
   /**
-   * Advances the state by one frame, plays the sounds of what happened in it
-   * and forgets the keys pressed during it.
+   * Runs one frame: steps through the history when undo or redo was pressed,
+   * otherwise advances the rules. Then forgets the keys pressed during it.
    * @param delta - Seconds since the previous frame
    * @param input - The keyboard
    * @returns Whether the state changed
@@ -264,27 +278,13 @@ export class Level {
       this.clockStarted = true
     }
 
-    if (this.state !== null) {
-      const subject = this.state.subject
-      const startX = subject.x
-      const startY = subject.y
-      // The rules read only this, so replaying the logged frames gives them exactly what they saw live
-      const frameInput = input.frameInput
+    if ((this.state !== null) && (this.history !== null)) {
+      const historyKey = Level.getHistoryKey(input)
 
-      updated = this.state.update(delta, createFrameInputReader(frameInput))
-      this.logFrame(this.state, frameInput)
-
-      // Only the arrow keys move the subject, so a new tile is one step
-      if ((subject.x !== startX) || (subject.y !== startY)) {
-        this.stepCount++
-      }
-
-      for (const event of this.state.events) {
-        Level.SOUNDS[event].play()
-
-        if ((event === GameEvent.BLUE_PORTAL_OPENED) || (event === GameEvent.ORANGE_PORTAL_OPENED)) {
-          this.portalCount++
-        }
+      if (historyKey !== null) {
+        updated = this.updateHistory(this.state, this.history, historyKey)
+      } else {
+        updated = this.updateRules(delta, this.state, this.history, input)
       }
     }
 
@@ -294,13 +294,75 @@ export class Level {
   }
 
   /**
+   * Advances the rules by one frame, records the step it took in the history
+   * and plays the sounds of what happened in it.
+   * @param delta - Seconds since the previous frame
+   * @param state - The chamber being played
+   * @param history - The run's undo and redo
+   * @param input - The keyboard
+   * @returns Whether the state changed
+   */
+  private updateRules(delta: number, state: State, history: UndoHistory, input: Input): boolean {
+    const subject = state.subject
+    const startX = subject.x
+    const startY = subject.y
+    // The rules read only this, so replaying the logged frames gives them exactly what they saw live
+    const frameInput = input.frameInput
+    // Only a frame with keys can take a step, so the others skip the snapshot
+    const before = (frameInput.keys.length > 0) ? takeSnapshot(state) : null
+
+    const updated = state.update(delta, createFrameInputReader(frameInput))
+
+    if (before !== null) {
+      history.record(before, state)
+    }
+
+    this.logFrame(state, frameInput)
+
+    // Only the arrow keys move the subject, so a new tile is one step
+    if ((subject.x !== startX) || (subject.y !== startY)) {
+      this.stepCount++
+    }
+
+    for (const event of state.events) {
+      Level.SOUNDS[event].play()
+
+      if ((event === GameEvent.BLUE_PORTAL_OPENED) || (event === GameEvent.ORANGE_PORTAL_OPENED)) {
+        this.portalCount++
+      }
+    }
+
+    return updated
+  }
+
+  /**
+   * Undoes or redoes a step, silently, in place of the rules' frame; any
+   * other key pressed in the same frame is dropped.
+   * @param state - The chamber being played
+   * @param history - The run's undo and redo
+   * @param key - Undo or redo
+   * @returns Whether a step was undone or redone
+   */
+  private updateHistory(state: State, history: UndoHistory, key: HistoryKey): boolean {
+    const restored = (key === GameKey.UNDO) ? history.undo(state) : history.redo(state)
+
+    if (restored && (key === GameKey.UNDO)) {
+      this.undoCount++
+    }
+
+    this.logFrame(state, key)
+
+    return restored
+  }
+
+  /**
    * Logs a frame that had keys, with the empty frames before it, and the
    * state it led to; frames without keys are only counted.
    * @param state - The state after the frame
-   * @param input - What the rules read in the frame
+   * @param input - What the rules read in the frame, or the undo or redo pressed instead
    */
-  private logFrame(state: State, input: FrameInput): void {
-    if (input.keys.length === 0) {
+  private logFrame(state: State, input: FrameInput | HistoryKey): void {
+    if ((typeof input !== 'string') && (input.keys.length === 0)) {
       this.emptyFrames++
 
       return
@@ -313,6 +375,23 @@ export class Level {
     }))
     this.keyFrameHashes.push(getStateHash(state))
     this.emptyFrames = 0
+  }
+
+  /**
+   * Which history key a frame pressed; undo wins when both were.
+   * @param input - The keyboard
+   * @returns Undo, redo, or null when neither was pressed
+   */
+  private static getHistoryKey(input: Input): HistoryKey | null {
+    if (input.isPressed(GameKey.UNDO)) {
+      return GameKey.UNDO
+    }
+
+    if (input.isPressed(GameKey.REDO)) {
+      return GameKey.REDO
+    }
+
+    return null
   }
 
   /**

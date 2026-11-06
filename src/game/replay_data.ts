@@ -1,13 +1,16 @@
 import type {ChamberData} from '@/game/chamber_data'
 import {FRAME_KEYS, type FrameInput, type FrameKey} from '@/game/frame_input'
+import {GameKey, type HistoryKey} from '@/game/game_key'
 import {formatHash, hashText} from '@/game/text_hash'
 
 /**
- * One frame in which keys were pressed, with the empty frames that ran before it.
+ * One frame in which keys were pressed, with the empty frames that ran before
+ * it. In a frame with undo or redo the rules don't run: the level steps
+ * through its history instead.
  */
 export type ReplayFrame = {
   readonly gap: number // Frames without a key pressed since the previous key frame, or since the load
-  readonly input: FrameInput // What the rules read in this frame
+  readonly input: FrameInput | HistoryKey // What the rules read in this frame, or the undo or redo pressed instead
 }
 
 /**
@@ -24,7 +27,8 @@ export type ReplayExpectation = {
  * A run recorded frame by frame on today's rules, replayable without a
  * browser. Each frame is written as its gap, a colon and its keys joined by
  * plus signs, with a caret before the keys when the turn key is held: "2:up",
- * "0:up+blue", "1:^left".
+ * "0:up+blue", "1:^left". An undo or redo frame names only that key: "3:undo",
+ * "0:redo".
  */
 export type ReplayData = {
   readonly format: 1 // Version of this layout
@@ -48,9 +52,13 @@ const FRAME_PATTERN = /^(\d+):(\^?)([a-z]+(?:\+[a-z]+)*)$/
 /**
  * Writes a frame in its text form.
  * @param frame - A key frame
- * @returns The frame as text, such as "2:up" or "0:^left"
+ * @returns The frame as text, such as "2:up", "0:^left" or "3:undo"
  */
 export function formatReplayFrame(frame: ReplayFrame): string {
+  if (typeof frame.input === 'string') {
+    return `${frame.gap}:${frame.input}`
+  }
+
   const turn = frame.input.turnHeld ? '^' : ''
 
   return `${frame.gap}:${turn}${frame.input.keys.join('+')}`
@@ -61,7 +69,8 @@ export function formatReplayFrame(frame: ReplayFrame): string {
  * returned in the fixed order.
  * @param text - The frame as text
  * @returns The frame
- * @throws Error when the text is not a frame, names an unknown key or names a key twice
+ * @throws Error when the text is not a frame, names an unknown key or names a
+ * key twice, or pairs undo or redo with another key or the turn key
  */
 export function parseReplayFrame(text: string): ReplayFrame {
   const match = FRAME_PATTERN.exec(text)
@@ -73,12 +82,24 @@ export function parseReplayFrame(text: string): ReplayFrame {
   }
 
   const gap = Number(gapText)
-  const names = keysText.split('+')
-  const keys: FrameKey[] = FRAME_KEYS.filter((key) => names.includes(key))
 
   if (!Number.isSafeInteger(gap)) {
     throw new Error(`Replay frame gap too large: "${text}"`)
   }
+
+  if ((keysText === GameKey.UNDO) || (keysText === GameKey.REDO)) {
+    if (match[2] === '^') {
+      throw new Error(`Replay frame with the turn key held on ${keysText}: "${text}"`)
+    }
+
+    return {
+      gap: gap,
+      input: keysText,
+    }
+  }
+
+  const names = keysText.split('+')
+  const keys: FrameKey[] = FRAME_KEYS.filter((key) => names.includes(key))
 
   if (keys.length !== names.length) {
     throw new Error(`Replay frame with an unknown or repeated key: "${text}"`)

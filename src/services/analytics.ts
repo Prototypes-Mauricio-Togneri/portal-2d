@@ -38,7 +38,8 @@ export type TrackedSetting = 'sound' | 'music'
 /** How far a run got when it ended. */
 export type RunProgress = {
   hundredths: number // The run's time as shown to the player, in hundredths of a second
-  moves: number // Tiles the subject stepped onto
+  moves: number // Tiles the subject stepped onto, undone ones included
+  undos: number // Steps taken back with undo
 }
 
 // Only what Analytics needs: it fetches the measurement ID from Firebase on start
@@ -108,12 +109,13 @@ function runParams(chamber: ChamberEntry, attempt: number): EventParams {
 /**
  * Describes how far a run got in an event's details.
  * @param progress - The run
- * @returns Its time in milliseconds and its moves
+ * @returns Its time in milliseconds, its moves and its undos
  */
 function progressParams(progress: RunProgress): EventParams {
   return {
     time_ms: progress.hundredths * 10,
     moves: progress.moves,
+    undos: progress.undos,
   }
 }
 
@@ -175,7 +177,7 @@ export function trackChamberAbandon(chamber: ChamberEntry, attempt: number, prog
  * @param chamber - The chamber
  * @param attempt - The run's attempt number at the chamber
  * @param progress - The finished run
- * @param portals - Portals opened on a wall during the run, misses not counted
+ * @param portals - Portals opened on a wall during the run, misses not counted, undone ones included
  * @param firstCompletion - Whether the chamber had not been completed before (since progress was last reset)
  * @param newBest - Whether the run set the chamber's best time, which a first completion always does
  */

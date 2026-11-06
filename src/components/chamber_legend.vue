@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * The controls legend shown beside the chamber: the same four controls as the
- * original game, plus Escape for the pause dialog, each with what it does.
+ * original game, then undo and redo, and Escape for the pause dialog, each
+ * with what it does.
  */
 </script>
 
@@ -40,6 +41,20 @@
         <dd class="legend-action">
           <span class="action-name">Interact</span>
           <span class="action-detail">Use switches, pick up and drop boxes</span>
+        </dd>
+      </div>
+      <div class="legend-row">
+        <dt><kbd class="keycap">Z</kbd></dt>
+        <dd class="legend-action">
+          <span class="action-name">Undo</span>
+          <span class="action-detail">Take back the last step</span>
+        </dd>
+      </div>
+      <div class="legend-row">
+        <dt><kbd class="keycap">X</kbd></dt>
+        <dd class="legend-action">
+          <span class="action-name">Redo</span>
+          <span class="action-detail">Bring back a step you undid</span>
         </dd>
       </div>
       <div class="legend-row">

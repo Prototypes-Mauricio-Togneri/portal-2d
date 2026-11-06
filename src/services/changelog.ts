@@ -11,6 +11,11 @@ export type ChangelogRelease = {
 
 export const CHANGELOG: ChangelogRelease[] = [
   {
+    version: '0.0.3',
+    date: '2026-11-06',
+    changes: ['Undo and redo every step (Z and X)'],
+  },
+  {
     version: '0.0.2',
     date: '2026-11-06',
     changes: ['Chambers are sharp on high-resolution screens'],
