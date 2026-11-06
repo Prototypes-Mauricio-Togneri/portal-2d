@@ -1,0 +1,185 @@
+# Stage 01 — Engine v2
+
+Status: Draft
+Last revised: 2026-11-06
+
+## Goal
+
+The rules become a pure, savable step: *state + one action → next state + events*. Players get unlimited undo and redo, keys they can remap, gamepad support, and rules without the inherited bugs. The author gets recorded solutions that are replayed by a local command on every change, element types described by data (a new mechanic is mostly one file), and a chamber format with a version number. Today's engine is kept only as a reference to prove v2 behaves the same, then deleted.
+
+The stage ships in slices that are each useful on their own: A and B (no player change, replays exist), C (undo), D (input), then E to G (v2 replaces the old rules).
+
+## Depends on
+
+- **Stage 00**
+  - Records keyed by permanent chamber id. Replays name chambers by permanent id.
+  - The local check command. This stage adds the replay check to it.
+  - The analytics events. Phase C adds an undo count next to them.
+  - The high-DPI canvas fix. It changes the renderer, so it must land before the renderer is ported in E9, and the pixel comparison in E9 must run at a fixed pixel ratio.
+
+## Decisions made
+
+- 2026-11-06 — Remappable keys and gamepad belong here, in the input rewrite (README decision 2).
+- 2026-11-06 — Today's rules are a **reference only**. Every recorded solution runs through both engines, and the differences must match the written list of intended changes. Then the old engine is deleted and all chambers run on v2 with the fixes (README decision 3).
+- 2026-11-06 — All checks are local commands run on demand. No cloud CI (README decision 6).
+- 2026-11-06 — The inherited rule bugs are fixed here, not in stage 00, because rules stay frozen until v2 (README decision 1).
+
+## Open decisions
+
+| # | Question | Options and cost | Recommendation |
+|---|---|---|---|
+| 1 | How do engine scripts run under Node? | **tsx**: one small dev dependency; reads `paths` from a tsconfig, handles imports without extensions; can't import `.mp3` (fine once the rules import no sounds). **vite-node**: reuses `vite.config.ts` including asset imports; heavier, and its future is tied to Vitest. **Vite's own module runner** via a small loader script: no new dependency, more code to keep. Plain Node 24 can't do it: it doesn't resolve `@/` or imports without extensions | tsx, run with a dedicated `tsconfig.scripts.json` |
+| 2 | Does undo land on today's engine or only on v2? | **Today's engine**, by restoring snapshots from phase B: players get undo months earlier; the restore code is deleted with the old engine. **v2 only**: no throwaway code, but the biggest gain waits for the longest phase | Today's engine |
+| 3 | How are moves counted once undo exists (README open decision 1)? | **All steps taken**, undone ones included: keeps the meaning of `moves` in analytics history. **Net steps** on the final path: matches solver par, but changes what `moves` means mid-history. **Both**: more fields | Keep `moves` and `portals` counting everything, undone included. Add an `undos` count. Stage 04 picks the medal basis with real data |
+| 4 | What is "Reset chamber" once undo exists? | **Stays a full restart**: new run, clock and counters reset, `chamber_restart` sent. **Becomes "rewind to start"**: redo still possible and the clock keeps running, but the run's meaning blurs for best times and analytics | Reset stays a full restart. Undoing all the way back is the rewind, and the clock keeps running |
+| 5 | Default undo and redo keys? | Z / X (next to the portal keys); Z / Y; Backspace / Shift+Backspace; also accept Ctrl+Z (Ctrl is already the turn key) | Z undo, X redo. Remappable after phase D |
+| 6 | Bind keys by physical position (`code`) or printed character (`key`)? | **`code`**: the standard for games and works on every layout; labels shown through `navigator.keyboard.getLayoutMap()` (Chromium) with a fallback. AZERTY players' default portal key moves (today the A *label* works). **`key`**: follows labels like today, but breaks on non-Latin layouts and with Shift or Caps Lock | `code`, with layout labels shown wherever keys appear |
+| 7 | How fast does live play apply queued presses? | **Next press only once the state has settled** (at most a few frames, imperceptible): live play then matches the step function exactly. **One press per frame**: closer to today's timing, but live play and the step function can differ | Apply the next press only once settled |
+| 8 | How does the gamepad reach the game? | **App-wide bridge** turning the pad into the same key actions (game keys in a chamber, arrows, Enter and Escape in menus and dialogs): menus and dialogs work for free, one service. **Game input only**: chambers only; menus still need keyboard or mouse | App-wide bridge in `src/services/` |
+| 9 | How is a solution saved in development? | **Dev-only "Download solution" button** in the completion dialog: one click, file named after the chamber. **Console output** to copy by hand. **Dev-server endpoint** that writes the file: no clicks, but overwrites without asking | Dev-only download button |
+| 10 | Where does v2 live? | **Move today's rules into `src/game/classic/` in phase A and build v2 in `src/game/rules/`**: v2 gets its final paths, and deleting classic is one folder. **Build v2 in `src/game/v2/`**: no early move, but a rename after the switch | Move classic early |
+| 11 | What happens when you come out of a portal onto a tile you couldn't walk onto (closed door, raised barrier, open ditch, active laser, closed exit, wrong-way arrow)? | **Refuse the crossing** (error sound), like walking into it: matches the rest of the game, which has no death. **Allow it and apply effects**: there is nothing to apply, because the game has no falling or dying | Refuse the crossing |
+| 12 | What happens when a button linked to a box is released? | **Nothing**: box links act only on press (the box goes back to its start). **Reject the chamber at load**: stricter, but the editor (stage 05) then needs the same rule | Nothing. The validator warns |
+| 13 | Fizzler rule without the "inside a fizzler" flag | **At the end of every step, if the subject is in an active field: close both portals (event only on entering or when the field turns on) and destroy a carried box.** No flag in the state. **Keep the flag**, with the quirk fixed (clear it on any tile without an *active* field) | End-of-step rule, no flag (smaller state for the solver) |
+| 14 | Should chamber analytics events carry a rules version? | **Add `rules_version`** to chamber events at the switch: stage 04 can separate data from before and after v2. **Don't**: date ranges have to do instead | Add it (a new parameter, not a rename) |
+| 15 | What is outside the chamber's edge? | **Treat it as wall**, and the validator requires enclosed chambers. **Keep today's behaviour** (no edge check; only the walls in the data keep you in) | Treat as wall and validate |
+
+## Steps
+
+### Phase A — An engine that runs without a browser
+
+No behaviour changes. Verify by playing every chamber in `npm run dev` and hearing each sound at the right moment: blue and orange portal, error (missed shot, or Space on a switch while carrying), box pick-up, fizzler, portal crossing, door and exit open and close, button press and release, switch.
+
+- [ ] **A1. Move today's rules into `src/game/classic/`** (open decision 10). Move `state.ts`, `chamber.ts`, `gateway.ts`, `portal.ts`, `subject.ts`, `wall.ts`, `floor.ts`, `laser_direction.ts` and every element file (`arrow`, `barrier`, `box`, `button`, `ditch`, `door`, `exit`, `fizzler`, `laser`, `switch`). `chamber_data.ts` and `direction.ts` stay shared; `level.ts`, `renderer.ts`, `input.ts`, `sound.ts`, `music.ts`, `audio_sources.ts` and `chamber_preview.ts` stay as the browser side. Update imports only. Verify: `npm run lint:fix`, `npm run build`, play one chamber.
+- [ ] **A2. Key names out of `Input`.** `state.ts` imports the `Input` class only for its key constants, which pulls DOM types into the rules. Add a `GameKey` string union with a const object (`up`, `down`, `left`, `right`, `blue`, `orange`, `interact`, `turn`) in its own file. `Input` maps `keyCode` to `GameKey`, and the rules' input reader takes `GameKey`. `Level`'s clock-start list uses the same names. Verify: build; play, including Ctrl-turn and the arrow tiles.
+- [ ] **A3. Rules emit events instead of playing sounds.** Add a `GameEvent` union naming each thing that happens today (portal opened blue or orange, refused, box picked up, fizzled, crossed, door opened or closed, exit opened or closed, button pressed or released, switch used). `State` collects them during `update`, and elements emit through the chamber (it already holds the gateway; give it an emit function too). Keep every emit at the exact call site and order of today's `Sound.*.play()` calls in `classic/state.ts`, `button.ts`, `switch.ts`, `door.ts` and `exit.ts`. `Level` plays the matching `Sound` for each event after the frame's update. Verify: the sound checklist above.
+- [ ] **A4. Counters move to `Level`.** `Level` counts portals placed from the portal-opened events (today `State.placedPortals`), so the rules' state holds no run statistics. Moves are already counted in `Level`. Verify: the analytics payloads in dev (log them) match today's for a known run.
+- [ ] **A5. Lint guard for the rules.** In `eslint.config.js`, for `src/game/classic/**` (later `src/game/rules/**`): forbid importing `@/game/sound`, `@/game/music`, `@/game/audio_sources`, `@/game/renderer`, `@/game/input` and `@/game/level`, and forbid the globals `window`, `document`, `Audio`, `requestAnimationFrame` and `performance`. Verify: `npm run lint` passes; adding a test import of `sound` in a rules file fails it (then remove it).
+- [ ] **A6. Node runner and a scripts project** (open decision 1). Add the runner as a dev dependency. Add `tsconfig.scripts.json` (Node types, no DOM lib, `paths` for `@/*`, `strict`, `noUncheckedIndexedAccess`, include `scripts/**/*.ts`) and reference it from `tsconfig.json`, so `vue-tsc --build` type-checks scripts and the rules they import. A rules file that touches the DOM then fails the build. Give `scripts/**/*.ts` Node globals in the lint config. Verify: `npm run build` and `npm run lint` pass.
+- [ ] **A7. Smoke script.** Add `scripts/smoke_engine.ts`: for each chamber JSON, build the classic state, run 100 empty frames and print OK. Add an npm script for it. Verify: it passes under Node.
+- [ ] **A8. Audio players created lazily: only if needed.** Once the rules import no sounds, nothing on the Node path creates audio players, so this is optional. If it's ever needed, `useAudioFile` must remember each downloaded copy by address so that players created later still use it (the loading screen's handover in `asset_preloader.ts`). Verify: no extra audio requests in the Network tab after loading.
+- [ ] **A9. Docs.** In AGENTS.md: the layout (`src/game/classic/`, `scripts/`), the game/Vue boundary (rules emit events and `Level` plays the sounds), the third TypeScript project, and the new lint guard. Verify: re-read against the code.
+
+### Phase B — Today's rules as a step function, and replays
+
+- [ ] **B1. State snapshot and hash.** In `src/game/classic/`, a function reading every mutable field into a plain object, in a fixed order: subject x, y, facing and carried box (as a box index); each portal's tile and side; each box's x, y; each button's pressed flag; every linkable element's `blocked` flag (barriers, ditches, doors, fizzlers, lasers, exit); the inside-a-fizzler flag; the completed flag. Add a stable text form and a 32-bit FNV-1a hash of it. Verify: the smoke script prints each chamber's start hash; two runs print the same values.
+- [ ] **B2. The settle step.** `stepClassic(state, frameInput)`: run one frame with the input, then run empty frames until the snapshot stops changing (a cap of 8 frames, then throw). The frame input is the set of keys pressed that frame plus whether the turn key is held. Compare snapshots, not the frame's "changed" result, which misses a fizzler firing on a later frame. Verify: the random walk in B9.
+- [ ] **B3. Frame log in `Level`.** For every frame with at least one key pressed, record the empty frames since the last recorded frame (capped at the settle cap, beyond which the state is settled), the keys pressed and whether the turn key is held. Today's input can press two keys in one frame, and a key can come a frame before the previous one settled, so recording whole frames with their gaps is what reproduces live play exactly. Expose it as a read-only `replay` on `Level`. Verify: log a short run's replay in dev.
+- [ ] **B4. Replay format.** A `ReplayData` type in `src/game/`: `format: 1`, `ruleset: 'classic'`, `chamberHash` (hash of the chamber JSON text, so an edited chamber invalidates its solution), `frames` (compact strings such as `"2:up"` or `"0:up+blue"`, with `^` marking the turn key held), and `expected` (completed, moves, portals, final hash). The screen adds the permanent `chamberId` when saving, because the game can't import the catalogue. Verify: type-checks; the file in B6 parses into it without a cast.
+- [ ] **B5. Replay runner.** Pure `runReplay(chamberData, replay)`: runs the frames with their gaps through the classic rules (gap empty frames, then the key frame), then settles, and returns completed, moves, portals, the final hash and the hash after each key frame. Verify: a replay logged in B3 reproduces the live run's final hash (compare it with a hash logged from the live state).
+- [ ] **B6. Saving a solution in development** (open decision 9). Dev builds (`import.meta.env.DEV`) get a "Download solution" button in `completion_dialog.vue` that saves `chamber_N.solution.json` (the chamber's file name), including the permanent id. The UI change uses the `frontend-design` skill even though it is dev only. Verify: the button is missing from `npm run build` output (grep `dist/`); the downloaded file replays to completion.
+- [ ] **B7. Record a solution for every chamber.** Commit them as `src/chambers/chamber_N.solution.json` next to each chamber (not imported by the app, so not bundled). Verify: B8 passes.
+- [ ] **B8. Local replay check.** `scripts/check_replays.ts` plus an npm script: for every chamber in the catalogue, load its solution, check the chamber hash, replay, and compare with `expected`. Print one line per chamber and exit non-zero on any failure. Add it to stage 00's local check command. Verify: passes; editing one step of a solution makes it fail.
+- [ ] **B9. Random walk check.** `scripts/random_walk.ts`: seeded random frame inputs (100,000 per chamber) through `stepClassic`. It must never hit the settle cap or throw, and it reports steps per second as the baseline for stage 02. Verify: passes; the numbers go into "Notes for later stages".
+- [ ] **B10. Behaviour fixtures.** Record short replays that pin today's odd behaviour, each with its expected final hash: coming out of a portal onto an open ditch, onto an active laser and onto a closed exit (which completes the chamber); a fizzler firing a frame late after a portal; a button releasing behind a carried box. The box-button crash needs a tiny fixture chamber, because no real chamber triggers it. Keep fixtures in `scripts/fixtures/`, outside the catalogue. The replay check runs them too. Verify: they pass on classic. Phase F uses them as evidence for each intended change.
+- [ ] **B11. Docs.** In AGENTS.md: the solution files (what they are, when to re-record), the replay check in the local checks, and the "No test suite" rule now naming replays as part of the safety net.
+
+### Phase C — Undo and redo (on today's engine, open decision 2)
+
+- [ ] **C1. Restore from a snapshot.** Write every field from B1 back into the classic state; the carried box is restored by index. Verify: in the random walk, every 1,000 steps take a snapshot, run 50 more steps, restore, and check the hash equals the snapshot's.
+- [ ] **C2. History in `Level`.** Before each key frame that changes the snapshot, push the snapshot onto an undo stack; a new change clears the redo stack. Inputs that change nothing (Ctrl alone, walking into a wall already facing it) add no entry. Verify: in dev, undo through a portal crossing, a box carry, a button press and release, a fizzler, a switch and a door.
+- [ ] **C3. Undo and redo keys** (open decision 5). `Input` maps them to undo and redo actions; `Level` restores the previous or next snapshot. Undo plays no sound, doesn't start the clock, and does nothing while paused or after completion. Holding the key repeats it. Verify: manual play; auto-repeat walks back smoothly.
+- [ ] **C4. Counters with undo** (open decision 3). `moves` and `portals` keep counting everything, undone included; `Level` adds `undos`. Analytics adds an `undos` parameter to `chamber_restart`, `chamber_quit` and `chamber_complete`. Update the analytics paragraph in AGENTS.md. Verify: dev log of the payloads.
+- [ ] **C5. Undo in replays.** The frame log records undo and redo as frames of their own; `runReplay` restores snapshots for them. Verify: a fixture replay that uses undo passes.
+- [ ] **C6. Reset chamber** (open decision 4). Keep it a full restart, behind the existing confirmation; it clears both stacks. Verify: manual.
+- [ ] **C7. Legend and keyboard rules.** `chamber_legend.vue` shows the undo and redo keys (`frontend-design` skill). AGENTS.md: keyboard ownership (the game's input also owns the undo and redo keys), and the `Level` API (undo, redo, `undos`). Verify: visual check; lint and build pass.
+- [ ] **C8. Changelog.** A release in `src/services/changelog.ts` ("Undo and redo every step") and a matching `package.json` version. Verify: the entry shows under About.
+
+### Phase D — Input rewrite
+
+- [ ] **D1. Actions and bindings.** In `src/game/`: an `InputAction` union (up, down, left, right, turn (held), blue, orange, interact, undo, redo) and an `InputBindings` type (action → list of `KeyboardEvent.code`), with defaults that match today's keys (open decision 6). `Input` takes bindings and maps `event.code` to actions. Verify: play with the defaults.
+- [ ] **D2. An ordered press queue.** Replace the per-frame key set with a queue of presses in arrival order, each recording whether the turn key was held at that moment. Auto-repeat is kept (holding an arrow walks), but a repeat is dropped while an earlier press of the same key is still waiting. `Level` takes the next press only once the state has settled (open decision 7), so two keys in one frame both count, in the order pressed. This replaces today's single arrow per frame, the A-beats-D rule and move-then-shoot; note it as an intended change for phase F. Verify: press an arrow and A at the same moment in both orders and get both orders' results; replays still pass (they replay frames, not the queue).
+- [ ] **D3. Browser defaults.** Call `preventDefault` only while playing, and only for bound keys that have a browser default (arrows, Space, and any bound key that scrolls or activates). Never for Escape, Tab, F-keys, or combinations with Alt or Meta. Verify: Tab and Escape still work; the page never scrolls during play.
+- [ ] **D4. Key labels.** A helper that turns a `code` into the label printed on the player's keyboard, using `navigator.keyboard.getLayoutMap()` where it exists and a built-in US table otherwise. Verify: in Chromium with an AZERTY layout, the legend shows the AZERTY letters.
+- [ ] **D5. Saved bindings.** A service (next to the settings service, or inside it) stores `portal-2d.key-bindings` as JSON, with `try`/`catch` per AGENTS.md. It validates on read: an unknown action or code, or a duplicate, falls back to that action's default. It has a reset to defaults and passes the bindings into `Level` through `chamber_screen.vue` (the game can't read `localStorage`). Verify: change a binding, reload, and it's kept; corrupt the stored JSON by hand and the defaults return.
+- [ ] **D6. Controls settings UI.** Under Settings, a "Controls" row that opens a third column listing each action with its key caps. Enter or a click starts rebinding and captures the next key; Escape cancels; Escape and Tab can't be bound; a key already in use is swapped. A final "Reset controls" row. Use the `frontend-design` skill and follow the home-menu keyboard rules in AGENTS.md (Right or Enter steps in, Left or Escape steps back, one Tab stop per column). Verify: the whole flow by keyboard only, then by mouse.
+- [ ] **D7. Legend from bindings.** `chamber_legend.vue` shows the bound keys' labels instead of fixed caps. Verify: rebind A to Q and the legend says Q.
+- [ ] **D8. Gamepad bridge** (open decision 8). A service polls `navigator.getGamepads()` on animation frames, with a dead zone for the stick and repeat for held directions, and turns the standard mapping into actions. In a chamber: D-pad or left stick move, X blue portal, B orange portal, A interact, LB held turn, Y undo, RB redo, Start pause (Escape). In menus and dialogs: D-pad moves, A is Enter, B is Escape. It knows whether a chamber is being played from the route. Verify: a full chamber and the menus with a pad only; nothing happens with no pad connected.
+- [ ] **D9. Docs and changelog.** AGENTS.md: keyboard ownership (bindings, queue, browser defaults, gamepad), persistence (the bindings key), and the Settings column. A changelog release ("Change the controls", "Play with a gamepad"). Verify: re-read against the code.
+
+### Phase E — v2 rules
+
+Write the rules down first, build the comparison tool, then port one element at a time.
+
+- [ ] **E1. Write the v2 rules.** In `docs/elements.md`, a "Rules" section: the order inside a step (turn or move or portal crossing → enterability → carried box follows → landing effects → buttons → link effects, repeated until nothing changes, with a cap → fizzler rule → exit check), what each element does, and the defined behaviour for every inherited bug (open decisions 11–13, 15) and for a laser or ditch turning on under the subject (recommended: nothing happens, you can walk off). Verify: read it against `src/game/classic/state.ts` line by line; every difference is either a listed fix or a mistake.
+- [ ] **E2. Comparison tool.** `scripts/compare_engines.ts`: runs the same inputs through classic (`stepClassic`) and v2, and after each input compares a shared view (subject, portals, boxes, buttons, open flags, completed). Each intended difference is listed in code with a short id, a description and a check that recognises its situation (for example, "classic crossed into a tile that can't be entered"). Any other difference fails with the step and both states. Verify: run it against classic on both sides; it passes trivially.
+- [ ] **E3. Chamber format v2 types.** In `src/game/chamber_data.ts` (or a v2 file next to it): `version: number` (2); optional lists, where a missing one means empty; wall entries with an optional `takesPortals: boolean` (default true); link groups (a trigger's `links` may name a group defined once in the chamber); an optional `par` block (moves, portals), left empty here and filled by stage 02, so adding par later needs no version bump. JSON imports widen string literals to `string`, so keep **one optional list per element type**, not a single list told apart by a `type` string, which would need a cast. If practical, derive the type from the element registry (E5) with a mapped type, so a new element file extends it. Verify: a v2 JSON fixture imports and type-checks without a cast.
+- [ ] **E4. Upgrade and validate.** A pure upgrader from v1 (no `version`) to v2, chained so that v2 → v3 can follow later. A pure validator, usable at load time in the browser as well as in scripts (stage 05 validates shared links with it), returning readable errors with tile positions: unknown or duplicate link ids, links to elements that can't be linked, invalid overlaps on a tile, subject or exit inside a wall, out of bounds, a chamber not enclosed (open decision 15), a box linked to a button (warning, open decision 12). Add a `scripts/check_chambers.ts` command and include it in the local checks. The chamber files stay v1 until G, because classic still reads them; v2 upgrades them at load. Verify: all three chambers upgrade and validate; a broken fixture reports each error.
+- [ ] **E5. Element definitions and registry.** In `src/game/rules/`: an element definition type, one file per element type, and a registry. A definition says: its list key in the JSON, draw layer, whether it can be linked, its default open state, whether it blocks walking or shots (by open state), whether it takes portals, optional hooks (on enter, on interact, pressed-by, on link open or close), whether entering or leaving its tile can change state (stage 02's solver stops its walking shortcut on those tiles), its event names, and how it is drawn. Shape the hook list and the step order (E1) so stage 03's six needs fit later without reshaping the step (see 03's "Depends on": movement continuation, after-step update, derived state, solid movable objects, per-element counters, link actions beyond open/close); they don't have to be implemented now. Verify: build; the registry lists every element of today's game.
+- [ ] **E6. Compiled chamber.** The static part, built once per load: grid size, per-cell indexes (a typed array per lookup), resolved links and groups, wall portal flags, and each box's start tile. Every lookup is O(1). Verify: lookups agree with classic's `get*` methods for every cell of every chamber (a script).
+- [ ] **E7. Compact immutable state.** Subject x, y, facing and carried box index; two portals (wall cell and side, or none); box positions; button pressed bits; open bits per linkable element; completed. No counters and no fizzler flag (open decision 13). Add a key for maps (a string or byte form) and a hash. Verify: print each chamber's state size; stage 02 needs it to stay in the hundreds of bytes.
+- [ ] **E8. Actions and the pure step.** `step(chamber, state, action) → {state, events}`. Actions: move up, down, left or right; turn to each direction (today's Ctrl plus arrow); blue; orange; interact. Undo and redo are not actions, they live in `Level`. Implement the order from E1 and the shot trace with today's blocking rules and portal-side rules. Verify: build. Behaviour is checked from E9 on, with the comparison tool.
+- [ ] **E9. Port elements one at a time.** Order: walls and floor, portals and the shot, barrier, door, exit, ditch, laser, arrow, box, button, switch, fizzler. After each one, run the comparison tool on random walks limited to chambers or fixtures that use only the elements ported so far, and on the recorded solutions once everything is in. Verify: the comparison tool passes, apart from listed differences.
+- [ ] **E10. Renderer for v2.** The renderer draws from the element definitions by layer, with today's exact drawing code, colours and sizes (the visuals stay frozen until stage 04). A dev-only page renders every state along every recorded solution with both renderers at a fixed pixel ratio and compares pixels (`getImageData`), reporting the first mismatch. Verify: zero mismatches.
+- [ ] **E11. `Level` runs v2 behind a dev flag.** In dev only (`?rules=v2`), the chamber screen plays v2: input presses become actions, each fully resolved by `step` (no settling), undo and redo become a stack of immutable states, and events drive sounds, counters and completion. Verify: play every chamber with undo, remapped keys and a gamepad.
+- [ ] **E12. Measure.** Steps per second under Node on random walks and state size per chamber, compared with the B9 baseline. Verify: numbers written into "Notes for later stages".
+
+### Phase F — Prove v2 matches the old rules
+
+- [ ] **F1. Recorded solutions and fixtures through both engines.** Every solution and fixture through the comparison tool. Each fixture from B10 must hit exactly the intended difference it was made for. Verify: passes.
+- [ ] **F2. Long random comparison.** Seeded random inputs, 100,000 per chamber, through both engines. Any difference not on the list fails. Verify: passes with three different seeds.
+- [ ] **F3. List of intended changes.** Write the final list into `docs/elements.md` ("Changes from the original rules"): portal crossing onto a tile you can't enter is refused; landing on a closed exit no longer completes; a box-linked button release does nothing; the fizzler rule; no one-frame delays; several keys in one frame all count, in order; outside the edge is wall. Verify: every id in the comparison tool appears there, and nothing else.
+- [ ] **F4. Re-record solutions in the v2 format.** `format: 2`, `ruleset: 'v2'`, `actions` (a press list, no gaps), `expected`. Re-record by converting the classic frame logs, and replay by hand only where a fix changes the route. Record moves and portals per chamber for stage 02's par. Verify: the replay check passes on v2 for every chamber.
+
+### Phase G — Switch over
+
+- [ ] **G1. Screens use v2.** `chamber_screen.vue`, and `chamber_preview.ts` for the home menu's map, run v2; remove the dev flag. Verify: play every chamber; the map previews match.
+- [ ] **G2. Chamber files to v2.** Run the upgrader over the three chamber files and commit the output; `ChamberData` becomes the v2 type, and the catalogue's JSON imports still type-check without a cast. Keep the upgrader for future versions and shared chambers (stage 05). Verify: build; check_chambers passes.
+- [ ] **G3. Delete the old engine.** Remove `src/game/classic/`, the settle step, the frame-log replay code, the comparison tool and the old fixtures; point the lint guard at `src/game/rules/**`. Verify: lint, build, replay check and chamber check all pass.
+- [ ] **G4. Analytics rules version** (open decision 14). Add `rules_version` to the chamber events. Verify: dev log of the payloads.
+- [ ] **G5. AGENTS.md.** Replace "Game behaviour is frozen" with: the rules are defined in `docs/elements.md` and pinned by recorded solutions; a rule change needs an explicit ask, re-recorded solutions and a docs update; drawing, colours and sizes stay frozen until stage 04. Also update: the game/Vue boundary (`Level`'s API: undo, redo, bindings, replay, counters from events), keyboard ownership, persistence, analytics (`undos`, `rules_version`), TypeScript projects, the layout, and the local checks. Verify: re-read against the code.
+- [ ] **G6. `docs/elements.md`.** Format v2 (version, optional lists, groups, `takesPortals`), the rules, and the changes list. Verify: an element's every field is documented.
+- [ ] **G7. Changelog.** A release listing what players notice (the fixes, in plain words). Verify: shows under About.
+- [ ] **G8. Final pass.** Lint, build, every local check, and a full playthrough of all chambers by keyboard, by gamepad, with remapped keys and with undo. Verify: all pass; tick "Done when".
+
+## Local checks added
+
+| # | Command (names to settle when implementing) | Phase | What it checks |
+|---|---|---|---|
+| 1 | Smoke engine | A | Every chamber loads and runs under Node |
+| 2 | Replay check | B (classic), F (v2) | Every chamber's recorded solution completes with the expected moves, portals and final hash; fixtures match |
+| 3 | Random walk | B | The settle step always converges; nothing throws; steps per second |
+| 4 | Chamber check | E | Every chamber upgrades and validates |
+| 5 | Engine comparison | E–F (deleted in G) | v2 matches classic apart from listed changes |
+
+Each one joins stage 00's local check command when it appears, and leaves it when it is deleted.
+
+## Done when
+
+- [ ] The rules are a pure step on a compact immutable state, and no rules file imports anything that needs a browser (the build proves it).
+- [ ] Every chamber has a recorded v2 solution, and the replay check passes.
+- [ ] Undo and redo work for every step, with `undos` in analytics.
+- [ ] Keys can be remapped and are saved; a gamepad can play chambers and use the menus.
+- [ ] Two keys pressed in one frame are both applied, in order.
+- [ ] The inherited bugs are gone, and each change is listed in `docs/elements.md`.
+- [ ] Element types are described by data in `src/game/rules/`; adding one means a definition file, a registry entry, its JSON list, its docs and its drawing.
+- [ ] Chamber files carry `version: 2`; the upgrader and validator exist and run in the local checks.
+- [ ] The old engine and its tools are deleted.
+- [ ] AGENTS.md, `docs/elements.md` and the changelog describe the new state.
+
+## Go/no-go points
+
+- **After B5 and B8:** if a replay of a live run doesn't reproduce its final hash, stop. Fix the recorder (log every frame if needed) before building undo or v2 on it.
+- **After B9:** if the settle step ever hits its cap, the "state stops changing" assumption is wrong somewhere. Find the loop before going on.
+- **After C1:** if snapshot restore doesn't round-trip on random walks, undo on today's engine is cancelled and moves to E11 (open decision 2 flips).
+- **After E3:** if the format type can't be derived from the registry without a cast, write the optional lists by hand. "A new mechanic is one file" becomes "one file plus one line in the format type".
+- **During E9:** if most element types need their own hooks in the core step, the data description isn't buying much. Record that in "Notes for later stages" so stage 03 plans honestly.
+- **After E12:** if v2 runs slower than classic, or a state is far above a few hundred bytes, fix it before stage 02. The solver depends on both.
+- **After F2:** any unexplained difference blocks the switch-over.
+
+## Risks
+
+- **Three solutions don't cover everything.** The seeded random comparison (F2) and the fixtures (B10) are the cover; widen the random inputs if differences show up late.
+- **Two engines at once (E–F).** Freeze rule changes on classic while v2 is built; keep E and F short.
+- **The layout change for AZERTY players** (open decision 6). Their default portal key moves to a different label. The legend and settings show real labels, and remapping fixes it; mention it in the changelog.
+- **Keyboard rules get more complex** (undo, remapping, a Settings column, gamepad). Update AGENTS.md in the same step as each change, not at the end.
+- **Visual drift in the renderer port.** The pixel comparison (E10) must reach zero before G1.
+- **Best times before and after the fixes** may not be comparable if a route relied on a bug. Check every recorded solution's route in F4; the `rules_version` parameter separates analytics.
+- **Scope.** This is the largest stage. Ship C and D as soon as each is done rather than holding them for v2.
+
+## Notes for later stages
+
+- **Stage 02 (solver):** use `step(chamber, state, action)` and the state key from E7. Actions are the four moves, four turns, blue, orange and interact. Turns cost no moves, so for "fewest moves" they cost 0. Boxes aren't interchangeable (a box link sends each one back to its own start), so symmetry reduction must keep box identity unless a chamber has no box links. The B9 and E12 numbers are the speed budget.
+- **Stage 03 (mechanics):** add an element by writing a definition (E5). Lasers that travel and bend need state derived each step (beams computed, not stored); the step's fixpoint loop (E1) is where that goes. Check the E9 note on hooks before promising "one file".
+- **Stage 04 (look):** the renderer draws by element definition and layer, and step events (moved from → to, crossed a portal, fizzled) are the hooks for animation. The pixel comparison from E10 can be reused before an intentional visual change.
+- **Stage 05 (creator platform):** format v2 plus the upgrader, the validator and replays tied to a chamber hash are the basis for publishing only solved chambers. Remember that JSON string literals widen (E3).
