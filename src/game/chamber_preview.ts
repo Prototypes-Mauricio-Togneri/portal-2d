@@ -9,11 +9,12 @@ import {Subject} from '@/game/subject'
  * No frame loop, no input, no sounds.
  * @param canvas - The canvas to draw on; its width and height are set to fit
  * @param chamberData - The chamber JSON, which is only read
- * @param maxWidth - Width available, in pixels
- * @param maxHeight - Height available, in pixels
+ * @param maxWidth - Width available, in canvas pixels
+ * @param maxHeight - Height available, in canvas pixels
+ * @param pixelRatio - Canvas pixels per page pixel, such as the screen's device pixel ratio; 1 by default
  */
-export function drawChamberPreview(canvas: HTMLCanvasElement, chamberData: ChamberData, maxWidth: number, maxHeight: number): void {
-  const renderer = new Renderer(canvas, maxWidth, maxHeight)
+export function drawChamberPreview(canvas: HTMLCanvasElement, chamberData: ChamberData, maxWidth: number, maxHeight: number, pixelRatio = 1): void {
+  const renderer = new Renderer(canvas, maxWidth, maxHeight, pixelRatio)
   renderer.setSize(chamberData.size.width, chamberData.size.height)
 
   const chamber = new Chamber(chamberData)

@@ -26,7 +26,7 @@ import {Sound} from '@/game/sound'
 import {trackChangelogOpen, trackFeedbackOpen, trackLinkOpen, trackProgressReset} from '@/services/analytics'
 import {CHAMBERS} from '@/services/chamber_catalogue'
 import {lastChamber} from '@/services/last_chamber'
-import {bestTimes, completedChambers, resetProgress} from '@/services/progress'
+import {bestTime, isCompleted, resetProgress} from '@/services/progress'
 import {musicEnabled, playMusic, soundEnabled} from '@/services/settings'
 
 /** A section listed in the first column. */
@@ -627,7 +627,7 @@ function closeResetDialog(): void {
 }
 
 /**
- * Marks every chamber as not completed again, then closes the confirmation.
+ * Forgets every chamber's completion, best time and attempts, then closes the confirmation.
  */
 function confirmResetProgress(): void {
   resetProgress()
@@ -784,8 +784,8 @@ onBeforeUnmount(() => {
             <li v-for="(chamber, index) in CHAMBERS" :key="chamber.number">
               <ChamberRow
                 :chamber="chamber"
-                :completed="completedChambers.includes(chamber.number)"
-                :best-time="bestTimes[chamber.number] ?? null"
+                :completed="isCompleted(chamber)"
+                :best-time="bestTime(chamber)"
                 :class="{
                   'menu-row-selected': index === highlightedChamber,
                   'menu-row-active': index === highlightedChamber && activeColumn === 'items',

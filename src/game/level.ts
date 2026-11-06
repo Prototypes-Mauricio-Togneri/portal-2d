@@ -40,11 +40,12 @@ export class Level {
   /**
    * Takes over a canvas. Nothing is drawn until load().
    * @param canvas - The canvas to draw on
-   * @param screenWidth - Width available to the chamber, in pixels
-   * @param screenHeight - Height available to the chamber, in pixels
+   * @param screenWidth - Width available to the chamber, in canvas pixels
+   * @param screenHeight - Height available to the chamber, in canvas pixels
+   * @param pixelRatio - Canvas pixels per page pixel, such as the screen's device pixel ratio; 1 by default
    */
-  constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number) {
-    this.renderer = new Renderer(canvas, screenWidth, screenHeight)
+  constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number, pixelRatio = 1) {
+    this.renderer = new Renderer(canvas, screenWidth, screenHeight, pixelRatio)
     document.addEventListener('visibilitychange', this.onVisibilityChange)
   }
 
@@ -131,12 +132,13 @@ export class Level {
   }
 
   /**
-   * Fits the current chamber to a new screen area and redraws it.
-   * @param screenWidth - Width available to the chamber, in pixels
-   * @param screenHeight - Height available to the chamber, in pixels
+   * Fits the current chamber to a new screen area or pixel ratio and redraws it.
+   * @param screenWidth - Width available to the chamber, in canvas pixels
+   * @param screenHeight - Height available to the chamber, in canvas pixels
+   * @param pixelRatio - Canvas pixels per page pixel; 1 by default
    */
-  resize(screenWidth: number, screenHeight: number): void {
-    this.renderer.resize(screenWidth, screenHeight)
+  resize(screenWidth: number, screenHeight: number, pixelRatio = 1): void {
+    this.renderer.resize(screenWidth, screenHeight, pixelRatio)
 
     if (this.state !== null) {
       this.renderer.setSize(this.state.chamber.width, this.state.chamber.height)

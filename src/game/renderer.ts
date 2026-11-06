@@ -37,13 +37,17 @@ type TriangleCenter = {
 /**
  * Draws a state onto a canvas. Tiles are square, sized to fit the chamber in
  * the screen area, and row 0 is at the bottom. Sets the canvas's width and
- * height attributes only; its styling belongs to the page.
+ * height attributes only; its styling belongs to the page. Sizes are in canvas
+ * pixels; a canvas drawn at a pixel ratio above 1 (to stay sharp on a dense
+ * screen) gets its fixed edge widths multiplied by it, so every shape keeps its
+ * size on the page.
  */
 export class Renderer {
   private readonly canvas: HTMLCanvasElement // The canvas drawn on
   private readonly context: CanvasRenderingContext2D // Its 2D context
   private screenWidth: number // Width available to the chamber, in pixels
   private screenHeight: number // Height available to the chamber, in pixels
+  private pixelRatio: number // Canvas pixels per page pixel; multiplies the fixed edge widths
   private blockSize = 0 // Side of a tile, in pixels
 
   /**
@@ -51,12 +55,14 @@ export class Renderer {
    * @param canvas - The canvas to draw on
    * @param screenWidth - Width available to the chamber, in pixels
    * @param screenHeight - Height available to the chamber, in pixels
+   * @param pixelRatio - Canvas pixels per page pixel, such as the screen's device pixel ratio; 1 by default
    * @throws Error when the canvas cannot provide a 2D context
    */
-  constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number) {
+  constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number, pixelRatio = 1) {
     this.canvas = canvas
     this.screenWidth = screenWidth
     this.screenHeight = screenHeight
+    this.pixelRatio = pixelRatio
 
     this.canvas.width = 0
     this.canvas.height = 0
@@ -71,13 +77,16 @@ export class Renderer {
   }
 
   /**
-   * Changes the area available to the chamber. Takes effect on the next setSize().
+   * Changes the area available to the chamber and the pixel ratio. Takes
+   * effect on the next setSize().
    * @param screenWidth - Width available to the chamber, in pixels
    * @param screenHeight - Height available to the chamber, in pixels
+   * @param pixelRatio - Canvas pixels per page pixel; 1 by default
    */
-  resize(screenWidth: number, screenHeight: number): void {
+  resize(screenWidth: number, screenHeight: number, pixelRatio = 1): void {
     this.screenWidth = screenWidth
     this.screenHeight = screenHeight
+    this.pixelRatio = pixelRatio
   }
 
   /**
@@ -117,23 +126,26 @@ export class Renderer {
    * @param height - Height, in pixels
    * @param fillColor - Body fill
    * @param borderColor - Border fill, or null when there is no border
-   * @param borderWidth - Border width in pixels, 0 for none
+   * @param borderWidth - Border width in page pixels (multiplied by the pixel ratio), 0 for none
    * @param opacity - Alpha for the whole rectangle; absent or 0 means opaque
    */
   private renderBlock(x: number, y: number, width: number, height: number, fillColor: string | CanvasGradient, borderColor: string | null, borderWidth: number, opacity?: number): void {
+    // Every fixed edge width passes through here; at ratio 1 it is unchanged
+    const edgeWidth = borderWidth * this.pixelRatio
+
     if (opacity) {
       this.context.globalAlpha = opacity
     } else {
       this.context.globalAlpha = 1
     }
 
-    if ((borderWidth !== 0) && (borderColor !== null)) {
+    if ((edgeWidth !== 0) && (borderColor !== null)) {
       this.context.fillStyle = borderColor
       this.context.fillRect(x, y - height, width, height)
     }
 
     this.context.fillStyle = fillColor
-    this.context.fillRect(x + borderWidth, y - height + borderWidth, width - (borderWidth * 2), height - (borderWidth * 2))
+    this.context.fillRect(x + edgeWidth, y - height + edgeWidth, width - (edgeWidth * 2), height - (edgeWidth * 2))
   }
 
   /**

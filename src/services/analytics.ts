@@ -3,6 +3,12 @@
  * Only production builds send anything, and analytics never affects the game:
  * a browser that can't run it, an ad blocker or any error just means the
  * events are dropped.
+ *
+ * Run events carry the attempt they belong to: the chamber's attempt count on
+ * this device, kept with the progress and cleared by Reset progress. Every
+ * opening, Reset chamber and Play again starts a new attempt, but Reset chamber
+ * sends no chamber_start of its own, so runs = chamber_start + chamber_restart.
+ * A restart ends attempt N, and the run after it is N + 1.
  */
 import {getAnalytics, isSupported, logEvent} from 'firebase/analytics'
 import type {Analytics} from 'firebase/analytics'
@@ -15,6 +21,7 @@ type EventName =
   | 'chamber_start'
   | 'chamber_restart'
   | 'chamber_quit'
+  | 'chamber_abandon'
   | 'chamber_complete'
   | 'setting_change'
   | 'progress_reset'
@@ -86,6 +93,19 @@ function chamberParams(chamber: ChamberEntry): EventParams {
 }
 
 /**
+ * Names a run of a chamber in an event's details.
+ * @param chamber - The chamber
+ * @param attempt - The run's attempt number at the chamber
+ * @returns The chamber's permanent id, the number the player sees and the attempt
+ */
+function runParams(chamber: ChamberEntry, attempt: number): EventParams {
+  return {
+    ...chamberParams(chamber),
+    attempt: attempt,
+  }
+}
+
+/**
  * Describes how far a run got in an event's details.
  * @param progress - The run
  * @returns Its time in milliseconds and its moves
@@ -100,19 +120,22 @@ function progressParams(progress: RunProgress): EventParams {
 /**
  * A run of a chamber begins: the chamber was opened, or played again after finishing it.
  * @param chamber - The chamber
+ * @param attempt - The run's attempt number at the chamber
  */
-export function trackChamberStart(chamber: ChamberEntry): void {
-  sendEvent('chamber_start', chamberParams(chamber))
+export function trackChamberStart(chamber: ChamberEntry, attempt: number): void {
+  sendEvent('chamber_start', runParams(chamber, attempt))
 }
 
 /**
- * The player confirmed Reset chamber, ending the run.
+ * The player confirmed Reset chamber, ending the run. The next run starts
+ * without a chamber_start event.
  * @param chamber - The chamber
+ * @param attempt - The attempt number of the run that ended
  * @param progress - How far the run got before the reset
  */
-export function trackChamberRestart(chamber: ChamberEntry, progress: RunProgress): void {
+export function trackChamberRestart(chamber: ChamberEntry, attempt: number, progress: RunProgress): void {
   sendEvent('chamber_restart', {
-    ...chamberParams(chamber),
+    ...runParams(chamber, attempt),
     ...progressParams(progress),
   })
 }
@@ -120,11 +143,29 @@ export function trackChamberRestart(chamber: ChamberEntry, progress: RunProgress
 /**
  * The player confirmed leaving the chamber before finishing it.
  * @param chamber - The chamber
+ * @param attempt - The run's attempt number at the chamber
  * @param progress - How far the run got
  */
-export function trackChamberQuit(chamber: ChamberEntry, progress: RunProgress): void {
+export function trackChamberQuit(chamber: ChamberEntry, attempt: number, progress: RunProgress): void {
   sendEvent('chamber_quit', {
-    ...chamberParams(chamber),
+    ...runParams(chamber, attempt),
+    ...progressParams(progress),
+  })
+}
+
+/**
+ * The page was closed, reloaded or left for another site during an unfinished
+ * run. Sent at most once per attempt. A page the browser keeps in its
+ * back/forward cache can be shown again and the run carried on, so an attempt
+ * may be abandoned and later still end another way. Events sent as a page goes
+ * away can be lost, so the counts are a lower bound.
+ * @param chamber - The chamber
+ * @param attempt - The run's attempt number at the chamber
+ * @param progress - How far the run got
+ */
+export function trackChamberAbandon(chamber: ChamberEntry, attempt: number, progress: RunProgress): void {
+  sendEvent('chamber_abandon', {
+    ...runParams(chamber, attempt),
     ...progressParams(progress),
   })
 }
@@ -132,14 +173,20 @@ export function trackChamberQuit(chamber: ChamberEntry, progress: RunProgress): 
 /**
  * The subject reached the exit.
  * @param chamber - The chamber
+ * @param attempt - The run's attempt number at the chamber
  * @param progress - The finished run
  * @param portals - Portals opened on a wall during the run, misses not counted
+ * @param firstCompletion - Whether the chamber had not been completed before (since progress was last reset)
+ * @param newBest - Whether the run set the chamber's best time, which a first completion always does
  */
-export function trackChamberComplete(chamber: ChamberEntry, progress: RunProgress, portals: number): void {
+export function trackChamberComplete(chamber: ChamberEntry, attempt: number, progress: RunProgress, portals: number, firstCompletion: boolean, newBest: boolean): void {
   sendEvent('chamber_complete', {
-    ...chamberParams(chamber),
+    ...runParams(chamber, attempt),
     ...progressParams(progress),
     portals: portals,
+    // 1 or 0, so reports can sum them
+    first_completion: firstCompletion ? 1 : 0,
+    new_best: newBest ? 1 : 0,
   })
 }
 

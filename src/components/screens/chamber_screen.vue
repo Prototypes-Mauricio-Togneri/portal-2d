@@ -15,12 +15,12 @@ import PauseDialog from '@/components/pause_dialog.vue'
 import PortalLogo from '@/components/portal_logo.vue'
 import {Level} from '@/game/level'
 import {Sound} from '@/game/sound'
-import {trackChamberComplete, trackChamberQuit, trackChamberRestart, trackChamberStart} from '@/services/analytics'
+import {trackChamberAbandon, trackChamberComplete, trackChamberQuit, trackChamberRestart, trackChamberStart} from '@/services/analytics'
 import type {RunProgress} from '@/services/analytics'
 import {findChamber} from '@/services/chamber_catalogue'
 import {formatTime} from '@/services/format_time'
 import {rememberChamber} from '@/services/last_chamber'
-import {bestTimes, markChamberCompleted, recordTime} from '@/services/progress'
+import {bestTime, isCompleted, markChamberCompleted, recordTime, startAttempt} from '@/services/progress'
 import {playMusic} from '@/services/settings'
 
 /** Which dialog is open over the chamber. */
@@ -33,7 +33,7 @@ type CompletedRun = {
   newBest: boolean // Whether the run set the best time
 }
 
-/** Space available to the chamber, in pixels. */
+/** Space available to the chamber, in page pixels. */
 type StageSize = {
   width: number
   height: number
@@ -60,15 +60,18 @@ const completedRun = ref<CompletedRun | null>(null) // The run the completion di
 
 let level: Level | null = null // Running game; created on mount, disposed on unmount
 let resizeObserver: ResizeObserver | null = null // Refits the chamber when the window changes size
+let densityQuery: MediaQueryList | null = null // Matches the screen's current pixel density, to notice it changing
 let leaveConfirmed = false // Set once the player has confirmed leaving, so the route guard lets them go
 let pendingRoute: string | null = null // Where browser Back was heading when the exit confirmation opened
 let readoutFrameId: number | null = null // The pending animation frame request that refreshes the timer
 let shownTime = '' // The text now in the timer, so the element is only written when it changes
+let attempt = 0 // The current run's attempt number at this chamber, counted on this device across visits
+let abandonReported = false // Whether the page going away has already been reported for this attempt
 
 /**
  * Measures the space the chamber may fill inside the stage.
  * @param element - The stage element
- * @returns Available width and height in pixels, excluding padding and the canvas border
+ * @returns Available width and height in page pixels, excluding padding and the canvas border
  */
 function availableSize(element: HTMLElement): StageSize {
   const style = getComputedStyle(element)
@@ -76,6 +79,52 @@ function availableSize(element: HTMLElement): StageSize {
     width: element.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - CANVAS_BORDER_PIXELS * 2,
     height: element.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - CANVAS_BORDER_PIXELS * 2,
   }
+}
+
+/**
+ * Sets the canvas's size on the page to its drawn size divided by the pixel
+ * ratio, so each canvas pixel covers one device pixel.
+ * @param canvasElement - The game canvas
+ * @param pixelRatio - Canvas pixels per page pixel
+ */
+function setCanvasPageSize(canvasElement: HTMLCanvasElement, pixelRatio: number): void {
+  canvasElement.style.width = `${canvasElement.width / pixelRatio}px`
+  canvasElement.style.height = `${canvasElement.height / pixelRatio}px`
+}
+
+/**
+ * Fits the chamber to the stage at the screen's current pixel density, so it
+ * stays sharp, and redraws it.
+ */
+function fitToStage(): void {
+  const stageElement = stage.value
+  const canvasElement = canvas.value
+  if (level === null || stageElement === null || canvasElement === null) {
+    return
+  }
+  const pixelRatio = window.devicePixelRatio
+  const size = availableSize(stageElement)
+  level.resize(size.width * pixelRatio, size.height * pixelRatio, pixelRatio)
+  setCanvasPageSize(canvasElement, pixelRatio)
+}
+
+/**
+ * Waits for the screen's pixel density to change. Zooming also resizes the
+ * stage, but moving the window to a screen with another density may not.
+ */
+function watchPixelRatio(): void {
+  densityQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`)
+  densityQuery.addEventListener('change', handlePixelRatioChange, {
+    once: true,
+  })
+}
+
+/**
+ * Refits the chamber to the new pixel density, then waits for the next change.
+ */
+function handlePixelRatioChange(): void {
+  fitToStage()
+  watchPixelRatio()
 }
 
 /**
@@ -133,6 +182,16 @@ function runProgress(): RunProgress {
 }
 
 /**
+ * Counts a new attempt at the chamber, which the page going away may report once.
+ */
+function beginAttempt(): void {
+  if (chamber.value !== undefined) {
+    attempt = startAttempt(chamber.value)
+  }
+  abandonReported = false
+}
+
+/**
  * Rebuilds the chamber from its starting layout, starts the music over and resumes play.
  */
 function restartChamber(): void {
@@ -148,8 +207,10 @@ function restartChamber(): void {
  */
 function confirmReset(): void {
   if (chamber.value !== undefined) {
-    trackChamberRestart(chamber.value, runProgress())
+    trackChamberRestart(chamber.value, attempt, runProgress())
   }
+  // The restart ends this attempt; the run after it is the next one, with no chamber_start
+  beginAttempt()
   restartChamber()
 }
 
@@ -157,9 +218,10 @@ function confirmReset(): void {
  * Starts a new run of the chamber just completed.
  */
 function playAgain(): void {
+  beginAttempt()
   restartChamber()
   if (chamber.value !== undefined) {
-    trackChamberStart(chamber.value)
+    trackChamberStart(chamber.value, attempt)
   }
 }
 
@@ -194,7 +256,7 @@ function leaveChamber(): void {
  */
 function confirmExit(): void {
   if (chamber.value !== undefined) {
-    trackChamberQuit(chamber.value, runProgress())
+    trackChamberQuit(chamber.value, attempt, runProgress())
   }
   leaveChamber()
 }
@@ -212,18 +274,37 @@ function cancelExit(): void {
  */
 function handleCompleted(): void {
   const time = level?.elapsedHundredths ?? 0
+  let newBest = true
+  let chamberBest = time
   if (chamber.value !== undefined) {
-    trackChamberComplete(chamber.value, runProgress(), level?.portalsPlaced ?? 0)
+    // Read before marking it, so a first completion can be told from a repeat
+    const firstCompletion = !isCompleted(chamber.value)
+    markChamberCompleted(chamber.value)
+    newBest = recordTime(chamber.value, time)
+    chamberBest = bestTime(chamber.value) ?? time
+    trackChamberComplete(chamber.value, attempt, runProgress(), level?.portalsPlaced ?? 0, firstCompletion, newBest)
   }
-  markChamberCompleted(props.chamberNumber)
-  const newBest = recordTime(props.chamberNumber, time)
   completedRun.value = {
     time: time,
-    bestTime: bestTimes.value[props.chamberNumber] ?? time,
+    bestTime: chamberBest,
     newBest: newBest,
   }
   setPaused(true)
   dialog.value = 'completed'
+}
+
+/**
+ * Reports the run abandoned when the page goes away (closed, reloaded or left
+ * for another site) before the chamber is completed. Leaving within the game
+ * never hides the page, so a confirmed exit sends only chamber_quit.
+ */
+function handlePageHide(): void {
+  if (abandonReported || dialog.value === 'completed' || chamber.value === undefined) {
+    return
+  }
+  // Once per attempt: a page restored from the back/forward cache can be hidden again
+  abandonReported = true
+  trackChamberAbandon(chamber.value, attempt, runProgress())
 }
 
 /**
@@ -284,28 +365,34 @@ onMounted(() => {
   if (stageElement === null || canvasElement === null || chamber.value === undefined) {
     return
   }
+  // Drawn in device pixels, so the chamber stays sharp on dense screens
+  const pixelRatio = window.devicePixelRatio
   const size = availableSize(stageElement)
   // Stored before the first load, which runs a frame straight away and can already complete the chamber
-  level = new Level(canvasElement, size.width, size.height)
+  level = new Level(canvasElement, size.width * pixelRatio, size.height * pixelRatio, pixelRatio)
   level.onCompleted = handleCompleted
-  // Sent before the load, whose first frame could already report the chamber completed
-  trackChamberStart(chamber.value)
+  // Counted and sent before the load, whose first frame could already report the chamber completed
+  beginAttempt()
+  trackChamberStart(chamber.value, attempt)
   level.load(chamber.value.data)
+  setCanvasPageSize(canvasElement, pixelRatio)
   refreshTimer()
 
-  resizeObserver = new ResizeObserver(() => {
-    const resized = availableSize(stageElement)
-    level?.resize(resized.width, resized.height)
-  })
+  resizeObserver = new ResizeObserver(fitToStage)
   resizeObserver.observe(stageElement)
+  watchPixelRatio()
 
   window.addEventListener('keydown', handleKeydown)
+  window.addEventListener('pagehide', handlePageHide)
   // Every chamber starts its music from the beginning
   playMusic('game', true)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown)
+  window.removeEventListener('pagehide', handlePageHide)
+  densityQuery?.removeEventListener('change', handlePixelRatioChange)
+  densityQuery = null
   if (readoutFrameId !== null) {
     cancelAnimationFrame(readoutFrameId)
     readoutFrameId = null
@@ -525,7 +612,9 @@ onBeforeUnmount(() => {
   filter: blur(0.25rem);
 }
 
+/* The script sets its size to the drawing alone, so the border goes outside it */
 .chamber-canvas {
+  box-sizing: content-box;
   display: block;
   border: 1px solid rgba(0, 0, 0, 1);
 }

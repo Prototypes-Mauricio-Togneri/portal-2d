@@ -41,15 +41,6 @@
         ]
       },
       {
-        "source": "/settings",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache"
-          }
-        ]
-      },
-      {
         "source": "/chamber/**",
         "headers": [
           {
