@@ -1,16 +1,17 @@
-import {Arrow} from '@/game/arrow'
-import {Barrier} from '@/game/barrier'
-import {Box} from '@/game/box'
-import {Button} from '@/game/button'
+import {Arrow} from '@/game/classic/arrow'
+import {Barrier} from '@/game/classic/barrier'
+import {Box} from '@/game/classic/box'
+import {Button} from '@/game/classic/button'
 import type {ChamberData, WallData} from '@/game/chamber_data'
-import {Ditch} from '@/game/ditch'
-import {Door} from '@/game/door'
-import {Exit} from '@/game/exit'
-import {Fizzler} from '@/game/fizzler'
-import type {Gateway} from '@/game/gateway'
-import {Laser} from '@/game/laser'
-import {Switch} from '@/game/switch'
-import {Wall} from '@/game/wall'
+import {Ditch} from '@/game/classic/ditch'
+import {Door} from '@/game/classic/door'
+import {Exit} from '@/game/classic/exit'
+import {Fizzler} from '@/game/classic/fizzler'
+import type {GameEvent} from '@/game/game_event'
+import type {Gateway} from '@/game/classic/gateway'
+import {Laser} from '@/game/classic/laser'
+import {Switch} from '@/game/classic/switch'
+import {Wall} from '@/game/classic/wall'
 
 /**
  * Every element that can carry an id, and so be the target of a button or
@@ -34,6 +35,7 @@ export class Chamber {
   readonly width: number // In tiles
   readonly height: number // In tiles
   private gateway: Gateway | null = null // The portals, set by the state that plays this chamber
+  private eventListener: ((event: GameEvent) => void) | null = null // Receives what the elements do, set by the state that plays this chamber
 
   private readonly links = new Map<number, LinkableElement>() // Link targets by id
   private readonly tileMap = new Map<number, Map<number, Wall>>() // Walls by column, then row
@@ -67,11 +69,11 @@ export class Chamber {
     this.buttons = data.buttons.map((elementData) => new Button(elementData, this))
     this.arrows = data.arrows.map((elementData) => new Arrow(elementData))
     this.fizzlers = this.getGenericElements(data.fizzlers, (elementData) => new Fizzler(elementData))
-    this.doors = this.getGenericElements(data.doors, (elementData) => new Door(elementData))
+    this.doors = this.getGenericElements(data.doors, (elementData) => new Door(elementData, this))
     this.switches = data.switches.map((elementData) => new Switch(elementData, this))
     this.lasers = this.getGenericElements(data.lasers, (elementData) => new Laser(elementData))
 
-    this.exit = new Exit(data.exit)
+    this.exit = new Exit(data.exit, this)
     this.addLinkElement(this.exit)
 
     this.addTiles(this.walls)
@@ -340,5 +342,21 @@ export class Chamber {
    */
   setGateway(gateway: Gateway): void {
     this.gateway = gateway
+  }
+
+  /**
+   * Gives the chamber where to report what its elements do.
+   * @param listener - Receives each event, in the order they happen
+   */
+  setEventListener(listener: (event: GameEvent) => void): void {
+    this.eventListener = listener
+  }
+
+  /**
+   * Reports something an element did to the state playing this chamber.
+   * @param event - What happened
+   */
+  emit(event: GameEvent): void {
+    this.eventListener?.(event)
   }
 }

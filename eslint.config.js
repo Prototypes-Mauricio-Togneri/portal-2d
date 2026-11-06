@@ -176,4 +176,49 @@ export default withVueTs(
       ],
     },
   },
+  {
+    // The rules also run under Node (scripts/), so they report events instead
+    // of playing sounds and never touch the browser. These options replace
+    // the block above for these files, so its entries are repeated
+    files: ['src/game/classic/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            '@/game/sound',
+            '@/game/music',
+            '@/game/audio_sources',
+            '@/game/renderer',
+            '@/game/input',
+            '@/game/level',
+          ],
+          patterns: [
+            '@/chambers/*',
+            '@/components/*',
+            '@/services/*',
+            'vue',
+            'vue-router',
+          ],
+        },
+      ],
+      'no-restricted-globals': [
+        'error',
+        'localStorage',
+        'sessionStorage',
+        'window',
+        'document',
+        'Audio',
+        'requestAnimationFrame',
+        'performance',
+      ],
+    },
+  },
+  {
+    // Engine scripts run under Node (tsconfig.scripts.json)
+    files: ['scripts/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 )

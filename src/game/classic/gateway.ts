@@ -1,4 +1,4 @@
-import {Portal} from '@/game/portal'
+import {Portal} from '@/game/classic/portal'
 
 /**
  * The pair of portals. The subject can only travel once both are open.

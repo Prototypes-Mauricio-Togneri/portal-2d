@@ -1,10 +1,12 @@
+import {GameKey} from '@/game/game_key'
+
 /**
  * Keyboard state for the game, fed by keydown and keyup on the window.
- * Tracks the keys pressed since the last clear() and the keys held down.
- * Uses KeyboardEvent.keyCode, as the original did, so layouts behave as they
- * always have: letter keys follow the character the layout types (falling
- * back to US positions on non-Latin layouts), while arrows, Space and Ctrl
- * are the same everywhere.
+ * Tracks the game keys pressed since the last clear() and those held down;
+ * every other key is ignored. Uses KeyboardEvent.keyCode, as the original
+ * did, so layouts behave as they always have: letter keys follow the
+ * character the layout types (falling back to US positions on non-Latin
+ * layouts), while arrows, Space and Ctrl are the same everywhere.
  */
 export class Input {
   static readonly LEFT = 37 // Left arrow
@@ -26,9 +28,21 @@ export class Input {
     Input.SPACE,
   ])
 
+  /** The game key each key stands for, by keyCode */
+  private static readonly GAME_KEY_BY_KEY_CODE: Readonly<Record<number, GameKey>> = {
+    [Input.UP]: GameKey.UP,
+    [Input.DOWN]: GameKey.DOWN,
+    [Input.LEFT]: GameKey.LEFT,
+    [Input.RIGHT]: GameKey.RIGHT,
+    [Input.KEY_A]: GameKey.BLUE,
+    [Input.KEY_D]: GameKey.ORANGE,
+    [Input.SPACE]: GameKey.INTERACT,
+    [Input.CTRL]: GameKey.TURN,
+  }
+
   enabled = true // When false, keydown is ignored entirely; keyup is still tracked
-  private readonly pressing = new Set<number>() // Keys held down
-  private readonly pressed = new Set<number>() // Keys pressed since the last clear(), auto-repeat included
+  private readonly pressing = new Set<GameKey>() // Game keys held down
+  private readonly pressed = new Set<GameKey>() // Game keys pressed since the last clear(), auto-repeat included
 
   /**
    * Starts listening to the keyboard on the window.
@@ -54,21 +68,21 @@ export class Input {
   }
 
   /**
-   * Whether a key went down since the last clear().
-   * @param keyCode - The key, one of the constants on this class
+   * Whether a game key went down since the last clear().
+   * @param key - The game key
    * @returns True when it was pressed
    */
-  isPressed(keyCode: number): boolean {
-    return this.pressed.has(keyCode)
+  isPressed(key: GameKey): boolean {
+    return this.pressed.has(key)
   }
 
   /**
-   * Whether a key is held down.
-   * @param keyCode - The key, one of the constants on this class
+   * Whether a game key is held down.
+   * @param key - The game key
    * @returns True when it is down
    */
-  isPressing(keyCode: number): boolean {
-    return this.pressing.has(keyCode)
+  isPressing(key: GameKey): boolean {
+    return this.pressing.has(key)
   }
 
   /**
@@ -88,8 +102,12 @@ export class Input {
       return
     }
 
-    this.pressing.add(event.keyCode)
-    this.pressed.add(event.keyCode)
+    const gameKey = Input.GAME_KEY_BY_KEY_CODE[event.keyCode]
+
+    if (gameKey !== undefined) {
+      this.pressing.add(gameKey)
+      this.pressed.add(gameKey)
+    }
 
     if (Input.GAME_KEYS.has(event.keyCode)) {
       event.preventDefault()
@@ -101,7 +119,11 @@ export class Input {
    * @param event - The keyup event
    */
   readonly onKeyup = (event: KeyboardEvent): void => {
-    this.pressing.delete(event.keyCode)
+    const gameKey = Input.GAME_KEY_BY_KEY_CODE[event.keyCode]
+
+    if (gameKey !== undefined) {
+      this.pressing.delete(gameKey)
+    }
 
     if (this.enabled && Input.GAME_KEYS.has(event.keyCode)) {
       event.preventDefault()

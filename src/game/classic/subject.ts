@@ -1,4 +1,4 @@
-import type {Box} from '@/game/box'
+import type {Box} from '@/game/classic/box'
 import type {SubjectData} from '@/game/chamber_data'
 import {Direction, parseDirection} from '@/game/direction'
 

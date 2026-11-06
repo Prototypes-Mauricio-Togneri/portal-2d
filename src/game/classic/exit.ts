@@ -1,5 +1,6 @@
 import type {BlockableData} from '@/game/chamber_data'
-import {Sound} from '@/game/sound'
+import type {Chamber} from '@/game/classic/chamber'
+import {GameEvent} from '@/game/game_event'
 
 /**
  * The chamber's exit door. Standing on it completes the chamber.
@@ -13,15 +14,18 @@ export class Exit {
   readonly x: number // Column
   readonly y: number // Row
   blocked: boolean // Whether the exit is closed
+  private readonly chamber: Chamber // The chamber that passes on what the exit does
 
   /**
    * @param data - The exit's entry in the chamber JSON
+   * @param chamber - The chamber that passes on what the exit does
    */
-  constructor(data: BlockableData) {
+  constructor(data: BlockableData, chamber: Chamber) {
     this.id = data.id
     this.x = data.x
     this.y = data.y
     this.blocked = data.blocked !== undefined ? data.blocked : true
+    this.chamber = chamber
   }
 
   /**
@@ -36,7 +40,7 @@ export class Exit {
    */
   activate(): void {
     if (this.blocked) {
-      Sound.DOOR_OPEN.play()
+      this.chamber.emit(GameEvent.EXIT_OPENED)
       this.blocked = false
     }
   }
@@ -46,7 +50,7 @@ export class Exit {
    */
   deactivate(): void {
     if (!this.blocked) {
-      Sound.DOOR_CLOSE.play()
+      this.chamber.emit(GameEvent.EXIT_CLOSED)
       this.blocked = true
     }
   }

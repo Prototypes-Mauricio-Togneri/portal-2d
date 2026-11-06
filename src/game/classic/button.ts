@@ -1,6 +1,6 @@
-import type {Chamber} from '@/game/chamber'
+import type {Chamber} from '@/game/classic/chamber'
 import type {TriggerData} from '@/game/chamber_data'
-import {Sound} from '@/game/sound'
+import {GameEvent} from '@/game/game_event'
 
 /**
  * A floor button, held down by the subject or a box standing on it. Pressing
@@ -35,7 +35,7 @@ export class Button {
   activate(): boolean {
     if (!this.activated) {
       this.activated = true
-      Sound.BUTTON_ON.play()
+      this.chamber.emit(GameEvent.BUTTON_PRESSED)
       this.chamber.activate(this.links)
 
       return true
@@ -51,7 +51,7 @@ export class Button {
   deactivate(): boolean {
     if (this.activated) {
       this.activated = false
-      Sound.BUTTON_OFF.play()
+      this.chamber.emit(GameEvent.BUTTON_RELEASED)
       this.chamber.deactivate(this.links)
 
       return true

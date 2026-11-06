@@ -1,5 +1,6 @@
 import type {BlockableData} from '@/game/chamber_data'
-import {Sound} from '@/game/sound'
+import type {Chamber} from '@/game/classic/chamber'
+import {GameEvent} from '@/game/game_event'
 
 /**
  * A door that blocks the subject and portal shots while closed.
@@ -13,15 +14,18 @@ export class Door {
   readonly x: number // Column
   readonly y: number // Row
   blocked: boolean // Whether the door is closed
+  private readonly chamber: Chamber // The chamber that passes on what the door does
 
   /**
    * @param data - The door's entry in the chamber JSON
+   * @param chamber - The chamber that passes on what the door does
    */
-  constructor(data: BlockableData) {
+  constructor(data: BlockableData, chamber: Chamber) {
     this.id = data.id
     this.x = data.x
     this.y = data.y
     this.blocked = data.blocked !== undefined ? data.blocked : true
+    this.chamber = chamber
   }
 
   /**
@@ -36,7 +40,7 @@ export class Door {
    */
   activate(): void {
     if (this.blocked) {
-      Sound.DOOR_OPEN.play()
+      this.chamber.emit(GameEvent.DOOR_OPENED)
       this.blocked = false
     }
   }
@@ -46,7 +50,7 @@ export class Door {
    */
   deactivate(): void {
     if (!this.blocked) {
-      Sound.DOOR_CLOSE.play()
+      this.chamber.emit(GameEvent.DOOR_CLOSED)
       this.blocked = true
     }
   }

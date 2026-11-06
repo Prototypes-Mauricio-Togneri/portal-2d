@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "check": "npm run lint:fix && npm run build",
-    "verify": "npm run lint && npm run build",
+    "verify": "npm run lint && npm run build && npm run smoke:engine",
+    "smoke:engine": "tsx --tsconfig tsconfig.scripts.json scripts/smoke_engine.ts",
     "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
@@ -29,6 +30,7 @@
     "eslint": "^10.11.0",
     "eslint-plugin-vue": "^10.11.0",
     "globals": "^17.14.0",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.70.1",
     "vite": "^8.3.0",

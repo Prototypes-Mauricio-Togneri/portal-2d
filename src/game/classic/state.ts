@@ -1,16 +1,20 @@
-import type {Chamber} from '@/game/chamber'
+import type {Chamber} from '@/game/classic/chamber'
 import {Direction} from '@/game/direction'
-import {Gateway} from '@/game/gateway'
-import {Input} from '@/game/input'
-import {Portal, type PortalStyle} from '@/game/portal'
-import {Sound} from '@/game/sound'
-import type {Subject} from '@/game/subject'
-import {Wall} from '@/game/wall'
+import {GameEvent} from '@/game/game_event'
+import {GameKey} from '@/game/game_key'
+import {Gateway} from '@/game/classic/gateway'
+import {Portal, type PortalStyle} from '@/game/classic/portal'
+import type {Subject} from '@/game/classic/subject'
+import {Wall} from '@/game/classic/wall'
 
 /**
- * The keyboard as the state reads it: it never clears or changes the input.
+ * The keyboard as the state reads it, by game key: it never clears or
+ * changes the input.
  */
-type InputReader = Pick<Input, 'isPressed' | 'isPressing'>
+type InputReader = {
+  isPressed(key: GameKey): boolean // Whether the key went down since the previous frame
+  isPressing(key: GameKey): boolean // Whether the key is held down
+}
 
 /**
  * Where the subject is trying to go this frame.
@@ -33,7 +37,7 @@ export class State {
   insideFizzler = false // Whether the subject has entered an active fizzler and not yet left every fizzler
   chamberCompleted = false // Whether the subject has reached the exit
   private readonly onChamberCompleted: (() => void) | null // Called once when the subject reaches the exit
-  private placedPortals = 0 // Portals opened on a wall so far, misses not counted
+  private frameEvents: GameEvent[] = [] // What happened during the latest update, in order
 
   /**
    * @param chamber - The chamber to play, freshly built
@@ -46,14 +50,17 @@ export class State {
     this.onChamberCompleted = onChamberCompleted
 
     this.chamber.setGateway(this.gateway)
+    this.chamber.setEventListener((event) => {
+      this.emit(event)
+    })
   }
 
   /**
-   * Portals opened on a wall since the chamber was built; a shot that misses
-   * doesn't count, and moving a portal counts again.
+   * What happened during the latest update, in the order it happened. Each
+   * update starts a new list.
    */
-  get portalsPlaced(): number {
-    return this.placedPortals
+  get events(): readonly GameEvent[] {
+    return this.frameEvents
   }
 
   /**
@@ -63,6 +70,7 @@ export class State {
    * @returns Whether anything visible changed, so the frame needs drawing
    */
   update(_: number, input: InputReader): boolean {
+    this.frameEvents = []
     this.checkExit()
 
     // Every check runs, in this order, even once an earlier one reports a change
@@ -105,12 +113,12 @@ export class State {
   private checkInteract(input: InputReader): boolean {
     let interacted = false
 
-    if (input.isPressed(Input.SPACE)) {
+    if (input.isPressed(GameKey.INTERACT)) {
       const switchElement = this.chamber.getSwitch(this.subject.x, this.subject.y)
 
       if (switchElement !== null) {
         if (this.subject.hasBox) {
-          Sound.ERROR.play()
+          this.emit(GameEvent.REFUSED)
         } else {
           switchElement.activate()
           interacted = true
@@ -123,7 +131,7 @@ export class State {
 
         if (box !== null) {
           this.subject.setBox(box)
-          Sound.BOX.play()
+          this.emit(GameEvent.BOX_PICKED_UP)
           interacted = true
         }
       }
@@ -142,15 +150,11 @@ export class State {
     const fizzler = this.chamber.getFizzler(this.subject.x, this.subject.y)
 
     if ((fizzler === null) || (!fizzler.activated)) {
-      if (input.isPressed(Input.KEY_A)) {
+      if (input.isPressed(GameKey.BLUE)) {
         portalCreated = this.shootPortal(Portal.BLUE)
-      } else if (input.isPressed(Input.KEY_D)) {
+      } else if (input.isPressed(GameKey.ORANGE)) {
         portalCreated = this.shootPortal(Portal.ORANGE)
       }
-    }
-
-    if (portalCreated) {
-      this.placedPortals++
     }
 
     return portalCreated
@@ -171,18 +175,18 @@ export class State {
       switch (portalType) {
         case Portal.BLUE:
           this.gateway.blue.set(wall.x, wall.y, pointingDirection.x * -1, pointingDirection.y * -1)
-          Sound.PORTAL_BLUE.play()
+          this.emit(GameEvent.BLUE_PORTAL_OPENED)
           portalCreated = true
           break
 
         case Portal.ORANGE:
           this.gateway.orange.set(wall.x, wall.y, pointingDirection.x * -1, pointingDirection.y * -1)
-          Sound.PORTAL_ORANGE.play()
+          this.emit(GameEvent.ORANGE_PORTAL_OPENED)
           portalCreated = true
           break
       }
     } else {
-      Sound.ERROR.play()
+      this.emit(GameEvent.REFUSED)
     }
 
     return portalCreated
@@ -262,33 +266,33 @@ export class State {
     let newDirection = subject.direction
     const arrow = this.chamber.getArrow(subject.x, subject.y)
 
-    if (input.isPressed(Input.UP)) {
+    if (input.isPressed(GameKey.UP)) {
       if ((arrow === null) || (arrow.direction === Direction.UP)) {
-        if ((subject.direction === Direction.UP) || (!input.isPressing(Input.CTRL))) {
+        if ((subject.direction === Direction.UP) || (!input.isPressing(GameKey.TURN))) {
           newY++
         }
 
         newDirection = Direction.UP
       }
-    } else if (input.isPressed(Input.DOWN)) {
+    } else if (input.isPressed(GameKey.DOWN)) {
       if ((arrow === null) || (arrow.direction === Direction.DOWN)) {
-        if ((subject.direction === Direction.DOWN) || (!input.isPressing(Input.CTRL))) {
+        if ((subject.direction === Direction.DOWN) || (!input.isPressing(GameKey.TURN))) {
           newY--
         }
 
         newDirection = Direction.DOWN
       }
-    } else if (input.isPressed(Input.LEFT)) {
+    } else if (input.isPressed(GameKey.LEFT)) {
       if ((arrow === null) || (arrow.direction === Direction.LEFT)) {
-        if ((subject.direction === Direction.LEFT) || (!input.isPressing(Input.CTRL))) {
+        if ((subject.direction === Direction.LEFT) || (!input.isPressing(GameKey.TURN))) {
           newX--
         }
 
         newDirection = Direction.LEFT
       }
-    } else if (input.isPressed(Input.RIGHT)) {
+    } else if (input.isPressed(GameKey.RIGHT)) {
       if ((arrow === null) || (arrow.direction === Direction.RIGHT)) {
-        if ((subject.direction === Direction.RIGHT) || (!input.isPressing(Input.CTRL))) {
+        if ((subject.direction === Direction.RIGHT) || (!input.isPressing(GameKey.TURN))) {
           newX++
         }
 
@@ -377,7 +381,7 @@ export class State {
       this.gateway.clear()
 
       this.insideFizzler = true
-      Sound.FIZZLER.play()
+      this.emit(GameEvent.FIZZLED)
 
       if (this.subject.hasBox) {
         this.subject.destroyBox()
@@ -404,7 +408,15 @@ export class State {
       this.subject.direction = exitPosition.direction
     }
 
-    Sound.CROSS.play()
+    this.emit(GameEvent.CROSSED)
+  }
+
+  /**
+   * Records something that happened during this update.
+   * @param event - What happened
+   */
+  private emit(event: GameEvent): void {
+    this.frameEvents.push(event)
   }
 
   /**

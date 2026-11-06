@@ -1,6 +1,6 @@
-import type {Chamber} from '@/game/chamber'
+import type {Chamber} from '@/game/classic/chamber'
 import type {TriggerData} from '@/game/chamber_data'
-import {Sound} from '@/game/sound'
+import {GameEvent} from '@/game/game_event'
 
 /**
  * A wall switch the subject uses with the interact key. Every use activates
@@ -31,7 +31,7 @@ export class Switch {
    * Uses the switch.
    */
   activate(): void {
-    Sound.SWITCH.play()
+    this.chamber.emit(GameEvent.SWITCH_USED)
     this.chamber.activate(this.links)
   }
 }

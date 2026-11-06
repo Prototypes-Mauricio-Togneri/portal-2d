@@ -1,5 +1,5 @@
 import type {LaserData} from '@/game/chamber_data'
-import {type LaserDirection, parseLaserDirection} from '@/game/laser_direction'
+import {type LaserDirection, parseLaserDirection} from '@/game/classic/laser_direction'
 
 /**
  * A laser beam the subject cannot walk through while it is on. Portal shots

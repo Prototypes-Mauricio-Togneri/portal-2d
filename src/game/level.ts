@@ -1,27 +1,48 @@
-import {Chamber} from '@/game/chamber'
+import {Chamber} from '@/game/classic/chamber'
 import type {ChamberData} from '@/game/chamber_data'
+import {GameEvent} from '@/game/game_event'
+import {GameKey} from '@/game/game_key'
 import {Input} from '@/game/input'
 import {Renderer} from '@/game/renderer'
-import {State} from '@/game/state'
-import {Subject} from '@/game/subject'
+import {Sound} from '@/game/sound'
+import {State} from '@/game/classic/state'
+import {Subject} from '@/game/classic/subject'
 
 /**
  * Plays chambers on a canvas: owns the keyboard input, the renderer and the
  * frame loop. Each frame advances the state with the keys pressed since the
- * previous frame and redraws only when the state reports a change.
+ * previous frame, plays a sound for each thing that happened in it, and
+ * redraws only when the state reports a change.
  */
 export class Level {
   /** Keys that start the clock: moving, turning, both portals and interacting */
-  private static readonly CLOCK_START_KEYS: readonly number[] = [
-    Input.LEFT,
-    Input.UP,
-    Input.RIGHT,
-    Input.DOWN,
-    Input.KEY_A,
-    Input.KEY_D,
-    Input.SPACE,
-    Input.CTRL,
+  private static readonly CLOCK_START_KEYS: readonly GameKey[] = [
+    GameKey.LEFT,
+    GameKey.UP,
+    GameKey.RIGHT,
+    GameKey.DOWN,
+    GameKey.BLUE,
+    GameKey.ORANGE,
+    GameKey.INTERACT,
+    GameKey.TURN,
   ]
+
+  /** The sound each event of the rules plays */
+  private static readonly SOUNDS: Readonly<Record<GameEvent, Sound>> = {
+    [GameEvent.BLUE_PORTAL_OPENED]: Sound.PORTAL_BLUE,
+    [GameEvent.ORANGE_PORTAL_OPENED]: Sound.PORTAL_ORANGE,
+    [GameEvent.REFUSED]: Sound.ERROR,
+    [GameEvent.BOX_PICKED_UP]: Sound.BOX,
+    [GameEvent.FIZZLED]: Sound.FIZZLER,
+    [GameEvent.CROSSED]: Sound.CROSS,
+    [GameEvent.DOOR_OPENED]: Sound.DOOR_OPEN,
+    [GameEvent.DOOR_CLOSED]: Sound.DOOR_CLOSE,
+    [GameEvent.EXIT_OPENED]: Sound.DOOR_OPEN,
+    [GameEvent.EXIT_CLOSED]: Sound.DOOR_CLOSE,
+    [GameEvent.BUTTON_PRESSED]: Sound.BUTTON_ON,
+    [GameEvent.BUTTON_RELEASED]: Sound.BUTTON_OFF,
+    [GameEvent.SWITCH_USED]: Sound.SWITCH,
+  }
 
   onCompleted: (() => void) | null = null // Called once per load when the subject reaches the exit
 
@@ -29,6 +50,7 @@ export class Level {
   private clockStarted = false // Whether a game key has been pressed since the last load
   private elapsedSeconds = 0 // Play time since the clock started; only grows while unpaused
   private stepCount = 0 // Tiles the subject has stepped onto since the last load
+  private portalCount = 0 // Portals opened on a wall since the last load, misses not counted
   private readonly renderer: Renderer // Draws the state
   private readonly input = new Input() // The keyboard, listening from construction until dispose()
   private initialized = false // Whether the frame loop has started
@@ -60,6 +82,7 @@ export class Level {
     this.clockStarted = false
     this.elapsedSeconds = 0
     this.stepCount = 0
+    this.portalCount = 0
 
     const chamber = new Chamber(chamberData)
     const subject = new Subject(chamberData.subject)
@@ -125,10 +148,11 @@ export class Level {
   }
 
   /**
-   * Portals opened on a wall since the last load, misses not counted.
+   * Portals opened on a wall since the last load; a shot that misses doesn't
+   * count, and moving a portal counts again.
    */
   get portalsPlaced(): number {
-    return this.state?.portalsPlaced ?? 0
+    return this.portalCount
   }
 
   /**
@@ -171,7 +195,8 @@ export class Level {
   }
 
   /**
-   * Advances the state by one frame and forgets the keys pressed during it.
+   * Advances the state by one frame, plays the sounds of what happened in it
+   * and forgets the keys pressed during it.
    * @param delta - Seconds since the previous frame
    * @param input - The keyboard
    * @returns Whether the state changed
@@ -182,7 +207,7 @@ export class Level {
     // The clock counts from the frame after the first key, so the wait before it is not included
     if (this.clockStarted) {
       this.elapsedSeconds += delta
-    } else if (Level.CLOCK_START_KEYS.some((keyCode) => input.isPressed(keyCode))) {
+    } else if (Level.CLOCK_START_KEYS.some((key) => input.isPressed(key))) {
       this.clockStarted = true
     }
 
@@ -196,6 +221,14 @@ export class Level {
       // Only the arrow keys move the subject, so a new tile is one step
       if ((subject.x !== startX) || (subject.y !== startY)) {
         this.stepCount++
+      }
+
+      for (const event of this.state.events) {
+        Level.SOUNDS[event].play()
+
+        if ((event === GameEvent.BLUE_PORTAL_OPENED) || (event === GameEvent.ORANGE_PORTAL_OPENED)) {
+          this.portalCount++
+        }
       }
     }
 

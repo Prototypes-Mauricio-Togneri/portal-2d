@@ -1,8 +1,8 @@
-import {Chamber} from '@/game/chamber'
+import {Chamber} from '@/game/classic/chamber'
 import type {ChamberData} from '@/game/chamber_data'
 import {Renderer} from '@/game/renderer'
-import {State} from '@/game/state'
-import {Subject} from '@/game/subject'
+import {State} from '@/game/classic/state'
+import {Subject} from '@/game/classic/subject'
 
 /**
  * Draws a chamber's starting layout once, the same way the game draws it.
