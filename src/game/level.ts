@@ -1,26 +1,29 @@
 import {Chamber} from '@/game/classic/chamber'
 import type {ChamberData} from '@/game/chamber_data'
-import {createFrameInputReader, type FrameInput} from '@/game/frame_input'
+import {createFrameInputReader, EMPTY_FRAME_INPUT, type FrameInput} from '@/game/frame_input'
 import {GameEvent} from '@/game/game_event'
 import {GameKey, type HistoryKey} from '@/game/game_key'
 import {Input} from '@/game/input'
+import type {KeyBindings} from '@/game/key_bindings'
 import {formatReplayFrame, getChamberHash, type ReplayData} from '@/game/replay_data'
 import {Renderer} from '@/game/renderer'
 import {runReplay} from '@/game/classic/replay_runner'
 import {SETTLE_CAP} from '@/game/classic/step_classic'
 import {Sound} from '@/game/sound'
 import {State} from '@/game/classic/state'
-import {getStateHash, takeSnapshot} from '@/game/classic/state_snapshot'
+import {getSnapshotText, getStateHash, takeSnapshot} from '@/game/classic/state_snapshot'
 import {Subject} from '@/game/classic/subject'
 import {UndoHistory} from '@/game/classic/undo_history'
 
 /**
  * Plays chambers on a canvas: owns the keyboard input, the renderer and the
- * frame loop. Each frame advances the state with the keys pressed since the
- * previous frame, plays a sound for each thing that happened in it, and
- * redraws only when the state reports a change. A frame with undo or redo
- * steps through the run's history instead, silently. Frames with keys are
- * logged, so the run since the last load can be replayed without a browser.
+ * frame loop. Each frame advances the state, with the oldest waiting key
+ * press once the state has settled (so live play takes exactly the steps of
+ * the step function, one key at a time, in the order pressed), plays a sound
+ * for each thing that happened in it, and redraws only when the state reports
+ * a change. An undo or redo press steps through the run's history instead,
+ * silently. Frames with keys are logged, so the run since the last load can
+ * be replayed without a browser.
  */
 export class Level {
   /** Keys that start the clock: moving, turning, both portals and interacting */
@@ -60,13 +63,14 @@ export class Level {
   private frameLog: string[] = [] // Every frame with keys since the last load, in the replay text form
   private keyFrameHashes: string[] = [] // Hash of the state right after each logged frame
   private emptyFrames = 0 // Frames without keys since the last logged frame or the load
+  private settled = false // Whether the latest frame left the state as it was, so the next press may be taken
   private clockStarted = false // Whether a game key has been pressed since the last load
   private elapsedSeconds = 0 // Play time since the clock started; only grows while unpaused
   private stepCount = 0 // Tiles the subject has stepped onto since the last load
   private portalCount = 0 // Portals opened on a wall since the last load, misses not counted
   private undoCount = 0 // Steps taken back with undo since the last load
   private readonly renderer: Renderer // Draws the state
-  private readonly input = new Input() // The keyboard, listening from construction until dispose()
+  private readonly input: Input // The keyboard, listening from construction until dispose()
   private initialized = false // Whether the frame loop has started
   private isPaused = false // Whether the loop skips updates and the input ignores keydown
   private disposed = false // Whether dispose() has run
@@ -76,12 +80,14 @@ export class Level {
   /**
    * Takes over a canvas. Nothing is drawn until load().
    * @param canvas - The canvas to draw on
+   * @param bindings - The key bound to each game key, which is only read
    * @param screenWidth - Width available to the chamber, in canvas pixels
    * @param screenHeight - Height available to the chamber, in canvas pixels
    * @param pixelRatio - Canvas pixels per page pixel, such as the screen's device pixel ratio; 1 by default
    */
-  constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number, pixelRatio = 1) {
+  constructor(canvas: HTMLCanvasElement, bindings: KeyBindings, screenWidth: number, screenHeight: number, pixelRatio = 1) {
     this.renderer = new Renderer(canvas, screenWidth, screenHeight, pixelRatio)
+    this.input = new Input(bindings)
     document.addEventListener('visibilitychange', this.onVisibilityChange)
   }
 
@@ -103,6 +109,7 @@ export class Level {
     this.frameLog = []
     this.keyFrameHashes = []
     this.emptyFrames = 0
+    this.settled = false
 
     const chamber = new Chamber(chamberData)
     const subject = new Subject(chamberData.subject)
@@ -262,8 +269,10 @@ export class Level {
   }
 
   /**
-   * Runs one frame: steps through the history when undo or redo was pressed,
-   * otherwise advances the rules. Then forgets the keys pressed during it.
+   * Runs one frame: steps through the history when the press it takes is
+   * undo or redo, otherwise advances the rules, with the press or with none.
+   * A press is taken only once the state has settled. Then forgets which keys
+   * went down during the frame, for the clock.
    * @param delta - Seconds since the previous frame
    * @param input - The keyboard
    * @returns Whether the state changed
@@ -279,12 +288,13 @@ export class Level {
     }
 
     if ((this.state !== null) && (this.history !== null)) {
-      const historyKey = Level.getHistoryKey(input)
+      // A press waits until the previous one's late effects have landed
+      const press = this.settled ? input.takePress() : null
 
-      if (historyKey !== null) {
-        updated = this.updateHistory(this.state, this.history, historyKey)
+      if (typeof press === 'string') {
+        updated = this.updateHistory(this.state, this.history, press)
       } else {
-        updated = this.updateRules(delta, this.state, this.history, input)
+        updated = this.updateRules(delta, this.state, this.history, press ?? EMPTY_FRAME_INPUT)
       }
     }
 
@@ -294,27 +304,32 @@ export class Level {
   }
 
   /**
-   * Advances the rules by one frame, records the step it took in the history
-   * and plays the sounds of what happened in it.
+   * Advances the rules by one frame, records the step it took in the history,
+   * notes whether the state has settled and plays the sounds of what happened
+   * in it.
    * @param delta - Seconds since the previous frame
    * @param state - The chamber being played
    * @param history - The run's undo and redo
-   * @param input - The keyboard
+   * @param frameInput - What the rules read in this frame; the replay logs exactly this
    * @returns Whether the state changed
    */
-  private updateRules(delta: number, state: State, history: UndoHistory, input: Input): boolean {
+  private updateRules(delta: number, state: State, history: UndoHistory, frameInput: FrameInput): boolean {
     const subject = state.subject
     const startX = subject.x
     const startY = subject.y
-    // The rules read only this, so replaying the logged frames gives them exactly what they saw live
-    const frameInput = input.frameInput
-    // Only a frame with keys can take a step, so the others skip the snapshot
-    const before = (frameInput.keys.length > 0) ? takeSnapshot(state) : null
+    const isKeyFrame = frameInput.keys.length > 0
+    // A settled state stays as it is without a key, so only frames with keys
+    // and those after a change need comparing
+    const before = (isKeyFrame || !this.settled) ? takeSnapshot(state) : null
 
     const updated = state.update(delta, createFrameInputReader(frameInput))
 
     if (before !== null) {
-      history.record(before, state)
+      if (isKeyFrame) {
+        history.record(before, state)
+      }
+
+      this.settled = getSnapshotText(before) === getSnapshotText(takeSnapshot(state))
     }
 
     this.logFrame(state, frameInput)
@@ -336,8 +351,8 @@ export class Level {
   }
 
   /**
-   * Undoes or redoes a step, silently, in place of the rules' frame; any
-   * other key pressed in the same frame is dropped.
+   * Undoes or redoes a step, silently, in place of the rules' frame. The
+   * states in the history are settled, so the next press may follow at once.
    * @param state - The chamber being played
    * @param history - The run's undo and redo
    * @param key - Undo or redo
@@ -375,23 +390,6 @@ export class Level {
     }))
     this.keyFrameHashes.push(getStateHash(state))
     this.emptyFrames = 0
-  }
-
-  /**
-   * Which history key a frame pressed; undo wins when both were.
-   * @param input - The keyboard
-   * @returns Undo, redo, or null when neither was pressed
-   */
-  private static getHistoryKey(input: Input): HistoryKey | null {
-    if (input.isPressed(GameKey.UNDO)) {
-      return GameKey.UNDO
-    }
-
-    if (input.isPressed(GameKey.REDO)) {
-      return GameKey.REDO
-    }
-
-    return null
   }
 
   /**

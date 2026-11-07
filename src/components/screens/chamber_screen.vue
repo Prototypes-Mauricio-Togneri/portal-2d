@@ -19,6 +19,7 @@ import {Sound} from '@/game/sound'
 import {trackChamberAbandon, trackChamberComplete, trackChamberQuit, trackChamberRestart, trackChamberStart} from '@/services/analytics'
 import type {RunProgress} from '@/services/analytics'
 import {findChamber} from '@/services/chamber_catalogue'
+import {keyBindings} from '@/services/key_bindings'
 import {formatTime} from '@/services/format_time'
 import {rememberChamber} from '@/services/last_chamber'
 import {bestTime, isCompleted, markChamberCompleted, recordTime, startAttempt} from '@/services/progress'
@@ -417,7 +418,7 @@ onMounted(() => {
   const pixelRatio = window.devicePixelRatio
   const size = availableSize(stageElement)
   // Stored before the first load, which runs a frame straight away and can already complete the chamber
-  level = new Level(canvasElement, size.width * pixelRatio, size.height * pixelRatio, pixelRatio)
+  level = new Level(canvasElement, keyBindings.value, size.width * pixelRatio, size.height * pixelRatio, pixelRatio)
   level.onCompleted = handleCompleted
   // Counted and sent before the load, whose first frame could already report the chamber completed
   beginAttempt()

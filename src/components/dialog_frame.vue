@@ -45,11 +45,20 @@ function moveFocus(offset: number): void {
 }
 
 /**
- * Arrow keys move between actions; Tab wraps inside the dialog.
+ * Arrow keys move between actions; Tab wraps inside the dialog. A held
+ * (repeating) Enter or Space presses nothing.
  * @param event - Keyboard event
  */
 function handleKeydown(event: KeyboardEvent): void {
   switch (event.key) {
+    case 'Enter':
+    case ' ':
+      // A key held since before the dialog opened, such as a move key bound
+      // to Enter or Space, must not press the action that just took focus
+      if (event.repeat) {
+        event.preventDefault()
+      }
+      break
     case 'ArrowDown':
     case 'ArrowRight':
       event.preventDefault()

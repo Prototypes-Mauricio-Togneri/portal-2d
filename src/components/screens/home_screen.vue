@@ -5,26 +5,34 @@
  * nothing else. Opening a section with Enter, Right or a click shows its
  * chambers, settings or About rows in the second column, starting level with
  * the section's row. The third follows the highlight there: Play shows the
- * chamber's map, About shows a list of pages or the changelog.
- * Right, Enter or a click steps from an About row into its pages or changelog.
- * Up and Down move the highlight (or scroll the changelog) in the column that
- * has the keyboard, Left and Escape step back a column, closing the section
- * from the second. Every move of the highlight clicks. Settings ends with
- * Reset progress, which asks first in a dialog; while it is open the menu
- * ignores the keyboard and Escape closes it.
+ * chamber's map, About shows a list of pages or the changelog, and Settings'
+ * Controls row the key bound to each game key, from the top of the menu.
+ * Right, Enter or a click steps from an About row into its pages or changelog,
+ * or from Controls into its keys. Up and Down move the highlight (or scroll
+ * the changelog) in the column that has the keyboard, Left and Escape step
+ * back a column, closing the section from the second. Every move of the
+ * highlight clicks. Picking a key's row waits for the next key, which takes
+ * the whole keyboard until it is pressed or Escape cancels. Settings ends
+ * with Reset progress, which asks first in a dialog; while it is open the
+ * menu ignores the keyboard and Escape closes it.
  */
-import {computed, nextTick, onBeforeUnmount, onMounted, ref, useId, useTemplateRef} from 'vue'
+import {computed, nextTick, onBeforeUnmount, onMounted, ref, useId, useTemplateRef, watch} from 'vue'
 import type {Ref} from 'vue'
 import ChamberMap from '@/components/chamber_map.vue'
 import ChamberRow from '@/components/chamber_row.vue'
 import ChangelogList from '@/components/changelog_list.vue'
 import ConfirmDialog from '@/components/confirm_dialog.vue'
+import ControlRow from '@/components/control_row.vue'
 import LinkRow from '@/components/link_row.vue'
 import PortalLogo from '@/components/portal_logo.vue'
 import SettingsSwitch from '@/components/settings_switch.vue'
+import {GameKey} from '@/game/game_key'
+import {getBoundKey} from '@/game/key_bindings'
 import {Sound} from '@/game/sound'
 import {trackChangelogOpen, trackFeedbackOpen, trackLinkOpen, trackProgressReset} from '@/services/analytics'
 import {CHAMBERS} from '@/services/chamber_catalogue'
+import {bindKey, keyBindings, resetKeyBindings} from '@/services/key_bindings'
+import {getKeyLabel, refreshKeyLabels} from '@/services/key_labels'
 import {lastChamber} from '@/services/last_chamber'
 import {bestTime, isCompleted, resetProgress} from '@/services/progress'
 import {musicEnabled, playMusic, soundEnabled} from '@/services/settings'
@@ -32,7 +40,7 @@ import {musicEnabled, playMusic, soundEnabled} from '@/services/settings'
 /** A section listed in the first column. */
 type MenuSection = 'play' | 'settings' | 'about'
 
-/** The column that has the keyboard: the sections, the open section's items, or About's third column. */
+/** The column that has the keyboard: the sections, the open section's items, or the third column (About's pages or changelog, or the controls). */
 type MenuColumn = 'sections' | 'items' | 'details'
 
 /** A section's row in the first column. */
@@ -45,6 +53,13 @@ type SectionEntry = {
 type SettingEntry = {
   label: string // Name on the row
   enabled: Ref<boolean> // The preference the row switches
+}
+
+/** A game key listed in the Controls column, with the key bound to it. */
+type ControlEntry = {
+  gameKey: GameKey // The game key the row rebinds
+  label: string // What the key does, on the row
+  portal: 'blue' | 'orange' | null // The portal the key shoots, if any
 }
 
 /** A page outside the game, listed in the third column and opened in a new tab. */
@@ -157,7 +172,63 @@ const settings: SettingEntry[] = [
   },
 ]
 
-const RESET_PROGRESS_INDEX = settings.length // The Reset progress row comes after the switches
+const CONTROLS_INDEX = settings.length // The Controls row comes after the switches
+const RESET_PROGRESS_INDEX = settings.length + 1 // Reset progress comes last
+
+const CONTROLS: ControlEntry[] = [
+  {
+    gameKey: GameKey.UP,
+    label: 'Move up',
+    portal: null,
+  },
+  {
+    gameKey: GameKey.DOWN,
+    label: 'Move down',
+    portal: null,
+  },
+  {
+    gameKey: GameKey.LEFT,
+    label: 'Move left',
+    portal: null,
+  },
+  {
+    gameKey: GameKey.RIGHT,
+    label: 'Move right',
+    portal: null,
+  },
+  {
+    gameKey: GameKey.TURN,
+    label: 'Turn in place',
+    portal: null,
+  },
+  {
+    gameKey: GameKey.BLUE,
+    label: 'Blue portal',
+    portal: 'blue',
+  },
+  {
+    gameKey: GameKey.ORANGE,
+    label: 'Orange portal',
+    portal: 'orange',
+  },
+  {
+    gameKey: GameKey.INTERACT,
+    label: 'Interact',
+    portal: null,
+  },
+  {
+    gameKey: GameKey.UNDO,
+    label: 'Undo',
+    portal: null,
+  },
+  {
+    gameKey: GameKey.REDO,
+    label: 'Redo',
+    portal: null,
+  },
+]
+
+const RESET_CONTROLS_INDEX = CONTROLS.length // Reset controls comes after the keys
 
 const menuId = useId()
 const itemColumnId = `${menuId}-items`
@@ -175,10 +246,15 @@ const highlightedChamber = ref(Math.max(rememberedChamber, 0))
 const highlightedSetting = ref(0)
 const highlightedAbout = ref(0)
 const highlightedLink = ref(0)
+const highlightedControl = ref(0)
 const resetDialogOpen = ref(false)
+const waitingControl = ref<GameKey | null>(null) // The game key whose row waits for a new key, or null
+const refusedKey = ref<string | null>(null) // The key last refused while waiting, by name, or null
+const controlStatus = ref('') // What the Controls column last did, read aloud by screen readers
 
 let pointerSection: MenuSection | null = null // Section row under the pointer, so only moving onto a row takes the keyboard
-let pointerItem: number | null = null // Item row under the pointer, so moving within an About row just clicked leaves the keyboard in its third column
+let pointerItem: number | null = null // Item row under the pointer, so moving within an About or Controls row just clicked leaves the keyboard in its third column
+let capturedCode: string | null = null // The key last taken while waiting, whose keyup must not press the focused row again
 
 const sectionColumn = useTemplateRef<HTMLElement>('sectionColumn')
 const itemColumn = useTemplateRef<HTMLElement>('itemColumn')
@@ -197,14 +273,27 @@ const highlightedItem = computed(() => {
 const highlightedChamberEntry = computed(() => CHAMBERS[highlightedChamber.value])
 const highlightedAboutEntry = computed(() => ABOUT[highlightedAbout.value])
 
-// The third column takes the keyboard only for About's pages and changelog; Play's map is just shown
+const controlsShown = computed(() => openSection.value === 'settings' && highlightedSetting.value === CONTROLS_INDEX)
+const changelogShown = computed(() => openSection.value === 'about' && highlightedAboutEntry.value?.kind === 'changelog')
+
+// The third column takes the keyboard only for About's pages and changelog and for the controls; Play's map is just shown
 const detailTakesKeyboard = computed(() => {
   const kind = highlightedAboutEntry.value?.kind
-  return openSection.value === 'about' && (kind === 'links' || kind === 'changelog')
+  return controlsShown.value || (openSection.value === 'about' && (kind === 'links' || kind === 'changelog'))
 })
 const highlightedLinks = computed(() => {
   const entry = highlightedAboutEntry.value
   return openSection.value === 'about' && entry?.kind === 'links' ? entry.links : []
+})
+// The third column's rows: About's pages, or the keys with Reset controls
+const detailRowCount = computed(() => controlsShown.value ? CONTROLS.length + 1 : highlightedLinks.value.length)
+const highlightedDetail = computed(() => controlsShown.value ? highlightedControl.value : highlightedLink.value)
+// The game key of the row that has the keyboard in the Controls column, or null
+const activeControl = computed(() => {
+  if (activeColumn.value !== 'details' || !controlsShown.value) {
+    return null
+  }
+  return CONTROLS[highlightedControl.value]?.gameKey ?? null
 })
 
 /**
@@ -216,7 +305,7 @@ function itemCount(): number {
     return CHAMBERS.length
   }
   if (openSection.value === 'settings') {
-    return settings.length + 1
+    return settings.length + 2
   }
   if (openSection.value === 'about') {
     return ABOUT.length
@@ -243,6 +332,15 @@ function aboutRowId(index: number): string {
 }
 
 /**
+ * Builds the id of a Settings row, which its third column is labelled by.
+ * @param index - The row's index in the second column
+ * @returns The row's id
+ */
+function settingRowId(index: number): string {
+  return `${menuId}-settings-${index}`
+}
+
+/**
  * Finds a section's position in the first column.
  * @param section - The section
  * @returns Its index
@@ -265,7 +363,23 @@ function highlightItem(index: number): void {
     }
     highlightedAbout.value = index
   } else {
+    // Coming back to Controls starts its keys at the top, as another About row does
+    if (index !== highlightedSetting.value) {
+      highlightedControl.value = 0
+    }
     highlightedSetting.value = index
+  }
+}
+
+/**
+ * Highlights a row of the third column: a page under About, or a key under Controls.
+ * @param index - The row's index in the third column
+ */
+function highlightDetail(index: number): void {
+  if (controlsShown.value) {
+    highlightedControl.value = index
+  } else {
+    highlightedLink.value = index
   }
 }
 
@@ -296,13 +410,13 @@ function focusRow(column: MenuColumn, index: number, preventScroll = false): voi
 }
 
 /**
- * Gives the third column the keyboard: the highlighted page, or the changelog.
+ * Gives the third column the keyboard: the highlighted page or key, or the changelog.
  */
 function focusDetail(): void {
-  if (highlightedAboutEntry.value?.kind === 'changelog') {
+  if (changelogShown.value) {
     changelogScroller.value?.focus()
   } else {
-    focusRow('details', highlightedLink.value)
+    focusRow('details', highlightedDetail.value)
   }
 }
 
@@ -314,22 +428,22 @@ function focusDetail(): void {
  */
 function moveHighlight(offset: number): void {
   if (activeColumn.value === 'details') {
-    if (highlightedAboutEntry.value?.kind === 'changelog') {
+    if (changelogShown.value) {
       changelogScroller.value?.scrollBy({
         top: offset * CHANGELOG_SCROLL_PIXELS,
       })
       return
     }
-    const linkCount = highlightedLinks.value.length
-    if (linkCount === 0) {
+    const rowCount = detailRowCount.value
+    if (rowCount === 0) {
       return
     }
-    const nextLink = (highlightedLink.value + offset + linkCount) % linkCount
-    if (nextLink !== highlightedLink.value) {
-      highlightedLink.value = nextLink
+    const nextRow = (highlightedDetail.value + offset + rowCount) % rowCount
+    if (nextRow !== highlightedDetail.value) {
+      highlightDetail(nextRow)
       Sound.MENU_BUTTON.play()
     }
-    focusRow('details', nextLink)
+    focusRow('details', nextRow)
     return
   }
   if (activeColumn.value === 'sections') {
@@ -392,8 +506,8 @@ function closeSection(): void {
 
 /**
  * Steps from the highlighted About row into its pages or changelog in the
- * third column, with a click. Does nothing anywhere else, or for Feedback,
- * which has nothing there.
+ * third column, or from Controls into its keys, with a click. Does nothing
+ * anywhere else, or for Feedback, which has nothing there.
  */
 function openDetail(): void {
   if (activeColumn.value !== 'items' || !detailTakesKeyboard.value) {
@@ -401,27 +515,31 @@ function openDetail(): void {
   }
   activeColumn.value = 'details'
   Sound.MENU_BUTTON.play()
-  if (highlightedAboutEntry.value?.kind === 'changelog') {
+  if (changelogShown.value) {
     trackChangelogOpen()
+  }
+  // The player may have switched keyboard layouts since the labels were read
+  if (controlsShown.value) {
+    refreshKeyLabels()
   }
   // A row clicked has only just been highlighted, so its third column may not be drawn yet
   void nextTick(focusDetail)
 }
 
 /**
- * Steps into the third column of an About row picked with the mouse (or Space),
- * just like Right. The row is highlighted first, since some browsers (Safari)
- * don't focus a clicked button, which would otherwise have done it.
+ * Steps into the third column of an About or Controls row picked with the
+ * mouse (or Space), just like Right. The row is highlighted first, since some
+ * browsers (Safari) don't focus a clicked button, which would otherwise have done it.
  * @param index - The row's index in the second column
  */
-function chooseAboutRow(index: number): void {
+function chooseDetailRow(index: number): void {
   handleItemFocus(index)
   openDetail()
 }
 
 /**
  * Right opens the highlighted section from the first column, or steps into the
- * third column from an About row that has pages or the changelog there.
+ * third column from an About row that has pages or the changelog there, or from Controls.
  */
 function stepIn(): void {
   if (activeColumn.value === 'sections') {
@@ -432,8 +550,8 @@ function stepIn(): void {
 }
 
 /**
- * Left and Escape step back from the third column to its About row, with a
- * click, or close the open section.
+ * Left and Escape step back from the third column to its About or Controls
+ * row, with a click, or close the open section.
  */
 function stepBack(): void {
   if (activeColumn.value !== 'details') {
@@ -565,34 +683,34 @@ function handleItemPointerLeave(): void {
 }
 
 /**
- * Keeps the state in step when a page row in the third column gets the
- * keyboard, such as through Tab, clicking when that moves the highlight.
+ * Keeps the state in step when a page or key row in the third column gets
+ * the keyboard, such as through Tab, clicking when that moves the highlight.
  * @param index - The row's index in the third column
  */
-function handleLinkFocus(index: number): void {
-  if (activeColumn.value === 'details' && highlightedLink.value === index) {
+function handleDetailFocus(index: number): void {
+  if (activeColumn.value === 'details' && highlightedDetail.value === index) {
     return
   }
   activeColumn.value = 'details'
-  highlightedLink.value = index
+  highlightDetail(index)
   Sound.MENU_BUTTON.play()
 }
 
 /**
- * Highlights the page row under a moving pointer, with a click. Only real
- * movement counts, so pages shown under a still pointer never pull the keyboard into them.
+ * Highlights the page or key row under a moving pointer, with a click. Only
+ * real movement counts, so rows shown under a still pointer never pull the keyboard into them.
  * @param index - The row's index in the third column
  * @param event - Pointer event
  */
-function handleLinkPointerMove(index: number, event: PointerEvent): void {
+function handleDetailPointerMove(index: number, event: PointerEvent): void {
   if (event.movementX === 0 && event.movementY === 0) {
     return
   }
-  if (activeColumn.value === 'details' && highlightedLink.value === index) {
+  if (activeColumn.value === 'details' && highlightedDetail.value === index) {
     return
   }
   activeColumn.value = 'details'
-  highlightedLink.value = index
+  highlightDetail(index)
   Sound.MENU_BUTTON.play()
   focusRow('details', index, true)
 }
@@ -608,6 +726,81 @@ function handleChangelogFocus(): void {
   activeColumn.value = 'details'
   Sound.MENU_BUTTON.play()
   trackChangelogOpen()
+}
+
+/**
+ * Waits for a new key for a game key picked in the Controls column (Enter,
+ * Space or a click), with a click. The row is highlighted first, as for a
+ * row stepped into, since some browsers (Safari) don't focus a clicked button.
+ * @param index - The row's index in the third column
+ */
+function chooseControl(index: number): void {
+  const control = CONTROLS[index]
+  if (control === undefined) {
+    return
+  }
+  handleDetailFocus(index)
+  waitingControl.value = control.gameKey
+  refusedKey.value = null
+  controlStatus.value = `Press a key for ${control.label}, or Escape to cancel`
+  Sound.MENU_BUTTON.play()
+}
+
+/**
+ * Stops waiting for a key, leaving the binding as it was, silently.
+ */
+function cancelWaiting(): void {
+  if (waitingControl.value === null) {
+    return
+  }
+  waitingControl.value = null
+  refusedKey.value = null
+  controlStatus.value = ''
+}
+
+/**
+ * Takes a key pressed while a row waits for one, keeping it from the page and
+ * the menu: binds it, with a click (a key bound to another game key is
+ * swapped), or refuses it with a note and keeps waiting. Escape cancels; a
+ * held key's repeats are ignored, so the key that started the wait can't bind.
+ * @param event - Keyboard event
+ * @param gameKey - The game key waiting for a key
+ */
+function captureKey(event: KeyboardEvent, gameKey: GameKey): void {
+  event.preventDefault()
+  if (event.repeat) {
+    return
+  }
+  capturedCode = event.code
+  if (event.code === 'Escape') {
+    cancelWaiting()
+    return
+  }
+  const key = getBoundKey(event.code)
+  if (key === null) {
+    refusedKey.value = event.key === '' || event.key === 'Unidentified' ? 'that key' : event.key
+    controlStatus.value = `Can't use ${refusedKey.value}. Press another key, or Escape to cancel`
+    return
+  }
+  const control = CONTROLS.find((entry) => entry.gameKey === gameKey)
+  const previousKey = keyBindings.value[gameKey]
+  const swapped = CONTROLS.find((entry) => entry.gameKey !== gameKey && keyBindings.value[entry.gameKey] === key)
+  bindKey(gameKey, key)
+  waitingControl.value = null
+  refusedKey.value = null
+  const swapNote = swapped === undefined ? '' : `. ${swapped.label} moved to ${getKeyLabel(previousKey).name}`
+  controlStatus.value = `${control?.label ?? 'Key'} set to ${getKeyLabel(key).name}${swapNote}`
+  Sound.MENU_BUTTON.play()
+}
+
+/**
+ * Puts every game key back on its default key, with a click.
+ */
+function resetControls(): void {
+  cancelWaiting()
+  resetKeyBindings()
+  controlStatus.value = 'Controls reset to the defaults'
+  Sound.MENU_BUTTON.play()
 }
 
 /**
@@ -656,7 +849,7 @@ function handleEnter(event: KeyboardEvent): void {
   }
   const row = activeColumn.value === 'items'
     ? rowElements('items')[highlightedItem.value]
-    : rowElements('details')[highlightedLink.value]
+    : rowElements('details')[highlightedDetail.value]
   if (row !== undefined && document.activeElement !== row) {
     event.preventDefault()
     row.click()
@@ -664,10 +857,16 @@ function handleEnter(event: KeyboardEvent): void {
 }
 
 /**
- * Arrow keys, Enter and Escape drive the menu.
+ * Arrow keys, Enter and Escape drive the menu, unless a row in the Controls
+ * column waits for a key, which then takes every key.
  * @param event - Keyboard event
  */
 function handleKeydown(event: KeyboardEvent): void {
+  // Before the modifier check, so Ctrl and Shift can be bound
+  if (waitingControl.value !== null) {
+    captureKey(event, waitingControl.value)
+    return
+  }
   // While the reset confirmation is open its buttons have the keyboard, and Escape closes it
   if (resetDialogOpen.value) {
     if (event.key === 'Escape') {
@@ -714,8 +913,28 @@ function handleKeydown(event: KeyboardEvent): void {
   }
 }
 
+/**
+ * Keeps the release of a key just taken for a binding from pressing the
+ * focused row again, as Space would, which would start waiting once more.
+ * @param event - Keyboard event
+ */
+function handleKeyup(event: KeyboardEvent): void {
+  if (capturedCode !== null && event.code === capturedCode) {
+    event.preventDefault()
+    capturedCode = null
+  }
+}
+
+// Moving the keyboard off the waiting row (the pointer, onto another row or column) stops the wait
+watch(activeControl, (gameKey) => {
+  if (gameKey !== waitingControl.value) {
+    cancelWaiting()
+  }
+})
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
+  window.addEventListener('keyup', handleKeyup)
   playMusic('menu')
   // The focus handlers find the state already set, so arriving makes no click
   if (activeColumn.value === 'items') {
@@ -727,6 +946,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown)
+  window.removeEventListener('keyup', handleKeyup)
 })
 </script>
 
@@ -814,6 +1034,26 @@ onBeforeUnmount(() => {
             </li>
             <li>
               <button
+                :id="settingRowId(CONTROLS_INDEX)"
+                class="menu-row"
+                :class="{
+                  'menu-row-selected': highlightedSetting === CONTROLS_INDEX,
+                  'menu-row-active': highlightedSetting === CONTROLS_INDEX && activeColumn === 'items',
+                }"
+                type="button"
+                :aria-controls="highlightedSetting === CONTROLS_INDEX ? detailColumnId : undefined"
+                :tabindex="highlightedSetting === CONTROLS_INDEX ? 0 : -1"
+                @click="chooseDetailRow(CONTROLS_INDEX)"
+                @focus="handleItemFocus(CONTROLS_INDEX)"
+                @pointerdown="handleItemPointerDown(CONTROLS_INDEX)"
+                @pointermove="handleItemPointerMove(CONTROLS_INDEX, $event)"
+                @pointerleave="handleItemPointerLeave"
+              >
+                <span class="menu-row-label">Controls</span>
+              </button>
+            </li>
+            <li>
+              <button
                 class="menu-row"
                 :class="{
                   'menu-row-selected': highlightedSetting === RESET_PROGRESS_INDEX,
@@ -862,7 +1102,7 @@ onBeforeUnmount(() => {
                 type="button"
                 :aria-controls="index === highlightedAbout ? detailColumnId : undefined"
                 :tabindex="index === highlightedAbout ? 0 : -1"
-                @click="chooseAboutRow(index)"
+                @click="chooseDetailRow(index)"
                 @focus="handleItemFocus(index)"
                 @pointerdown="handleItemPointerDown(index)"
                 @pointermove="handleItemPointerMove(index, $event)"
@@ -908,8 +1148,8 @@ onBeforeUnmount(() => {
                 }"
                 :tabindex="index === highlightedLink ? 0 : -1"
                 @click="trackLinkOpen(link.label, link.url)"
-                @focus="handleLinkFocus(index)"
-                @pointermove="handleLinkPointerMove(index, $event)"
+                @focus="handleDetailFocus(index)"
+                @pointermove="handleDetailPointerMove(index, $event)"
               />
             </li>
           </ul>
@@ -928,8 +1168,57 @@ onBeforeUnmount(() => {
             <ChangelogList />
           </div>
         </div>
+
+        <!-- The Controls column runs from the top of the menu, since its keys reach well below
+             the Settings rows -->
+        <div
+          v-else-if="controlsShown"
+          :id="detailColumnId"
+          ref="detailColumn"
+          key="controls"
+          class="home-column home-detail"
+        >
+          <ul class="home-row-list home-control-list" :aria-labelledby="settingRowId(CONTROLS_INDEX)">
+            <li v-for="(control, index) in CONTROLS" :key="control.gameKey">
+              <ControlRow
+                :label="control.label"
+                :bound-key="keyBindings[control.gameKey]"
+                :portal="control.portal"
+                :waiting="waitingControl === control.gameKey"
+                :refused-key="refusedKey"
+                :class="{
+                  'menu-row-selected': index === highlightedControl,
+                  'menu-row-active': index === highlightedControl && activeColumn === 'details',
+                }"
+                :tabindex="index === highlightedControl ? 0 : -1"
+                @click="chooseControl(index)"
+                @focus="handleDetailFocus(index)"
+                @pointermove="handleDetailPointerMove(index, $event)"
+              />
+            </li>
+            <li>
+              <button
+                class="menu-row"
+                :class="{
+                  'menu-row-selected': highlightedControl === RESET_CONTROLS_INDEX,
+                  'menu-row-active': highlightedControl === RESET_CONTROLS_INDEX && activeColumn === 'details',
+                }"
+                type="button"
+                :tabindex="highlightedControl === RESET_CONTROLS_INDEX ? 0 : -1"
+                @click="resetControls"
+                @focus="handleDetailFocus(RESET_CONTROLS_INDEX)"
+                @pointermove="handleDetailPointerMove(RESET_CONTROLS_INDEX, $event)"
+              >
+                <span class="menu-row-label">Reset controls</span>
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
+
+    <!-- Read aloud as the Controls column waits for, takes or refuses a key -->
+    <p class="home-status" role="status">{{ controlStatus }}</p>
 
     <ConfirmDialog
       v-if="resetDialogOpen"
@@ -1013,9 +1302,22 @@ onBeforeUnmount(() => {
   aspect-ratio: 4 / 3;
 }
 
-/* Page rows as wide as the second column's narrowest, so their arrows stay near the names */
-.home-link-list {
+/* Page and key rows as wide as the second column's narrowest, so their arrows and keys stay near the names */
+.home-link-list,
+.home-control-list {
   max-width: 28rem;
+}
+
+/* Heard, not seen */
+.home-status {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* The changelog: text on the wall beside a thin rule, reaching at most as far down as the longest

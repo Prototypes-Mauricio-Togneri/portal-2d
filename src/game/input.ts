@@ -1,85 +1,110 @@
-import {FRAME_KEYS, type FrameInput} from '@/game/frame_input'
-import {GameKey} from '@/game/game_key'
+import type {FrameInput, FrameKey} from '@/game/frame_input'
+import {GameKey, type HistoryKey} from '@/game/game_key'
+import {type BoundKey, getBoundKey, type KeyBindings} from '@/game/key_bindings'
 
 /**
- * Keyboard state for the game, fed by keydown and keyup on the window.
- * Tracks the game keys pressed since the last clear() and those held down;
- * every other key is ignored. Uses KeyboardEvent.keyCode, as the original
- * did, so layouts behave as they always have: letter keys follow the
- * character the layout types (falling back to US positions on non-Latin
- * layouts), while arrows, Space and Ctrl are the same everywhere.
+ * A press waiting for the level, with whether the turn key was held as it
+ * went down.
+ */
+type KeyPress = {
+  readonly key: FrameKey | HistoryKey // The game key pressed
+  readonly turnHeld: boolean // Whether the turn key was held down at that moment
+}
+
+/**
+ * Keyboard state for the game, fed by keydown and keyup on the window. Keys
+ * are read by physical position (KeyboardEvent.code) through the player's
+ * bindings, so they stay in place on every layout; every other key is
+ * ignored. Presses wait in arrival order until the level takes them, one at a
+ * time; the turn key is only ever read as held.
  */
 export class Input {
-  static readonly LEFT = 37 // Left arrow
-  static readonly UP = 38 // Up arrow
-  static readonly RIGHT = 39 // Right arrow
-  static readonly DOWN = 40 // Down arrow
-  static readonly KEY_A = 65 // Shoots the blue portal
-  static readonly KEY_S = 83 // Unused by the game
-  static readonly KEY_D = 68 // Shoots the orange portal
-  static readonly SPACE = 32 // Interact
-  static readonly CTRL = 17 // Held to turn without moving
-  static readonly KEY_Z = 90 // Undo
-  static readonly KEY_X = 88 // Redo
-
-  /** Keys whose browser default (scrolling, pressing a focused button) is suppressed while enabled */
-  private static readonly GAME_KEYS: ReadonlySet<number> = new Set([
-    Input.LEFT,
-    Input.UP,
-    Input.RIGHT,
-    Input.DOWN,
-    Input.SPACE,
+  /**
+   * Keys whose browser default (scrolling, pressing a focused button,
+   * Firefox's quick find) is suppressed while enabled, when they are bound
+   */
+  private static readonly KEYS_WITH_DEFAULTS: ReadonlySet<string> = new Set([
+    'ArrowUp',
+    'ArrowDown',
+    'ArrowLeft',
+    'ArrowRight',
+    'Space',
+    'PageUp',
+    'PageDown',
+    'Home',
+    'End',
+    'Enter',
+    'NumpadEnter',
+    'Slash',
+    'Quote',
   ])
 
-  /** The game key each key stands for, by keyCode */
-  private static readonly GAME_KEY_BY_KEY_CODE: Readonly<Record<number, GameKey>> = {
-    [Input.UP]: GameKey.UP,
-    [Input.DOWN]: GameKey.DOWN,
-    [Input.LEFT]: GameKey.LEFT,
-    [Input.RIGHT]: GameKey.RIGHT,
-    [Input.KEY_A]: GameKey.BLUE,
-    [Input.KEY_D]: GameKey.ORANGE,
-    [Input.SPACE]: GameKey.INTERACT,
-    [Input.CTRL]: GameKey.TURN,
-    [Input.KEY_Z]: GameKey.UNDO,
-    [Input.KEY_X]: GameKey.REDO,
-  }
+  /**
+   * Characters that open Firefox's quick find, whichever key types them on
+   * the player's layout, suppressed while enabled when their key is bound
+   */
+  private static readonly QUICK_FIND_CHARACTERS: ReadonlySet<string> = new Set([
+    '/',
+    '\'',
+  ])
 
   enabled = true // When false, keydown is ignored entirely; keyup is still tracked
-  private readonly pressing = new Set<GameKey>() // Game keys held down
+  private readonly gameKeys: ReadonlyMap<BoundKey, GameKey> // The game key each bound key stands for
+  private readonly holding = new Set<GameKey>() // Game keys held down
   private readonly pressed = new Set<GameKey>() // Game keys pressed since the last clear(), auto-repeat included
+  private readonly presses: KeyPress[] = [] // Presses not yet taken, oldest first
 
   /**
    * Starts listening to the keyboard on the window.
+   * @param bindings - The key bound to each game key, which is only read
    */
-  constructor() {
+  constructor(bindings: KeyBindings) {
+    this.gameKeys = new Map(Object.values(GameKey).map((gameKey) => [
+      bindings[gameKey],
+      gameKey,
+    ]))
+
     window.addEventListener('keyup', this.onKeyup, false)
     window.addEventListener('keydown', this.onKeydown, false)
   }
 
   /**
-   * Forgets the keys pressed so far, keeping those held down.
+   * Forgets which keys went down since the last call, keeping the presses
+   * still waiting and the keys held down.
    */
   clear(): void {
     this.pressed.clear()
   }
 
   /**
-   * Forgets every key, pressed and held.
+   * Forgets every key: pressed, waiting and held.
    */
   reset(): void {
     this.pressed.clear()
-    this.pressing.clear()
+    this.presses.length = 0
+    this.holding.clear()
   }
 
   /**
-   * What the rules read this frame: the keys pressed since the last clear(),
-   * in the fixed order, and whether the turn key is held.
+   * Takes the oldest waiting press.
+   * @returns What the rules read for it (its key, and whether the turn key
+   * was held as it went down), the undo or redo pressed, or null when no
+   * press is waiting
    */
-  get frameInput(): FrameInput {
+  takePress(): FrameInput | HistoryKey | null {
+    const press = this.presses.shift()
+
+    if (press === undefined) {
+      return null
+    }
+
+    if ((press.key === GameKey.UNDO) || (press.key === GameKey.REDO)) {
+      return press.key
+    }
+
     return {
-      keys: FRAME_KEYS.filter((key) => this.pressed.has(key)),
-      turnHeld: this.pressing.has(GameKey.TURN),
+      keys: [press.key],
+      turnHeld: press.turnHeld,
     }
   }
 
@@ -93,15 +118,6 @@ export class Input {
   }
 
   /**
-   * Whether a game key is held down.
-   * @param key - The game key
-   * @returns True when it is down
-   */
-  isPressing(key: GameKey): boolean {
-    return this.pressing.has(key)
-  }
-
-  /**
    * Stops listening to the keyboard.
    */
   dispose(): void {
@@ -110,7 +126,9 @@ export class Input {
   }
 
   /**
-   * Records a key going down, unless disabled.
+   * Records a key going down, unless disabled. A press waits for the level,
+   * except a held key's repeat while its earlier press is still waiting, and
+   * a press with Alt or Meta held, which is only recorded as held.
    * @param event - The keydown event
    */
   readonly onKeydown = (event: KeyboardEvent): void => {
@@ -118,16 +136,30 @@ export class Input {
       return
     }
 
-    const gameKey = Input.GAME_KEY_BY_KEY_CODE[event.keyCode]
+    const gameKey = this.getGameKey(event)
 
-    if (gameKey !== undefined) {
-      this.pressing.add(gameKey)
-      this.pressed.add(gameKey)
+    if (gameKey === null) {
+      return
     }
 
-    if (Input.GAME_KEYS.has(event.keyCode)) {
-      event.preventDefault()
+    this.holding.add(gameKey)
+
+    // With Alt or Meta held the key is a browser shortcut (Alt+Left goes
+    // back), so it is left to the browser and doesn't play
+    if (event.altKey || event.metaKey) {
+      return
     }
+
+    this.pressed.add(gameKey)
+
+    if ((gameKey !== GameKey.TURN) && !(event.repeat && this.presses.some((press) => press.key === gameKey))) {
+      this.presses.push({
+        key: gameKey,
+        turnHeld: this.holding.has(GameKey.TURN),
+      })
+    }
+
+    this.preventDefault(event)
   }
 
   /**
@@ -135,13 +167,39 @@ export class Input {
    * @param event - The keyup event
    */
   readonly onKeyup = (event: KeyboardEvent): void => {
-    const gameKey = Input.GAME_KEY_BY_KEY_CODE[event.keyCode]
+    const gameKey = this.getGameKey(event)
 
-    if (gameKey !== undefined) {
-      this.pressing.delete(gameKey)
+    if (gameKey === null) {
+      return
     }
 
-    if (this.enabled && Input.GAME_KEYS.has(event.keyCode)) {
+    this.holding.delete(gameKey)
+
+    if (this.enabled) {
+      this.preventDefault(event)
+    }
+  }
+
+  /**
+   * The game key a keyboard event's key is bound to.
+   * @param event - The keyboard event
+   * @returns The game key, or null when the key is not bound
+   */
+  private getGameKey(event: KeyboardEvent): GameKey | null {
+    const key = getBoundKey(event.code)
+
+    return (key === null) ? null : (this.gameKeys.get(key) ?? null)
+  }
+
+  /**
+   * Suppresses a bound key's browser default, such as scrolling, unless Alt
+   * or Meta is held, which leaves the combination to the browser.
+   * @param event - The keyboard event of a bound key
+   */
+  private preventDefault(event: KeyboardEvent): void {
+    const hasDefault = Input.KEYS_WITH_DEFAULTS.has(event.code) || Input.QUICK_FIND_CHARACTERS.has(event.key)
+
+    if (hasDefault && !event.altKey && !event.metaKey) {
       event.preventDefault()
     }
   }
