@@ -62,7 +62,7 @@ const dialog = ref<ChamberDialog>('none')
 const timeReadout = useTemplateRef<HTMLElement>('timeReadout')
 const timerStarted = ref(false) // Whether the clock has started; changes only on the first key and on reset
 const completedRun = ref<CompletedRun | null>(null) // The run the completion dialog reports
-const solutionFailed = ref(false) // Whether the last solution download was refused because the run doesn't replay the same way
+const solutionFailed = ref(false) // Whether the last solution download was refused: not on the v2 rules, or the run doesn't replay the same way
 
 let level: Level | LevelV2 | null = null // Running game, on the v2 rules in development with ?rules=v2; created on mount, disposed on unmount
 let resizeObserver: ResizeObserver | null = null // Refits the chamber when the window changes size
@@ -304,8 +304,8 @@ function handleCompleted(): void {
 /**
  * Development only: saves the run just completed as the chamber's recorded
  * solution, chamber_N.solution.json, named after the chamber's file (whose
- * number is its permanent id). Refuses, and says so, when the run doesn't
- * replay the same way.
+ * number is its permanent id). Refuses, and says so, on today's rules or
+ * when the run doesn't replay the same way.
  */
 function downloadSolution(): void {
   // Also lets the production build drop the rest of this function
@@ -321,7 +321,7 @@ function downloadSolution(): void {
       ruleset: replay.ruleset,
       chamberId: chamber.value.id,
       chamberHash: replay.chamberHash,
-      frames: replay.frames,
+      actions: replay.actions,
       expected: replay.expected,
     }
   } catch (error) {

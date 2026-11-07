@@ -2,6 +2,7 @@ import type {ChamberData} from '@/game/chamber_data'
 import type {ReplayExpectation} from '@/game/replay_data'
 import boxLinkedButton from '@scripts/fixtures/box_linked_button.json'
 import buttonBehindCarriedBox from '@scripts/fixtures/button_behind_carried_box.json'
+import carriedBoxLink from '@scripts/fixtures/carried_box_link.json'
 import crossingLasers from '@scripts/fixtures/crossing_lasers.json'
 import fizzlersInARow from '@scripts/fixtures/fizzlers_in_a_row.json'
 import openEdge from '@scripts/fixtures/open_edge.json'
@@ -13,10 +14,11 @@ import twoButtonsOneDoor from '@scripts/fixtures/two_buttons_one_door.json'
 
 // Short replays that pin today's odd behaviour, each on a tiny chamber made
 // for it (the JSON files next to this one), outside the catalogue, and a few
-// that pin how undo and redo replay. The replay check runs them; phase F of
-// stage 01 uses each odd-behaviour fixture as evidence for the intended change
-// it pins (undo and redo live outside the rules, so the undo fixtures are not
-// among them)
+// that pin how undo and redo replay. The replay check runs them; the engine
+// comparison plays each odd-behaviour fixture on both engines as evidence for
+// the intended change it pins (undo and redo live outside the rules, so the
+// undo fixtures are not among them). fixtures_v2.ts pins how the v2 rules
+// play the same chambers
 
 /**
  * How a fixture ends when the rules throw, as live play does when its frame
@@ -208,6 +210,23 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 2,
       portals: 0,
       finalHash: 'ea8bf645',
+    },
+  },
+  {
+    name: 'carried_box_link_sends_box_to_start',
+    behaviour: 'Stepping onto a button linked to the box the subject carries sends the box to its start tile for the rest of the frame, so the button there is pressed and opens its door, then the box comes back and the door closes again.',
+    chamber: carriedBoxLink,
+    frames: [
+      '2:right',
+      '2:interact',
+      '2:right',
+      '2:right',
+    ],
+    expected: {
+      completed: false,
+      moves: 3,
+      portals: 0,
+      finalHash: '131fabe7',
     },
   },
   {

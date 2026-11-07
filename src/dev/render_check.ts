@@ -1,12 +1,13 @@
 import type {ChamberData} from '@/game/chamber_data'
 import {Chamber} from '@/game/classic/chamber'
-import {createRulesState} from '@/game/classic/rules_state_bridge'
+import {createRulesState, toFrameInput} from '@/game/classic/rules_state_bridge'
 import {State} from '@/game/classic/state'
 import {takeSnapshot} from '@/game/classic/state_snapshot'
 import {runFrame, settleClassic} from '@/game/classic/step_classic'
 import {Subject} from '@/game/classic/subject'
 import {EMPTY_FRAME_INPUT} from '@/game/frame_input'
-import {parseReplayFrame} from '@/game/replay_data'
+import {GameKey} from '@/game/game_key'
+import {parseReplayStep} from '@/game/replay_data'
 import {Renderer} from '@/game/renderer'
 import {RendererV2} from '@/game/renderer_v2'
 import {CompiledChamber} from '@/game/rules/compiled_chamber'
@@ -14,9 +15,10 @@ import {readChamber} from '@/game/rules/load_chamber'
 import {CHAMBERS} from '@/services/chamber_catalogue'
 
 // Development only (src/dev/render_check.html, served by `npm run dev`,
-// never built): plays every chamber's recorded solution on today's rules and
-// after every frame, empty frames included, draws the state with today's
-// renderer and, translated into a v2 state, with the v2 renderer, both at
+// never built): plays every chamber's recorded solution on today's rules, the
+// start settled first and each action as its key frame followed by empty
+// frames until the state settles, and after every frame, empty frames
+// included, draws the state with today's renderer and, translated into a v2 state, with the v2 renderer, both at
 // pixel ratio 1 on the same screen size, then compares the two canvases
 // pixel by pixel. Stops at the first mismatch. The result is shown on the
 // page and logged to the console
@@ -76,24 +78,24 @@ function readPixels(canvas: HTMLCanvasElement): Uint8ClampedArray {
 }
 
 /**
- * Reads the key frames of a chamber's recorded solution.
+ * Reads the presses of a chamber's recorded solution.
  * @param id - The chamber's permanent id, which names its solution file
- * @returns The frames, in their text form
- * @throws Error when there is no solution or it has no list of frames
+ * @returns The presses, in their text form
+ * @throws Error when there is no solution or it has no list of actions
  */
-function readSolutionFrames(id: number): string[] {
+function readSolutionActions(id: number): string[] {
   const fileName = `/chamber_${id}.solution.json`
   const path = Object.keys(SOLUTIONS).find((candidate) => candidate.endsWith(fileName))
   const solution: unknown = (path === undefined) ? undefined : SOLUTIONS[path]
-  const frames: unknown = ((typeof solution === 'object') && (solution !== null) && ('frames' in solution)) ? solution.frames : null
+  const actions: unknown = ((typeof solution === 'object') && (solution !== null) && ('actions' in solution)) ? solution.actions : null
 
-  if (!Array.isArray(frames)) {
-    throw new Error(`No solution with a list of frames for chamber ${id}`)
+  if (!Array.isArray(actions)) {
+    throw new Error(`No solution with a list of actions for chamber ${id}`)
   }
 
-  const frameValues: readonly unknown[] = frames
+  const actionValues: readonly unknown[] = actions
 
-  return frameValues.map((frame) => String(frame))
+  return actionValues.map((action) => String(action))
 }
 
 /**
@@ -135,7 +137,7 @@ function compareFrame(drawn: DrawnChamber, frame: string): string | null {
  * @param id - The chamber's permanent id
  * @param data - The chamber JSON
  * @returns How many frames were compared, or a description of the first mismatch
- * @throws Error when the chamber can't be read for the v2 rules or its solution holds an undo or redo
+ * @throws Error when the chamber can't be read for the v2 rules, its solution holds an undo, a redo or an unknown action, or a step doesn't settle
  */
 function checkChamber(id: number, data: ChamberData): number | string {
   const read = readChamber(data)
@@ -166,39 +168,47 @@ function checkChamber(id: number, data: ChamberData): number | string {
     return startMismatch
   }
 
-  for (const [
-    index,
-    text,
-  ] of readSolutionFrames(id).entries()) {
-    const frame = parseReplayFrame(text)
-    const input = frame.input
-
-    if (typeof input === 'string') {
-      throw new Error(`Chamber ${id}'s solution holds an ${input} at key frame ${index + 1}, which this check doesn't play`)
-    }
-
-    for (let i = 0; i <= frame.gap; i++) {
-      // The gap's empty frames, then the key frame
-      runFrame(drawn.state, (i < frame.gap) ? EMPTY_FRAME_INPUT : input)
-      compared++
-
-      const mismatch = compareFrame(drawn, `frame ${compared - 1} (key frame ${index + 1}, ${text})`)
-
-      if (mismatch !== null) {
-        return mismatch
-      }
-    }
-  }
-
+  // The start settles before the first action, as in live play
   let settleMismatch: string | null = null
 
   settleClassic(drawn.state, () => {
     runFrame(drawn.state, EMPTY_FRAME_INPUT)
     compared++
-    settleMismatch = settleMismatch ?? compareFrame(drawn, `frame ${compared - 1} (settling after the last key frame)`)
+    settleMismatch = settleMismatch ?? compareFrame(drawn, `frame ${compared - 1} (settling the start)`)
   })
 
-  return settleMismatch ?? compared
+  if (settleMismatch !== null) {
+    return settleMismatch
+  }
+
+  for (const [
+    index,
+    text,
+  ] of readSolutionActions(id).entries()) {
+    const replayStep = parseReplayStep(text)
+
+    if ((replayStep === GameKey.UNDO) || (replayStep === GameKey.REDO)) {
+      throw new Error(`Chamber ${id}'s solution holds an ${replayStep} at action ${index + 1}, which this check doesn't play`)
+    }
+
+    // The action's key frame, then empty frames until the state settles
+    runFrame(drawn.state, toFrameInput(replayStep))
+    compared++
+
+    let mismatch = compareFrame(drawn, `frame ${compared - 1} (action ${index + 1}, ${text})`)
+
+    settleClassic(drawn.state, () => {
+      runFrame(drawn.state, EMPTY_FRAME_INPUT)
+      compared++
+      mismatch = mismatch ?? compareFrame(drawn, `frame ${compared - 1} (settling after action ${index + 1}, ${text})`)
+    })
+
+    if (mismatch !== null) {
+      return mismatch
+    }
+  }
+
+  return compared
 }
 
 /**

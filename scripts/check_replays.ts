@@ -1,14 +1,24 @@
 import {existsSync, readFileSync} from 'node:fs'
 import type {ChamberData} from '@/game/chamber_data'
-import {runReplay, type ReplayResult} from '@/game/classic/replay_runner'
-import {getChamberHash, type ReplayExpectation, type SolutionData} from '@/game/replay_data'
+import {runReplay} from '@/game/classic/replay_runner'
+import {getChamberHash, parseReplayStep, type ReplayExpectation, type ReplayStep, type SolutionData} from '@/game/replay_data'
+import {ACTIONS} from '@/game/rules/action'
+import {CompiledChamber} from '@/game/rules/compiled_chamber'
+import {loadChamber, readChamber} from '@/game/rules/load_chamber'
+import {runRulesReplay, type RulesReplayResult} from '@/game/rules/replay_runner'
+import type {RulesState} from '@/game/rules/rules_state'
+import {step} from '@/game/rules/step'
 import {CHAMBER_FILES, CHAMBERS_DIRECTORY, listChamberFiles} from '@scripts/chamber_files'
 import {type Fixture, FIXTURES} from '@scripts/fixtures/fixtures'
+import {type FixtureV2, FIXTURES_V2} from '@scripts/fixtures/fixtures_v2'
 
 // Replays every chamber's recorded solution (src/chambers/chamber_N.solution.json)
-// and every behaviour fixture (scripts/fixtures/) with today's rules under
-// Node, and compares each with what it must give. Prints one line per chamber
-// and per fixture, and exits non-zero on any failure
+// with the v2 rules under Node, compares it with what it must give, and
+// checks that no action changes the completed chamber; then every behaviour
+// fixture of today's rules (scripts/fixtures/fixtures.ts) with today's rules
+// and every fixture of the v2 rules (scripts/fixtures/fixtures_v2.ts) with
+// the v2 rules, each compared with how it must end. Prints one line per
+// chamber and per fixture, and exits non-zero on any failure
 
 /** Eight lowercase hexadecimal digits, as hashes are written */
 const HASH_PATTERN = /^[0-9a-f]{8}$/
@@ -87,31 +97,31 @@ function parseSolutionData(value: unknown): SolutionData {
     throw new Error('the solution is not an object')
   }
 
-  if (value.format !== 1) {
-    throw new Error('format is not 1')
+  if (value.format !== 2) {
+    throw new Error('format is not 2')
   }
 
-  if (value.ruleset !== 'classic') {
-    throw new Error('ruleset is not "classic"')
+  if (value.ruleset !== 'v2') {
+    throw new Error('ruleset is not "v2"')
   }
 
   if ((typeof value.chamberId !== 'number') || (!Number.isInteger(value.chamberId)) || (value.chamberId < 1)) {
     throw new Error('chamberId is not a positive whole number')
   }
 
-  if (!Array.isArray(value.frames)) {
-    throw new Error('frames is not a list')
+  if (!Array.isArray(value.actions)) {
+    throw new Error('actions is not a list')
   }
 
-  const frameValues: readonly unknown[] = value.frames
-  const frames: string[] = []
+  const actionValues: readonly unknown[] = value.actions
+  const actions: ReplayStep[] = []
 
-  for (const frame of frameValues) {
-    if (typeof frame !== 'string') {
-      throw new Error('frames holds something other than text')
+  for (const action of actionValues) {
+    if (typeof action !== 'string') {
+      throw new Error('actions holds something other than text')
     }
 
-    frames.push(frame)
+    actions.push(parseReplayStep(action))
   }
 
   return {
@@ -119,7 +129,7 @@ function parseSolutionData(value: unknown): SolutionData {
     ruleset: value.ruleset,
     chamberId: value.chamberId,
     chamberHash: readHash(value.chamberHash, 'chamberHash'),
-    frames: frames,
+    actions: actions,
     expected: readExpectation(value.expected),
   }
 }
@@ -130,7 +140,7 @@ function parseSolutionData(value: unknown): SolutionData {
  * @param expected - What it must give
  * @returns Every difference, in words, or null when there is none
  */
-function describeDifferences(result: ReplayResult, expected: ReplayExpectation): string | null {
+function describeDifferences(result: ReplayExpectation, expected: ReplayExpectation): string | null {
   const differences: string[] = []
 
   if (result.completed !== expected.completed) {
@@ -153,6 +163,36 @@ function describeDifferences(result: ReplayResult, expected: ReplayExpectation):
 }
 
 /**
+ * What a replay on the v2 rules gave, in the terms of an expectation.
+ * @param result - What the replay gave
+ * @returns Its completion, counters and final hash
+ */
+function toExpectation(result: RulesReplayResult): ReplayExpectation {
+  return {
+    completed: result.completed,
+    moves: result.moves,
+    portals: result.portals,
+    finalHash: result.finalState.hash,
+  }
+}
+
+/**
+ * Checks that no action changes a completed chamber or reports anything.
+ * @param chamber - The chamber
+ * @param state - A completed state of it
+ * @throws Error naming the first action that did
+ */
+function checkCompletedIsFinal(chamber: CompiledChamber, state: RulesState): void {
+  for (const action of ACTIONS) {
+    const result = step(chamber, state, action)
+
+    if ((result.state !== state) || (result.events.length > 0)) {
+      throw new Error(`${action} after completion changed the state or reported [${result.events.join(', ')}]`)
+    }
+  }
+}
+
+/**
  * Replays a chamber's recorded solution and checks it.
  * @param file - The chamber's file name
  * @param data - The chamber JSON
@@ -164,33 +204,42 @@ function checkSolution(file: string, data: ChamberData): string {
   const solutionUrl = new URL(solutionFile, CHAMBERS_DIRECTORY)
 
   if (!existsSync(solutionUrl)) {
-    throw new Error(`no solution recorded; save one as src/chambers/${solutionFile} with Download solution in the completion dialog (development only)`)
+    throw new Error(`no solution recorded; save one as src/chambers/${solutionFile} with Download solution in the completion dialog (development only, with ?rules=v2)`)
   }
 
   const parsed: unknown = JSON.parse(readFileSync(solutionUrl, 'utf8'))
   const solution = parseSolutionData(parsed)
 
-  if (solution.chamberHash !== getChamberHash(data)) {
+  const loaded = loadChamber(data)
+
+  if (loaded.chamber === null) {
+    throw new Error(`the v2 rules can't load the chamber: ${loaded.problems.map((problem) => problem.message).join('; ')}`)
+  }
+
+  if (solution.chamberHash !== getChamberHash(loaded.chamber)) {
     throw new Error(`the chamber changed since ${solutionFile} was recorded; record it again`)
   }
 
-  const result = runReplay(data, solution.frames)
+  const chamber = new CompiledChamber(loaded.chamber)
+  const result = runRulesReplay(chamber, solution.actions)
 
   if (!result.completed) {
     throw new Error(`${solutionFile} does not complete the chamber`)
   }
 
-  const differences = describeDifferences(result, solution.expected)
+  const differences = describeDifferences(toExpectation(result), solution.expected)
 
   if (differences !== null) {
     throw new Error(`${solutionFile}: ${differences}`)
   }
 
+  checkCompletedIsFinal(chamber, result.finalState)
+
   return `chamber id ${solution.chamberId}, ${result.moves} moves, ${result.portals} portals`
 }
 
 /**
- * Replays a fixture and checks it ends as pinned.
+ * Replays a fixture of today's rules and checks it ends as pinned.
  * @param fixture - The fixture
  * @throws Error saying how it ended differently
  */
@@ -214,6 +263,26 @@ function checkFixture(fixture: Fixture): void {
   }
 
   const differences = describeDifferences(runReplay(fixture.chamber, fixture.frames), expected)
+
+  if (differences !== null) {
+    throw new Error(differences)
+  }
+}
+
+/**
+ * Replays a fixture of the v2 rules and checks it ends as pinned.
+ * @param fixture - The fixture
+ * @throws Error saying how it ended differently
+ */
+function checkFixtureV2(fixture: FixtureV2): void {
+  const read = readChamber(fixture.chamber)
+
+  if (read.chamber === null) {
+    throw new Error(`the v2 rules can't read the chamber: ${read.problems.map((problem) => problem.message).join('; ')}`)
+  }
+
+  const result = runRulesReplay(new CompiledChamber(read.chamber), fixture.actions)
+  const differences = describeDifferences(toExpectation(result), fixture.expected)
 
   if (differences !== null) {
     throw new Error(differences)
@@ -250,6 +319,16 @@ function runAll(): boolean {
       console.log(`fixture ${fixture.name} OK`)
     } catch (error) {
       console.error(`fixture ${fixture.name} FAILED: ${error instanceof Error ? error.message : String(error)}`)
+      passed = false
+    }
+  }
+
+  for (const fixture of FIXTURES_V2) {
+    try {
+      checkFixtureV2(fixture)
+      console.log(`v2 fixture ${fixture.name} OK`)
+    } catch (error) {
+      console.error(`v2 fixture ${fixture.name} FAILED: ${error instanceof Error ? error.message : String(error)}`)
       passed = false
     }
   }

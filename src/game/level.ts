@@ -5,13 +5,11 @@ import {GameEvent} from '@/game/game_event'
 import {GameKey, type HistoryKey} from '@/game/game_key'
 import {Input} from '@/game/input'
 import type {KeyBindings} from '@/game/key_bindings'
-import {formatReplayFrame, getChamberHash, type ReplayData} from '@/game/replay_data'
+import type {ReplayData} from '@/game/replay_data'
 import {Renderer} from '@/game/renderer'
-import {runReplay} from '@/game/classic/replay_runner'
-import {SETTLE_CAP} from '@/game/classic/step_classic'
 import {Sound} from '@/game/sound'
 import {State} from '@/game/classic/state'
-import {getSnapshotText, getStateHash, takeSnapshot} from '@/game/classic/state_snapshot'
+import {getSnapshotText, takeSnapshot} from '@/game/classic/state_snapshot'
 import {Subject} from '@/game/classic/subject'
 import {UndoHistory} from '@/game/classic/undo_history'
 
@@ -22,8 +20,7 @@ import {UndoHistory} from '@/game/classic/undo_history'
  * the step function, one key at a time, in the order pressed), plays a sound
  * for each thing that happened in it, and redraws only when the state reports
  * a change. An undo or redo press steps through the run's history instead,
- * silently. Frames with keys are logged, so the run since the last load can
- * be replayed without a browser.
+ * silently. Solutions are recorded on the v2 rules only, so it records none.
  */
 export class Level {
   /** Keys that start the clock: moving, turning, both portals and interacting */
@@ -58,11 +55,7 @@ export class Level {
   onCompleted: (() => void) | null = null // Called once per load when the subject reaches the exit
 
   private state: State | null = null // The chamber being played, null before the first load
-  private chamberData: ChamberData | null = null // The layout of the chamber being played, null before the first load
   private history: UndoHistory | null = null // Undo and redo for the run since the last load, null before the first load
-  private frameLog: string[] = [] // Every frame with keys since the last load, in the replay text form
-  private keyFrameHashes: string[] = [] // Hash of the state right after each logged frame
-  private emptyFrames = 0 // Frames without keys since the last logged frame or the load
   private settled = false // Whether the latest frame left the state as it was, so the next press may be taken
   private clockStarted = false // Whether a game key has been pressed since the last load
   private elapsedSeconds = 0 // Play time since the clock started; only grows while unpaused
@@ -104,11 +97,7 @@ export class Level {
     this.stepCount = 0
     this.portalCount = 0
     this.undoCount = 0
-    this.chamberData = chamberData
     this.history = new UndoHistory(chamberData)
-    this.frameLog = []
-    this.keyFrameHashes = []
-    this.emptyFrames = 0
     this.settled = false
 
     const chamber = new Chamber(chamberData)
@@ -191,42 +180,13 @@ export class Level {
   }
 
   /**
-   * The run since the last load as a replay, for saving a solution. Replays
-   * the logged frames on a fresh copy of the chamber first and checks that
-   * they reproduce the live run: the state after every key frame, the moves
-   * and the portals.
-   * @returns The replay
-   * @throws Error when no chamber is loaded, or when the replay differs from the live run
+   * Refuses: solutions are recorded on the v2 rules, in development with
+   * ?rules=v2.
+   * @returns Never
+   * @throws Error always
    */
   createReplay(): ReplayData {
-    if (this.chamberData === null) {
-      throw new Error('No chamber is loaded')
-    }
-
-    const frames = [...this.frameLog]
-    const result = runReplay(this.chamberData, frames)
-    const differingFrame = this.keyFrameHashes.findIndex((hash, index) => hash !== result.keyFrameHashes[index])
-
-    if (differingFrame !== -1) {
-      throw new Error(`The replay differs from the live run after key frame ${differingFrame + 1} of ${frames.length} (${frames[differingFrame]})`)
-    }
-
-    if ((result.moves !== this.stepCount) || (result.portals !== this.portalCount)) {
-      throw new Error(`The replay counts ${result.moves} moves and ${result.portals} portals, the live run ${this.stepCount} and ${this.portalCount}`)
-    }
-
-    return {
-      format: 1,
-      ruleset: 'classic',
-      chamberHash: getChamberHash(this.chamberData),
-      frames: frames,
-      expected: {
-        completed: result.completed,
-        moves: result.moves,
-        portals: result.portals,
-        finalHash: result.finalHash,
-      },
-    }
+    throw new Error('Solutions are recorded on the v2 rules; open the chamber with ?rules=v2 to record one')
   }
 
   /**
@@ -310,7 +270,7 @@ export class Level {
    * @param delta - Seconds since the previous frame
    * @param state - The chamber being played
    * @param history - The run's undo and redo
-   * @param frameInput - What the rules read in this frame; the replay logs exactly this
+   * @param frameInput - What the rules read in this frame
    * @returns Whether the state changed
    */
   private updateRules(delta: number, state: State, history: UndoHistory, frameInput: FrameInput): boolean {
@@ -331,8 +291,6 @@ export class Level {
 
       this.settled = getSnapshotText(before) === getSnapshotText(takeSnapshot(state))
     }
-
-    this.logFrame(state, frameInput)
 
     // Only the arrow keys move the subject, so a new tile is one step
     if ((subject.x !== startX) || (subject.y !== startY)) {
@@ -365,31 +323,7 @@ export class Level {
       this.undoCount++
     }
 
-    this.logFrame(state, key)
-
     return restored
-  }
-
-  /**
-   * Logs a frame that had keys, with the empty frames before it, and the
-   * state it led to; frames without keys are only counted.
-   * @param state - The state after the frame
-   * @param input - What the rules read in the frame, or the undo or redo pressed instead
-   */
-  private logFrame(state: State, input: FrameInput | HistoryKey): void {
-    if ((typeof input !== 'string') && (input.keys.length === 0)) {
-      this.emptyFrames++
-
-      return
-    }
-
-    // Past the cap the state has settled, so more empty frames would replay the same
-    this.frameLog.push(formatReplayFrame({
-      gap: Math.min(this.emptyFrames, SETTLE_CAP),
-      input: input,
-    }))
-    this.keyFrameHashes.push(getStateHash(state))
-    this.emptyFrames = 0
   }
 
   /**

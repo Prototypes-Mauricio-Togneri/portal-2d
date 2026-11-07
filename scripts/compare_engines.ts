@@ -3,15 +3,10 @@ import {parseArgs} from 'node:util'
 import type {ChamberData} from '@/game/chamber_data'
 import {Action, ACTIONS} from '@/game/rules/action'
 import {CHAMBER_FILES, CHAMBERS_DIRECTORY, listChamberFiles} from '@scripts/chamber_files'
-import {ChamberTiles} from '@scripts/engine_comparison/chamber_tiles'
-import {startClassicRun} from '@scripts/engine_comparison/classic_run'
 import {checkCompiledLookups} from '@scripts/engine_comparison/compiled_lookups'
-import {readAction} from '@scripts/engine_comparison/compared_action'
-import {type ComparedEngine, type ComparedOutcome, type ComparedRun, playStep} from '@scripts/engine_comparison/compared_run'
-import {findIntendedDifference} from '@scripts/engine_comparison/intended_differences'
-import {describeOutcomeDifferences} from '@scripts/engine_comparison/outcome_differences'
-import {checkRecognisedFixture, RECOGNISED_FIXTURES} from '@scripts/engine_comparison/self_test'
-import {startV2Run} from '@scripts/engine_comparison/v2_run'
+import {readSolutionAction} from '@scripts/engine_comparison/compared_action'
+import {type Comparison, compareStep, createComparison, startBoth} from '@scripts/engine_comparison/comparison'
+import {checkPinnedFixture, findUnpinnedFixtures, PINNED_FIXTURES} from '@scripts/engine_comparison/fixture_comparison'
 import {FIXTURES} from '@scripts/fixtures/fixtures'
 import {readNumberOption} from '@scripts/number_option'
 import {createRandom} from '@scripts/seeded_random'
@@ -22,12 +17,14 @@ import {createRandom} from '@scripts/seeded_random'
 // the original rules" is counted under its id, and the run carries on from
 // v2's state; any other difference fails. First every chamber file and
 // fixture chamber is compiled for the v2 rules, and each lookup of the
-// compiled chamber must agree with today's rules on every tile. Then a
-// self-test checks that each behaviour fixture playing one key at a time is
-// recognised as its own intended difference; then, per chamber, its recorded
-// solution and a seeded random walk are compared, then a seeded random walk
-// on each fixture chamber. Prints one line per compiled chamber, per fixture
-// and per chamber, and exits non-zero on any failure.
+// compiled chamber must agree with today's rules on every tile. Then each
+// behaviour fixture without undo or redo is played on both engines, one
+// settled step per key frame, and must show exactly the intended difference
+// it pins, at its step (or none, for those pinning a key pressed before a
+// late effect lands); then, per chamber, its recorded solution and a seeded
+// random walk are compared, then a seeded random walk on each fixture
+// chamber. Prints one line per compiled chamber, per fixture and per
+// chamber, and exits non-zero on any failure.
 // Options: --seed=<number> (default 1), --steps=<number> per chamber and per fixture chamber (default 100000)
 
 /** Steps per chamber unless --steps says otherwise */
@@ -36,122 +33,14 @@ const DEFAULT_STEPS = 100_000
 /** Seed unless --seed says otherwise */
 const DEFAULT_SEED = 1
 
-/** The v2 rules */
-const V2_ENGINE: ComparedEngine = startV2Run
-
 /**
- * A chamber played on both engines, in step with each other.
- */
-type Comparison = {
-  readonly data: ChamberData // The chamber JSON
-  readonly tiles: ChamberTiles // What the chamber file puts on each tile
-  readonly differences: Map<string, number> // Intended differences seen so far, by id
-  classic: ComparedRun // The chamber on today's rules
-  v2: ComparedRun // The chamber on the v2 rules
-}
-
-/**
- * Whether two outcomes of a step agree in everything compared. Cheaper than
- * listing the differences, which only a disagreement needs.
- * @param classic - What today's rules did
- * @param v2 - What the v2 rules did
- * @returns True when the error, the events and the state are the same
- */
-function outcomesAgree(classic: ComparedOutcome, v2: ComparedOutcome): boolean {
-  return (classic.error === v2.error) &&
-    (classic.events.join() === v2.events.join()) &&
-    (JSON.stringify(classic.view) === JSON.stringify(v2.view))
-}
-
-/**
- * Starts the chamber on both engines, which must agree on the settled start.
- * @param comparison - The chamber; both runs are replaced
- * @throws Error listing the differences when they disagree
- */
-function startBoth(comparison: Comparison): void {
-  comparison.classic = startClassicRun(comparison.data)
-  comparison.v2 = V2_ENGINE(comparison.data)
-
-  const differences = describeOutcomeDifferences({
-    view: comparison.classic.view,
-    events: comparison.classic.startEvents,
-    error: null,
-  }, {
-    view: comparison.v2.view,
-    events: comparison.v2.startEvents,
-    error: null,
-  })
-
-  if (differences.length > 0) {
-    throw new Error(`the start differs: ${differences.join('; ')}`)
-  }
-}
-
-/**
- * Builds a comparison of a chamber, started on both engines.
- * @param data - The chamber JSON
- * @param differences - Where intended differences are counted
- * @returns The comparison
- * @throws Error when the engines disagree on the start
- */
-function createComparison(data: ChamberData, differences: Map<string, number>): Comparison {
-  const comparison: Comparison = {
-    data: data,
-    tiles: new ChamberTiles(data),
-    differences: differences,
-    classic: startClassicRun(data),
-    v2: V2_ENGINE(data),
-  }
-
-  startBoth(comparison)
-
-  return comparison
-}
-
-/**
- * Plays one action on both engines and compares them. An intended
- * difference is counted, and today's rules then take over v2's state.
- * @param comparison - The chamber on both engines
- * @param action - The step's action
- * @throws Error when v2 throws, or listing the differences when no intended difference explains them
- */
-function compareStep(comparison: Comparison, action: Action): void {
-  const before = comparison.classic.view
-  const classic = playStep(comparison.classic, action)
-  const v2 = playStep(comparison.v2, action)
-
-  if (v2.error !== null) {
-    throw new Error(`v2 threw "${v2.error}"`)
-  }
-
-  if (outcomesAgree(classic, v2)) {
-    return
-  }
-
-  const difference = findIntendedDifference({
-    tiles: comparison.tiles,
-    action: action,
-    before: before,
-    classic: classic,
-    v2: v2,
-  })
-
-  if (difference === null) {
-    throw new Error(`no intended difference explains: ${describeOutcomeDifferences(classic, v2).join('; ')}`)
-  }
-
-  comparison.differences.set(difference.id, (comparison.differences.get(difference.id) ?? 0) + 1)
-  comparison.classic.takeOver(v2.view)
-}
-
-/**
- * Reads the key frames of a chamber's recorded solution. The replay check
+ * Reads the presses of a chamber's recorded solution. The replay check
  * validates the rest of the file.
  * @param file - The chamber's file name
- * @returns The frames, in their text form
- * @throws Error when there is no solution or it has no list of frames
+ * @returns The presses, in their text form
+ * @throws Error when there is no solution or it has no list of actions
  */
-function readSolutionFrames(file: string): string[] {
+function readSolutionActions(file: string): string[] {
   const solutionFile = file.replace(/\.json$/, '.solution.json')
   const solutionUrl = new URL(solutionFile, CHAMBERS_DIRECTORY)
 
@@ -160,40 +49,40 @@ function readSolutionFrames(file: string): string[] {
   }
 
   const parsed: unknown = JSON.parse(readFileSync(solutionUrl, 'utf8'))
-  const frames: unknown = ((typeof parsed === 'object') && (parsed !== null) && ('frames' in parsed)) ? parsed.frames : null
+  const actions: unknown = ((typeof parsed === 'object') && (parsed !== null) && ('actions' in parsed)) ? parsed.actions : null
 
-  if (!Array.isArray(frames)) {
-    throw new Error(`${solutionFile} has no list of frames`)
+  if (!Array.isArray(actions)) {
+    throw new Error(`${solutionFile} has no list of actions`)
   }
 
-  const frameValues: readonly unknown[] = frames
+  const actionValues: readonly unknown[] = actions
 
-  return frameValues.map((frame) => String(frame))
+  return actionValues.map((action) => String(action))
 }
 
 /**
- * Plays a chamber's recorded solution on both engines, one key frame per step.
+ * Plays a chamber's recorded solution on both engines, one press per step.
  * @param comparison - The chamber on both engines, at its start
  * @param file - The chamber's file name
  * @returns A short summary
  * @throws Error naming the step that failed
  */
 function compareSolution(comparison: Comparison, file: string): string {
-  const frames = readSolutionFrames(file)
+  const actions = readSolutionActions(file)
 
-  for (let i = 0; i < frames.length; i++) {
-    const frame = frames[i] ?? ''
+  for (let i = 0; i < actions.length; i++) {
+    const action = actions[i] ?? ''
 
     try {
-      compareStep(comparison, readAction(frame))
+      compareStep(comparison, readSolutionAction(action))
     } catch (error) {
-      throw new Error(`solution step ${i + 1} (${frame}): ${error instanceof Error ? error.message : String(error)}`, {
+      throw new Error(`solution step ${i + 1} (${action}): ${error instanceof Error ? error.message : String(error)}`, {
         cause: error,
       })
     }
   }
 
-  return `solution ${frames.length} steps (${comparison.v2.view.chamberCompleted ? 'completed' : 'not completed'})`
+  return `solution ${actions.length} steps (${comparison.v2.view.chamberCompleted ? 'completed' : 'not completed'})`
 }
 
 /**
@@ -308,12 +197,16 @@ function runAll(): boolean {
     }
   }
 
-  for (const expected of RECOGNISED_FIXTURES) {
+  for (const name of findUnpinnedFixtures()) {
+    console.error(`fixture ${name} FAILED: not listed in scripts/engine_comparison/fixture_comparison.ts`)
+    passed = false
+  }
+
+  for (const pinned of PINNED_FIXTURES) {
     try {
-      checkRecognisedFixture(expected)
-      console.log(`fixture ${expected.fixture} OK: ${expected.difference} at step ${expected.step}`)
+      console.log(`fixture ${pinned.fixture} OK: ${checkPinnedFixture(pinned)}`)
     } catch (error) {
-      console.error(`fixture ${expected.fixture} FAILED: ${error instanceof Error ? error.message : String(error)}`)
+      console.error(`fixture ${pinned.fixture} FAILED: ${error instanceof Error ? error.message : String(error)}`)
       passed = false
     }
   }
@@ -330,7 +223,7 @@ function runAll(): boolean {
     }
 
     try {
-      const comparison = createComparison(data, new Map())
+      const comparison = createComparison(data)
       const solution = compareSolution(comparison, file)
       const walk = compareWalk(comparison, steps, seed)
 
@@ -349,7 +242,7 @@ function runAll(): boolean {
     }
 
     try {
-      const comparison = createComparison(fixture.chamber, new Map())
+      const comparison = createComparison(fixture.chamber)
       const walk = compareWalk(comparison, steps, seed)
 
       console.log(`fixture chamber of ${fixture.name} OK: ${walk}; ${describeCounts(comparison.differences)}`)

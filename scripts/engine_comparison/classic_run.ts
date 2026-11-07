@@ -1,13 +1,13 @@
 import type {ChamberData} from '@/game/chamber_data'
 import {Chamber} from '@/game/classic/chamber'
 import {State} from '@/game/classic/state'
+import {toFrameInput} from '@/game/classic/rules_state_bridge'
 import {restoreSnapshot, takeSnapshot} from '@/game/classic/state_snapshot'
 import {runFrame, settleClassic, stepClassic} from '@/game/classic/step_classic'
 import {Subject} from '@/game/classic/subject'
 import {EMPTY_FRAME_INPUT} from '@/game/frame_input'
 import type {GameEvent} from '@/game/game_event'
 import type {Action} from '@/game/rules/action'
-import {toFrameInput} from '@scripts/engine_comparison/compared_action'
 import type {ComparedRun, ComparedView} from '@scripts/engine_comparison/compared_run'
 
 /**

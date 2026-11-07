@@ -1,4 +1,7 @@
 import type {BoxSnapshot, PortalSnapshot, StateSnapshot} from '@/game/classic/state_snapshot'
+import type {FrameInput, FrameKey} from '@/game/frame_input'
+import {GameKey} from '@/game/game_key'
+import {Action} from '@/game/rules/action'
 import type {CompiledChamber} from '@/game/rules/compiled_chamber'
 import type {BlockableKind} from '@/game/rules/element_registry'
 import {PortalColor} from '@/game/rules/portal_color'
@@ -6,7 +9,8 @@ import type {RulesState} from '@/game/rules/rules_state'
 import {StateDraft} from '@/game/rules/state_draft'
 import {NO_BOX, NOT_STORED} from '@/game/rules/state_layout'
 
-// Translates between today's snapshots and states of the v2 rules, for the
+// Translates between today's snapshots and states of the v2 rules, and from
+// an action of the v2 rules to the key frame today's rules read, for the
 // engine comparison and the renderer comparison while both rules exist
 // (stage 01). Deleted with today's rules
 
@@ -16,6 +20,43 @@ import {NO_BOX, NOT_STORED} from '@/game/rules/state_layout'
  * element order.
  */
 export type SharedSnapshot = Omit<StateSnapshot, 'insideFizzler'>
+
+/**
+ * A key frame pressing one key.
+ * @param key - The key pressed
+ * @param turnHeld - Whether the turn key is held
+ * @returns The frame's input
+ */
+function keyFrame(key: FrameKey, turnHeld: boolean): FrameInput {
+  return {
+    keys: [key],
+    turnHeld: turnHeld,
+  }
+}
+
+/** The key frame today's rules read for each action: its one key, with the turn key held for a turn */
+const FRAME_INPUTS: Readonly<Record<Action, FrameInput>> = {
+  [Action.UP]: keyFrame(GameKey.UP, false),
+  [Action.DOWN]: keyFrame(GameKey.DOWN, false),
+  [Action.LEFT]: keyFrame(GameKey.LEFT, false),
+  [Action.RIGHT]: keyFrame(GameKey.RIGHT, false),
+  [Action.TURN_UP]: keyFrame(GameKey.UP, true),
+  [Action.TURN_DOWN]: keyFrame(GameKey.DOWN, true),
+  [Action.TURN_LEFT]: keyFrame(GameKey.LEFT, true),
+  [Action.TURN_RIGHT]: keyFrame(GameKey.RIGHT, true),
+  [Action.BLUE]: keyFrame(GameKey.BLUE, false),
+  [Action.ORANGE]: keyFrame(GameKey.ORANGE, false),
+  [Action.INTERACT]: keyFrame(GameKey.INTERACT, false),
+}
+
+/**
+ * The key frame today's rules read for an action of the v2 rules.
+ * @param action - The action
+ * @returns Its one key, with the turn key held for a turn
+ */
+export function toFrameInput(action: Action): FrameInput {
+  return FRAME_INPUTS[action]
+}
 
 /**
  * Reads one portal of a v2 state as today's snapshot holds it.

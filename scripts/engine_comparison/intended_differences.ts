@@ -28,7 +28,7 @@ export type ComparedStep = {
 export type IntendedDifference = {
   readonly id: string // The id docs/elements.md lists it under
   readonly description: string // What changes, in plain words
-  readonly recognise: ((step: ComparedStep) => boolean) | null // Whether a step is in its situation; null when it can only show in frame-by-frame replays, which stage 01's phase F adds
+  readonly recognise: ((step: ComparedStep) => boolean) | null // Whether a step is in its situation; null when it can only show in frame recordings, which the comparison doesn't play
 }
 
 /** The error today's rules throw when a button releases a box it links */
@@ -115,8 +115,9 @@ function recogniseFizzlerWithoutFlag(step: ComparedStep): boolean {
  * A step where today's rules land an effect a frame late, which changes the
  * order of events and so can change the settled result: the subject carried
  * a box off a button (judged before the box follows), or came out of a
- * portal into a fizzler (which fires on the next frame). Keys pressed before
- * a late effect lands need frame-by-frame replays (phase F).
+ * portal into a fizzler (which fires on the next frame). A key pressed before
+ * a late effect lands shows only in frame recordings, which the comparison
+ * doesn't play.
  * @param step - The step
  * @returns Whether the step is in that situation
  */
