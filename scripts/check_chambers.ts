@@ -2,21 +2,25 @@ import type {ChamberData} from '@/game/chamber_data'
 import {GameEvent} from '@/game/game_event'
 import {CHAMBER_FIELDS} from '@/game/rules/chamber_parser'
 import {formatChamberProblem} from '@/game/rules/chamber_problem'
+import {CompiledChamber, type LinkTarget} from '@/game/rules/compiled_chamber'
 import type {ElementDefinition} from '@/game/rules/element_definition'
 import {CORE_STEP_EVENTS, ELEMENT_REGISTRY} from '@/game/rules/element_registry'
 import {loadChamber} from '@/game/rules/load_chamber'
 import {CHAMBER_FILES, listChamberFiles} from '@scripts/chamber_files'
-import {CHAMBER_CASES, type ChamberCase} from '@scripts/fixtures/format_examples'
+import {CHAMBER_CASES, type ChamberCase, FORMAT_V2_EXAMPLE} from '@scripts/fixtures/format_examples'
 
 // Loads every chamber file the way the v2 rules will (brought to the current
 // format, every field read, the layout checked). Every chamber in
 // src/chambers must load without an error, and each case in
 // scripts/fixtures/format_examples.ts must report exactly the problems pinned
-// for it. Then checks the element registry against the format: every
-// element's field is one the parser accepts, the registry holds exactly format
-// 1's elements, and every game event has one owner. Prints one line per
-// chamber, case and registry check, then any problem below it, and exits
-// non-zero on any failure
+// for it. The format 2 example, compiled, must reach exactly the pinned links
+// (its link group expanded) and refuse portals on exactly the pinned walls,
+// which nothing in today's rules can be compared with. Then checks the
+// element registry against the format: every element's field is one the
+// parser accepts, the registry holds exactly format 1's elements, and every
+// game event has one owner. Prints one line per chamber, case, compiled
+// example and registry check, then any problem below it, and exits non-zero
+// on any failure
 
 /** Format 1's element fields: every field of ChamberData but the size and the subject. Typed by ChamberData, so the build fails when one is missing or extra */
 const FORMAT_1_ELEMENT_FIELDS: Readonly<Record<Exclude<keyof ChamberData, 'size' | 'subject'>, true>> = {
@@ -32,6 +36,24 @@ const FORMAT_1_ELEMENT_FIELDS: Readonly<Record<Exclude<keyof ChamberData, 'size'
   switches: true,
   lasers: true,
 }
+
+/** What each button's and switch's links reach in the compiled format 2 example: its group stands for the door and the barrier, in that order */
+const EXAMPLE_LINKS: readonly string[] = [
+  'button 0: door 0, barrier 0',
+  'switch 0: door 0, barrier 0, exit 0',
+]
+
+/** The wall tiles of the compiled format 2 example that refuse portals, row by row from the bottom: the wall in the middle and the top row */
+const EXAMPLE_WALLS_REFUSING_PORTALS: readonly string[] = [
+  '(3, 2)',
+  '(0, 4)',
+  '(1, 4)',
+  '(2, 4)',
+  '(3, 4)',
+  '(4, 4)',
+  '(5, 4)',
+  '(6, 4)',
+]
 
 /** The registry's element definitions, read through the plain definition type */
 const DEFINITIONS: readonly ElementDefinition[] = ELEMENT_REGISTRY
@@ -125,6 +147,58 @@ function checkCase(chamberCase: ChamberCase): boolean {
   if (reported.every((line) => expected.includes(line)) && expected.every((line) => reported.includes(line))) {
     console.error('  the same problems, in another order')
   }
+
+  return false
+}
+
+/**
+ * Lists the lines of one list that the other doesn't have, under a label.
+ * @param label - What the lines are, such as "not pinned"
+ * @param lines - The lines to look through
+ * @param other - The lines to look for them in
+ */
+function printMissing(label: string, lines: readonly string[], other: readonly string[]): void {
+  for (const line of lines.filter((candidate) => !other.includes(candidate))) {
+    console.error(`  ${label}: ${line}`)
+  }
+}
+
+/**
+ * Compiles the format 2 example and compares its links and the walls that
+ * refuse portals with what is pinned.
+ * @returns Whether both are as pinned
+ */
+function checkCompiledExample(): boolean {
+  const compiled = new CompiledChamber(FORMAT_V2_EXAMPLE)
+  const describe = (targets: readonly LinkTarget[]): string => targets.map((target) => `${target.kind} ${target.index}`).join(', ')
+  const links = [
+    ...(FORMAT_V2_EXAMPLE.buttons ?? []).map((_, index) => `button ${index}: ${describe(compiled.linksOf('button', index))}`),
+    ...(FORMAT_V2_EXAMPLE.switches ?? []).map((_, index) => `switch ${index}: ${describe(compiled.linksOf('switch', index))}`),
+  ]
+  const refusing: string[] = []
+
+  for (let y = 0; y < compiled.height; y++) {
+    for (let x = 0; x < compiled.width; x++) {
+      if (compiled.isWall(x, y) && (!compiled.takesPortals(x, y))) {
+        refusing.push(`(${x}, ${y})`)
+      }
+    }
+  }
+
+  const linksPinned = links.join('\n') === EXAMPLE_LINKS.join('\n')
+  const wallsPinned = refusing.join('\n') === EXAMPLE_WALLS_REFUSING_PORTALS.join('\n')
+
+  if (linksPinned && wallsPinned) {
+    console.log(`compiled format_v2_example OK: ${links.length} link lists and ${refusing.length} walls refusing portals, as pinned`)
+
+    return true
+  }
+
+  console.error('compiled format_v2_example FAILED: its links or the walls refusing portals differ from what is pinned')
+  printMissing('links not pinned', links, EXAMPLE_LINKS)
+  printMissing('links not reached', EXAMPLE_LINKS, links)
+  printMissing('wall refusing portals, not pinned', refusing, EXAMPLE_WALLS_REFUSING_PORTALS)
+  printMissing('wall pinned as refusing portals, but takes them', EXAMPLE_WALLS_REFUSING_PORTALS, refusing)
 
   return false
 }
@@ -224,8 +298,8 @@ function checkRegistryEvents(): boolean {
 }
 
 /**
- * Checks every chamber file in src/chambers, every case and the element
- * registry.
+ * Checks every chamber file in src/chambers, every case, the compiled format
+ * 2 example and the element registry.
  * @returns Whether all of them passed
  */
 function runAll(): boolean {
@@ -238,6 +312,8 @@ function runAll(): boolean {
   for (const chamberCase of CHAMBER_CASES) {
     passed = checkCase(chamberCase) && passed
   }
+
+  passed = checkCompiledExample() && passed
 
   passed = checkRegistryFields() && passed
   passed = checkRegistryElements() && passed

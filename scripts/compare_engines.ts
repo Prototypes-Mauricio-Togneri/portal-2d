@@ -4,11 +4,13 @@ import type {ChamberData} from '@/game/chamber_data'
 import {CHAMBER_FILES, CHAMBERS_DIRECTORY, listChamberFiles} from '@scripts/chamber_files'
 import {ChamberTiles} from '@scripts/engine_comparison/chamber_tiles'
 import {startClassicRun} from '@scripts/engine_comparison/classic_run'
+import {checkCompiledLookups} from '@scripts/engine_comparison/compiled_lookups'
 import {type ComparedAction, COMPARED_ACTIONS, readAction} from '@scripts/engine_comparison/compared_action'
 import {type ComparedEngine, type ComparedOutcome, type ComparedRun, playStep} from '@scripts/engine_comparison/compared_run'
 import {findIntendedDifference} from '@scripts/engine_comparison/intended_differences'
 import {describeOutcomeDifferences} from '@scripts/engine_comparison/outcome_differences'
 import {checkRecognisedFixture, RECOGNISED_FIXTURES} from '@scripts/engine_comparison/self_test'
+import {FIXTURES} from '@scripts/fixtures/fixtures'
 import {readNumberOption} from '@scripts/number_option'
 import {createRandom} from '@scripts/seeded_random'
 
@@ -16,11 +18,14 @@ import {createRandom} from '@scripts/seeded_random'
 // rules, one action at a time, and compares the state and the events after
 // every step. A difference that docs/elements.md lists under "Changes from
 // the original rules" is counted under its id, and the run carries on from
-// v2's state; any other difference fails. First a self-test checks that each
-// behaviour fixture playing one key at a time is recognised as its own
-// intended difference; then, per chamber, its recorded solution and a seeded
-// random walk are compared. Prints one line per fixture and per chamber, and
-// exits non-zero on any failure.
+// v2's state; any other difference fails. First every chamber file and
+// fixture chamber is compiled for the v2 rules, and each lookup of the
+// compiled chamber must agree with today's rules on every tile. Then a
+// self-test checks that each behaviour fixture playing one key at a time is
+// recognised as its own intended difference; then, per chamber, its recorded
+// solution and a seeded random walk are compared. Prints one line per
+// compiled chamber, per fixture and per chamber, and exits non-zero on any
+// failure.
 // Options: --seed=<number> (default 1), --steps=<number> per chamber (default 100000)
 
 /** Steps per chamber unless --steps says otherwise */
@@ -245,8 +250,27 @@ function describeCounts(differences: ReadonlyMap<string, number>): string {
 }
 
 /**
- * Runs the self-test, then compares every chamber file in src/chambers, and
- * reports each.
+ * Checks a chamber's compiled lookups against today's rules, and reports it.
+ * @param name - The chamber, as the report names it
+ * @param data - The chamber JSON
+ * @returns Whether every lookup agreed
+ */
+function checkLookups(name: string, data: ChamberData): boolean {
+  try {
+    console.log(`lookups ${name} OK: ${checkCompiledLookups(data)}`)
+
+    return true
+  } catch (error) {
+    console.error(`lookups ${name} FAILED: ${error instanceof Error ? error.message : String(error)}`)
+
+    return false
+  }
+}
+
+/**
+ * Checks the compiled lookups of every chamber file in src/chambers and of
+ * every fixture chamber, runs the self-test, then compares every chamber
+ * file, and reports each.
  * @returns Whether everything passed
  */
 function runAll(): boolean {
@@ -263,6 +287,24 @@ function runAll(): boolean {
   const seed = readNumberOption(options.seed, DEFAULT_SEED, 'seed')
   const steps = readNumberOption(options.steps, DEFAULT_STEPS, 'steps')
   let passed = true
+
+  for (const file of listChamberFiles()) {
+    const data = CHAMBER_FILES[file]
+
+    // A file missing from the list fails below, with the comparison
+    if (data !== undefined) {
+      passed = checkLookups(file, data) && passed
+    }
+  }
+
+  const fixtureChambers = new Set<ChamberData>()
+
+  for (const fixture of FIXTURES) {
+    if (!fixtureChambers.has(fixture.chamber)) {
+      fixtureChambers.add(fixture.chamber)
+      passed = checkLookups(`of fixture ${fixture.name}`, fixture.chamber) && passed
+    }
+  }
 
   for (const expected of RECOGNISED_FIXTURES) {
     try {

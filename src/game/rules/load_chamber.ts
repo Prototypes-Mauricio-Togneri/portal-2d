@@ -13,14 +13,13 @@ export type ChamberLoadResult = {
 }
 
 /**
- * Loads a chamber file of any format this game knows: upgrades it to the
- * current format, reads every field, then checks how the parts fit together.
- * A step only runs when the one before it found no error, since it needs
- * what that step produced.
+ * Reads a chamber file of any format this game knows without checking how
+ * its parts fit together: upgrades it to the current format, then reads
+ * every field. The upgrade only runs the reading when it found no error.
  * @param data - The parsed JSON of a chamber file, from the game's own files or from anywhere else
  * @returns The chamber, or null when it has an error, with every problem found
  */
-export function loadChamber(data: unknown): ChamberLoadResult {
+export function readChamber(data: unknown): ChamberLoadResult {
   const upgraded = upgradeChamber(data)
 
   if (upgraded.data === null) {
@@ -30,20 +29,29 @@ export function loadChamber(data: unknown): ChamberLoadResult {
     }
   }
 
-  const parsed = parseChamber(upgraded.data)
+  return parseChamber(upgraded.data)
+}
 
-  if (parsed.chamber === null) {
-    return {
-      chamber: null,
-      problems: parsed.problems,
-    }
+/**
+ * Loads a chamber file of any format this game knows: upgrades it to the
+ * current format, reads every field, then checks how the parts fit together.
+ * A step only runs when the one before it found no error, since it needs
+ * what that step produced.
+ * @param data - The parsed JSON of a chamber file, from the game's own files or from anywhere else
+ * @returns The chamber, or null when it has an error, with every problem found
+ */
+export function loadChamber(data: unknown): ChamberLoadResult {
+  const read = readChamber(data)
+
+  if (read.chamber === null) {
+    return read
   }
 
-  const problems = validateChamber(parsed.chamber)
+  const problems = validateChamber(read.chamber)
   const hasError = problems.some((problem) => problem.level === ChamberProblemLevel.ERROR)
 
   return {
-    chamber: hasError ? null : parsed.chamber,
+    chamber: hasError ? null : read.chamber,
     problems: problems,
   }
 }
