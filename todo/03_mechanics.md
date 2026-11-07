@@ -28,6 +28,12 @@ None of this exists yet. These are assumptions; Phase 0 checks them against what
 - A settled definition of "moves" (README open decision 1). Slides and conveyors move the subject several tiles on one key, so the definition matters here.
 - Input owning arrows, A, D, Space and Ctrl (remappable). This stage adds no keys.
 
+**Stage 01 as built, 2026-11-07** (kept from its notes when its file was removed)
+
+- Hooks an element definition (`src/game/rules/elements/`) can have today: `interact`, `subjectInside`, `everyPass`, `linkUnblocked` and `linkBlocked`. 9 of the 11 element types have hooks, but six only set their own flag. The core step has element-specific code only for boxes (carrying, pick-up, put-down) and the exit check.
+- The six hooks above: link actions beyond open and close (6) fit `linkUnblocked` and `linkBlocked` as they are; derived state (3) fits a pass hook in the step's repeat loop, which is where travelling and bending lasers go; an after-step update (2) and movement continuation (1) need new hook slots, after the repeat loop and after the action; per-element counters (5) need a new section in the state layout; solid movable objects (4) need walking to ask a hook. None needs the step reshaped.
+- A new element isn't one file yet: the chamber file reader and the validator still list elements by hand (see "Adding an element" in `docs/elements.md`). Making them read the registry is the step that would bring a new element close to one file.
+
 **From stage 02 (solver)**
 
 - A solver over the v2 state with a compact state encoding, a per-chamber budget (time and states), a local "solve every chamber" check, par storage, the shortcut finder and the dead-end warning.

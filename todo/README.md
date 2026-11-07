@@ -16,7 +16,7 @@
 | # | File | Status | Contents |
 |---|---|---|---|
 | 1 | `00_fixes.md` (file removed) | Done | Records keyed by permanent id (one-time migration, chamber number taken from list order), high-DPI blur fix, missing analytics events, first local check command |
-| 2 | `01_engine_v2.md` | Done | Sounds out of the rules, engine runnable without a browser, replays on today's engine, recorded solutions and a local replay check, undo/redo, input rewrite (remappable keys), v2 rules and chamber format, the three inherited bugs fixed, v2 checked against the old rules, old engine deleted |
+| 2 | `01_engine_v2.md` (file removed) | Done | Sounds out of the rules, engine runnable without a browser, replays on today's engine, recorded solutions and a local replay check, undo/redo, input rewrite (remappable keys), v2 rules and chamber format, the three inherited bugs fixed, v2 checked against the old rules, old engine deleted |
 | 3 | `02_solver.md` | Draft | Solver prototype on the current chambers (go/no-go), solvability and par in the local checks, shortcut finder, dead-end warning, hints; generated chambers only if the prototype passes |
 | 4 | `03_mechanics.md` | Draft | Lasers through portals, slide floors, conveyors and rotating arrows, timed buttons, mirror blocks, echo; teach → test → twist → combine |
 | 5 | `04_campaign_identity_look_sound.md` | Draft | Identity, wings and tutorial chambers, a menu and catalogue that scale, chamber numbering and links, difficulty from data, medals, visual rework, colour-blind palettes and relaxed mode, reactive music |

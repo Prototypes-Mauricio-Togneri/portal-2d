@@ -25,6 +25,13 @@ A program that searches every reachable state of a chamber and answers questions
 - A fixed **action set**: Up, Down, Left, Right; turn in place (Ctrl + arrow); A, D (shoot blue, orange); Space (interact).
 - **"Moves" counted as today**: tiles stepped onto, where going through a portal is one step and turning in place is none (`level.ts`). Stage 01 decides how undone steps count; par uses the same definition.
 
+**Stage 01 as built, 2026-11-07** (kept from its notes when its file was removed):
+- The step is `step(chamber, state, action)` (`src/game/rules/step.ts`); a state's `key` (one character per 16-bit value) is the map key. Actions: the four moves, four turns, blue, orange and interact. Turns cost no moves.
+- The recorded solutions take chamber 1 in 163 moves and 22 portals, chamber 2 in 97 and 16, chamber 3 in 121 and 28: routes that work, not optimal, so not par.
+- Two throwaway searches (on the old rules) failed. A plain breadth-first search over single presses found nothing in chamber 2 after 2.75 million states (49 presses deep). Treating walking as free and searching over world-changing actions (shots, pick-ups, switches, buttons) reached 13 actions deep before portal pairs times box positions blew up; each chamber needs 20–40 such actions. The solver needs stronger pruning than either.
+- Speed budget (`npm run random:walk`, Node 24, the author's machine): about 785,000–1,200,000 steps per second. A state is 24–26 16-bit values (48–52 bytes), about 330 bytes on the heap, its key not included.
+- Boxes aren't interchangeable (a box link sends each one back to its own start), so symmetry reduction must keep box identity unless a chamber has no box links.
+
 ## Decisions made
 
 | # | Date | Decision |

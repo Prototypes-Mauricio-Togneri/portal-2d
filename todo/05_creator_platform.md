@@ -18,6 +18,7 @@ This stage assumes the following exist when it starts. Re-check each when revisi
   - An engine that loads under Node with no browser (sounds are no longer played by the rules). Stage A replays links headless in the browser; Stage B runs the same engine in Cloud Functions.
   - A defined behaviour for releasing a button linked to a box (today it throws, `src/game/chamber.ts:323-325`), or a rule the editor enforces to forbid it.
   - How "moves" counts once undo exists (README open decision 1).
+  - As built, 2026-11-07 (kept from its notes when its file was removed): JSON imports widen string literals to `string`, which is why format 2 keeps one optional list per element type rather than one list told apart by a `type` string, which would need a cast.
 - **Stage 02 (solver)**
   - The solver runs in a Web Worker with a time limit and reports par (fewest moves, fewest portals) and shortcuts ("solvable without ever opening door 2").
   - If 02's prototype was a no-go, publishing still works (the author's replay proves solvability) but shows no par or shortcuts. See Go/no-go points.
