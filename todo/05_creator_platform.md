@@ -11,14 +11,14 @@ Players can build their own chambers in the browser, prove they are solvable by 
 
 This stage assumes the following exist when it starts. Re-check each when revisiting; if one is missing, it must be built first (in its own stage), not here.
 
-- **Stage 01 (engine v2)**
-  - Chamber format v2 with a version number and automatic upgrades from every older version. Shared links live forever, so every format version ever shipped must stay decodable.
-  - Elements described by data (a registry saying what each element type blocks and holds, and its draw layer), with each type's drawing kept browser-side in the renderer, looked up by element kind (stage 01, E10). The editor's palette reads the registry and draws through the renderer, so stage 03's mechanics appear in the editor without editor changes.
-  - The pure step (*state + key → next state*) and a compact replay format (a list of keys).
-  - An engine that loads under Node with no browser (sounds are no longer played by the rules). Stage A replays links headless in the browser; Stage B runs the same engine in Cloud Functions.
-  - A defined behaviour for releasing a button linked to a box (today it throws, `src/game/chamber.ts:323-325`), or a rule the editor enforces to forbid it.
-  - How "moves" counts once undo exists (README open decision 1).
-  - As built, 2026-11-07 (kept from its notes when its file was removed): JSON imports widen string literals to `string`, which is why format 2 keeps one optional list per element type rather than one list told apart by a `type` string, which would need a cast.
+- **Stage 01 (engine v2)**, done 2026-11-07
+  - Chamber format 2 with a version number and an upgrader that chains one step per format version (`src/game/rules/upgrade_chamber.ts`, which still reads format 1). The chamber loader reports each problem with its field and tile (`src/game/rules/load_chamber.ts`). Shared links live forever, so every format version ever shipped must stay decodable.
+  - Elements described by data: the element registry (`src/game/rules/element_registry.ts`) says what each element type blocks and holds, and its draw layer. Each type's drawing stays browser-side in `src/game/element_drawings.ts`, looked up by element kind. The editor's palette reads the registry and draws through the renderer, so stage 03's mechanics appear in the editor without editor changes.
+  - The pure step: `step(chamber, state, action)` gives the next state and its events. The replay format is compact: `ReplayData` format 2 (`src/game/replay_data.ts`), a list of presses (each an action, or undo or redo) with the expected result and the hash of the chamber it was recorded on.
+  - An engine that loads under Node with no browser (the rules report events and play no sounds). Stage A replays links headless in the browser; Stage B runs the same engine in Cloud Functions.
+  - Releasing a button linked to a box does nothing to the box. The validator warns about a button linked to a box but still loads the chamber, so the editor can show that warning, or forbid the link if it chooses.
+  - "Moves" is settled: each step that puts the subject on another tile, undone steps included, redo counting nothing (README decision 8). Whether ranked runs allow undo waits for stage 04.
+  - JSON imports widen string literals to `string`, which is why format 2 keeps one optional list per element type rather than one list told apart by a `type` string, which would need a cast.
 - **Stage 02 (solver)**
   - The solver runs in a Web Worker with a time limit and reports par (fewest moves, fewest portals) and shortcuts ("solvable without ever opening door 2").
   - If 02's prototype was a no-go, publishing still works (the author's replay proves solvability) but shows no par or shortcuts. See Go/no-go points.

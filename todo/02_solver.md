@@ -13,23 +13,22 @@ A program that searches every reachable state of a chamber and answers questions
 - Records keyed by permanent chamber id, so par and solver results can be stored by id too.
 - The first local check command, which this stage extends.
 
-**Stage 01** — not built yet. This file assumes stage 01 delivers the following; re-check each one when revisiting:
-- A **pure step** on the v2 rules: `step(state, action) → state`, with no one-frame-late effects (today a button behind a carried box releases a frame late, a fizzler under the subject fires a frame late and the win is reported a frame late; v2 removes all three).
-- A **compact, copyable state** with a canonical encoding and hash: no object references, no in-place changes that leak between copies.
-- **No sounds or browser APIs in the rules** (they return events instead), so the engine loads under Node and in a Web Worker.
-- A **Node runner** for local scripts (whatever 01 picks to run TypeScript outside the browser).
-- **Recorded solutions** for every chamber, plus the replay check.
-- **Chamber format v2** with a version number and upgrade rules, and elements described by data (each type declares whether it blocks walking, blocks shots, holds a portal, can be switched, and changes state when entered or left).
-- The inherited bugs fixed (README lists four), including the box-button crash, so the solver never has to model a crash.
-- An optional `par` block reserved in chamber format v2 (stage 01, E3), so this stage fills it without a format version bump.
-- A fixed **action set**: Up, Down, Left, Right; turn in place (Ctrl + arrow); A, D (shoot blue, orange); Space (interact).
-- **"Moves" counted as today**: tiles stepped onto, where going through a portal is one step and turning in place is none (`level.ts`). Stage 01 decides how undone steps count; par uses the same definition.
+**Stage 01** — done (2026-11-07). It delivered:
+- A **pure step** on the v2 rules: `step(chamber, state, action)` (`src/game/rules/step.ts`) returns the next state (the same object when nothing changed) and its events, and `startChamber(chamber)` gives a chamber's settled start. Every effect lands inside the step, so the original rules' one-frame-late effects are gone, and once the chamber is completed a step changes nothing.
+- A **compact, immutable state** (`RulesState`): 24–26 16-bit values in the current chambers, with a `key` for maps (one character per value) and a hash. A step never changes the state it is given.
+- **No sounds or browser APIs in the rules** (they report events instead; lint and the scripts' TypeScript project enforce it), so the engine loads under Node. A Web Worker should work the same way but hasn't been tried.
+- **tsx** runs the engine scripts under Node (`scripts/`, type-checked by `tsconfig.scripts.json`).
+- **Recorded solutions** for every chamber (`ReplayData` format 2: actions plus undo and redo), the replay check (`npm run replay:check`) and behaviour fixtures.
+- **Chamber format 2** with a version number and an upgrader, and elements described by data: each definition in `src/game/rules/elements/` declares when it blocks walking and shots, whether it takes portals, whether links reach it, and whether entering or leaving its tile can change the state (`reactsToSubject`, the tiles a walking shortcut must stop on).
+- The four inherited bugs README lists are fixed, including the box-button crash (releasing a button linked to a box now does nothing), so the solver never has to model a crash.
+- An optional `par` block in format 2 (optional `moves` and `portals`), left empty, so this stage fills it without a format version bump.
+- A fixed **action set** of 11 (`src/game/rules/action.ts`): the four moves, four turns in place, blue, orange and interact. Undo and redo aren't actions; the level handles them.
+- **"Moves"**: each step that puts the subject on another tile, a portal crossing included; turning in place counts none, so turns cost no moves (`level.ts`). Undone steps keep counting and redo counts nothing (README decision 8). Par uses the same definition.
 
 **Stage 01 as built, 2026-11-07** (kept from its notes when its file was removed):
-- The step is `step(chamber, state, action)` (`src/game/rules/step.ts`); a state's `key` (one character per 16-bit value) is the map key. Actions: the four moves, four turns, blue, orange and interact. Turns cost no moves.
 - The recorded solutions take chamber 1 in 163 moves and 22 portals, chamber 2 in 97 and 16, chamber 3 in 121 and 28: routes that work, not optimal, so not par.
 - Two throwaway searches (on the old rules) failed. A plain breadth-first search over single presses found nothing in chamber 2 after 2.75 million states (49 presses deep). Treating walking as free and searching over world-changing actions (shots, pick-ups, switches, buttons) reached 13 actions deep before portal pairs times box positions blew up; each chamber needs 20–40 such actions. The solver needs stronger pruning than either.
-- Speed budget (`npm run random:walk`, Node 24, the author's machine): about 785,000–1,200,000 steps per second. A state is 24–26 16-bit values (48–52 bytes), about 330 bytes on the heap, its key not included.
+- Speed budget (`npm run random:walk`, Node 24, the author's machine): about 785,000–1,200,000 steps per second. A state is 48–52 bytes of values, about 330 bytes on the heap, its key not included.
 - Boxes aren't interchangeable (a box link sends each one back to its own start), so symmetry reduction must keep box identity unless a chamber has no box links.
 
 ## Decisions made

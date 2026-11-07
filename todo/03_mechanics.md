@@ -9,29 +9,29 @@ Today only the subject and a carried box go through portals; shots and lasers ne
 
 ## Depends on
 
-None of this exists yet. These are assumptions; Phase 0 checks them against what stages 01 and 02 actually delivered.
+Stage 01 is done: its part below is what it delivered, though Phase 0 still checks each hook. Stage 02's part is an assumption, which Phase 0 checks against what that stage actually delivered.
 
-**From stage 01 (engine v2)**
+**From stage 01 (engine v2)**, done 2026-11-07
 
-- A pure step: *state + one action → next state*, with a copyable state and the one-frame lags of today's engine gone.
-- Elements described by data, one file per type, declaring at least: blocks walking, blocks shots, holds portals, linkable, per-element state, drawing.
-- Hooks this stage needs from that element system (Phase 0 checks each one):
+- A pure step: `step(chamber, state, action)` (`src/game/rules/step.ts`) gives the next state and its events, on an immutable state. Every effect lands inside the step, so the original rules' one-frame lags are gone.
+- Elements described by data, one definition file per type in `src/game/rules/elements/`. Each declares when it blocks walking and shots, whether it takes portals, whether links reach it, its blocked flag (the only per-element state today) and its draw layer. How it is drawn stays browser-side in `src/game/element_drawings.ts`.
+- Hooks this stage needs from that element system (Phase 0 checks each one; see "Stage 01 as built" below for what exists):
   1. **Movement continuation**: an element can keep the subject moving after it enters a tile (slide floors), or move it after its step (conveyors).
   2. **After-step update**: an element acts once per tick after the subject's move (conveyors, timed buttons).
   3. **Derived state recomputed every step**: state that is calculated, not stored (beams, lit receivers).
   4. **Solid movable objects**: walking into one pushes it (push blocks).
   5. **Per-element counters** stored in the state (timed buttons).
   6. **Link actions beyond open/close**: an element can do something else when linked (rotate an arrow, switch a conveyor on).
-- Landing checks applied on every tile the subject enters, including coming out of a portal (stage 01 fixes the inherited bug). Slide floors depend on this.
-- Chamber format v2 with a version number, automatic upgrades, optional element lists and "one switch driving groups".
+- The same entry check on every tile the subject enters, coming out of a portal included (stage 01 fixed the inherited bug: `portal_exit_checked` in `docs/elements.md`). Slide floors depend on this.
+- Chamber format 2 with a version number, an upgrader, optional element lists and link groups (one button or switch driving a group).
 - Replays and recorded solutions, a local replay check, and sounds sent as events instead of played by the rules.
-- A settled definition of "moves" (README open decision 1). Slides and conveyors move the subject several tiles on one key, so the definition matters here.
-- Input owning arrows, A, D, Space and Ctrl (remappable). This stage adds no keys.
+- "Moves" is settled: the game counts one move for each step that puts the subject on another tile, undone ones included, and redo counts nothing (README decision 8). Slides and conveyors move the subject several tiles on one key, and as the count stands, a step like that would count as one move.
+- Input owning the game keys, remappable, by default the arrows, A, D, Space, Ctrl, Z and X (undo, redo). This stage adds no keys.
 
 **Stage 01 as built, 2026-11-07** (kept from its notes when its file was removed)
 
-- Hooks an element definition (`src/game/rules/elements/`) can have today: `interact`, `subjectInside`, `everyPass`, `linkUnblocked` and `linkBlocked`. 9 of the 11 element types have hooks, but six only set their own flag. The core step has element-specific code only for boxes (carrying, pick-up, put-down) and the exit check.
-- The six hooks above: link actions beyond open and close (6) fit `linkUnblocked` and `linkBlocked` as they are; derived state (3) fits a pass hook in the step's repeat loop, which is where travelling and bending lasers go; an after-step update (2) and movement continuation (1) need new hook slots, after the repeat loop and after the action; per-element counters (5) need a new section in the state layout; solid movable objects (4) need walking to ask a hook. None needs the step reshaped.
+- Hooks an element definition (`src/game/rules/elements/`) can have today: `interact` (the switch), `subjectInside` (the fizzler rule), `everyPass` (the button), `linkUnblocked` and `linkBlocked`. 9 of the 11 element types have hooks, but six of them only set their own flag on a link (the door and the exit also report opening and closing, the barrier also closes a portal on its tile). The core step has element-specific code only for boxes (carrying, pick-up, put-down) and the exit check.
+- The six hooks above: link actions beyond open and close (6) fit `linkUnblocked` and `linkBlocked` as they are; derived state (3) fits a pass hook in the step's repeat loop, which is where travelling and bending lasers go; an after-step update (2) and movement continuation (1) need new hook slots, after the repeat loop and after the action; per-element counters (5) need a new section in the state layout (`state_layout.ts`); solid movable objects (4) need walking to ask a hook. None needs the step reshaped.
 - A new element isn't one file yet: the chamber file reader and the validator still list elements by hand (see "Adding an element" in `docs/elements.md`). Making them read the registry is the step that would bring a new element close to one file.
 
 **From stage 02 (solver)**
@@ -39,16 +39,17 @@ None of this exists yet. These are assumptions; Phase 0 checks them against what
 - A solver over the v2 state with a compact state encoding, a per-chamber budget (time and states), a local "solve every chamber" check, par storage, the shortcut finder and the dead-end warning.
 - If the solver prototype failed in stage 02, see go/no-go point 6.
 
-**How elements work today** (the base the new mechanics extend)
+**How elements work today** (the base the new mechanics extend; the full rules are under "Rules" in `docs/elements.md`, the code in `src/game/rules/`)
 
-- Walking: `State.updateSubjectPosition` (`src/game/state.ts:312`) refuses a tile with an active barrier, door, closed exit, open ditch or lit laser, and only enters an arrow moving in its direction. Walking into a wall holding a portal, from the tile in front of it, with both portals open, sends the subject out of the other portal (`exitPortal`, `state.ts:396`), which today skips every landing check.
-- Shots: `getCollisionWall` (`state.ts:201`) traces a straight line that stops at active fizzlers, barriers, doors and a closed exit, passes lasers, ditches and boxes, and lands on a wall tile.
-- Links: buttons activate their links when pressed and deactivate them when released (`button.ts`); switches only ever activate (`switch.ts`). Only barriers, boxes, ditches, doors, the exit, fizzlers and lasers can be linked (`chamber.ts:19`); arrows cannot. Linking a box resets it to its start, and deactivating one throws (`chamber.ts:316`).
-- Lasers: one on/off tile each; `direction` (`H`/`V`) only changes the drawing (`laser.ts`, `renderer.ts:427`).
-- Arrows: fixed, unlinkable (`arrow.ts`, `chamber.ts:68`).
-- Boxes block nothing, can stack, follow the subject at the end of the frame (`subject.ts:95`), and a fizzler resets a carried box to its start (`subject.ts:70`).
-- Barriers can sit on wall tiles (chamber 2 has 8 like this, chamber 3 has 1). A raised barrier stops shots before they reach the wall, so that wall takes portals only while the barrier is down, and raising it removes the portal (`chamber.ts:316`). This is already a switchable portal surface.
-- Drawing: `Renderer.render` (`renderer.ts:548`) draws floor, arrows, walls, then each active blocker, portals, buttons, switches, boxes, subject, and fizzlers last. Colours are hex literals on each element class.
+- Walking: `move` in `step.ts` first faces the subject the way pressed; on an arrow tile only the arrow's way acts. Then `canEnter` refuses a wall, a tile outside the chamber, a tile with a blocked barrier, ditch, door, exit or laser (each definition's `blocksWalking`), and an arrow tile entered against its way. Walking into a wall that holds a portal on the side facing the subject, with both portals open, crosses it (`crossPortal`). The tile in front of the other portal goes through the same `canEnter`, so a crossing onto a tile the subject can't enter is refused.
+- Shots: `shoot` in `step.ts` goes tile by tile the way the subject faces. A fizzler that is on, a raised barrier, a closed door or the closed exit stops it (`blocksShots`); everything else lets it through. It opens the portal on the first wall it reaches if that wall takes portals and no portal sits on that side or a neighbouring side; outside the edge counts as a wall that takes none. Standing in a fizzler that is on silences the portal keys (`stopsShootingFrom`).
+- Links: `CompiledChamber` (`compiled_chamber.ts`) resolves each button's and switch's links once, groups expanded. The draft's `applyLinks` (`state_draft.ts`) runs each linked element's `linkUnblocked` or `linkBlocked` hook. A button (`elements/button.ts`, judged in every pass) unblocks its links going down and blocks them coming up. A switch (`elements/switch.ts`, on the interact key) only ever unblocks them, and is refused while the subject carries a box. Only barriers, ditches, boxes, fizzlers, doors, lasers and the exit can be linked (`linkable`).
+- The repeat loop: after the action and the carried box following, `settle` in `step.ts` runs passes until one changes nothing (capped at 32), then the exit check. A pass runs the hooks of the elements on the subject's tile (the fizzler rule), then every element's pass hook (the buttons).
+- Lasers: one on/off tile each, blocking walking only. `direction` (`H`/`V`) changes only the drawing and lets two crossing lasers share a tile, which either one blocks while it is on.
+- Arrows: fixed and unlinkable (`elements/arrow.ts`, `blocksWalking: 'alongDirection'`).
+- Boxes: block nothing, and a tile can hold several (the validator allows one per tile at the start). Picking up and putting down are in the core step's `interact`, not a box hook. A carried box moves onto the subject's tile after each action (`carryBoxAlong` in `state_draft.ts`). The fizzler rule sends a carried box back to its start, and a link sends a box back unless it is carried; releasing a button linked to a box does nothing (the validator warns).
+- Barriers can sit on wall tiles (`sitsOn: 'floorOrWall'`; chamber 2 has 8 like this, chamber 3 has 1). A raised barrier stops shots before they reach the wall, so that wall takes portals only while the barrier is down, and raising it closes a portal there (`raiseBarrier` in `elements/barrier.ts`). This is already a switchable portal surface. Format 2 also lets a wall entry refuse portals for good (`takesPortals: false`), which no chamber uses yet.
+- Drawing: `Renderer.render` (`src/game/renderer.ts`) draws layer by layer (`DRAW_LAYERS` in `draw_layer.ts`): floor, arrows, walls, the blockers that are blocked, portals, buttons and switches, boxes, the subject, and fizzlers last. Inside a layer, each element type is drawn in registry order by its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`). Colours are hex literals in `element_drawings.ts`, `renderer.ts` and `tile_painter.ts`.
 
 ## Decisions made
 
