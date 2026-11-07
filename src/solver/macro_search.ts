@@ -8,7 +8,8 @@ import {costOf, Objective} from '@/solver/baseline_search'
 import {ChamberIndex} from '@/solver/chamber_index'
 import {CostHeap} from '@/solver/cost_heap'
 import {MAX_MACRO_TILES, MOVE_ACTIONS, packMacro} from '@/solver/macro_action'
-import {encodeCanonical, expandRoute, type MacroStep} from '@/solver/macro_route'
+import {encodeCanonical, expandRoute, foldSubject, type MacroStep} from '@/solver/macro_route'
+import {SHOT_ACTIONS, ShotLines} from '@/solver/shot_lines'
 import {StateKeyCodec} from '@/solver/state_key_codec'
 import {NO_ACTION, NO_ENTRY, StateSet} from '@/solver/state_set'
 import {NO_WALK, WalkGraph} from '@/solver/walk_graph'
@@ -45,7 +46,8 @@ export type MacroSearchResult = {
   readonly states: number // Distinct states kept
   readonly expanded: number // States whose macro actions it tried
   readonly steps: number // Calls to the rules' step
-  readonly shots: number // Shots tried
+  readonly shots: number // Shots taken through the rules' step
+  readonly shotsReused: number // Shots reused from another tile on their line instead
   readonly interacts: number // Interacts tried
   readonly moveTries: number // Moves tried that a walk doesn't cover: onto or off an event tile, into a wall or a portal
 }
@@ -57,25 +59,32 @@ const CLOCK_INTERVAL = 64
 export const PROGRESS_INTERVAL = 4096
 
 /**
- * The solver's macro search (stage 02, step A7). A state is a settled state
- * of the rules with the subject turned to its tile's canonical facing, since
- * turning is free. From each state it walks, without the rules' step, to
- * every tile walk edges reach (WalkGraph), then tries there each action
- * whose effect a walk can't have, through the rules' step: interact, both
- * shots each way the subject may face, and each move a walk doesn't cover
- * (onto or off an event tile, into a wall, which crosses a portal there).
- * A macro action costs the walk's moves plus what the step counts. States
- * are kept as 64-bit keys in a StateSet, with their costs and macro actions
- * in typed arrays. In the solvable mode it searches breadth first and stops
- * at the first completed state; in the moves and portals modes it takes the
- * cheapest state first (Dijkstra's algorithm), so the first completed state
- * taken off the queue ends an optimal route.
+ * The solver's macro search (stage 02, steps A7 and A8). A state is a
+ * settled state of the rules with the subject turned to its tile's canonical
+ * facing, since turning is free. From each state it walks, without the
+ * rules' step, to every tile walk edges reach (WalkGraph), then tries there
+ * each action whose effect a walk can't have, through the rules' step:
+ * interact, both shots each way the subject may face, and each move a walk
+ * doesn't cover (onto or off an event tile, into a wall, which crosses a
+ * portal there). Each shot line takes its shots through the rules' step once
+ * per state, and its other tiles reuse them (ShotLines). A macro action
+ * costs the walk's moves plus what the step counts. States are kept as
+ * 64-bit keys in a StateSet, with their costs and macro actions in typed
+ * arrays. In the solvable mode it stores the subject on its region's tile
+ * (foldSubject), since states that differ only in where the subject stands
+ * inside a region reach the same states, searches breadth first and stops
+ * at the first completed state; the route's counts are then those of the
+ * actions it expands to. In the moves and portals modes it keeps the
+ * subject's tile and takes the cheapest state first (Dijkstra's algorithm),
+ * so the first completed state taken off the queue ends an optimal route.
  */
 export class MacroSearch {
   private readonly chamber: CompiledChamber // The chamber
   private readonly codec: StateKeyCodec // The chamber's state key
   private readonly graph: WalkGraph // Where the subject can walk
+  private readonly lines: ShotLines // The shots, taken once per line
   private readonly mode: SearchMode // What the search looks for
+  private readonly folded: boolean // Whether states keep the subject on its region's tile, in the solvable mode
   private readonly set: StateSet // Every state found, as keys, with its parent
   private readonly moves: Uint32Array // Each state's moves on the cheapest known way to it
   private readonly portals: Uint32Array // Each state's portals opened on that way
@@ -86,7 +95,6 @@ export class MacroSearch {
   private gaveUp: GiveUpReason | null = null // Why the search stopped early, or null
   private expanded = 0 // States whose macro actions were tried
   private steps = 0 // Calls to the rules' step
-  private shots = 0 // Shots tried
   private interacts = 0 // Interacts tried
   private moveTries = 0 // Moves tried that a walk doesn't cover
 
@@ -106,7 +114,9 @@ export class MacroSearch {
     this.chamber = chamber
     this.codec = new StateKeyCodec(index)
     this.graph = new WalkGraph(index, startChamber(chamber).state)
+    this.lines = new ShotLines(this.codec, this.graph)
     this.mode = mode
+    this.folded = mode === SearchMode.SOLVABLE
     this.set = new StateSet(maxStates)
     this.moves = new Uint32Array(maxStates)
     this.portals = new Uint32Array(maxStates)
@@ -124,7 +134,7 @@ export class MacroSearch {
     const startTime = Date.now()
     const start = startChamber(this.chamber)
 
-    encodeCanonical(this.codec, this.graph, start.state, this.words)
+    this.encodeKey(start.state)
     this.set.addIfAbsent(this.words[0] ?? 0, this.words[1] ?? 0, NO_ENTRY, NO_ACTION)
     this.portals[0] = countPortalsOpened(start.events)
 
@@ -194,6 +204,34 @@ export class MacroSearch {
   }
 
   /**
+   * Packs a state into the words as the search stores it: with the
+   * canonical facing, and in the solvable mode on its region's tile.
+   * @param state - The state
+   */
+  private encodeKey(state: RulesState): void {
+    encodeCanonical(this.codec, this.graph, state, this.words)
+
+    if (this.folded) {
+      foldSubject(this.codec, this.graph, state, this.words)
+    }
+  }
+
+  /**
+   * The low word of a key with the subject moved to a tile, as the search
+   * stores it: facing the tile's canonical way, and in the solvable mode on
+   * the tile's region instead.
+   * @param low - The key's low word
+   * @param tile - The subject's tile
+   * @param regions - Each tile's region for the key's flags, or null outside the solvable mode
+   * @returns The low word
+   */
+  private placeStored(low: number, tile: number, regions: Int32Array | null): number {
+    const place = (regions === null) ? tile : (regions[tile] ?? tile)
+
+    return this.codec.placeSubject(low, place, this.graph.facingOf(place))
+  }
+
+  /**
    * Unpacks a key.
    * @param low - The key's low word
    * @param high - The key's high word
@@ -223,40 +261,39 @@ export class MacroSearch {
   private expand(entry: number, state: RulesState): void {
     const low = this.set.keyLow(entry)
     const high = this.set.keyHigh(entry)
-    const edges = this.graph.edgesFor(state, this.codec.flagsOf(low, high))
+    const flags = this.codec.flagsOf(low, high)
+    const edges = this.graph.edgesFor(state, flags)
+    const regions = this.folded ? this.graph.regionsFor(state, flags) : null
     const from = this.codec.subjectTileOf(low)
     const reachedCount = this.graph.walk(edges, from)
 
     this.expanded++
+    this.lines.begin(state, flags)
 
     for (let position = 0; position < reachedCount; position++) {
       const tile = this.graph.reachedTile(position)
       const distance = this.graph.distanceTo(tile)
-      const facing = this.graph.facingOf(tile)
-      const standingLow = this.codec.placeSubject(low, tile, facing)
-      const standing = (tile === from) ? state : this.decodeKey(standingLow, high)
+      const walkedLow = this.codec.placeSubject(low, tile, this.graph.facingOf(tile))
+      const standing = (tile === from) ? state : this.decodeKey(walkedLow, high)
+      const standingLow = this.placeStored(low, tile, regions)
 
       this.interacts++
-      this.tryAction(entry, standing, standingLow, high, Action.INTERACT, tile, 0, distance)
+      this.tryAction(entry, standing, standingLow, high, Action.INTERACT, tile, distance)
 
       for (let directionIndex = 0; directionIndex < DIRECTIONS.length; directionIndex++) {
         // A walk covers a walk edge, except off an event tile, where leaving can change the state
         if (this.graph.isEventTile(tile) || (edges[(tile * DIRECTIONS.length) + directionIndex] === NO_WALK)) {
           this.moveTries++
-          this.tryAction(entry, standing, standingLow, high, MOVE_ACTIONS[directionIndex] ?? Action.UP, tile, 0, distance)
+          this.tryAction(entry, standing, standingLow, high, MOVE_ACTIONS[directionIndex] ?? Action.UP, tile, distance)
         }
       }
 
       for (let directionIndex = 0; directionIndex < DIRECTIONS.length; directionIndex++) {
-        if (!this.graph.allowsWayFrom(tile, directionIndex)) {
-          continue
+        if (this.graph.allowsWayFrom(tile, directionIndex)) {
+          for (const action of SHOT_ACTIONS) {
+            this.tryShot(entry, low, high, standingLow, regions, action, tile, directionIndex, distance)
+          }
         }
-
-        const aimed = (directionIndex === facing) ? standing : this.decodeKey(this.codec.placeSubject(low, tile, directionIndex), high)
-
-        this.shots += 2
-        this.tryAction(entry, aimed, standingLow, high, Action.BLUE, tile, directionIndex, distance)
-        this.tryAction(entry, aimed, standingLow, high, Action.ORANGE, tile, directionIndex, distance)
       }
 
       if ((this.solvedEntry !== NO_ENTRY) || (this.gaveUp !== null)) {
@@ -267,17 +304,17 @@ export class MacroSearch {
 
   /**
    * Takes one action through the rules' step and keeps the state it leads
-   * to, unless nothing changed but where the subject faces.
+   * to, unless nothing changed but where the subject faces, or in the
+   * solvable mode where it stands inside its region.
    * @param parent - The entry of the state the macro action starts from
    * @param from - The state the action is taken in: the subject on the tile walked to
-   * @param standingLow - The low word of that state's key with the canonical facing
+   * @param standingLow - The low word of that state's key as the search stores it
    * @param high - The high word of that key
    * @param action - The action
    * @param tile - The tile walked to
-   * @param directionIndex - The way faced before a shot, or 0
    * @param distance - The moves walked to the tile
    */
-  private tryAction(parent: number, from: RulesState, standingLow: number, high: number, action: Action, tile: number, directionIndex: number, distance: number): void {
+  private tryAction(parent: number, from: RulesState, standingLow: number, high: number, action: Action, tile: number, distance: number): void {
     if ((this.solvedEntry !== NO_ENTRY) || (this.gaveUp !== null)) {
       return
     }
@@ -290,7 +327,7 @@ export class MacroSearch {
       return
     }
 
-    encodeCanonical(this.codec, this.graph, result.state, this.words)
+    this.encodeKey(result.state)
 
     const childLow = this.words[0] ?? 0
     const childHigh = this.words[1] ?? 0
@@ -299,9 +336,68 @@ export class MacroSearch {
       return
     }
 
-    const moves = (this.moves[parent] ?? 0) + distance + (countsAsMove(from, result.state) ? 1 : 0)
-    const portals = (this.portals[parent] ?? 0) + countPortalsOpened(result.events)
-    const macro = packMacro(tile, directionIndex, action)
+    this.keep(parent, childLow, childHigh, distance + (countsAsMove(from, result.state) ? 1 : 0), countPortalsOpened(result.events), packMacro(tile, 0, action), result.state.completed)
+  }
+
+  /**
+   * Takes one shot, through the rules' step once per line (ShotLines), and
+   * keeps the state it leads to, unless nothing changed but where the
+   * subject faces. In the solvable mode a line gives one state per region
+   * it crosses: a tile in the region of the tile that took the line's shot
+   * would give that tile's state again, so it is skipped.
+   * @param parent - The entry of the state the macro action starts from
+   * @param low - The low word of that state's key
+   * @param high - The high word of that key
+   * @param standingLow - The low word of the key, as the search stores it, with the subject on the tile walked to
+   * @param regions - Each tile's region for the state's flags, or null outside the solvable mode
+   * @param action - The shot, blue or orange
+   * @param tile - The tile walked to
+   * @param directionIndex - The way faced before the shot
+   * @param distance - The moves walked to the tile
+   */
+  private tryShot(parent: number, low: number, high: number, standingLow: number, regions: Int32Array | null, action: Action, tile: number, directionIndex: number, distance: number): void {
+    if ((this.solvedEntry !== NO_ENTRY) || (this.gaveUp !== null) || (!this.lines.shoot(low, high, tile, directionIndex, action))) {
+      return
+    }
+
+    const lineTile = this.lines.lineTile
+
+    if ((regions !== null) && (lineTile !== tile) && (regions[lineTile] === regions[tile])) {
+      return
+    }
+
+    this.words[0] = this.lines.childLow
+    this.words[1] = this.lines.childHigh
+
+    if (this.folded) {
+      foldSubject(this.codec, this.graph, this.lines.resultState, this.words)
+    }
+
+    const childLow = this.words[0] ?? 0
+    const childHigh = this.words[1] ?? 0
+
+    if ((childLow === standingLow) && (childHigh === high)) {
+      return
+    }
+
+    // A shot never moves the subject, which the solver check confirms
+    this.keep(parent, childLow, childHigh, distance, this.lines.portalsOpened, packMacro(tile, directionIndex, action), this.lines.resultState.completed)
+  }
+
+  /**
+   * Keeps the state a macro action leads to: adds it when it is new, or in
+   * the moves and portals modes lowers its cost when this way is cheaper.
+   * @param parent - The entry of the state the macro action starts from
+   * @param childLow - The low word of the key of the state it leads to
+   * @param childHigh - The high word of that key
+   * @param movesTaken - The moves the macro action takes, its walk included
+   * @param portalsOpened - The portals it opens
+   * @param macro - The packed macro action
+   * @param completed - Whether the state it leads to is completed
+   */
+  private keep(parent: number, childLow: number, childHigh: number, movesTaken: number, portalsOpened: number, macro: number, completed: boolean): void {
+    const moves = (this.moves[parent] ?? 0) + movesTaken
+    const portals = (this.portals[parent] ?? 0) + portalsOpened
     const known = this.set.find(childLow, childHigh)
 
     if (known === NO_ENTRY) {
@@ -318,7 +414,7 @@ export class MacroSearch {
       this.macros[child] = macro
 
       if (this.mode === SearchMode.SOLVABLE) {
-        if (result.state.completed) {
+        if (completed) {
           this.solvedEntry = child
         }
       } else {
@@ -353,16 +449,20 @@ export class MacroSearch {
       })
     }
 
+    const expandedRoute = solved ? expandRoute(this.codec, this.graph, route.reverse(), this.folded) : null
+
+    // A folded state's costs count the walk from its region's tile, not from where the subject stood
     return {
       solved: solved,
       gaveUp: solved ? null : this.gaveUp,
-      moves: solved ? (this.moves[this.solvedEntry] ?? 0) : 0,
-      portals: solved ? (this.portals[this.solvedEntry] ?? 0) : 0,
-      actions: solved ? expandRoute(this.codec, this.graph, route.reverse()) : [],
+      moves: (expandedRoute === null) ? 0 : (this.folded ? expandedRoute.moves : (this.moves[this.solvedEntry] ?? 0)),
+      portals: (expandedRoute === null) ? 0 : (this.folded ? expandedRoute.portals : (this.portals[this.solvedEntry] ?? 0)),
+      actions: (expandedRoute === null) ? [] : expandedRoute.actions,
       states: this.set.size,
       expanded: this.expanded,
-      steps: this.steps,
-      shots: this.shots,
+      steps: this.steps + this.lines.steps,
+      shots: this.lines.steps,
+      shotsReused: this.lines.reused,
       interacts: this.interacts,
       moveTries: this.moveTries,
     }

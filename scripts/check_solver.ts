@@ -6,14 +6,16 @@ import {runRulesReplay} from '@/game/rules/replay_runner'
 import type {RulesState} from '@/game/rules/rules_state'
 import {DIRECTIONS} from '@/game/rules/state_layout'
 import {DELTAS, startChamber, step} from '@/game/rules/step'
+import {countPortalsOpened} from '@/game/rules/step_counts'
 import {Objective, searchBaseline} from '@/solver/baseline_search'
 import {ChamberIndex, NO_NUMBER} from '@/solver/chamber_index'
 import {MOVE_ACTIONS, TURN_ACTIONS} from '@/solver/macro_action'
 import {encodeCanonical} from '@/solver/macro_route'
 import {MacroSearch, SearchMode} from '@/solver/macro_search'
+import {SHOT_ACTIONS, ShotLines} from '@/solver/shot_lines'
 import {MAX_KEY_BITS, measureKey, StateKeyCodec} from '@/solver/state_key_codec'
 import {NO_ACTION, NO_ENTRY, StateSet} from '@/solver/state_set'
-import {NO_WALK, WalkGraph} from '@/solver/walk_graph'
+import {NO_WALK, UNREACHED, WalkGraph} from '@/solver/walk_graph'
 import {CHAMBER_FILES, CHAMBERS_DIRECTORY, listChamberFiles} from '@scripts/chamber_files'
 import {createRandom} from '@scripts/seeded_random'
 import {parseSolutionData} from '@scripts/solution_file'
@@ -26,7 +28,11 @@ import {SOLVER_FIXTURES, type SolverFixture, type SolverRoute} from '@scripts/so
 // along each recorded solution and every state the reference search finds on
 // the solver fixtures, each walk it allows gives through the rules' step the
 // state the solver builds, no move it leaves out walks onto a plain tile, and
-// turning gives the state the solver builds for that facing. The searches:
+// turning gives the state the solver builds for that facing; each shot from
+// each tile a walk reaches, each way and colour, gives through the rules'
+// step the state the solver builds from the shot it shares with its line;
+// and a tile a walk reaches shares the start's region exactly when a walk
+// from it gets back to the start. The searches:
 // on every solver fixture (scripts/solver_fixtures/), the reference search
 // and the macro search find both hand-counted pars, the macro search also
 // finds a route in its solvable mode, every route replays to the counts
@@ -188,6 +194,139 @@ function checkWalks(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
 }
 
 /**
+ * What checking the shot lines gave.
+ */
+type ShotCheck = {
+  readonly checked: number // Shots compared with the rules' step
+  readonly reused: number // Of those, the shots the solver reused from another tile on their line
+}
+
+/**
+ * Checks the shots the solver takes once per line (ShotLines) against the
+ * rules' step from each of a list of states: from every tile a walk
+ * reaches, turned each way the subject may move there, each shot through
+ * the rules' step gives the state, and opens the portals, that the solver
+ * builds from the first shot along its line.
+ * @param codec - The chamber's state key
+ * @param graph - The chamber's walk graph
+ * @param states - The states to walk from
+ * @returns How many shots it checked, and how many of them the solver reused
+ * @throws Error naming the first that disagrees
+ */
+function checkShots(codec: StateKeyCodec, graph: WalkGraph, states: readonly RulesState[]): ShotCheck {
+  const chamber = codec.index.chamber
+  const lines = new ShotLines(codec, graph)
+  const words = new Uint32Array(2)
+  let checked = 0
+
+  for (const state of states.filter((candidate) => !candidate.completed)) {
+    encodeCanonical(codec, graph, state, words)
+
+    const low = words[0] ?? 0
+    const high = words[1] ?? 0
+    const flags = codec.flagsOf(low, high)
+    const reachedCount = graph.walk(graph.edgesFor(state, flags), codec.subjectTileOf(low))
+
+    lines.begin(state, flags)
+
+    for (let position = 0; position < reachedCount; position++) {
+      const tile = graph.reachedTile(position)
+
+      words[0] = codec.placeSubject(low, tile, graph.facingOf(tile))
+      words[1] = high
+
+      // checkWalks proves this is the state walking there gives
+      const standing = codec.decode(words, 0)
+
+      DIRECTIONS.forEach((direction, directionIndex) => {
+        if (!graph.allowsWayFrom(tile, directionIndex)) {
+          return
+        }
+
+        const turned = (standing.facing === direction) ? standing : step(chamber, standing, TURN_ACTIONS[directionIndex] ?? Action.TURN_UP).state
+
+        for (const action of SHOT_ACTIONS) {
+          const real = step(chamber, turned, action)
+          const changed = lines.shoot(low, high, tile, directionIndex, action)
+
+          checked++
+
+          if (!changed) {
+            if (real.state.key !== turned.key) {
+              throw new Error(`${action} facing ${direction} from tile ${tile} changes the state, but the solver's shot changes nothing (state ${state.hash})`)
+            }
+
+            continue
+          }
+
+          encodeCanonical(codec, graph, real.state, words)
+
+          if ((words[0] !== lines.childLow) || (words[1] !== lines.childHigh) || (real.state.completed !== lines.resultState.completed) || (countPortalsOpened(real.events) !== lines.portalsOpened)) {
+            throw new Error(`${action} facing ${direction} from tile ${tile} gives another state than the solver builds (state ${state.hash})`)
+          }
+        }
+      })
+    }
+  }
+
+  return {
+    checked: checked,
+    reused: lines.reused,
+  }
+}
+
+/**
+ * Checks the regions against walks from each of a list of states: a tile
+ * the walk from the subject's tile reaches has the same region exactly when
+ * a walk from it reaches the subject's tile back, and no tile of that region
+ * is smaller than the region's own number.
+ * @param codec - The chamber's state key
+ * @param graph - The chamber's walk graph
+ * @param states - The states to walk from
+ * @returns How many tiles it checked
+ * @throws Error naming the first tile that disagrees
+ */
+function checkRegions(codec: StateKeyCodec, graph: WalkGraph, states: readonly RulesState[]): number {
+  const words = new Uint32Array(2)
+  let checked = 0
+
+  for (const state of states.filter((candidate) => !candidate.completed)) {
+    codec.encode(state, words, 0)
+
+    const low = words[0] ?? 0
+    const flags = codec.flagsOf(low, words[1] ?? 0)
+    const edges = graph.edgesFor(state, flags)
+    const regions = graph.regionsFor(state, flags)
+    const from = codec.subjectTileOf(low)
+    const reachedCount = graph.walk(edges, from)
+    const reached: number[] = []
+
+    for (let position = 0; position < reachedCount; position++) {
+      reached.push(graph.reachedTile(position))
+    }
+
+    for (const tile of reached) {
+      graph.walk(edges, tile)
+
+      const walksBack = graph.distanceTo(from) !== UNREACHED
+      const sameRegion = regions[tile] === regions[from]
+
+      checked++
+
+      if (sameRegion !== walksBack) {
+        throw new Error(`tile ${tile} is ${sameRegion ? '' : 'not '}in the region of tile ${from}, but a walk from it ${walksBack ? 'gets' : 'doesn\'t get'} back (state ${state.hash})`)
+      }
+
+      if (sameRegion && (tile < (regions[from] ?? tile))) {
+        throw new Error(`tile ${tile} is in region ${regions[from] ?? from}, a larger number (state ${state.hash})`)
+      }
+    }
+  }
+
+  return checked
+}
+
+/**
  * Checks the state key on a catalogue chamber, along its recorded solution
  * and a random walk, and the walk graph from every state along the solution.
  * @param file - The chamber's file name
@@ -210,8 +349,10 @@ function checkChamberKey(file: string, data: unknown): string {
 
   const walked = walkStates(chamber, (state) => checkRoundTrip(codec, state, words))
   const walks = checkWalks(codec, graph, solutionStates)
+  const shots = checkShots(codec, graph, solutionStates)
+  const regions = checkRegions(codec, graph, solutionStates)
 
-  return `key ${codec.widths.total} bits, ${solutionStates.length + walked} states survive it; ${walks} moves and turns agree with the walk graph`
+  return `key ${codec.widths.total} bits, ${solutionStates.length + walked} states survive it; ${walks} moves and turns agree with the walk graph; ${shots.checked} shots agree with the shot lines (${shots.reused} reused); ${regions} tiles agree with the regions`
 }
 
 /**
@@ -336,14 +477,17 @@ function checkSolverFixture(fixture: SolverFixture): string {
     throw new Error(`${states.length} distinct states share ${set.size} keys`)
   }
 
-  const walks = checkWalks(codec, new WalkGraph(codec.index, startChamber(chamber).state), states)
+  const graph = new WalkGraph(codec.index, startChamber(chamber).state)
+  const walks = checkWalks(codec, graph, states)
+  const shots = checkShots(codec, graph, states)
+  const regions = checkRegions(codec, graph, states)
   const macro = [
     checkMacro(chamber, SearchMode.SOLVABLE, null),
     checkMacro(chamber, SearchMode.MOVES, fixture.fewestMoves),
     checkMacro(chamber, SearchMode.PORTALS, fixture.fewestPortals),
   ]
 
-  return `reference ${fewestMoves.summary}; ${fewestPortals.summary}; key ${codec.widths.total} bits; ${walks} moves and turns agree with the walk graph; macro ${macro.join('; ')}`
+  return `reference ${fewestMoves.summary}; ${fewestPortals.summary}; key ${codec.widths.total} bits; ${walks} moves and turns agree with the walk graph; ${shots.checked} shots agree with the shot lines (${shots.reused} reused); ${regions} tiles agree with the regions; macro ${macro.join('; ')}`
 }
 
 /**

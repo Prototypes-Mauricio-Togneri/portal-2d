@@ -9,14 +9,17 @@ import {type ChamberIndex, NO_NUMBER} from '@/solver/chamber_index'
 export const NO_WALK = -1
 
 /** A tile's distance before a walk reaches it */
-const UNREACHED = -1
+export const UNREACHED = -1
+
+/** Bits in one word of a row of tiles */
+const WORD_BITS = 32
 
 /**
  * Whether an element type is found by tile: every type but walls and boxes.
  * @param kind - The type
  * @returns True when it is found by tile
  */
-function isPlacedKind(kind: ElementKind): kind is PlacedKind {
+export function isPlacedKind(kind: ElementKind): kind is PlacedKind {
   return (kind !== 'wall') && (kind !== 'box')
 }
 
@@ -27,6 +30,83 @@ const REACTING_KINDS: readonly PlacedKind[] = ELEMENT_REGISTRY
   .filter(isPlacedKind)
 
 /**
+ * Finds each tile's region: the tiles the subject can walk between both
+ * ways. Arrows make some walks one-way, so the tiles a walk reaches aren't
+ * always a region. A walk from each tile, breadth first, marks the tiles it
+ * reaches in a row of bits, then each tile's region is the smallest tile
+ * that reaches it and that it reaches. Walks start from every tile, event
+ * tiles included, but no walk edge leads onto an event tile, so each event
+ * tile is a region of its own. Built once per set of flags, so its cost,
+ * tiles times walk edges, stays small.
+ * @param edges - The walk edges, from WalkGraph's edgesFor
+ * @param tileCount - The chamber's tiles
+ * @returns Each tile's region, as its smallest tile's number
+ */
+function findRegions(edges: Int32Array, tileCount: number): Int32Array {
+  const rowWords = Math.ceil(tileCount / WORD_BITS)
+  const reaches = new Uint32Array(tileCount * rowWords)
+  const queue = new Int32Array(tileCount)
+  const regions = new Int32Array(tileCount)
+
+  /**
+   * Whether the walk from one tile reaches another.
+   * @param from - The tile the walk starts on
+   * @param tile - The tile it may reach
+   * @returns True when it does
+   */
+  const reachesTile = (from: number, tile: number): boolean => {
+    return ((((reaches[(from * rowWords) + Math.floor(tile / WORD_BITS)] ?? 0) >>> (tile % WORD_BITS)) & 1) === 1)
+  }
+
+  /**
+   * Marks a tile as reached by the walk from another.
+   * @param from - The tile the walk starts on
+   * @param tile - The tile it reaches
+   */
+  const markReached = (from: number, tile: number): void => {
+    const word = (from * rowWords) + Math.floor(tile / WORD_BITS)
+
+    reaches[word] = (reaches[word] ?? 0) | (1 << (tile % WORD_BITS))
+  }
+
+  for (let from = 0; from < tileCount; from++) {
+    let queued = 1
+
+    queue[0] = from
+    markReached(from, from)
+
+    for (let next = 0; next < queued; next++) {
+      const tile = queue[next] ?? 0
+
+      for (let directionIndex = 0; directionIndex < DIRECTIONS.length; directionIndex++) {
+        const target = edges[(tile * DIRECTIONS.length) + directionIndex] ?? NO_WALK
+
+        if ((target !== NO_WALK) && (!reachesTile(from, target))) {
+          markReached(from, target)
+          queue[queued] = target
+          queued++
+        }
+      }
+    }
+  }
+
+  for (let tile = 0; tile < tileCount; tile++) {
+    let region = tile
+
+    for (let other = 0; other < tile; other++) {
+      if (reachesTile(tile, other) && reachesTile(other, tile)) {
+        region = other
+        break
+      }
+    }
+
+    regions[tile] = region
+  }
+
+  return regions
+}
+
+/**
  * Where the subject can walk in a chamber, for the solver. A walk edge
  * leads from a tile one way to the next tile when the rules let the subject
  * leave its tile that way and step onto the next one (allowsWay and
@@ -35,7 +115,8 @@ const REACTING_KINDS: readonly PlacedKind[] = ELEMENT_REGISTRY
  * leaving it. Walking along walk edges changes only the subject's tile, its
  * facing and a carried box's tile, so the solver can take a whole walk as one
  * move. Which edges exist depends only on the blocked flags, so the edges are
- * built once per set of flags. Also numbers each tile's canonical facing: the
+ * built once per set of flags, and so are the regions, the tiles the subject
+ * can walk between both ways. Also numbers each tile's canonical facing: the
  * first way the subject may move there, which on an arrow is its own way.
  */
 export class WalkGraph {
@@ -44,6 +125,7 @@ export class WalkGraph {
   private readonly facings: Uint8Array // Each tile's canonical facing, as an index in DIRECTIONS
   private readonly allowedWays: Uint8Array // Each tile's ways the subject may move, one bit per index in DIRECTIONS
   private readonly edgesByFlags = new Map<number, Int32Array>() // The walk edges, by the blocked flags they were built for
+  private readonly regionsByFlags = new Map<number, Int32Array>() // Each tile's region, by the blocked flags it was found for
   private readonly reached: Int32Array // The tiles the last walk reached, in the order reached
   private readonly distances: Int32Array // Each tile's distance in the last walk, or UNREACHED
   private readonly arrivals: Int8Array // Each reached tile's last move in the last walk, as an index in DIRECTIONS
@@ -149,6 +231,29 @@ export class WalkGraph {
     this.edgesByFlags.set(flags, edges)
 
     return edges
+  }
+
+  /**
+   * The regions for a state's blocked flags: for each tile, the smallest
+   * tile of its region, the tiles the subject can walk between both ways.
+   * States that differ only in where the subject stands inside one region
+   * can reach the same states, so the search for any route keeps one.
+   * @param state - A state with these flags
+   * @param flags - Its blocked flags, as one number, the cache key
+   * @returns Each tile's region, as its smallest tile's number
+   */
+  regionsFor(state: RulesState, flags: number): Int32Array {
+    const cached = this.regionsByFlags.get(flags)
+
+    if (cached !== undefined) {
+      return cached
+    }
+
+    const regions = findRegions(this.edgesFor(state, flags), this.index.tileCount)
+
+    this.regionsByFlags.set(flags, regions)
+
+    return regions
   }
 
   /**

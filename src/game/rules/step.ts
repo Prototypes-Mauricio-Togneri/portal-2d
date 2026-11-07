@@ -1,3 +1,4 @@
+import type {PositionData} from '@/game/chamber_data'
 import {Direction} from '@/game/direction'
 import {GameEvent} from '@/game/game_event'
 import {Action, MOVEMENTS, type Movement} from '@/game/rules/action'
@@ -293,12 +294,12 @@ function move(draft: StateDraft, movement: Movement): void {
 
 /**
  * Whether something on a tile stops a shot.
- * @param draft - The step's state
+ * @param draft - The state, a step's draft or a settled state
  * @param x - Column
  * @param y - Row
  * @returns True when it does
  */
-function stopsShot(draft: StateDraft, x: number, y: number): boolean {
+function stopsShot(draft: StateReader, x: number, y: number): boolean {
   for (const kind of SHOT_BLOCKED_WHEN_BLOCKED) {
     if (draft.isBlockedAt(kind, x, y)) {
       return true
@@ -329,47 +330,58 @@ function hasRoomForPortal(draft: StateDraft, x: number, y: number, direction: Di
 }
 
 /**
+ * Where a shot stops: it goes on tile by tile from the tile it starts on,
+ * which doesn't count, until a tile something on it stops the shot, or a
+ * wall. Exported for the solver, like allowsWay, so the shots that end at
+ * the same tile share one result.
+ * @param draft - The state, a step's draft or a settled state
+ * @param x - Column the shot starts from
+ * @param y - Row the shot starts from
+ * @param direction - The way it goes
+ * @returns The tile where it stops, which can be just outside the chamber
+ */
+export function shotStop(draft: StateReader, x: number, y: number, direction: Direction): PositionData {
+  const delta = DELTAS[direction]
+  let stopX = x + delta.dx
+  let stopY = y + delta.dy
+
+  // Outside the chamber is wall, so every shot ends
+  while ((!stopsShot(draft, stopX, stopY)) && (!draft.chamber.isWall(stopX, stopY))) {
+    stopX += delta.dx
+    stopY += delta.dy
+  }
+
+  return {
+    x: stopX,
+    y: stopY,
+  }
+}
+
+/**
  * Shoots a portal the way the subject faces, unless it stands somewhere
  * that keeps it from shooting (a fizzler that is on), which does nothing,
- * silently. The shot goes on tile by tile until something stops it, a miss,
- * or it reaches a wall: a wall that takes portals and has room on its side
- * facing the shot opens the portal there; any other wall, outside the
+ * silently. The shot goes on until something stops it, a miss, or it
+ * reaches a wall (shotStop): a wall that takes portals and has room on its
+ * side facing the shot opens the portal there; any other wall, outside the
  * chamber included, is a miss.
  * @param draft - The step's state
  * @param color - The portal shot
  */
 function shoot(draft: StateDraft, color: PortalColor): void {
-  let x = draft.subjectX
-  let y = draft.subjectY
-
   for (const kind of SHOOTING_STOPPED_WHEN_BLOCKED) {
-    if (draft.isBlockedAt(kind, x, y)) {
+    if (draft.isBlockedAt(kind, draft.subjectX, draft.subjectY)) {
       return
     }
   }
 
   const direction = draft.facing
-  const delta = DELTAS[direction]
+  const stop = shotStop(draft, draft.subjectX, draft.subjectY, direction)
 
-  // Outside the chamber is wall, so every shot ends
-  for (;;) {
-    x += delta.dx
-    y += delta.dy
+  if ((!stopsShot(draft, stop.x, stop.y)) && draft.chamber.takesPortals(stop.x, stop.y) && hasRoomForPortal(draft, stop.x, stop.y, direction)) {
+    draft.openPortal(color, stop.x, stop.y, OPPOSITES[direction])
+    draft.emit(PORTAL_OPENED[color])
 
-    if (stopsShot(draft, x, y)) {
-      break
-    }
-
-    if (draft.chamber.isWall(x, y)) {
-      if (draft.chamber.takesPortals(x, y) && hasRoomForPortal(draft, x, y, direction)) {
-        draft.openPortal(color, x, y, OPPOSITES[direction])
-        draft.emit(PORTAL_OPENED[color])
-
-        return
-      }
-
-      break
-    }
+    return
   }
 
   draft.emit(GameEvent.REFUSED)
