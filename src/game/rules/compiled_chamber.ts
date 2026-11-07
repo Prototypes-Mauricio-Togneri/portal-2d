@@ -1,6 +1,9 @@
 import type {PositionData} from '@/game/chamber_data'
 import type {ChamberDataV2, WallDataV2} from '@/game/chamber_data_v2'
+import {Direction, parseDirection} from '@/game/direction'
+import {listEntries, type PlacedEntry} from '@/game/rules/chamber_entries'
 import {ELEMENT_REGISTRY, type ElementKind} from '@/game/rules/element_registry'
+import {StateLayout} from '@/game/rules/state_layout'
 
 /**
  * An element type the compiled chamber finds by tile: every type in the
@@ -23,12 +26,12 @@ export type LinkTarget = {
 }
 
 /**
- * An element's entry in a chamber file, whatever its type, as the compiled
- * chamber reads it.
+ * Where the subject starts, and which way it faces.
  */
-type PlacedEntry = PositionData & {
-  readonly id?: number // Target for links, when it has one
-  readonly links?: readonly number[] // Ids it links, for a button or a switch
+export type SubjectStart = {
+  readonly x: number // Column
+  readonly y: number // Row
+  readonly facing: Direction // Which way it faces
 }
 
 /**
@@ -57,17 +60,17 @@ const OUTSIDE = -1
 const NO_LINKS: readonly LinkTarget[] = []
 
 /**
- * Reads an element type's field of a chamber file as a list: a list left out
- * is empty, and the exit, a single entry, is a list of one.
- * @param field - The field, as the chamber file holds it
- * @returns The entries, in file order
+ * Reads an entry's direction when it is one of the four ways an arrow or the
+ * subject can point.
+ * @param text - The entry's direction, when it has one
+ * @returns The direction, or null for none, or for a laser's H or V
  */
-function listEntries(field: PlacedEntry | readonly PlacedEntry[] | undefined): readonly PlacedEntry[] {
-  if (field === undefined) {
-    return []
+function readDirection(text: string | undefined): Direction | null {
+  if ((text === Direction.UP) || (text === Direction.DOWN) || (text === Direction.LEFT) || (text === Direction.RIGHT)) {
+    return text
   }
 
-  return ('x' in field) ? [field] : field
+  return null
 }
 
 /**
@@ -142,8 +145,9 @@ function resolveLinks(ids: readonly number[], linkIds: LinkIds): readonly LinkTa
 
 /**
  * The fixed part of a chamber, built once per load for the v2 rules: its
- * size, its walls and which of them take portals, where each element is,
- * what each link reaches and where each box starts. Every lookup takes the
+ * size, its walls and which of them take portals, where each element is and
+ * which way it points, what each link reaches, where the subject and each
+ * box start, and how its state is laid out. Every lookup takes the
  * same time whatever the chamber's size. Outside the chamber's edge is wall
  * that takes no portals, with no element on it. Built from a chamber whose
  * fields have been read (readChamber), even one the validator rejects.
@@ -152,18 +156,28 @@ export class CompiledChamber {
   readonly width: number // In tiles
   readonly height: number // In tiles
   readonly boxStarts: readonly PositionData[] // Each box's start tile, in list order
+  readonly subjectStart: SubjectStart // Where the subject starts
+  readonly stateLayout: StateLayout // How this chamber's state is laid out
   private readonly walls: Uint8Array // 1 on each cell holding a wall
   private readonly portalWalls: Uint8Array // 1 on each cell holding a wall that takes portals
   private readonly tileIndexes = new Map<PlacedKind, TileIndex>() // Where each type's elements are
+  private readonly entries = new Map<PlacedKind, readonly PlacedEntry[]>() // Each type's entries, in list order
+  private readonly directions = new Map<PlacedKind, readonly (Direction | null)[]>() // Which way each element points, by type, then index
   private readonly links = new Map<PlacedKind, readonly (readonly LinkTarget[])[]>() // What each element's links reach, by type, then index
 
   /**
    * @param data - The chamber, its fields already read; it is only read
+   * @throws Error when the chamber is too large for a state's numbers
    */
   constructor(data: ChamberDataV2) {
     this.width = data.size.width
     this.height = data.size.height
     this.boxStarts = data.boxes ?? []
+    this.subjectStart = {
+      x: data.subject.x,
+      y: data.subject.y,
+      facing: parseDirection(data.subject.direction),
+    }
     this.walls = new Uint8Array(this.width * this.height)
     this.portalWalls = new Uint8Array(this.width * this.height)
 
@@ -178,9 +192,21 @@ export class CompiledChamber {
 
       const entries = listEntries(data[definition.fileKey])
 
+      this.entries.set(definition.kind, entries)
+      this.directions.set(definition.kind, entries.map((entry) => readDirection(entry.direction)))
       this.tileIndexes.set(definition.kind, this.indexTiles(entries))
       this.links.set(definition.kind, entries.map((entry) => resolveLinks(entry.links ?? [], linkIds)))
     }
+
+    const linked: LinkTarget[] = []
+
+    this.links.forEach((byElement) => {
+      for (const targets of byElement) {
+        linked.push(...targets)
+      }
+    })
+
+    this.stateLayout = new StateLayout(data, linked)
   }
 
   /**
@@ -325,6 +351,51 @@ export class CompiledChamber {
    */
   nextOnTile(kind: PlacedKind, index: number): number {
     return this.tileIndex(kind).next[index] ?? NO_ELEMENT
+  }
+
+  /**
+   * Every entry of an element type, in list order.
+   * @param kind - The element type
+   * @returns Its entries, as the chamber file lists them
+   */
+  entriesOf(kind: PlacedKind): readonly PlacedEntry[] {
+    return this.entries.get(kind) ?? []
+  }
+
+  /**
+   * How many elements of a type the chamber has.
+   * @param kind - The element type
+   * @returns The length of its list
+   */
+  countOf(kind: PlacedKind): number {
+    return this.entriesOf(kind).length
+  }
+
+  /**
+   * The tile an element sits on.
+   * @param kind - The element type
+   * @param index - The element's index in the type's list
+   * @returns Its entry, which holds its column and row
+   * @throws RangeError for an element the chamber doesn't have
+   */
+  positionOf(kind: PlacedKind, index: number): PositionData {
+    const entry = this.entriesOf(kind)[index]
+
+    if (entry === undefined) {
+      throw new RangeError(`no ${kind} ${index} in the chamber`)
+    }
+
+    return entry
+  }
+
+  /**
+   * Which way an element points, for an arrow.
+   * @param kind - The element type
+   * @param index - The element's index in the type's list
+   * @returns Its direction, or null when it points no way of the four
+   */
+  directionOf(kind: PlacedKind, index: number): Direction | null {
+    return this.directions.get(kind)?.[index] ?? null
   }
 
   /**

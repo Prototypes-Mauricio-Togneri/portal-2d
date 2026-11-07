@@ -1,14 +1,14 @@
 import type {ChamberData} from '@/game/chamber_data'
-import type {StateSnapshot} from '@/game/classic/state_snapshot'
+import type {SharedSnapshot} from '@/game/classic/rules_state_bridge'
 import type {GameEvent} from '@/game/game_event'
-import type {ComparedAction} from '@scripts/engine_comparison/compared_action'
+import type {Action} from '@/game/rules/action'
 
 /**
  * The state both engines must agree on after every step: everything today's
  * snapshot holds except the "inside a fizzler" flag, which v2 drops. Lists
  * follow the chamber file's element order.
  */
-export type ComparedView = Omit<StateSnapshot, 'insideFizzler'>
+export type ComparedView = SharedSnapshot
 
 /**
  * One chamber being played by one engine, one action at a time.
@@ -16,7 +16,7 @@ export type ComparedView = Omit<StateSnapshot, 'insideFizzler'>
 export type ComparedRun = {
   readonly startEvents: readonly GameEvent[] // What settling the chamber at load reported, in order
   readonly view: ComparedView // The state now
-  step(action: ComparedAction): readonly GameEvent[] // Runs one step and returns what it reported; throws when the rules throw
+  step(action: Action): readonly GameEvent[] // Runs one step and returns what it reported; throws when the rules throw
   takeOver(view: ComparedView): void // Carries on from a state another engine reached
 }
 
@@ -40,7 +40,7 @@ export type ComparedOutcome = {
  * @param action - The step's action
  * @returns The state, events and error after the step
  */
-export function playStep(run: ComparedRun, action: ComparedAction): ComparedOutcome {
+export function playStep(run: ComparedRun, action: Action): ComparedOutcome {
   try {
     const events = run.step(action)
 

@@ -1,0 +1,202 @@
+import {Direction} from '@/game/direction'
+import {BOX_STYLE, ELEMENT_DRAWINGS} from '@/game/element_drawings'
+import {DRAW_LAYERS, type DrawLayer} from '@/game/rules/draw_layer'
+import {ELEMENT_REGISTRY} from '@/game/rules/element_registry'
+import {PortalColor} from '@/game/rules/portal_color'
+import type {RulesState} from '@/game/rules/rules_state'
+import {TilePainter} from '@/game/tile_painter'
+
+/**
+ * The colours and edge width of a portal, drawn as half its wall tile.
+ */
+type PortalStyle = {
+  readonly fillColor: string // Body colour
+  readonly borderColor: string // Edge colour
+  readonly borderWidth: number // Edge width in pixels
+}
+
+/** A floor tile */
+const FLOOR_FILL = '#F0F0F0'
+
+/** A floor tile's edge */
+const FLOOR_BORDER = '#828282'
+
+/** A floor tile's edge width, in pixels */
+const FLOOR_BORDER_WIDTH = 0.1
+
+/** The subject's body */
+const SUBJECT_FILL = '#00A064'
+
+/** The subject's edge */
+const SUBJECT_BORDER = '#828282'
+
+/** The subject's edge width, in pixels */
+const SUBJECT_BORDER_WIDTH = 0.1
+
+/** The subject's facing triangle while it carries no box */
+const SUBJECT_ARROW = '#FFFFFF'
+
+/** Each portal's look */
+const PORTAL_STYLES: Readonly<Record<PortalColor, PortalStyle>> = {
+  [PortalColor.BLUE]: {
+    fillColor: '#288CDC',
+    borderColor: '#227ABF',
+    borderWidth: 1,
+  },
+  [PortalColor.ORANGE]: {
+    fillColor: '#FFA01E',
+    borderColor: '#D18011',
+    borderWidth: 1,
+  },
+}
+
+/**
+ * Draws a state of the v2 rules onto a canvas, exactly as today's renderer
+ * draws today's state: the floor, then each draw layer back to front. The
+ * core step's layers (floor, portals, subject) are drawn here; every other
+ * layer draws its element types in registry order, each by its drawing in
+ * ELEMENT_DRAWINGS. Tiles are square, sized to fit the chamber in the screen
+ * area, and row 0 is at the bottom.
+ */
+export class RendererV2 {
+  private readonly painter: TilePainter // Paints the tiles
+
+  /**
+   * Takes over a canvas, collapsing it to 0 × 0 until setSize() is called.
+   * @param canvas - The canvas to draw on
+   * @param screenWidth - Width available to the chamber, in pixels
+   * @param screenHeight - Height available to the chamber, in pixels
+   * @param pixelRatio - Canvas pixels per page pixel, such as the screen's device pixel ratio; 1 by default
+   * @throws Error when the canvas cannot provide a 2D context
+   */
+  constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number, pixelRatio = 1) {
+    this.painter = new TilePainter(canvas, screenWidth, screenHeight, pixelRatio)
+  }
+
+  /**
+   * Changes the area available to the chamber and the pixel ratio. Takes
+   * effect on the next setSize().
+   * @param screenWidth - Width available to the chamber, in pixels
+   * @param screenHeight - Height available to the chamber, in pixels
+   * @param pixelRatio - Canvas pixels per page pixel; 1 by default
+   */
+  resize(screenWidth: number, screenHeight: number, pixelRatio = 1): void {
+    this.painter.resize(screenWidth, screenHeight, pixelRatio)
+  }
+
+  /**
+   * Sizes the tiles and the canvas for a chamber. Clears the canvas.
+   * @param width - Chamber width, in tiles
+   * @param height - Chamber height, in tiles
+   */
+  setSize(width: number, height: number): void {
+    this.painter.setSize(width, height)
+  }
+
+  /**
+   * Draws the floor of every tile.
+   * @param state - The state drawn
+   */
+  private drawFloor(state: RulesState): void {
+    const size = this.painter.blockSize
+
+    for (let x = 0; x < state.chamber.width; x++) {
+      for (let y = 0; y < state.chamber.height; y++) {
+        this.painter.drawBlock(x, y, size, size, FLOOR_FILL, FLOOR_BORDER, FLOOR_BORDER_WIDTH)
+      }
+    }
+  }
+
+  /**
+   * Draws an open portal as the half of its wall tile on the side it opens to.
+   * @param state - The state drawn
+   * @param color - The portal
+   */
+  private drawPortal(state: RulesState, color: PortalColor): void {
+    const side = state.portalSide(color)
+
+    if (side === null) {
+      return
+    }
+
+    const x = state.portalX(color)
+    const y = state.portalY(color)
+    const size = this.painter.blockSize
+    const style = PORTAL_STYLES[color]
+
+    switch (side) {
+      case Direction.UP:
+        this.painter.drawBlockUp(x, y, size, size, style.fillColor, style.borderColor, style.borderWidth)
+        break
+
+      case Direction.DOWN:
+        this.painter.drawBlockDown(x, y, size, size, style.fillColor, style.borderColor, style.borderWidth)
+        break
+
+      case Direction.LEFT:
+        this.painter.drawBlockLeft(x, y, size, size, style.fillColor, style.borderColor, style.borderWidth)
+        break
+
+      case Direction.RIGHT:
+        this.painter.drawBlockRight(x, y, size, size, style.fillColor, style.borderColor, style.borderWidth)
+        break
+    }
+  }
+
+  /**
+   * Draws the subject with a triangle showing where it faces, in the box
+   * colour while it carries one.
+   * @param state - The state drawn
+   */
+  private drawSubject(state: RulesState): void {
+    const x = state.subjectX
+    const y = state.subjectY
+    const size = this.painter.blockSize
+
+    this.painter.drawBlock(x, y, size, size, SUBJECT_FILL, SUBJECT_BORDER, SUBJECT_BORDER_WIDTH)
+    this.painter.drawTriangleTowards(state.facing, x, y, state.isCarrying ? BOX_STYLE.fillColor : SUBJECT_ARROW)
+  }
+
+  /**
+   * Draws one layer: the core step's own, or every element type on it, in
+   * registry order.
+   * @param state - The state drawn
+   * @param layer - The layer
+   */
+  private drawLayer(state: RulesState, layer: DrawLayer): void {
+    switch (layer) {
+      case 'floor':
+        this.drawFloor(state)
+        break
+
+      case 'portals':
+        this.drawPortal(state, PortalColor.BLUE)
+        this.drawPortal(state, PortalColor.ORANGE)
+        break
+
+      case 'subject':
+        this.drawSubject(state)
+        break
+    }
+
+    for (const definition of ELEMENT_REGISTRY) {
+      if (definition.layer === layer) {
+        ELEMENT_DRAWINGS[definition.kind](this.painter, state)
+      }
+    }
+  }
+
+  /**
+   * Draws a whole frame, back to front.
+   * @param state - The state to draw
+   */
+  render(state: RulesState): void {
+    // Drawn at whatever opacity the previous frame left set; the floor then
+    // covers all of it
+    this.painter.clear()
+
+    for (const layer of DRAW_LAYERS) {
+      this.drawLayer(state, layer)
+    }
+  }
+}

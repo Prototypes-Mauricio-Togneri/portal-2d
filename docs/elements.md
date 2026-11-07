@@ -25,7 +25,7 @@ Reference for the elements a chamber file (`src/chambers/*.json`) can contain, c
 
 ## Rules (v2)
 
-The rules the v2 engine implements (stage 01, phase E). The game still plays today's rules (`src/game/classic/`) until stage 01 switches over; both behave the same except for the [changes from the original rules](#changes-from-the-original-rules) listed at the end.
+The rules the v2 engine implements (stage 01, phase E), in `src/game/rules/` (`step.ts`). The game still plays today's rules (`src/game/classic/`) until stage 01 switches over; in development, opening the game with `?rules=v2` plays these instead. Both behave the same except for the [changes from the original rules](#changes-from-the-original-rules) listed at the end, which `npm run compare:engines` checks.
 
 Tiles are counted with x growing to the right and y growing upwards from the bottom row, so "up" is towards a higher y. Chambers the validator rejects (see [what the validator rejects](#what-the-validator-rejects)) are outside these rules.
 
@@ -148,3 +148,4 @@ Where v2 differs from today's rules, each with the short id the engine compariso
 7. **`carried_box_link`** — A link to a carried box does nothing. Today the box goes to its start tile for the rest of that frame, where it can hold a button down for one frame, then returns to the subject. No fixture; no current chamber links a button to a box.
 8. **`edge_is_wall`** — Outside the chamber's edge is wall that takes no portals. Today walking never checks the edge, so only the chamber's own walls keep the subject in, and a shot checks it only before each tile, so a wall just past the edge can take a portal (the validator rejects walls outside the chamber). Fixture: `walk_out_through_the_edge`.
 9. **`completed_is_final`** — Once the chamber is completed, a step changes nothing. Today the rules keep applying keys after completion; live play pauses at the completion dialog, so only frame recordings notice. No fixture.
+10. **`every_laser_blocks`** — Two lasers crossing on a tile keep the subject out while either of them is on. Today only the first one listed there counts, so with that one off the subject walks into the other while it is still on. No current chamber shows it: chamber 1's crossing pair is linked by nothing and always on. Fixture: `walk_into_crossing_lasers_first_off`.

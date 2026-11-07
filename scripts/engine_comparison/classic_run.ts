@@ -6,7 +6,8 @@ import {runFrame, settleClassic, stepClassic} from '@/game/classic/step_classic'
 import {Subject} from '@/game/classic/subject'
 import {EMPTY_FRAME_INPUT} from '@/game/frame_input'
 import type {GameEvent} from '@/game/game_event'
-import {type ComparedAction, toFrameInput} from '@scripts/engine_comparison/compared_action'
+import type {Action} from '@/game/rules/action'
+import {toFrameInput} from '@scripts/engine_comparison/compared_action'
 import type {ComparedRun, ComparedView} from '@scripts/engine_comparison/compared_run'
 
 /**
@@ -61,7 +62,7 @@ export class ClassicRun implements ComparedRun {
    * @returns What every frame reported, in order
    * @throws Error when the rules throw or the state doesn't settle
    */
-  step(action: ComparedAction): readonly GameEvent[] {
+  step(action: Action): readonly GameEvent[] {
     return stepClassic(this.state, toFrameInput(action))
   }
 

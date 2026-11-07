@@ -2,6 +2,7 @@ import type {ChamberData} from '@/game/chamber_data'
 import type {ReplayExpectation} from '@/game/replay_data'
 import boxLinkedButton from '@scripts/fixtures/box_linked_button.json'
 import buttonBehindCarriedBox from '@scripts/fixtures/button_behind_carried_box.json'
+import crossingLasers from '@scripts/fixtures/crossing_lasers.json'
 import fizzlersInARow from '@scripts/fixtures/fizzlers_in_a_row.json'
 import openEdge from '@scripts/fixtures/open_edge.json'
 import portalOntoClosedExit from '@scripts/fixtures/portal_onto_closed_exit.json'
@@ -191,6 +192,22 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 2,
       portals: 0,
       finalHash: '103272ce',
+    },
+  },
+  {
+    name: 'walk_into_crossing_lasers_first_off',
+    behaviour: 'Of two lasers crossing on a tile, only the first listed keeps the subject out, so with that one switched off it walks into the other, which is still on.',
+    chamber: crossingLasers,
+    frames: [
+      '2:right',
+      '2:interact',
+      '2:right',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: 'ea8bf645',
     },
   },
   {

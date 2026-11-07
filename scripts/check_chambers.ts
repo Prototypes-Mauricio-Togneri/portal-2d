@@ -298,6 +298,34 @@ function checkRegistryEvents(): boolean {
 }
 
 /**
+ * Checks that each element that blocks walking, shots or shooting only
+ * while blocked has a blocked flag, which the step reads; without one, the
+ * step would never see it block.
+ * @returns Whether every such element has a flag
+ */
+function checkRegistryFlags(): boolean {
+  const unflagged = DEFINITIONS.filter((definition) => (definition.defaultBlocked === null) && (
+    (definition.blocksWalking === 'whenBlocked') ||
+    (definition.blocksShots === 'whenBlocked') ||
+    (definition.stopsShootingFrom === 'whenBlocked')
+  ))
+
+  if (unflagged.length === 0) {
+    console.log('registry flags OK: every element that blocks only while blocked has a blocked flag')
+
+    return true
+  }
+
+  console.error('registry flags FAILED: some elements block only while blocked but have no blocked flag')
+
+  for (const definition of unflagged) {
+    console.error(`  ${definition.kind}`)
+  }
+
+  return false
+}
+
+/**
  * Checks every chamber file in src/chambers, every case, the compiled format
  * 2 example and the element registry.
  * @returns Whether all of them passed
@@ -318,6 +346,7 @@ function runAll(): boolean {
   passed = checkRegistryFields() && passed
   passed = checkRegistryElements() && passed
   passed = checkRegistryEvents() && passed
+  passed = checkRegistryFlags() && passed
 
   return passed
 }

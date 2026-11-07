@@ -3,11 +3,16 @@ import {Chamber} from '@/game/classic/chamber'
 import {State} from '@/game/classic/state'
 import {getStateHash} from '@/game/classic/state_snapshot'
 import {Subject} from '@/game/classic/subject'
+import {CompiledChamber} from '@/game/rules/compiled_chamber'
+import {loadChamber} from '@/game/rules/load_chamber'
+import {startChamber} from '@/game/rules/step'
 import {CHAMBER_FILES, listChamberFiles} from '@scripts/chamber_files'
 
 // Loads every chamber with today's rules under Node and runs empty frames on
-// it, proving the rules need no browser. Prints one line per chamber, with
-// the hash of its starting state, and exits non-zero on any failure
+// it, then loads it for the v2 rules and settles its start, proving both need
+// no browser. Prints one line per chamber, with the hash of today's starting
+// state and the size and hash of v2's settled start, and exits non-zero on
+// any failure
 
 /** Frames run on each chamber */
 const FRAMES = 100
@@ -35,6 +40,24 @@ function runChamber(data: ChamberData): string {
 }
 
 /**
+ * Loads a chamber for the v2 rules and settles its start.
+ * @param data - The chamber JSON
+ * @returns The size and hash of the settled start
+ * @throws Error when the chamber doesn't load
+ */
+function startV2(data: ChamberData): string {
+  const loaded = loadChamber(data)
+
+  if (loaded.chamber === null) {
+    throw new Error(`the v2 rules can't load it: ${loaded.problems.map((problem) => problem.message).join('; ')}`)
+  }
+
+  const start = startChamber(new CompiledChamber(loaded.chamber)).state
+
+  return `v2 start ${start.byteSize} bytes, hash ${start.hash}`
+}
+
+/**
  * Runs every chamber file in src/chambers and reports each one.
  * @returns Whether every chamber ran
  */
@@ -52,7 +75,7 @@ function runAll(): boolean {
 
     try {
       const startHash = runChamber(data)
-      console.log(`${file} OK, start hash ${startHash}`)
+      console.log(`${file} OK, start hash ${startHash}, ${startV2(data)}`)
     } catch (error) {
       console.error(`${file} FAILED: ${String(error)}`)
       passed = false

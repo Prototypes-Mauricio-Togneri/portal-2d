@@ -196,6 +196,10 @@ export default withVueTs(
             '@/game/renderer',
             '@/game/input',
             '@/game/level',
+            '@/game/level_v2',
+            '@/game/renderer_v2',
+            '@/game/tile_painter',
+            '@/game/element_drawings',
           ],
           patterns: [
             '@/chambers/*',

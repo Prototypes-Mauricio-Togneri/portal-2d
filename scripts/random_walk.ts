@@ -6,6 +6,10 @@ import {getSnapshotHash, getStateHash, restoreSnapshot, type StateSnapshot, take
 import {stepClassic} from '@/game/classic/step_classic'
 import {Subject} from '@/game/classic/subject'
 import {FRAME_KEYS, type FrameInput, type FrameKey} from '@/game/frame_input'
+import {Action, ACTIONS} from '@/game/rules/action'
+import {CompiledChamber} from '@/game/rules/compiled_chamber'
+import {loadChamber} from '@/game/rules/load_chamber'
+import {startChamber, step as stepV2} from '@/game/rules/step'
 import {formatHash} from '@/game/text_hash'
 import {CHAMBER_FILES, listChamberFiles} from '@scripts/chamber_files'
 import {readNumberOption} from '@scripts/number_option'
@@ -14,10 +18,12 @@ import {createRandom} from '@scripts/seeded_random'
 // Plays seeded random inputs on every chamber with today's rules as a step
 // function under Node. Every step must settle within the cap and nothing may
 // throw. Every RESTORE_CHECK_INTERVAL steps it also checks that a snapshot
-// restores the state exactly, as undo relies on. Reports steps per second,
-// the speed baseline for the solver (stage 02), leaving out the time the
-// restore checks take. Prints one line per chamber and exits non-zero on any
-// failure.
+// restores the state exactly, as undo relies on. Then it plays seeded random
+// actions on the v2 rules, where every step must settle within its pass cap.
+// Reports steps per second for both, the speed baseline for the solver
+// (stage 02), leaving out the time the restore checks take, and the size of
+// a v2 state. Prints one line per chamber and rules, and exits non-zero on
+// any failure.
 // Options: --seed=<number> (default 1), --steps=<number> per chamber (default 100000)
 
 /** Steps per chamber unless --steps says otherwise */
@@ -53,6 +59,15 @@ type RestoreCheck = {
 type WalkResult = {
   readonly milliseconds: number // Time spent walking, restore checks left out
   readonly restoreChecks: number // Restore checks that ran and passed
+}
+
+/**
+ * How a walk on the v2 rules went.
+ */
+type V2WalkResult = {
+  readonly milliseconds: number // Time spent walking
+  readonly stateBytes: number // Size of the chamber's state
+  readonly completions: number // Times the walk completed the chamber and started over
 }
 
 /**
@@ -186,6 +201,54 @@ function walkChamber(data: ChamberData, steps: number, seed: number): WalkResult
 }
 
 /**
+ * Walks a chamber on the v2 rules with random actions, starting over
+ * whenever it is completed.
+ * @param data - The chamber JSON
+ * @param steps - How many steps to take
+ * @param seed - The seed for the actions
+ * @returns How long the walk took, the state's size and the completions
+ * @throws Error when the chamber doesn't load, or naming the step that failed
+ */
+function walkChamberV2(data: ChamberData, steps: number, seed: number): V2WalkResult {
+  const loaded = loadChamber(data)
+
+  if (loaded.chamber === null) {
+    throw new Error(`the v2 rules can't load it: ${loaded.problems.map((problem) => problem.message).join('; ')}`)
+  }
+
+  const chamber = new CompiledChamber(loaded.chamber)
+  const random = createRandom(seed)
+  const startTime = performance.now()
+  const start = startChamber(chamber).state
+  let state = start
+  let completions = 0
+
+  for (let step = 1; step <= steps; step++) {
+    // The index is always inside the list; the fallback only satisfies the type checker
+    const action = ACTIONS[Math.floor(random() * ACTIONS.length)] ?? Action.UP
+
+    try {
+      state = stepV2(chamber, state, action).state
+
+      if (state.completed) {
+        state = start
+        completions++
+      }
+    } catch (error) {
+      throw new Error(`v2 step ${step} (${action}): ${error instanceof Error ? error.message : String(error)}`, {
+        cause: error,
+      })
+    }
+  }
+
+  return {
+    milliseconds: performance.now() - startTime,
+    stateBytes: start.byteSize,
+    completions: completions,
+  }
+}
+
+/**
  * Walks every chamber file in src/chambers and reports each one.
  * @returns Whether every walk finished
  */
@@ -221,6 +284,15 @@ function runAll(): boolean {
       console.log(`${file} OK: ${steps} steps in ${(result.milliseconds / 1000).toFixed(2)} s, ${perSecond} steps per second, ${result.restoreChecks} restore checks`)
     } catch (error) {
       console.error(`${file} FAILED: ${error instanceof Error ? error.message : String(error)}`)
+      passed = false
+    }
+
+    try {
+      const result = walkChamberV2(data, steps, seed)
+      const perSecond = Math.round(steps / (result.milliseconds / 1000))
+      console.log(`${file} v2 OK: ${steps} steps in ${(result.milliseconds / 1000).toFixed(2)} s, ${perSecond} steps per second, state ${result.stateBytes} bytes, ${result.completions} completions`)
+    } catch (error) {
+      console.error(`${file} v2 FAILED: ${error instanceof Error ? error.message : String(error)}`)
       passed = false
     }
   }

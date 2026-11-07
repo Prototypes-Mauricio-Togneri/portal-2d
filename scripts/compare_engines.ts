@@ -1,15 +1,17 @@
 import {existsSync, readFileSync} from 'node:fs'
 import {parseArgs} from 'node:util'
 import type {ChamberData} from '@/game/chamber_data'
+import {Action, ACTIONS} from '@/game/rules/action'
 import {CHAMBER_FILES, CHAMBERS_DIRECTORY, listChamberFiles} from '@scripts/chamber_files'
 import {ChamberTiles} from '@scripts/engine_comparison/chamber_tiles'
 import {startClassicRun} from '@scripts/engine_comparison/classic_run'
 import {checkCompiledLookups} from '@scripts/engine_comparison/compiled_lookups'
-import {type ComparedAction, COMPARED_ACTIONS, readAction} from '@scripts/engine_comparison/compared_action'
+import {readAction} from '@scripts/engine_comparison/compared_action'
 import {type ComparedEngine, type ComparedOutcome, type ComparedRun, playStep} from '@scripts/engine_comparison/compared_run'
 import {findIntendedDifference} from '@scripts/engine_comparison/intended_differences'
 import {describeOutcomeDifferences} from '@scripts/engine_comparison/outcome_differences'
 import {checkRecognisedFixture, RECOGNISED_FIXTURES} from '@scripts/engine_comparison/self_test'
+import {startV2Run} from '@scripts/engine_comparison/v2_run'
 import {FIXTURES} from '@scripts/fixtures/fixtures'
 import {readNumberOption} from '@scripts/number_option'
 import {createRandom} from '@scripts/seeded_random'
@@ -23,10 +25,10 @@ import {createRandom} from '@scripts/seeded_random'
 // compiled chamber must agree with today's rules on every tile. Then a
 // self-test checks that each behaviour fixture playing one key at a time is
 // recognised as its own intended difference; then, per chamber, its recorded
-// solution and a seeded random walk are compared. Prints one line per
-// compiled chamber, per fixture and per chamber, and exits non-zero on any
-// failure.
-// Options: --seed=<number> (default 1), --steps=<number> per chamber (default 100000)
+// solution and a seeded random walk are compared, then a seeded random walk
+// on each fixture chamber. Prints one line per compiled chamber, per fixture
+// and per chamber, and exits non-zero on any failure.
+// Options: --seed=<number> (default 1), --steps=<number> per chamber and per fixture chamber (default 100000)
 
 /** Steps per chamber unless --steps says otherwise */
 const DEFAULT_STEPS = 100_000
@@ -34,8 +36,8 @@ const DEFAULT_STEPS = 100_000
 /** Seed unless --seed says otherwise */
 const DEFAULT_SEED = 1
 
-/** The v2 rules; today's rules stand in for them until stage 01 builds them (E8), so every run agrees */
-const V2_ENGINE: ComparedEngine = startClassicRun
+/** The v2 rules */
+const V2_ENGINE: ComparedEngine = startV2Run
 
 /**
  * A chamber played on both engines, in step with each other.
@@ -113,7 +115,7 @@ function createComparison(data: ChamberData, differences: Map<string, number>): 
  * @param action - The step's action
  * @throws Error when v2 throws, or listing the differences when no intended difference explains them
  */
-function compareStep(comparison: Comparison, action: ComparedAction): void {
+function compareStep(comparison: Comparison, action: Action): void {
   const before = comparison.classic.view
   const classic = playStep(comparison.classic, action)
   const v2 = playStep(comparison.v2, action)
@@ -211,7 +213,7 @@ function compareWalk(comparison: Comparison, steps: number, seed: number): strin
 
   for (let step = 1; step <= steps; step++) {
     // The index is always inside the list; the fallback only satisfies the type checker
-    const action = COMPARED_ACTIONS[Math.floor(random() * COMPARED_ACTIONS.length)] ?? 'up'
+    const action = ACTIONS[Math.floor(random() * ACTIONS.length)] ?? Action.UP
 
     try {
       compareStep(comparison, action)
@@ -335,6 +337,24 @@ function runAll(): boolean {
       console.log(`${file} OK: ${solution}, ${walk}; ${describeCounts(comparison.differences)}`)
     } catch (error) {
       console.error(`${file} FAILED: ${error instanceof Error ? error.message : String(error)}`)
+      passed = false
+    }
+  }
+
+  // The fixture chambers are made to reach the situations where the rules
+  // differ, so random walks on them meet those far more often
+  for (const fixture of FIXTURES) {
+    if (!fixtureChambers.delete(fixture.chamber)) {
+      continue
+    }
+
+    try {
+      const comparison = createComparison(fixture.chamber, new Map())
+      const walk = compareWalk(comparison, steps, seed)
+
+      console.log(`fixture chamber of ${fixture.name} OK: ${walk}; ${describeCounts(comparison.differences)}`)
+    } catch (error) {
+      console.error(`fixture chamber of ${fixture.name} FAILED: ${error instanceof Error ? error.message : String(error)}`)
       passed = false
     }
   }

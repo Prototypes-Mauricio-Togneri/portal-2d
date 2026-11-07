@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Renderer check</title>
+    <style>
+      body {
+        margin: 1rem;
+        font-family: sans-serif;
+        color: rgba(32, 32, 32, 1);
+        background: rgba(255, 255, 255, 1);
+      }
+
+      .canvases {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Renderer check</h1>
+    <p>Development only. Draws every frame of every recorded solution with today's renderer (left) and the v2 renderer (right) at pixel ratio 1, and compares the pixels.</p>
+    <p id="result">Comparing…</p>
+    <div class="canvases">
+      <canvas id="classic"></canvas>
+      <canvas id="v2"></canvas>
+    </div>
+    <script type="module" src="./render_check.ts"></script>
+  </body>
+</html>

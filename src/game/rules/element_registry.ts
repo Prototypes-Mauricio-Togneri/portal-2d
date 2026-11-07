@@ -38,12 +38,54 @@ export const CORE_STEP_EVENTS: readonly GameEvent[] = [
 /**
  * One of the element types in the registry.
  */
-type RegisteredElement = (typeof ELEMENT_REGISTRY)[number]
+export type RegisteredElement = (typeof ELEMENT_REGISTRY)[number]
 
 /**
  * The name of an element type in the registry, such as 'barrier'.
  */
 export type ElementKind = RegisteredElement['kind']
+
+/**
+ * An element type that has a blocked flag.
+ */
+type BlockableElement = Extract<RegisteredElement, {readonly defaultBlocked: boolean}>
+
+/**
+ * The name of an element type that has a blocked flag: a barrier, ditch,
+ * laser, door, the exit or a fizzler.
+ */
+export type BlockableKind = BlockableElement['kind']
+
+/** Every element definition, by its kind */
+const DEFINITIONS_BY_KIND: ReadonlyMap<ElementKind, ElementDefinition> = new Map(ELEMENT_REGISTRY.map((definition) => [
+  definition.kind,
+  definition,
+]))
+
+/**
+ * Whether an element type has a blocked flag.
+ * @param definition - An element type from the registry
+ * @returns True when it has one
+ */
+export function isBlockableElement(definition: RegisteredElement): definition is BlockableElement {
+  return definition.defaultBlocked !== null
+}
+
+/**
+ * The definition of an element type.
+ * @param kind - The element type
+ * @returns Its definition
+ * @throws Error for a type the registry doesn't hold, which the types rule out
+ */
+export function findElementDefinition(kind: ElementKind): ElementDefinition {
+  const definition = DEFINITIONS_BY_KIND.get(kind)
+
+  if (definition === undefined) {
+    throw new Error(`no element type ${kind} in the registry`)
+  }
+
+  return definition
+}
 
 /**
  * A chamber file's element fields, from the registry: a required entry for

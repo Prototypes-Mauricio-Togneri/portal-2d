@@ -8,19 +8,28 @@ const FNV_PRIME = 0x01000193
 const TEXT_ENCODER = new TextEncoder()
 
 /**
- * The 32-bit FNV-1a hash of a text, over its UTF-8 bytes.
- * @param text - The text to hash
+ * The 32-bit FNV-1a hash of a list of bytes.
+ * @param bytes - The bytes to hash
  * @returns The hash, as an unsigned 32-bit integer
  */
-export function hashText(text: string): number {
+export function hashBytes(bytes: Uint8Array): number {
   let hash = FNV_OFFSET_BASIS
 
-  for (const byte of TEXT_ENCODER.encode(text)) {
+  for (const byte of bytes) {
     hash ^= byte
     hash = Math.imul(hash, FNV_PRIME)
   }
 
   return hash >>> 0
+}
+
+/**
+ * The 32-bit FNV-1a hash of a text, over its UTF-8 bytes.
+ * @param text - The text to hash
+ * @returns The hash, as an unsigned 32-bit integer
+ */
+export function hashText(text: string): number {
+  return hashBytes(TEXT_ENCODER.encode(text))
 }
 
 /**

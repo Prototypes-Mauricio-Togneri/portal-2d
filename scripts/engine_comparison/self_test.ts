@@ -58,6 +58,11 @@ export const RECOGNISED_FIXTURES: readonly RecognisedFixture[] = [
     difference: 'edge_is_wall',
     step: 2,
   },
+  {
+    fixture: 'walk_into_crossing_lasers_first_off',
+    difference: 'every_laser_blocks',
+    step: 3,
+  },
 ]
 
 /**

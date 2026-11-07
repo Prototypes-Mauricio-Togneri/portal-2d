@@ -1,7 +1,7 @@
 import type {SubjectSnapshot} from '@/game/classic/state_snapshot'
 import {GameEvent} from '@/game/game_event'
+import type {Action} from '@/game/rules/action'
 import type {ChamberTiles} from '@scripts/engine_comparison/chamber_tiles'
-import type {ComparedAction} from '@scripts/engine_comparison/compared_action'
 import type {ComparedOutcome, ComparedView} from '@scripts/engine_comparison/compared_run'
 
 // The differences between today's rules and v2 that docs/elements.md lists
@@ -16,7 +16,7 @@ import type {ComparedOutcome, ComparedView} from '@scripts/engine_comparison/com
  */
 export type ComparedStep = {
   readonly tiles: ChamberTiles // What the chamber file puts on each tile
-  readonly action: ComparedAction // The step's action
+  readonly action: Action // The step's action
   readonly before: ComparedView // The state both engines started the step from
   readonly classic: ComparedOutcome // What today's rules did
   readonly v2: ComparedOutcome // What the v2 rules did
@@ -170,6 +170,25 @@ function recogniseEdgeIsWall(step: ComparedStep): boolean {
     portals.some((portal) => (portal !== null) && (!step.tiles.isInside(portal.x, portal.y)))
 }
 
+/**
+ * Today's rules put the subject on a tile where a laser other than the
+ * first one there is on, since they only look at the first.
+ * @param step - The step
+ * @returns Whether the step is in that situation
+ */
+function recogniseEveryLaserBlocks(step: ComparedStep): boolean {
+  if (step.classic.error !== null) {
+    return false
+  }
+
+  const before = step.before.subject
+  const after = step.classic.view.subject
+  const moved = (before.x !== after.x) || (before.y !== after.y)
+
+  // The move comes first in the step, so the flags are those it started with
+  return moved && step.tiles.hasLaterLaserOn(step.before, after.x, after.y)
+}
+
 /** Every intended difference, in the order docs/elements.md lists them; the first that recognises a step names it */
 export const INTENDED_DIFFERENCES: readonly IntendedDifference[] = [
   {
@@ -216,6 +235,11 @@ export const INTENDED_DIFFERENCES: readonly IntendedDifference[] = [
     id: 'completed_is_final',
     description: 'Once the chamber is completed, a step changes nothing',
     recognise: null,
+  },
+  {
+    id: 'every_laser_blocks',
+    description: 'Two lasers crossing on a tile keep the subject out while either is on',
+    recognise: recogniseEveryLaserBlocks,
   },
 ]
 

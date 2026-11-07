@@ -55,6 +55,7 @@ export class ChamberTiles {
   private readonly ditches: ReadonlyMap<string, number> // Index of the first ditch on each tile
   private readonly doors: ReadonlyMap<string, number> // Index of the first door on each tile
   private readonly lasers: ReadonlyMap<string, number> // Index of the first laser on each tile
+  private readonly laterLasers = new Map<string, number[]>() // Indexes of every laser after the first on each tile
   private readonly fizzlers: ReadonlyMap<string, number> // Index of the first fizzler on each tile
   private readonly buttons: ReadonlyMap<string, number> // Index of the first button on each tile
   private readonly arrows = new Map<string, Direction>() // Direction of the first arrow on each tile
@@ -73,6 +74,17 @@ export class ChamberTiles {
     this.ditches = indexFirstOnTiles(chamber.ditches)
     this.doors = indexFirstOnTiles(chamber.doors)
     this.lasers = indexFirstOnTiles(chamber.lasers)
+
+    chamber.lasers.forEach((laser, index) => {
+      const key = tileKey(laser.x, laser.y)
+
+      if (this.lasers.get(key) !== index) {
+        this.laterLasers.set(key, [
+          ...(this.laterLasers.get(key) ?? []),
+          index,
+        ])
+      }
+    })
     this.fizzlers = indexFirstOnTiles(chamber.fizzlers)
     this.buttons = indexFirstOnTiles(chamber.buttons)
 
@@ -176,6 +188,18 @@ export class ChamberTiles {
       isFlagSet(view.ditches, this.ditches.get(key)) ||
       isFlagSet(view.doors, this.doors.get(key)) ||
       isFlagSet(view.lasers, this.lasers.get(key))
+  }
+
+  /**
+   * Whether a laser other than the first on a tile is on, which today's
+   * rules never look at.
+   * @param view - The state
+   * @param x - Column
+   * @param y - Row
+   * @returns True when one of them is on
+   */
+  hasLaterLaserOn(view: ComparedView, x: number, y: number): boolean {
+    return (this.laterLasers.get(tileKey(x, y)) ?? []).some((index) => view.lasers[index] === true)
   }
 
   /**
