@@ -10,10 +10,12 @@ A program that searches every reachable state of a chamber and answers questions
 ## Depends on
 
 **Stage 00**
+
 - Records keyed by permanent chamber id, so par and solver results can be stored by id too.
 - The first local check command, which this stage extends.
 
 **Stage 01** — done (2026-11-07). It delivered:
+
 - A **pure step** on the v2 rules: `step(chamber, state, action)` (`src/game/rules/step.ts`) returns the next state (the same object when nothing changed) and its events, and `startChamber(chamber)` gives a chamber's settled start. Every effect lands inside the step, so the original rules' one-frame-late effects are gone, and once the chamber is completed a step changes nothing.
 - A **compact, immutable state** (`RulesState`): 24–26 16-bit values in the current chambers, with a `key` for maps (one character per value) and a hash. A step never changes the state it is given.
 - **No sounds or browser APIs in the rules** (they report events instead; lint and the scripts' TypeScript project enforce it), so the engine loads under Node. A Web Worker should work the same way but hasn't been tried.
@@ -26,6 +28,7 @@ A program that searches every reachable state of a chamber and answers questions
 - **"Moves"**: each step that puts the subject on another tile, a portal crossing included; turning in place counts none, so turns cost no moves (`level.ts`). Undone steps keep counting and redo counts nothing (README decision 8). Par uses the same definition.
 
 **Stage 01 as built, 2026-11-07** (kept from its notes when its file was removed):
+
 - The recorded solutions take chamber 1 in 163 moves and 22 portals, chamber 2 in 97 and 16, chamber 3 in 121 and 28: routes that work, not optimal, so not par.
 - Two throwaway searches (on the old rules) failed. A plain breadth-first search over single presses found nothing in chamber 2 after 2.75 million states (49 presses deep). Treating walking as free and searching over world-changing actions (shots, pick-ups, switches, buttons) reached 13 actions deep before portal pairs times box positions blew up; each chamber needs 20–40 such actions. The solver needs stronger pruning than either.
 - Speed budget (`npm run random:walk`, Node 24, the author's machine): about 785,000–1,200,000 steps per second. A state is 48–52 bytes of values, about 330 bytes on the heap, its key not included.
@@ -33,23 +36,23 @@ A program that searches every reachable state of a chamber and answers questions
 
 ## Decisions made
 
-| # | Date | Decision |
-|---|---|---|
-| 1 | 2026-11-06 | The solver targets the v2 rules only; today's rules are a reference that stage 01 deletes (README decision 3) |
-| 2 | 2026-11-06 | Everything runs locally on demand; no cloud CI (README decision 6) |
-| 3 | 2026-11-06 | The solver always calls stage 01's step for rule effects and never reimplements the rules. Only movement inside a region (a flood fill) is solver code, and it is checked against the real step |
+| #   | Date       | Decision                                                                                                                                                                                        |
+| --- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | 2026-11-06 | The solver targets the v2 rules only; today's rules are a reference that stage 01 deletes (README decision 3)                                                                                   |
+| 2   | 2026-11-06 | Everything runs locally on demand; no cloud CI (README decision 6)                                                                                                                              |
+| 3   | 2026-11-06 | The solver always calls stage 01's step for rule effects and never reimplements the rules. Only movement inside a region (a flood fill) is solver code, and it is checked against the real step |
 
 ## Open decisions
 
-| # | Question | Options and cost | Recommendation |
-|---|---|---|---|
-| 1 | **Difficulty score** (README open decision 2) | **(a)** A solver formula (dead ends, choices per step, required "insights" such as carrying a box through a portal): available before anyone plays, but "insight" detection is research and the formula is hard to validate. **(b)** Measured clear rates, median time and quits from analytics (stage 04): reflects real players, but needs players and history, so new chambers have no score at first. **(c)** Both: solver metrics only in the designer report; the difficulty players see comes from data | **(c)**. Show players measured difficulty only; keep solver numbers as a designer aid (phase E) |
-| 2 | Where does the solver code live? | **(a)** `src/solver/`, plain TypeScript with the same lint boundary as `src/game/` (may import `src/game/`, never Vue, components, services or chambers). **(b)** Inside `src/game/`: blurs the engine, which only plays | **(a)** |
-| 3 | What does "par" mean? | **(a)** Two independent optimums: fewest moves (ties broken by fewest portals) and fewest portals (ties broken by fewest moves), each with its own stored solution. **(b)** One lexicographic optimum: fewer to show, but loses the "portal-light" route | **(a)** |
-| 4 | Where is par stored? | **(a)** In the chamber file (the optional `par` block stage 01 reserves, written by the solve command): one file per chamber, travels with shared chambers in stage 05, type-checked. **(b)** A generated file keyed by permanent id: keeps hand-edited files clean, but shared chambers need it attached separately | **(a)** |
-| 5 | Hints and records | Using a hint can **(a)** change nothing, **(b)** be shown on the result, or **(c)** keep that run out of best times and medals | **(b)** for now; stage 04 decides how medals treat it |
-| 6 | Which key asks for a hint, and does it start the clock? | Any key outside the arrows, A, D, Space, Ctrl and Escape (for example H), owned by the chamber screen | H, owned by the screen. It does not start the clock. Update AGENTS.md's keyboard section |
-| 7 | Dead-end warning default | On, or off with a setting | Off by default; a switch under Settings |
+| #   | Question                                                | Options and cost                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Recommendation                                                                                  |
+| --- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| 1   | **Difficulty score** (README open decision 2)           | **(a)** A solver formula (dead ends, choices per step, required "insights" such as carrying a box through a portal): available before anyone plays, but "insight" detection is research and the formula is hard to validate. **(b)** Measured clear rates, median time and quits from analytics (stage 04): reflects real players, but needs players and history, so new chambers have no score at first. **(c)** Both: solver metrics only in the designer report; the difficulty players see comes from data | **(c)**. Show players measured difficulty only; keep solver numbers as a designer aid (phase E) |
+| 2   | Where does the solver code live?                        | **(a)** `src/solver/`, plain TypeScript with the same lint boundary as `src/game/` (may import `src/game/`, never Vue, components, services or chambers). **(b)** Inside `src/game/`: blurs the engine, which only plays                                                                                                                                                                                                                                                                                       | **(a)**                                                                                         |
+| 3   | What does "par" mean?                                   | **(a)** Two independent optimums: fewest moves (ties broken by fewest portals) and fewest portals (ties broken by fewest moves), each with its own stored solution. **(b)** One lexicographic optimum: fewer to show, but loses the "portal-light" route                                                                                                                                                                                                                                                       | **(a)**                                                                                         |
+| 4   | Where is par stored?                                    | **(a)** In the chamber file (the optional `par` block stage 01 reserves, written by the solve command): one file per chamber, travels with shared chambers in stage 05, type-checked. **(b)** A generated file keyed by permanent id: keeps hand-edited files clean, but shared chambers need it attached separately                                                                                                                                                                                           | **(a)**                                                                                         |
+| 5   | Hints and records                                       | Using a hint can **(a)** change nothing, **(b)** be shown on the result, or **(c)** keep that run out of best times and medals                                                                                                                                                                                                                                                                                                                                                                                 | **(b)** for now; stage 04 decides how medals treat it                                           |
+| 6   | Which key asks for a hint, and does it start the clock? | Any key outside the arrows, A, D, Space, Ctrl and Escape (for example H), owned by the chamber screen                                                                                                                                                                                                                                                                                                                                                                                                          | H, owned by the screen. It does not start the clock. Update AGENTS.md's keyboard section        |
+| 7   | Dead-end warning default                                | On, or off with a setting                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Off by default; a switch under Settings                                                         |
 
 ## Steps
 
@@ -59,11 +62,11 @@ Each step: what changes, where, and how it is verified. UI steps must use the `f
 
 Rough size of the problem, from the current chamber data (2026-11-06). "Open tiles" are the non-wall tiles reachable from the start, ignoring blockers. "Wall sides" are the wall sides facing one of those tiles. "Flags" are linked elements with an open/closed state (boxes linked to a switch reset instead of holding a flag).
 
-| # | Chamber | Size | Open tiles | Wall sides | Flags | Boxes | Upper bound | With position and facing folded into the region |
-|---|---|---|---|---|---|---|---|---|
-| 1 | 1 | 20×20 | 262 | 225 | 6 | 2 | ~10^14.7 | ~10^11.7 |
-| 2 | 2 | 23×13 | 189 | 169 | 9 | 2 | ~10^14.9 | ~10^12.0 |
-| 3 | 3 | 23×17 | 268 | 212 | 5 | 2 | ~10^14.4 | ~10^11.3 |
+| #   | Chamber | Size  | Open tiles | Wall sides | Flags | Boxes | Upper bound | With position and facing folded into the region |
+| --- | ------- | ----- | ---------- | ---------- | ----- | ----- | ----------- | ----------------------------------------------- |
+| 1   | 1       | 20×20 | 262        | 225        | 6     | 2     | ~10^14.7    | ~10^11.7                                        |
+| 2   | 2       | 23×13 | 189        | 169        | 9     | 2     | ~10^14.9    | ~10^12.0                                        |
+| 3   | 3       | 23×17 | 268        | 212        | 5     | 2     | ~10^14.4    | ~10^11.3                                        |
 
 The upper bound is tiles × 4 facings × (wall sides + 1)² for the two portals × (tiles + 1)² for the two boxes × 2^flags × 2 for the "inside a fizzler" flag. Portal pairs (~3–5×10^4) and box placements (~4–7×10^4) dominate. Boxes block neither the subject nor shots (`state.ts` never looks at boxes when walking or shooting), so most box placements are equivalent. After the pruning below, the reachable count is a **guess of 10^6–10^8** per chamber. That guess is what this phase measures.
 
@@ -73,7 +76,7 @@ The upper bound is tiles × 4 facings × (wall sides + 1)² for the two portals 
 - [ ] **A4. Visited set.** An open-addressing hash set over a `Uint32Array` (two words per key) with a parent link for rebuilding the path; no JavaScript objects per state. Verified by: inserting and finding 10^7 random keys in Node, memory under ~250 MB.
 - [ ] **A5. Tiny test chambers.** Write 4–6 hand-made chambers of about 6×6 in `scripts/solver_fixtures/` (not in the catalogue), each with hand-counted fewest moves and fewest portals. Cover: walking through a portal, carrying a box through a portal, a button held by a box, a switch, a fizzler destroying a carried box, a one-way arrow trap (a dead end). Verified by: each file loads through the chamber type without a cast.
 - [ ] **A6. Baseline search.** Breadth-first search over single keypresses using stage 01's step, stopping on the win. This is slow, but it is the reference answer. Verified by: it matches the hand counts on every tiny chamber, and the solutions it finds pass the replay check.
-- [ ] **A7. Macro search.** From a state, flood-fill the subject's walkable tiles with distances under the current flags, respecting one-way arrows. Stop at **event tiles**: tiles whose entry or exit changes state (buttons, active fizzlers, the exit, and any type that stage 01's element data marks this way). Walking between other tiles changes only position. Macro actions: walk to tile *t*, then turn and shoot A or D; pick up or drop a box; use a switch; step onto an event tile; walk through a portal. The edge cost is steps walked (for fewest moves) or portals placed (for fewest portals), with a 0-1 BFS / Dijkstra search. Turning in place costs no moves, so facing only matters just before a shot (except on an arrow, where Ctrl and other directions are ignored). Every macro edge is expanded into keypresses and replayed through the real step on the tiny chambers. Verified by: same optimums as A6 on every tiny chamber; far fewer expanded states.
+- [ ] **A7. Macro search.** From a state, flood-fill the subject's walkable tiles with distances under the current flags, respecting one-way arrows. Stop at **event tiles**: tiles whose entry or exit changes state (buttons, active fizzlers, the exit, and any type that stage 01's element data marks this way). Walking between other tiles changes only position. Macro actions: walk to tile _t_, then turn and shoot A or D; pick up or drop a box; use a switch; step onto an event tile; walk through a portal. The edge cost is steps walked (for fewest moves) or portals placed (for fewest portals), with a 0-1 BFS / Dijkstra search. Turning in place costs no moves, so facing only matters just before a shot (except on an arrow, where Ctrl and other directions are ignored). Every macro edge is expanded into keypresses and replayed through the real step on the tiny chambers. Verified by: same optimums as A6 on every tiny chamber; far fewer expanded states.
 - [ ] **A8. Region folding (solvability only).** For "is it solvable?", replace the subject's tile by its region's smallest tile index (as Sokoban solvers do), and drop facing. Par search keeps exact tiles at decision points. Verified by: same yes/no as A7 on the tiny chambers and the three real ones.
 - [ ] **A9. Box drop pruning.** Only allow drops on buttons, at the box's start, and where the subject must have free hands next: before a switch (a switch refuses while carrying), before picking up the other box, before entering an active fizzler (which destroys a carried box and returns it to its start). Pruning could miss an optimum, so compare it with unpruned A7 on the tiny chambers. If par changes anywhere, use pruning for solvability only. Verified by: the comparison table in this file.
 - [ ] **A10. Dead states.** After a full search, mark states from which the win can't be reached (reachability backwards over the explored graph). Today switches only ever open things and destroyed boxes return to their start, so dead ends come mainly from one-way arrows; this step measures how many there really are. Treat leaving the grid as dead (the engine has no edge check; today every linked border barrier sits on a wall, so it can't happen in the current chambers). Verified by: the arrow-trap tiny chamber reports its dead states, and no state along a recorded solution is marked dead.
@@ -83,12 +86,12 @@ The upper bound is tiles × 4 facings × (wall sides + 1)² for the two portals 
 
 Pass thresholds:
 
-| # | Test | Pass | If it fails |
-|---|---|---|---|
-| 1 | Node: solvability on each current chamber | ≤ 60 s, ≤ 2 GB | Over 5 minutes or out of memory: stop the stage after phase A (see Go/no-go) |
-| 2 | Node: both pars on each current chamber | ≤ 60 s, ≤ 2 GB | Keep the solvability check, drop par |
-| 3 | Worker: next move to the next milestone, from a mid-game state | ≤ 1 s for 95% of states, ≤ 256 MB | No live next-move hints and no dead-end warning; nudge and highlight hints from precomputed data only |
-| 4 | Node: solvability on a 12×12 chamber with one box (for phase F) | ≤ 2 s | No generated chambers |
+| #   | Test                                                            | Pass                              | If it fails                                                                                           |
+| --- | --------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 1   | Node: solvability on each current chamber                       | ≤ 60 s, ≤ 2 GB                    | Over 5 minutes or out of memory: stop the stage after phase A (see Go/no-go)                          |
+| 2   | Node: both pars on each current chamber                         | ≤ 60 s, ≤ 2 GB                    | Keep the solvability check, drop par                                                                  |
+| 3   | Worker: next move to the next milestone, from a mid-game state  | ≤ 1 s for 95% of states, ≤ 256 MB | No live next-move hints and no dead-end warning; nudge and highlight hints from precomputed data only |
+| 4   | Node: solvability on a 12×12 chamber with one box (for phase F) | ≤ 2 s                             | No generated chambers                                                                                 |
 
 ### Phase B — Solvability and par in the local checks (if test 1 passes)
 
@@ -111,6 +114,7 @@ Pass thresholds:
   - designer metrics (phase E)
 
   It also has a JSON form for stage 05's editor. Verified by: reports for the three chambers, read by the author against what they meant.
+
 - [ ] **C3. Watching solutions.** Optimal solutions can be watched with stage 01's replay playback. If 01 has no viewer, add a dev-only one that never reaches the production build. Verified by: watching chamber 3's fewest-portals solution.
 
 ### Phase D — Player features (if test 3 passes)
@@ -125,6 +129,7 @@ Pass thresholds:
   3. the next move shown as a keycap
 
   The highlight is a renderer change; this file is the explicit request that AGENTS.md's frozen-drawing rule requires, so note the exception there. Verified by: manual run at three points in each chamber; Escape and dialogs still behave as AGENTS.md describes.
+
 - [ ] **D6. Hint analytics.** New events: `hint_request` (`chamber_id`, `chamber_number`, `tier`, `moves`, `time_ms`) and `dead_end_shown` (`chamber_id`, `chamber_number`, `moves`, `time_ms`). New parameter on `chamber_complete`: `hints` (highest tier used, 0 for none). Names are permanent once shipped, so review them before the first deploy. Verified by: `npm run dev` sends nothing; a preview deploy shows the events in GA4 DebugView.
 - [ ] **D7. Result display.** Show hint use on the completion dialog per open decision 5 (`frontend-design`). Verified by: completing a chamber with and without hints.
 - [ ] **D8. Docs.** AGENTS.md: keyboard ownership (hint key), Settings, persistence, analytics events, the worker. Verified by: re-reading against the code.
@@ -144,6 +149,7 @@ Pass thresholds:
   - **(c)** Stitch small "rooms", each built around one mechanic.
 
   Recommendation: start with (a) at ≤ 12×12. Verified by: 100 solvable candidates produced.
+
 - [ ] **F2. Quality filters beyond "solvable".** Par within a range; at least N portals needed; every element needed (C1); few distinct optimal routes; no big shortcut; a dead-state share within a band; at least one required "insight" (such as a box through a portal). Calibrate on the hand-made chambers first: they must pass. Verified by: pass rates for hand-made and generated chambers.
 - [ ] **F3. Daily delivery without a backend.** Options: generate in the browser from a date seed (needs a fast, deterministic generator that doesn't change between versions), or pre-generate offline, have the author review, and ship as chamber files. Recommendation: pre-generate. The menu entry and route belong to stage 04, which must add any new route to the no-cache headers. Leaderboards belong to stage 05. Verified by: a month of dailies generated and reviewed.
 - [ ] **F4. Endless packs.** Same pipeline, shipped as packs. Verified by: one pack of 20.
