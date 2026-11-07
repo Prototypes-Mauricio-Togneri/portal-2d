@@ -1,6 +1,6 @@
 # Chamber Elements
 
-Reference for the elements a chamber file (`src/chambers/*.json`) can contain, carried over from the original game's help page, followed by the v2 rules.
+Reference for the elements a chamber file (`src/chambers/*.json`) can contain, carried over from the original game's help page, followed by the chamber file format and the rules.
 
 | # | Element | Description | Can be activated/deactivated? | Can portals go through it? | Can the subject go through it? | Quantity |
 |---|---------|-------------|-------------------------------|----------------------------|--------------------------------|----------|
@@ -23,9 +23,32 @@ Reference for the elements a chamber file (`src/chambers/*.json`) can contain, c
 - Barriers, ditches, doors, fizzlers, exits and lasers can be locked or unlocked by enabling their linked activator. Boxes, instead, are reset to their original position.
 - Buttons and switches can be linked to many objects. For example, pushing a button can unlock a door and enable a barrier at the same time.
 
-## Rules (v2)
+## Chamber format
 
-The rules the v2 engine implements (stage 01, phase E), in `src/game/rules/` (`step.ts`). The game still plays today's rules (`src/game/classic/`) until stage 01 switches over; in development, opening the game with `?rules=v2` plays these instead. Both behave the same except for the [changes from the original rules](#changes-from-the-original-rules) listed at the end, which `npm run compare:engines` checks.
+A chamber file is a JSON object in format 2 (`ChamberData` in `src/game/chamber_data.ts`). Positions are tiles: `x` grows to the right and `y` upwards from the bottom row, both from 0. Every coordinate, size, id and count is a whole number. `version`, `size`, `subject` and `exit` are required; every list, `groups` and `par` may be left out, and a list left out means the chamber has none of that element. A field the format doesn't name is an error.
+
+| # | Field | Holds |
+|---|-------|-------|
+| 1 | `version` | The format's version: `2`. |
+| 2 | `size` | `width` and `height`, in tiles, each 1 or more. |
+| 3 | `subject` | Where the subject starts: `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required. |
+| 4 | `exit` | The exit, a single entry: `x`, `y`, and optionally `id` and `blocked`. |
+| 5 | `walls` | One tile (`x`, `y`) or a rectangle of tiles (`xFrom`, `xTo`, `yFrom`, `yTo`, both ends included, each from no greater than its to), each with an optional `takesPortals`: true when absent, false for a wall that refuses portals. |
+| 6 | `barriers`, `ditches`, `doors`, `fizzlers` | `x`, `y`, and optionally `id` and `blocked`. |
+| 7 | `lasers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn, and two lasers can share a tile only when they cross), and optionally `id` and `blocked`. |
+| 8 | `boxes` | `x`, `y`, and optionally `id`. |
+| 9 | `buttons`, `switches` | `x`, `y` and `links`, all required: the ids of the elements and link groups it acts on (see [links](#links)). |
+| 10 | `arrows` | `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required: the one way the subject can enter the tile. |
+| 11 | `groups` | Link groups, each with an `id` and `links`, both required: the ids of the elements it stands for, never another group. |
+| 12 | `par` | How well the chamber can be solved, for medals: optionally `moves` and `portals`, each 0 or more. Left empty until the solver (stage 02) fills it. |
+
+- **`id`:** 1 or more, unique among every element and group, and needed only by what a button, switch or group links to; an element without one can't be linked.
+- **`blocked`:** true when absent (see [blocking](#blocking)).
+- **Older files:** a file without a `version` is format 1, upgraded when read (`src/game/rules/upgrade_chamber.ts`): it gets `version: 2`, and an `id` of 0, which format 1 read as no id, is removed. A file with a newer version than the game plays is refused.
+
+## Rules
+
+The rules the game plays, in `src/game/rules/` (`step.ts`), pinned by each chamber's recorded solution and by the behaviour fixtures (`npm run replay:check`). They follow the original game's rules apart from the [changes from the original rules](#changes-from-the-original-rules) listed at the end.
 
 Tiles are counted with x growing to the right and y growing upwards from the bottom row, so "up" is towards a higher y. Chambers the validator rejects (see [what the validator rejects](#what-the-validator-rejects)) are outside these rules.
 
@@ -43,7 +66,7 @@ The player gives one action per step: move or turn (up, down, left or right), sh
    1. the [fizzler rule](#the-fizzler-rule);
    2. every [button](#buttons), in the chamber's list order, with its links.
 
-   It always ends, because a pass moves nothing but boxes, and only ever to their start tiles. A cap still guards against a mistake: reaching it is an error, like today's settle cap.
+   It always ends, because a pass moves nothing but boxes, and only ever to their start tiles. A cap of 32 passes still guards against a mistake: reaching it is an error.
 4. The [exit check](#the-exit).
 
 Once the chamber is completed, a step changes nothing.
@@ -127,7 +150,7 @@ Outside the chamber's edge counts as a wall that takes no portals, and the valid
 
 A chamber file is upgraded to the current format, then read field by field, then checked as a whole (`src/game/rules/`, run on every chamber by `npm run chamber:check`). Each problem names its field and, where it has one, its tile. Errors keep a chamber from loading:
 
-- **Fields:** a missing field, an unknown or misspelled one, a value of the wrong kind (coordinates and ids are whole numbers, ids 1 or more, a size at least 1, directions `UP`, `DOWN`, `LEFT` or `RIGHT`, a laser `H` or `V`), a wall rectangle whose from corner is past its to corner, or a format newer than the game plays.
+- **Fields:** a missing field, an unknown or misspelled one, a value of the wrong kind or out of range (see the [chamber format](#chamber-format)), a wall rectangle whose from corner is past its to corner, or a format newer than the game plays.
 - **Ids and links:** an id used twice (elements and groups share the ids), a link naming an id nothing has, and a group naming another group.
 - **Bounds:** anything outside the chamber, and the same wall tile listed twice.
 - **What shares a tile:** a wall holds nothing but at most one barrier, so the subject and the exit are never inside a wall. A floor tile holds at most one of a barrier, ditch, door, exit, fizzler, arrow, button, switch or laser, except two lasers that cross (one `H`, one `V`). A box and the subject start on plain floor or a button, with at most one box per tile; the subject and a box may share it.
@@ -137,15 +160,15 @@ One warning doesn't keep a chamber from loading: a button linked to a box, since
 
 ### Changes from the original rules
 
-Every way v2 differs from today's rules, each with the short id the engine comparison (`npm run compare:engines`) recognises it by, the behaviour fixtures that pin today's behaviour (`scripts/fixtures/fixtures.ts`) and those that pin v2's (on v2, `scripts/fixtures/fixtures_v2.ts`). The comparison plays each of today's fixtures on both engines, one settled step per key, and requires exactly the change it pins, at its step. Three situations can't be compared that way, since only frame recordings reach them: several keys in one frame, a key pressed before the state settles (part of `no_late_effects`), and keys after completion. The v2 rules take one action per step, finish it before the next and change nothing once the chamber is completed.
+Every way these rules differ from the original game's, which this game played until stage 01 replaced them, each with its short id and the behaviour fixtures that pin it (`scripts/fixtures/fixtures.ts`). These rules take one action per step, finish it before the next and change nothing once the chamber is completed.
 
-1. **`portal_exit_checked`** — Coming out of a portal onto a tile the subject couldn't walk onto is refused, with the error sound. Today it ignores every walking check, so the subject can stand on an open ditch, in a laser that is on, on a raised barrier, a closed door or a wrong-way arrow. Fixtures: `portal_onto_open_ditch`, `portal_onto_active_laser`; on v2: `portal_onto_open_ditch_refused`, `portal_onto_active_laser_refused`.
-2. **`closed_exit_by_portal`** — Coming out of a portal onto the closed exit is refused like any tile the subject can't enter. Today it completes the chamber. This is the closed-exit case of `portal_exit_checked`, kept as an id of its own because of the completion; the comparison tool reports it under this id. Fixture: `portal_onto_closed_exit_completes`; on v2: `portal_onto_closed_exit_refused`.
-3. **`box_link_release`** — Releasing a button linked to a box does nothing to the box. Today it stops the game with an error. Fixture: `box_linked_button_release_throws`; on v2: `box_linked_button_release_does_nothing`.
-4. **`fizzler_without_flag`** — The fizzler rule runs every step. Today the subject counts as inside a field until it stands on a tile with no fizzler at all, even after stepping onto one that is off, and nothing fizzles while it is inside: walking on from such a tile into another field, or that fizzler turning on, keeps the portals, and a box picked up inside a field is kept. Fixture: `fizzler_flag_kept_across_switched_off_fizzler`; on v2: `fizzler_rule_every_step`.
-5. **`no_late_effects`** — Everything a step causes happens within it, in the step's order. Today some effects land a frame late, so a key pressed in that frame acts first: a button behind a carried box releases a frame later; a fizzler fires a frame later when the subject comes out of a portal into it or it turns on under the subject; the exit completes at the start of the next frame; each frame judges the buttons once, so a chain of links takes several frames. The late effects also reorder events, which can change the settled result. Today the button a carried box leaves is released after every other button event of that frame, so when it shares a link with the button the subject steps onto, the link always ends blocked; v2 follows the list order and can end with it unblocked. And a portal crossing into a fizzler reports `crossed`, then the button events, then `fizzled`, where v2 reports `fizzled` before the button events. Fixtures: `carried_box_button_released_last`, and three that press a key a frame early, which agree with v2 step by step (the timing can't be compared): `button_releases_behind_carried_box`, `portal_onto_fizzler_left_next_frame`, `portal_onto_fizzler_fires_a_frame_late`; on v2: `carried_box_off_button_closes_door_at_once`, `portal_onto_fizzler_fizzles_at_once`, `carried_box_buttons_in_list_order`.
-6. **`one_action_per_step`** — One action per step, in the order pressed. Today a frame can carry several keys: only one arrow counts (up, then down, left, right), blue beats orange, and they run move, then shoot, then interact; a box put down in the same frame as a move stays on the tile the subject left. Live play has sent one key at a time since phase D, so only frame recordings notice. No fixture: the v2 step takes exactly one action, so there is nothing to compare.
-7. **`carried_box_link`** — A link to a carried box does nothing. Today the box goes to its start tile for the rest of that frame, where it can hold a button down for one frame, then returns to the subject. No current chamber links a button to a box. Fixture: `carried_box_link_sends_box_to_start`; on v2: `carried_box_link_does_nothing`.
-8. **`edge_is_wall`** — Outside the chamber's edge is wall that takes no portals. Today walking never checks the edge, so only the chamber's own walls keep the subject in, and a shot checks it only before each tile, so a wall just past the edge can take a portal (the validator rejects walls outside the chamber). Fixture: `walk_out_through_the_edge`; on v2: `edge_is_wall`.
-9. **`completed_is_final`** — Once the chamber is completed, a step changes nothing. Today the rules keep applying keys after completion; live play pauses at the completion dialog, so only frame recordings notice. No fixture: the replay check plays every action on each recorded solution's completed state, and none may change it or report anything.
-10. **`every_laser_blocks`** — Two lasers crossing on a tile keep the subject out while either of them is on. Today only the first one listed there counts, so with that one off the subject walks into the other while it is still on. No current chamber shows it: chamber 1's crossing pair is linked by nothing and always on. Fixture: `walk_into_crossing_lasers_first_off`; on v2: `crossing_lasers_either_blocks`.
+1. **`portal_exit_checked`** — Coming out of a portal onto a tile the subject couldn't walk onto is refused, with the error sound. The original rules ignored every walking check there, so the subject could stand on an open ditch, in a laser that is on, on a raised barrier, a closed door or a wrong-way arrow. Fixtures: `portal_onto_open_ditch_refused`, `portal_onto_active_laser_refused`.
+2. **`closed_exit_by_portal`** — Coming out of a portal onto the closed exit is refused like any tile the subject can't enter. The original rules completed the chamber. This is the closed-exit case of `portal_exit_checked`, kept as an id of its own because of the completion. Fixture: `portal_onto_closed_exit_refused`.
+3. **`box_link_release`** — Releasing a button linked to a box does nothing to the box. The original rules stopped the game with an error. Fixture: `box_linked_button_release_does_nothing`.
+4. **`fizzler_without_flag`** — The fizzler rule runs every step. The original rules counted the subject as inside a field until it stood on a tile with no fizzler at all, even after stepping onto one that is off, and nothing fizzled while it was inside: walking on from such a tile into another field, or that fizzler turning on, kept the portals, and a box picked up inside a field was kept. Fixture: `fizzler_rule_every_step`.
+5. **`no_late_effects`** — Everything a step causes happens within it, in the step's order. In the original rules some effects landed a frame late, so a key pressed in that frame acted first: a button behind a carried box released a frame later; a fizzler fired a frame later when the subject came out of a portal into it or it turned on under the subject; the exit completed at the start of the next frame; each frame judged the buttons once, so a chain of links took several frames. The late effects also reordered events, which could change the settled result. The button a carried box left was released after every other button event of that frame, so when it shared a link with the button the subject stepped onto, the link always ended blocked; these rules follow the list order and can end with it unblocked. And a portal crossing into a fizzler reported `crossed`, then the button events, then `fizzled`, where these rules report `fizzled` before the button events. Fixtures: `carried_box_off_button_closes_door_at_once`, `portal_onto_fizzler_fizzles_at_once`, `carried_box_buttons_in_list_order`.
+6. **`one_action_per_step`** — One action per step, in the order pressed. In the original rules a frame could carry several keys: only one arrow counted (up, then down, left, right), blue beat orange, and they ran move, then shoot, then interact; a box put down in the same frame as a move stayed on the tile the subject left. No fixture: a step takes exactly one action.
+7. **`carried_box_link`** — A link to a carried box does nothing. In the original rules the box went to its start tile for the rest of that frame, where it could hold a button down for one frame, then returned to the subject. No current chamber links a button to a box. Fixture: `carried_box_link_does_nothing`.
+8. **`edge_is_wall`** — Outside the chamber's edge is wall that takes no portals. The original rules never checked the edge when walking, so only the chamber's own walls kept the subject in, and a shot checked it only before each tile, so a wall just past the edge could take a portal (the validator rejects walls outside the chamber). Fixture: `edge_is_wall`.
+9. **`completed_is_final`** — Once the chamber is completed, a step changes nothing. The original rules kept applying keys after completion, which only showed in frame recordings, since the game pauses at the completion dialog. No fixture: the replay check plays every action on each recorded solution's completed state, and none may change it or report anything.
+10. **`every_laser_blocks`** — Two lasers crossing on a tile keep the subject out while either of them is on. In the original rules only the first one listed there counted, so with that one off the subject walked into the other while it was still on. No current chamber shows it: chamber 1's crossing pair is linked by nothing and always on. Fixture: `crossing_lasers_either_blocks`.

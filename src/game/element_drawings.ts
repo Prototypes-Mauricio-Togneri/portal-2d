@@ -3,10 +3,10 @@ import type {BlockableKind, ElementKind} from '@/game/rules/element_registry'
 import type {RulesState} from '@/game/rules/rules_state'
 import type {LineOrientation, TilePainter} from '@/game/tile_painter'
 
-// How each element type is drawn by the v2 renderer, looked up by kind: the
-// rules can't touch the canvas, so drawing stays on the browser side. Today's
-// drawing code, colours and sizes, copied from the classic renderer and its
-// element classes; the visuals stay frozen until stage 04
+// How each element type is drawn by the renderer, looked up by kind: the
+// rules can't touch the canvas, so drawing stays on the browser side. The
+// original game's drawing code, colours and sizes; the visuals stay frozen
+// until stage 04
 
 /**
  * Draws every element of one type in a state.

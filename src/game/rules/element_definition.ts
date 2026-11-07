@@ -32,7 +32,7 @@ export type ShotBlocking = 'never' | 'whenBlocked' | 'always'
 export type ShootingFromBlocking = 'never' | 'whenBlocked'
 
 /**
- * What an element does in a step of the v2 rules, beyond what its fixed data
+ * What an element does in a step of the rules, beyond what its fixed data
  * says. Each hook gets the draft of the step's state and the element's index
  * in its type's list. A step runs them in this order: the action (interact
  * reaches the element on the subject's tile), then, in every pass of the

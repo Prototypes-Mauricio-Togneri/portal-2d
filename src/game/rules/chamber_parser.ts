@@ -1,5 +1,4 @@
-import type {ArrowData, BlockableData, BoxData, LaserData, SubjectData, TriggerData} from '@/game/chamber_data'
-import type {ChamberDataV2, LinkGroupData, ParData, WallDataV2} from '@/game/chamber_data_v2'
+import type {ArrowData, BlockableData, BoxData, ChamberData, LaserData, LinkGroupData, ParData, SubjectData, TriggerData, WallData} from '@/game/chamber_data'
 import {type ChamberProblem, chamberError} from '@/game/rules/chamber_problem'
 import {isJsonObject, type JsonObject} from '@/game/rules/json_object'
 
@@ -7,7 +6,7 @@ import {isJsonObject, type JsonObject} from '@/game/rules/json_object'
  * What reading a chamber file's fields gave.
  */
 export type ParseResult = {
-  readonly chamber: ChamberDataV2 | null // The chamber, typed, or null when a field is wrong
+  readonly chamber: ChamberData | null // The chamber, typed, or null when a field is wrong
   readonly problems: readonly ChamberProblem[] // Every wrong field, in file order
 }
 
@@ -310,7 +309,7 @@ class ChamberParser {
    * @param field - Its path
    * @returns The size, or null when it is wrong
    */
-  readSize(value: unknown, field: string): ChamberDataV2['size'] | null {
+  readSize(value: unknown, field: string): ChamberData['size'] | null {
     const entry = this.readObject(value, field, SIZE_FIELDS, SIZE_FIELDS)
 
     if (entry === null) {
@@ -482,7 +481,7 @@ class ChamberParser {
    * @param field - Its path
    * @returns The wall, or null when it is wrong
    */
-  readWall(value: unknown, field: string): WallDataV2 | null {
+  readWall(value: unknown, field: string): WallData | null {
     if (isJsonObject(value) && (('x' in value) || ('y' in value))) {
       const entry = this.readObject(value, field, WALL_TILE_FIELDS, POSITION_FIELDS)
 
@@ -583,7 +582,7 @@ class ChamberParser {
    * @param data - A chamber file in format 2, fields not yet checked
    * @returns The chamber, or null when any field is wrong
    */
-  readChamber(data: JsonObject): ChamberDataV2 | null {
+  readChamber(data: JsonObject): ChamberData | null {
     const file = this.readObject(data, '', CHAMBER_FIELDS, CHAMBER_REQUIRED_FIELDS)
 
     if (file === null) {

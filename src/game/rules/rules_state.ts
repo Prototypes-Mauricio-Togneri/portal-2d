@@ -3,7 +3,7 @@ import {StateReader} from '@/game/rules/state_reader'
 import {formatHash, hashBytes} from '@/game/text_hash'
 
 /**
- * A state of the v2 rules, which never changes: the subject's tile, facing
+ * A state of the rules, which never changes: the subject's tile, facing
  * and carried box, both portals, each box's tile, each button's pressed flag,
  * the blocked flag of each element a link reaches, and whether the chamber is
  * completed, as one short list of 16-bit numbers (see StateLayout). It holds

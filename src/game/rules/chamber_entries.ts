@@ -1,7 +1,7 @@
 import type {PositionData} from '@/game/chamber_data'
 
 /**
- * An element's entry in a chamber file, whatever its type, as the v2 rules
+ * An element's entry in a chamber file, whatever its type, as the rules
  * read it.
  */
 export type PlacedEntry = PositionData & {

@@ -1,6 +1,6 @@
 {
   "name": "portal-2d",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,11 +10,10 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "check": "npm run lint:fix && npm run build",
-    "verify": "npm run lint && npm run build && npm run smoke:engine && npm run replay:check && npm run random:walk && npm run compare:engines && npm run chamber:check",
+    "verify": "npm run lint && npm run build && npm run smoke:engine && npm run replay:check && npm run random:walk && npm run chamber:check",
     "smoke:engine": "tsx --tsconfig tsconfig.scripts.json scripts/smoke_engine.ts",
     "replay:check": "tsx --tsconfig tsconfig.scripts.json scripts/check_replays.ts",
     "random:walk": "tsx --tsconfig tsconfig.scripts.json scripts/random_walk.ts",
-    "compare:engines": "tsx --tsconfig tsconfig.scripts.json scripts/compare_engines.ts",
     "chamber:check": "tsx --tsconfig tsconfig.scripts.json scripts/check_chambers.ts",
     "deploy": "bash scripts/deploy.sh"
   },

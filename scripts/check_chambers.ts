@@ -1,41 +1,43 @@
-import type {ChamberData} from '@/game/chamber_data'
 import {GameEvent} from '@/game/game_event'
 import {CHAMBER_FIELDS} from '@/game/rules/chamber_parser'
 import {formatChamberProblem} from '@/game/rules/chamber_problem'
-import {CompiledChamber, type LinkTarget} from '@/game/rules/compiled_chamber'
+import {CompiledChamber, type LinkTarget, NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
 import type {ElementDefinition} from '@/game/rules/element_definition'
 import {CORE_STEP_EVENTS, ELEMENT_REGISTRY} from '@/game/rules/element_registry'
-import {loadChamber} from '@/game/rules/load_chamber'
+import {loadChamber, readChamber} from '@/game/rules/load_chamber'
 import {CHAMBER_FILES, listChamberFiles} from '@scripts/chamber_files'
+import {listFixtureChambers} from '@scripts/fixtures/fixtures'
 import {CHAMBER_CASES, type ChamberCase, FORMAT_V2_EXAMPLE} from '@scripts/fixtures/format_examples'
 
-// Loads every chamber file the way the v2 rules will (brought to the current
+// Loads every chamber file the way the game does (brought to the current
 // format, every field read, the layout checked). Every chamber in
 // src/chambers must load without an error, and each case in
 // scripts/fixtures/format_examples.ts must report exactly the problems pinned
 // for it. The format 2 example, compiled, must reach exactly the pinned links
-// (its link group expanded) and refuse portals on exactly the pinned walls,
-// which nothing in today's rules can be compared with. Then checks the
+// (its link group expanded) and refuse portals on exactly the pinned walls.
+// Every chamber file, fixture chamber and the format 2 example, compiled,
+// must answer wall, no portals and no element on the ring of tiles just
+// outside its edge. Then checks the
 // element registry against the format: every element's field is one the
 // parser accepts, the registry holds exactly format 1's elements, and every
 // game event has one owner. Prints one line per chamber, case, compiled
 // example and registry check, then any problem below it, and exits non-zero
 // on any failure
 
-/** Format 1's element fields: every field of ChamberData but the size and the subject. Typed by ChamberData, so the build fails when one is missing or extra */
-const FORMAT_1_ELEMENT_FIELDS: Readonly<Record<Exclude<keyof ChamberData, 'size' | 'subject'>, true>> = {
-  exit: true,
-  walls: true,
-  barriers: true,
-  ditches: true,
-  boxes: true,
-  buttons: true,
-  arrows: true,
-  fizzlers: true,
-  doors: true,
-  switches: true,
-  lasers: true,
-}
+/** Format 1's element fields: every field of a format 1 file but the size and the subject. Format 1 never changes, so they are written out */
+const FORMAT_1_ELEMENT_FIELDS: readonly string[] = [
+  'exit',
+  'walls',
+  'barriers',
+  'ditches',
+  'boxes',
+  'buttons',
+  'arrows',
+  'fizzlers',
+  'doors',
+  'switches',
+  'lasers',
+]
 
 /** What each button's and switch's links reach in the compiled format 2 example: its group stands for the door and the barrier, in that order */
 const EXAMPLE_LINKS: readonly string[] = [
@@ -57,6 +59,14 @@ const EXAMPLE_WALLS_REFUSING_PORTALS: readonly string[] = [
 
 /** The registry's element definitions, read through the plain definition type */
 const DEFINITIONS: readonly ElementDefinition[] = ELEMENT_REGISTRY
+
+/** The element types the compiled chamber finds by tile, in registry order */
+const PLACED_KINDS: readonly PlacedKind[] = ELEMENT_REGISTRY
+  .map((definition) => definition.kind)
+  .filter((kind): kind is PlacedKind => (kind !== 'wall') && (kind !== 'box'))
+
+/** Wrong answers listed for one chamber before the rest are only counted */
+const LISTED_MISMATCHES = 5
 
 /**
  * What loading a chamber file reported, as the check prints it.
@@ -152,6 +162,64 @@ function checkCase(chamberCase: ChamberCase): boolean {
 }
 
 /**
+ * Compiles a chamber, read without the layout checks, and asks about every
+ * tile on the ring just outside its edge: each must be a wall that takes no
+ * portals and holds no element.
+ * @param label - What the chamber is, for the report
+ * @param data - The chamber file as parsed JSON
+ * @returns Whether every tile on the ring answered as it must
+ */
+function checkOutsideEdge(label: string, data: unknown): boolean {
+  const read = readChamber(data)
+
+  if (read.chamber === null) {
+    console.error(`outside the edge of ${label} FAILED: it doesn't read: ${read.problems.map((problem) => problem.message).join('; ')}`)
+
+    return false
+  }
+
+  const compiled = new CompiledChamber(read.chamber)
+  const mismatches: string[] = []
+  let tiles = 0
+
+  for (let y = -1; y <= compiled.height; y++) {
+    for (let x = -1; x <= compiled.width; x++) {
+      if ((x >= 0) && (y >= 0) && (x < compiled.width) && (y < compiled.height)) {
+        continue
+      }
+
+      tiles++
+
+      if (!compiled.isWall(x, y)) {
+        mismatches.push(`(${x}, ${y}) is not a wall`)
+      }
+
+      if (compiled.takesPortals(x, y)) {
+        mismatches.push(`(${x}, ${y}) takes portals`)
+      }
+
+      for (const kind of PLACED_KINDS) {
+        if (compiled.elementAt(kind, x, y) !== NO_ELEMENT) {
+          mismatches.push(`(${x}, ${y}) holds ${kind} ${compiled.elementAt(kind, x, y)}`)
+        }
+      }
+    }
+  }
+
+  if (mismatches.length === 0) {
+    console.log(`outside the edge of ${label} OK: ${tiles} tiles, each a wall that takes no portals and holds no element`)
+
+    return true
+  }
+
+  const more = (mismatches.length > LISTED_MISMATCHES) ? `; and ${mismatches.length - LISTED_MISMATCHES} more` : ''
+
+  console.error(`outside the edge of ${label} FAILED: ${mismatches.slice(0, LISTED_MISMATCHES).join('; ')}${more}`)
+
+  return false
+}
+
+/**
  * Lists the lines of one list that the other doesn't have, under a label.
  * @param label - What the lines are, such as "not pinned"
  * @param lines - The lines to look through
@@ -231,7 +299,7 @@ function checkRegistryFields(): boolean {
  */
 function checkRegistryElements(): boolean {
   const registered = DEFINITIONS.map((definition) => definition.fileKey)
-  const format1 = Object.keys(FORMAT_1_ELEMENT_FIELDS)
+  const format1 = FORMAT_1_ELEMENT_FIELDS
   const notRegistered = format1.filter((field) => !registered.includes(field))
   const notInFormat1 = registered.filter((field) => !format1.includes(field))
   const registeredTwice = registered.filter((field, index) => registered.indexOf(field) !== index)
@@ -327,7 +395,7 @@ function checkRegistryFlags(): boolean {
 
 /**
  * Checks every chamber file in src/chambers, every case, the compiled format
- * 2 example and the element registry.
+ * 2 example, the ring outside every chamber's edge and the element registry.
  * @returns Whether all of them passed
  */
 function runAll(): boolean {
@@ -342,6 +410,21 @@ function runAll(): boolean {
   }
 
   passed = checkCompiledExample() && passed
+
+  // A chamber file missing from the shared list has already failed above
+  for (const file of listChamberFiles()) {
+    const data = CHAMBER_FILES[file]
+
+    if (data !== undefined) {
+      passed = checkOutsideEdge(file, data) && passed
+    }
+  }
+
+  for (const fixtureChamber of listFixtureChambers()) {
+    passed = checkOutsideEdge(`fixture chamber of ${fixtureChamber.name}`, fixtureChamber.chamber) && passed
+  }
+
+  passed = checkOutsideEdge('format_v2_example', FORMAT_V2_EXAMPLE) && passed
 
   passed = checkRegistryFields() && passed
   passed = checkRegistryElements() && passed

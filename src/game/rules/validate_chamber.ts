@@ -1,5 +1,4 @@
-import type {PositionData} from '@/game/chamber_data'
-import type {ChamberDataV2} from '@/game/chamber_data_v2'
+import type {ChamberData, PositionData} from '@/game/chamber_data'
 import {type ChamberProblem, chamberError, chamberWarning, type ProblemTile} from '@/game/rules/chamber_problem'
 
 /**
@@ -86,14 +85,14 @@ function tileKey(x: number, y: number): string {
  */
 class ChamberValidator {
   readonly problems: ChamberProblem[] = [] // Every problem found so far
-  private readonly chamber: ChamberDataV2 // The chamber being checked
+  private readonly chamber: ChamberData // The chamber being checked
   private readonly occupants = new Map<string, TileOccupants>() // What stands on each tile inside the chamber, by tile key
   private readonly targets = new Map<number, LinkTarget>() // What each id names, the first one listed when an id is used twice
 
   /**
    * @param chamber - The chamber, its fields already read
    */
-  constructor(chamber: ChamberDataV2) {
+  constructor(chamber: ChamberData) {
     this.chamber = chamber
   }
 
@@ -418,7 +417,7 @@ class ChamberValidator {
  * @param chamber - The chamber
  * @returns Every error and warning, in the order the checks run
  */
-export function validateChamber(chamber: ChamberDataV2): ChamberProblem[] {
+export function validateChamber(chamber: ChamberData): ChamberProblem[] {
   const validator = new ChamberValidator(chamber)
 
   validator.validate()

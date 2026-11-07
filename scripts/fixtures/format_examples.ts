@@ -1,16 +1,16 @@
-import chamber2 from '@/chambers/chamber_2.json'
-import type {ChamberDataV2} from '@/game/chamber_data_v2'
+import type {ChamberData} from '@/game/chamber_data'
 import brokenChamberFields from '@scripts/fixtures/broken_chamber_fields.json'
 import brokenChamberLayout from '@scripts/fixtures/broken_chamber_layout.json'
+import formatV1Example from '@scripts/fixtures/format_v1_example.json'
 import formatV2Example from '@scripts/fixtures/format_v2_example.json'
 
 // Chamber files for the chamber check (npm run chamber:check), outside the
 // catalogue: a format 2 example, typed here without a cast so the build
-// fails when it doesn't fit the format, and cases that pin exactly what
-// loading a file reports, broken ones included
+// fails when it doesn't fit the format, a format 1 file for the upgrade, and
+// cases that pin exactly what loading a file reports, broken ones included
 
 /** A format 2 chamber using every addition (walls refusing portals, a link group named by a button and a switch, an empty par) and leaving out every list it doesn't need */
-export const FORMAT_V2_EXAMPLE: ChamberDataV2 = formatV2Example
+export const FORMAT_V2_EXAMPLE: ChamberData = formatV2Example
 
 /**
  * A chamber file and exactly what loading it must report.
@@ -32,9 +32,9 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
     name: 'format_1_with_id_0',
     // Format 1 read an id of 0 as no id, so upgrading removes it
     data: {
-      ...chamber2,
+      ...formatV1Example,
       exit: {
-        ...chamber2.exit,
+        ...formatV1Example.exit,
         id: 0,
       },
     },

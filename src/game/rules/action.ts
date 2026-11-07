@@ -3,7 +3,7 @@ import type {FrameInput} from '@/game/frame_input'
 import {GameKey} from '@/game/game_key'
 
 /**
- * One thing the player does in a step of the v2 rules: a move or a turn
+ * One thing the player does in a step of the rules: a move or a turn
  * towards one of four directions, a portal shot, or interact. Undo and redo
  * are not actions: they bring back an earlier state, outside the rules.
  */
@@ -102,7 +102,7 @@ export const MOVEMENTS: Readonly<Record<Action, Movement | null>> = {
 /**
  * The action a key press stands for: an arrow key moves, or turns while the
  * turn key is held; the turn key changes nothing for the other keys.
- * @param input - A press, as the game's input queues it, or a recorded frame
+ * @param input - A press, as the game's input queues it
  * @returns The action, or null when the press doesn't hold exactly one key
  */
 export function actionOfPress(input: FrameInput): Action | null {

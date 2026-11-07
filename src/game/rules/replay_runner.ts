@@ -7,7 +7,7 @@ import {StateHistory} from '@/game/rules/state_history'
 import {startChamber, step} from '@/game/rules/step'
 
 /**
- * What replaying a recording on the v2 rules gave.
+ * What replaying a recording on the rules gave.
  */
 export type RulesReplayResult = {
   readonly completed: boolean // Whether the chamber ended completed
@@ -27,11 +27,11 @@ function countPortals(events: readonly GameEvent[]): number {
 }
 
 /**
- * Replays recorded presses on a chamber's settled start with the v2 rules,
+ * Replays recorded presses on a chamber's settled start with the rules,
  * as the live game plays them: each action is one step of the rules, undo
  * and redo step through the run's history, and nothing runs once the
  * chamber is completed.
- * @param chamber - The chamber, compiled for the v2 rules
+ * @param chamber - The chamber, compiled for the rules
  * @param steps - The presses, in order
  * @returns What the replay gave
  * @throws Error when the rules throw

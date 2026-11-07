@@ -1,4 +1,4 @@
-import type {ChamberDataV2} from '@/game/chamber_data_v2'
+import type {ChamberData} from '@/game/chamber_data'
 import {Direction, parseDirection} from '@/game/direction'
 import {listEntries} from '@/game/rules/chamber_entries'
 import type {LinkTarget} from '@/game/rules/compiled_chamber'
@@ -81,7 +81,7 @@ export class StateLayout {
    * @param linked - Every element a button or switch link reaches
    * @throws Error when the chamber is too large for a state's numbers
    */
-  constructor(data: ChamberDataV2, linked: readonly LinkTarget[]) {
+  constructor(data: ChamberData, linked: readonly LinkTarget[]) {
     if ((data.size.width > MAX_COORDINATE) || (data.size.height > MAX_COORDINATE)) {
       throw new Error(`A chamber can be at most ${MAX_COORDINATE} tiles wide and high`)
     }
@@ -131,7 +131,7 @@ export class StateLayout {
    * @param data - The chamber
    * @returns The values
    */
-  private buildStartValues(data: ChamberDataV2): Int16Array {
+  private buildStartValues(data: ChamberData): Int16Array {
     const values = new Int16Array(this.length)
 
     values[StateSlot.SUBJECT_X] = data.subject.x

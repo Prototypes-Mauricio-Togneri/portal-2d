@@ -1,5 +1,4 @@
-import type {PositionData} from '@/game/chamber_data'
-import type {ChamberDataV2, WallDataV2} from '@/game/chamber_data_v2'
+import type {ChamberData, PositionData, WallData} from '@/game/chamber_data'
 import {Direction, parseDirection} from '@/game/direction'
 import {listEntries, type PlacedEntry} from '@/game/rules/chamber_entries'
 import {ELEMENT_REGISTRY, type ElementKind} from '@/game/rules/element_registry'
@@ -80,7 +79,7 @@ function readDirection(text: string | undefined): Direction | null {
  * @param data - The chamber
  * @returns The elements and the groups, by id
  */
-function collectLinkIds(data: ChamberDataV2): LinkIds {
+function collectLinkIds(data: ChamberData): LinkIds {
   const elements = new Map<number, LinkTarget>()
   const groups = new Map<number, readonly number[]>()
 
@@ -144,7 +143,7 @@ function resolveLinks(ids: readonly number[], linkIds: LinkIds): readonly LinkTa
 }
 
 /**
- * The fixed part of a chamber, built once per load for the v2 rules: its
+ * The fixed part of a chamber, built once per load: its
  * size, its walls and which of them take portals, where each element is and
  * which way it points, what each link reaches, where the subject and each
  * box start, and how its state is laid out. Every lookup takes the
@@ -169,7 +168,7 @@ export class CompiledChamber {
    * @param data - The chamber, its fields already read; it is only read
    * @throws Error when the chamber is too large for a state's numbers
    */
-  constructor(data: ChamberDataV2) {
+  constructor(data: ChamberData) {
     this.width = data.size.width
     this.height = data.size.height
     this.boxStarts = data.boxes ?? []
@@ -228,7 +227,7 @@ export class CompiledChamber {
    * wall entry inside the chamber is marked.
    * @param walls - The wall entries: single tiles or inclusive rectangles
    */
-  private placeWalls(walls: readonly WallDataV2[]): void {
+  private placeWalls(walls: readonly WallData[]): void {
     for (const wall of walls) {
       const xFrom = ('x' in wall) ? wall.x : wall.xFrom
       const xTo = ('x' in wall) ? wall.x : wall.xTo

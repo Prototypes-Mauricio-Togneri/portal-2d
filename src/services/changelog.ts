@@ -11,6 +11,14 @@ export type ChangelogRelease = {
 
 export const CHANGELOG: ChangelogRelease[] = [
   {
+    version: '0.0.5',
+    date: '2026-11-07',
+    changes: [
+      'Coming out of a portal onto a tile you can\'t walk onto is refused, like walking into it, so a closed exit can\'t be reached that way',
+      'Standing in an active fizzler always clears your portals and the box you carry',
+    ],
+  },
+  {
     version: '0.0.4',
     date: '2026-11-07',
     changes: [

@@ -1,8 +1,8 @@
-import type {WallDataV2} from '@/game/chamber_data_v2'
+import type {WallData} from '@/game/chamber_data'
 import {defineElement} from '@/game/rules/element_definition'
 
 /** A solid wall tile, the only element a portal opens on, unless its entry refuses portals; walking into one holding a portal crosses it (the core step) */
-export const WALL_ELEMENT = defineElement<WallDataV2>()({
+export const WALL_ELEMENT = defineElement<WallData>()({
   kind: 'wall',
   fileKey: 'walls',
   count: 'many',

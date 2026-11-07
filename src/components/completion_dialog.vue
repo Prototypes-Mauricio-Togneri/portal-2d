@@ -14,7 +14,7 @@ export interface CompletionDialogProps {
   bestTime: number // The chamber's best time after this run, in hundredths of a second
   newBest: boolean // Whether this run set the best time
   hasNextChamber: boolean // Whether a chamber follows this one
-  solutionFailed: boolean // Whether the last download was refused: not on the v2 rules, or the run doesn't replay the same way
+  solutionFailed: boolean // Whether the last download was refused, because the run doesn't replay the same way
 }
 
 defineProps<CompletionDialogProps>()
@@ -46,7 +46,7 @@ const canDownloadSolution = import.meta.env.DEV === true
       {{ newBest ? 'New best time' : `Best time ${formatTime(bestTime)}` }}
     </p>
     <p v-if="canDownloadSolution && solutionFailed" class="completion-solution-failed" role="alert">
-      Not saved. Solutions need ?rules=v2 and a run that replays the same way; the console says which check failed.
+      Not saved: the run doesn't replay the same way. The console says which check failed.
     </p>
     <template #actions>
       <button

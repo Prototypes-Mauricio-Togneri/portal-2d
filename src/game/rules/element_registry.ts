@@ -12,7 +12,7 @@ import {LASER_ELEMENT} from '@/game/rules/elements/laser'
 import {SWITCH_ELEMENT} from '@/game/rules/elements/switch'
 import {WALL_ELEMENT} from '@/game/rules/elements/wall'
 
-/** Every element type a chamber can hold, in today's drawing order; the subject and the portals belong to the core step */
+/** Every element type a chamber can hold, in the original game's drawing order; the subject and the portals belong to the core step */
 export const ELEMENT_REGISTRY = [
   ARROW_ELEMENT,
   WALL_ELEMENT,

@@ -1,5 +1,5 @@
 /**
- * Where something is drawn, back to front, in today's drawing order: the
+ * Where something is drawn, back to front, in the original game's drawing order: the
  * floor, the arrows, the walls, the blockers (barriers, ditches, lasers,
  * doors and the exit), the portals, the buttons and switches, the boxes, the
  * subject, then the fizzlers over everything. The core step draws the floor,

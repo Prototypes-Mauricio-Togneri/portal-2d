@@ -1,25 +1,28 @@
-import {Chamber} from '@/game/classic/chamber'
 import type {ChamberData} from '@/game/chamber_data'
 import {Renderer} from '@/game/renderer'
-import {State} from '@/game/classic/state'
-import {Subject} from '@/game/classic/subject'
+import {CompiledChamber} from '@/game/rules/compiled_chamber'
+import {loadChamber} from '@/game/rules/load_chamber'
+import {startChamber} from '@/game/rules/step'
 
 /**
- * Draws a chamber's starting layout once, the same way the game draws it.
- * No frame loop, no input, no sounds.
+ * Draws a chamber's starting layout once, the same way the game draws it:
+ * its start settled, as a load shows it. No frame loop, no input, no sounds.
  * @param canvas - The canvas to draw on; its width and height are set to fit
  * @param chamberData - The chamber JSON, which is only read
  * @param maxWidth - Width available, in canvas pixels
  * @param maxHeight - Height available, in canvas pixels
  * @param pixelRatio - Canvas pixels per page pixel, such as the screen's device pixel ratio; 1 by default
+ * @throws Error when the rules can't load the chamber
  */
 export function drawChamberPreview(canvas: HTMLCanvasElement, chamberData: ChamberData, maxWidth: number, maxHeight: number, pixelRatio = 1): void {
+  const loaded = loadChamber(chamberData)
+
+  if (loaded.chamber === null) {
+    throw new Error(`The rules can't load the chamber: ${loaded.problems.map((problem) => problem.message).join('; ')}`)
+  }
+
+  const chamber = new CompiledChamber(loaded.chamber)
   const renderer = new Renderer(canvas, maxWidth, maxHeight, pixelRatio)
-  renderer.setSize(chamberData.size.width, chamberData.size.height)
-
-  const chamber = new Chamber(chamberData)
-  const subject = new Subject(chamberData.subject)
-  const state = new State(chamber, subject)
-
-  renderer.render(state)
+  renderer.setSize(chamber.width, chamber.height)
+  renderer.render(startChamber(chamber).state)
 }

@@ -23,11 +23,10 @@ type TriangleCenter = {
 }
 
 /**
- * Paints tiles onto a canvas for the v2 renderer: today's drawing primitives,
- * copied from the classic renderer so that one stays untouched as the
- * reference the pixel comparison checks against. Tiles are square, sized to
- * fit the chamber in the screen area, and row 0 is at the bottom. Sets the
- * canvas's width and height attributes only; its styling belongs to the page.
+ * Paints tiles onto a canvas for the renderer, with the original game's
+ * drawing primitives. Tiles are square, sized to fit the chamber in the
+ * screen area, and row 0 is at the bottom. Sets the canvas's width and height
+ * attributes only; its styling belongs to the page.
  * Sizes are in canvas pixels; at a pixel ratio above 1 the fixed edge widths
  * are multiplied by it, so every shape keeps its size on the page.
  */

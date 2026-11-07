@@ -9,9 +9,9 @@ import type {RulesState} from '@/game/rules/rules_state'
 import {StateDraft} from '@/game/rules/state_draft'
 import {NO_BOX} from '@/game/rules/state_layout'
 
-// The v2 rules as a pure step, as docs/elements.md writes them under "Rules
-// (v2)": an action, then the carried box follows, then passes of the fizzler
-// rule and the buttons until one changes nothing, then the exit check. What
+// The rules as a pure step, as docs/elements.md writes them under "Rules":
+// an action, then the carried box follows, then passes of the fizzler rule
+// and the buttons until one changes nothing, then the exit check. What
 // blocks walking and shots is read from the element definitions, and what an
 // element does beyond that from its hooks
 
@@ -501,7 +501,7 @@ export function startChamber(chamber: CompiledChamber): StepResult {
 }
 
 /**
- * One step of the v2 rules: the action, then the carried box follows the
+ * One step of the rules: the action, then the carried box follows the
  * subject, then the repeat loop and the exit check. Once the chamber is
  * completed, a step changes nothing.
  * @param chamber - The chamber being played

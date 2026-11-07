@@ -1,26 +1,27 @@
-import {Chamber} from '@/game/classic/chamber'
 import type {ChamberData} from '@/game/chamber_data'
-import {createFrameInputReader, EMPTY_FRAME_INPUT, type FrameInput} from '@/game/frame_input'
 import {GameEvent} from '@/game/game_event'
 import {GameKey, type HistoryKey} from '@/game/game_key'
+import type {FrameInput} from '@/game/frame_input'
 import {Input} from '@/game/input'
 import type {KeyBindings} from '@/game/key_bindings'
-import type {ReplayData} from '@/game/replay_data'
+import {getChamberHash, type ReplayData, type ReplayStep} from '@/game/replay_data'
 import {Renderer} from '@/game/renderer'
+import {actionOfPress} from '@/game/rules/action'
+import {CompiledChamber} from '@/game/rules/compiled_chamber'
+import {loadChamber} from '@/game/rules/load_chamber'
+import {runRulesReplay} from '@/game/rules/replay_runner'
+import type {RulesState} from '@/game/rules/rules_state'
+import {StateHistory} from '@/game/rules/state_history'
+import {startChamber, step} from '@/game/rules/step'
 import {Sound} from '@/game/sound'
-import {State} from '@/game/classic/state'
-import {getSnapshotText, takeSnapshot} from '@/game/classic/state_snapshot'
-import {Subject} from '@/game/classic/subject'
-import {UndoHistory} from '@/game/classic/undo_history'
 
 /**
- * Plays chambers on a canvas: owns the keyboard input, the renderer and the
- * frame loop. Each frame advances the state, with the oldest waiting key
- * press once the state has settled (so live play takes exactly the steps of
- * the step function, one key at a time, in the order pressed), plays a sound
- * for each thing that happened in it, and redraws only when the state reports
- * a change. An undo or redo press steps through the run's history instead,
- * silently. Solutions are recorded on the v2 rules only, so it records none.
+ * Plays a chamber on a canvas, driven by the chamber screen. Each frame takes
+ * the oldest waiting key press, if any, as one action, fully resolved by the
+ * rules' step, plays a sound for each thing that happened and redraws when
+ * the state changed. Undo and redo bring back earlier states from the run's
+ * history, silently. Every press it acts on is logged, so the run since the
+ * last load can be replayed without a browser.
  */
 export class Level {
   /** Keys that start the clock: moving, turning, both portals and interacting */
@@ -54,9 +55,12 @@ export class Level {
 
   onCompleted: (() => void) | null = null // Called once per load when the subject reaches the exit
 
-  private state: State | null = null // The chamber being played, null before the first load
-  private history: UndoHistory | null = null // Undo and redo for the run since the last load, null before the first load
-  private settled = false // Whether the latest frame left the state as it was, so the next press may be taken
+  private chamber: CompiledChamber | null = null // The chamber being played, null before the first load
+  private chamberHash = '' // Hash of the chamber being played, as replays name it
+  private state: RulesState | null = null // The state now, null before the first load
+  private history = new StateHistory() // Undo and redo for the run since the last load
+  private replaySteps: ReplayStep[] = [] // Every press acted on since the last load, in order
+  private stepHashes: string[] = [] // Hash of the state right after each logged press
   private clockStarted = false // Whether a game key has been pressed since the last load
   private elapsedSeconds = 0 // Play time since the clock started; only grows while unpaused
   private stepCount = 0 // Tiles the subject has stepped onto since the last load
@@ -85,27 +89,36 @@ export class Level {
   }
 
   /**
-   * Builds the chamber from scratch and draws it; loading again resets it,
-   * its clock, its counters and its undo history. The first load starts the
-   * frame loop, running its first frame at once.
+   * Loads the chamber, settles its start and draws it;
+   * loading again resets it, its clock, its counters and its undo history.
+   * The first load starts the frame loop, running its first frame at once.
    * @param chamberData - The chamber JSON, which is only read
+   * @throws Error when the rules can't load the chamber
    */
   load(chamberData: ChamberData): void {
-    this.renderer.setSize(chamberData.size.width, chamberData.size.height)
+    const loaded = loadChamber(chamberData)
+
+    if (loaded.chamber === null) {
+      throw new Error(`The rules can't load the chamber: ${loaded.problems.map((problem) => problem.message).join('; ')}`)
+    }
+
+    const chamber = new CompiledChamber(loaded.chamber)
+    const start = startChamber(chamber)
+
+    this.renderer.setSize(chamber.width, chamber.height)
+    this.chamber = chamber
+    this.chamberHash = getChamberHash(loaded.chamber)
+    this.state = start.state
+    this.history = new StateHistory()
+    this.replaySteps = []
+    this.stepHashes = []
     this.clockStarted = false
     this.elapsedSeconds = 0
     this.stepCount = 0
     this.portalCount = 0
     this.undoCount = 0
-    this.history = new UndoHistory(chamberData)
-    this.settled = false
 
-    const chamber = new Chamber(chamberData)
-    const subject = new Subject(chamberData.subject)
-
-    this.state = new State(chamber, subject, () => {
-      this.onCompleted?.()
-    })
+    this.playEvents(start.events)
 
     if (!this.initialized) {
       this.initialized = true
@@ -180,13 +193,42 @@ export class Level {
   }
 
   /**
-   * Refuses: solutions are recorded on the v2 rules, in development with
-   * ?rules=v2.
-   * @returns Never
-   * @throws Error always
+   * The run since the last load as a replay, for saving a solution. Replays
+   * the logged presses on the chamber's start first and checks that they
+   * reproduce the live run: the state after every press, the moves and the
+   * portals.
+   * @returns The replay
+   * @throws Error when no chamber is loaded, or when the replay differs from the live run
    */
   createReplay(): ReplayData {
-    throw new Error('Solutions are recorded on the v2 rules; open the chamber with ?rules=v2 to record one')
+    if (this.chamber === null) {
+      throw new Error('No chamber is loaded')
+    }
+
+    const actions = [...this.replaySteps]
+    const result = runRulesReplay(this.chamber, actions)
+    const differingStep = this.stepHashes.findIndex((hash, index) => hash !== result.stepHashes[index])
+
+    if (differingStep !== -1) {
+      throw new Error(`The replay differs from the live run after press ${differingStep + 1} of ${actions.length} (${actions[differingStep]})`)
+    }
+
+    if ((result.moves !== this.stepCount) || (result.portals !== this.portalCount)) {
+      throw new Error(`The replay counts ${result.moves} moves and ${result.portals} portals, the live run ${this.stepCount} and ${this.portalCount}`)
+    }
+
+    return {
+      format: 2,
+      ruleset: 'v2',
+      chamberHash: this.chamberHash,
+      actions: actions,
+      expected: {
+        completed: result.completed,
+        moves: result.moves,
+        portals: result.portals,
+        finalHash: result.finalState.hash,
+      },
+    }
   }
 
   /**
@@ -198,8 +240,8 @@ export class Level {
   resize(screenWidth: number, screenHeight: number, pixelRatio = 1): void {
     this.renderer.resize(screenWidth, screenHeight, pixelRatio)
 
-    if (this.state !== null) {
-      this.renderer.setSize(this.state.chamber.width, this.state.chamber.height)
+    if (this.chamber !== null) {
+      this.renderer.setSize(this.chamber.width, this.chamber.height)
       this.render()
     }
   }
@@ -229,10 +271,25 @@ export class Level {
   }
 
   /**
-   * Runs one frame: steps through the history when the press it takes is
-   * undo or redo, otherwise advances the rules, with the press or with none.
-   * A press is taken only once the state has settled. Then forgets which keys
-   * went down during the frame, for the clock.
+   * Plays the sound of each thing that happened, in order, and counts the
+   * portals opened.
+   * @param events - What happened
+   */
+  private playEvents(events: readonly GameEvent[]): void {
+    for (const event of events) {
+      Level.SOUNDS[event].play()
+
+      if ((event === GameEvent.BLUE_PORTAL_OPENED) || (event === GameEvent.ORANGE_PORTAL_OPENED)) {
+        this.portalCount++
+      }
+    }
+  }
+
+  /**
+   * Runs one frame: takes the oldest waiting press, if any, and steps
+   * through the history for undo or redo, or runs the rules' step for any
+   * other key. Then forgets which keys went down during the frame, for the
+   * clock.
    * @param delta - Seconds since the previous frame
    * @param input - The keyboard
    * @returns Whether the state changed
@@ -247,14 +304,13 @@ export class Level {
       this.clockStarted = true
     }
 
-    if ((this.state !== null) && (this.history !== null)) {
-      // A press waits until the previous one's late effects have landed
-      const press = this.settled ? input.takePress() : null
+    if ((this.chamber !== null) && (this.state !== null)) {
+      const press = input.takePress()
 
       if (typeof press === 'string') {
-        updated = this.updateHistory(this.state, this.history, press)
-      } else {
-        updated = this.updateRules(delta, this.state, this.history, press ?? EMPTY_FRAME_INPUT)
+        updated = this.updateHistory(this.state, press)
+      } else if (press !== null) {
+        updated = this.updateRules(this.chamber, this.state, press)
       }
     }
 
@@ -264,66 +320,79 @@ export class Level {
   }
 
   /**
-   * Advances the rules by one frame, records the step it took in the history,
-   * notes whether the state has settled and plays the sounds of what happened
-   * in it.
-   * @param delta - Seconds since the previous frame
-   * @param state - The chamber being played
-   * @param history - The run's undo and redo
-   * @param frameInput - What the rules read in this frame
+   * Runs one step of the rules for a press, records it in the history and
+   * the log, counts the move and plays the sounds of what happened. Nothing
+   * runs once the chamber is completed.
+   * @param chamber - The chamber being played
+   * @param state - The state before the step
+   * @param press - The press, one key and whether the turn key was held
    * @returns Whether the state changed
    */
-  private updateRules(delta: number, state: State, history: UndoHistory, frameInput: FrameInput): boolean {
-    const subject = state.subject
-    const startX = subject.x
-    const startY = subject.y
-    const isKeyFrame = frameInput.keys.length > 0
-    // A settled state stays as it is without a key, so only frames with keys
-    // and those after a change need comparing
-    const before = (isKeyFrame || !this.settled) ? takeSnapshot(state) : null
+  private updateRules(chamber: CompiledChamber, state: RulesState, press: FrameInput): boolean {
+    const action = actionOfPress(press)
 
-    const updated = state.update(delta, createFrameInputReader(frameInput))
-
-    if (before !== null) {
-      if (isKeyFrame) {
-        history.record(before, state)
-      }
-
-      this.settled = getSnapshotText(before) === getSnapshotText(takeSnapshot(state))
+    if ((action === null) || state.completed) {
+      return false
     }
 
-    // Only the arrow keys move the subject, so a new tile is one step
-    if ((subject.x !== startX) || (subject.y !== startY)) {
+    const result = step(chamber, state, action)
+    const next = result.state
+
+    this.history.record(state, next)
+    this.logStep(action, next)
+
+    // Only moves change the subject's tile, so a new tile is one step
+    if ((next.subjectX !== state.subjectX) || (next.subjectY !== state.subjectY)) {
       this.stepCount++
     }
 
-    for (const event of state.events) {
-      Level.SOUNDS[event].play()
+    this.state = next
+    this.playEvents(result.events)
 
-      if ((event === GameEvent.BLUE_PORTAL_OPENED) || (event === GameEvent.ORANGE_PORTAL_OPENED)) {
-        this.portalCount++
-      }
+    if (next.completed) {
+      this.onCompleted?.()
     }
 
-    return updated
+    return next !== state
   }
 
   /**
-   * Undoes or redoes a step, silently, in place of the rules' frame. The
-   * states in the history are settled, so the next press may follow at once.
-   * @param state - The chamber being played
-   * @param history - The run's undo and redo
+   * Undoes or redoes a step, silently, and logs the press. Nothing can be
+   * undone once the chamber is completed.
+   * @param state - The state now
    * @param key - Undo or redo
    * @returns Whether a step was undone or redone
    */
-  private updateHistory(state: State, history: UndoHistory, key: HistoryKey): boolean {
-    const restored = (key === GameKey.UNDO) ? history.undo(state) : history.redo(state)
+  private updateHistory(state: RulesState, key: HistoryKey): boolean {
+    if (state.completed) {
+      return false
+    }
 
-    if (restored && (key === GameKey.UNDO)) {
+    const restored = (key === GameKey.UNDO) ? this.history.undo(state) : this.history.redo(state)
+
+    this.logStep(key, restored ?? state)
+
+    if (restored === null) {
+      return false
+    }
+
+    this.state = restored
+
+    if (key === GameKey.UNDO) {
       this.undoCount++
     }
 
-    return restored
+    return true
+  }
+
+  /**
+   * Logs a press acted on and the state it led to.
+   * @param replayStep - The action, or the undo or redo
+   * @param state - The state after it
+   */
+  private logStep(replayStep: ReplayStep, state: RulesState): void {
+    this.replaySteps.push(replayStep)
+    this.stepHashes.push(state.hash)
   }
 
   /**

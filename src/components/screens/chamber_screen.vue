@@ -14,10 +14,8 @@ import ConfirmDialog from '@/components/confirm_dialog.vue'
 import PauseDialog from '@/components/pause_dialog.vue'
 import PortalLogo from '@/components/portal_logo.vue'
 import {Level} from '@/game/level'
-import type {LevelV2} from '@/game/level_v2'
 import type {SolutionData} from '@/game/replay_data'
 import {Sound} from '@/game/sound'
-import {v2LevelClass} from '@/services/dev_rules'
 import {trackChamberAbandon, trackChamberComplete, trackChamberQuit, trackChamberRestart, trackChamberStart} from '@/services/analytics'
 import type {RunProgress} from '@/services/analytics'
 import {findChamber} from '@/services/chamber_catalogue'
@@ -62,9 +60,9 @@ const dialog = ref<ChamberDialog>('none')
 const timeReadout = useTemplateRef<HTMLElement>('timeReadout')
 const timerStarted = ref(false) // Whether the clock has started; changes only on the first key and on reset
 const completedRun = ref<CompletedRun | null>(null) // The run the completion dialog reports
-const solutionFailed = ref(false) // Whether the last solution download was refused: not on the v2 rules, or the run doesn't replay the same way
+const solutionFailed = ref(false) // Whether the last solution download was refused, because the run doesn't replay the same way
 
-let level: Level | LevelV2 | null = null // Running game, on the v2 rules in development with ?rules=v2; created on mount, disposed on unmount
+let level: Level | null = null // Running game; created on mount, disposed on unmount
 let resizeObserver: ResizeObserver | null = null // Refits the chamber when the window changes size
 let densityQuery: MediaQueryList | null = null // Matches the screen's current pixel density, to notice it changing
 let leaveConfirmed = false // Set once the player has confirmed leaving, so the route guard lets them go
@@ -304,8 +302,8 @@ function handleCompleted(): void {
 /**
  * Development only: saves the run just completed as the chamber's recorded
  * solution, chamber_N.solution.json, named after the chamber's file (whose
- * number is its permanent id). Refuses, and says so, on today's rules or
- * when the run doesn't replay the same way.
+ * number is its permanent id). Refuses, and says so, when the run doesn't
+ * replay the same way.
  */
 function downloadSolution(): void {
   // Also lets the production build drop the rest of this function
@@ -420,7 +418,7 @@ onMounted(() => {
   const pixelRatio = window.devicePixelRatio
   const size = availableSize(stageElement)
   // Stored before the first load, which runs a frame straight away and can already complete the chamber
-  level = (v2LevelClass !== null) ? new v2LevelClass(canvasElement, keyBindings.value, size.width * pixelRatio, size.height * pixelRatio, pixelRatio) : new Level(canvasElement, keyBindings.value, size.width * pixelRatio, size.height * pixelRatio, pixelRatio)
+  level = new Level(canvasElement, keyBindings.value, size.width * pixelRatio, size.height * pixelRatio, pixelRatio)
   level.onCompleted = handleCompleted
   // Counted and sent before the load, whose first frame could already report the chamber completed
   beginAttempt()

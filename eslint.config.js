@@ -179,12 +179,8 @@ export default withVueTs(
   {
     // The rules also run under Node (scripts/), so they report events instead
     // of playing sounds and never touch the browser. These options replace
-    // the block above for these files, so its entries are repeated. The v2
-    // rules (src/game/rules/) follow the same guard
-    files: [
-      'src/game/classic/**/*.ts',
-      'src/game/rules/**/*.ts',
-    ],
+    // the block above for these files, so its entries are repeated
+    files: ['src/game/rules/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -196,8 +192,6 @@ export default withVueTs(
             '@/game/renderer',
             '@/game/input',
             '@/game/level',
-            '@/game/level_v2',
-            '@/game/renderer_v2',
             '@/game/tile_painter',
             '@/game/element_drawings',
           ],

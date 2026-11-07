@@ -5,7 +5,7 @@ import type {PortalColor} from '@/game/rules/portal_color'
 import {CLOSED_PORTAL, DIRECTIONS, NO_BOX, NOT_STORED, PORTAL_SLOTS, StateSlot} from '@/game/rules/state_layout'
 
 /**
- * Reads a state of the v2 rules: the values of one chamber's state, laid out
+ * Reads a state of the rules: the values of one chamber's state, laid out
  * by its state layout, together with the chamber. The immutable state and the
  * draft a step works on both read through it.
  */

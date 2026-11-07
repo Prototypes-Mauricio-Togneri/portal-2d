@@ -1,7 +1,7 @@
 import type {RulesState} from '@/game/rules/rules_state'
 
 /**
- * Undo and redo for a run on the v2 rules: the states before each step that
+ * Undo and redo for a run on the rules: the states before each step that
  * changed the state, and those undone since the latest such step. States
  * never change, so keeping them is enough. The level and the replay runner
  * share it, so a replay steps through the history exactly as the live run did.

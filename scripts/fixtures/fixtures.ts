@@ -1,5 +1,5 @@
 import type {ChamberData} from '@/game/chamber_data'
-import type {ReplayExpectation} from '@/game/replay_data'
+import type {ReplayExpectation, ReplayStep} from '@/game/replay_data'
 import boxLinkedButton from '@scripts/fixtures/box_linked_button.json'
 import buttonBehindCarriedBox from '@scripts/fixtures/button_behind_carried_box.json'
 import carriedBoxLink from '@scripts/fixtures/carried_box_link.json'
@@ -12,306 +12,308 @@ import portalOntoFizzler from '@scripts/fixtures/portal_onto_fizzler.json'
 import portalOntoLaser from '@scripts/fixtures/portal_onto_laser.json'
 import twoButtonsOneDoor from '@scripts/fixtures/two_buttons_one_door.json'
 
-// Short replays that pin today's odd behaviour, each on a tiny chamber made
-// for it (the JSON files next to this one), outside the catalogue, and a few
-// that pin how undo and redo replay. The replay check runs them; the engine
-// comparison plays each odd-behaviour fixture on both engines as evidence for
-// the intended change it pins (undo and redo live outside the rules, so the
-// undo fixtures are not among them). fixtures_v2.ts pins how the v2 rules
-// play the same chambers
+// Short replays on tiny chambers (the JSON files next to this one): each pins
+// how the rules play a change from the original rules (docs/elements.md,
+// "Changes from the original rules"), and a few pin how undo and redo
+// replay. The replay check runs them. The chambers are read without the
+// layout checks, so the one open at the edge still plays
 
 /**
- * How a fixture ends when the rules throw, as live play does when its frame
- * loop stops.
- */
-export type FixtureFailure = {
-  readonly error: string // The message of the error the rules throw
-}
-
-/**
- * A replay pinning one odd behaviour of today's rules.
+ * A replay pinning one behaviour of the rules.
  */
 export type Fixture = {
   readonly name: string // Short id, used in the replay check's report
   readonly behaviour: string // The behaviour it pins, in plain words
   readonly chamber: ChamberData // The tiny chamber it is played on
-  readonly frames: readonly string[] // The key frames, in the replay text form
-  readonly expected: ReplayExpectation | FixtureFailure // What replaying the frames gives
+  readonly actions: readonly ReplayStep[] // The presses, in order
+  readonly expected: ReplayExpectation // What replaying the presses gives
 }
 
-// Frames with a gap of 2 are ordinary presses; a gap of 0 or 1 is the timing
-// the fixture is about
-
-/** Every fixture, run by the replay check */
+/** Every behaviour fixture, run by the replay check */
 export const FIXTURES: readonly Fixture[] = [
   {
-    name: 'portal_onto_open_ditch',
-    behaviour: 'Coming out of a portal skips the walking checks, so the subject ends up standing on an open ditch.',
+    name: 'portal_onto_open_ditch_refused',
+    behaviour: 'Coming out of a portal onto an open ditch is refused, so the subject stays in front of the portal it walked into.',
     chamber: portalOntoDitch,
-    frames: [
-      '2:blue',
-      '2:^left',
-      '2:orange',
-      '2:left',
+    actions: [
+      'blue',
+      'turnLeft',
+      'orange',
+      'left',
     ],
     expected: {
       completed: false,
-      moves: 1,
+      moves: 0,
       portals: 2,
-      finalHash: '0a44c420',
+      finalHash: 'b7a5e3c2',
     },
   },
   {
-    name: 'portal_onto_active_laser',
-    behaviour: 'Coming out of a portal skips the walking checks, so the subject ends up standing in an active laser.',
+    name: 'portal_onto_active_laser_refused',
+    behaviour: 'Coming out of a portal into an active laser is refused, so the subject stays in front of the portal it walked into.',
     chamber: portalOntoLaser,
-    frames: [
-      '2:blue',
-      '2:^left',
-      '2:orange',
-      '2:left',
+    actions: [
+      'blue',
+      'turnLeft',
+      'orange',
+      'left',
     ],
     expected: {
       completed: false,
-      moves: 1,
+      moves: 0,
       portals: 2,
-      finalHash: '568eda34',
+      finalHash: 'b7a5e3c2',
     },
   },
   {
-    name: 'portal_onto_closed_exit_completes',
-    behaviour: 'Coming out of a portal onto the closed exit puts the subject on it, which completes the chamber.',
+    name: 'portal_onto_closed_exit_refused',
+    behaviour: 'Coming out of a portal onto the closed exit is refused, so the chamber is not completed.',
     chamber: portalOntoClosedExit,
-    frames: [
-      '2:blue',
-      '2:up',
-      '2:orange',
-      '2:up',
+    actions: [
+      'blue',
+      'up',
+      'orange',
+      'up',
     ],
     expected: {
-      completed: true,
-      moves: 2,
+      completed: false,
+      moves: 1,
       portals: 2,
-      finalHash: 'cd97559d',
+      finalHash: 'af6e425b',
     },
   },
   {
-    name: 'portal_onto_fizzler_left_next_frame',
-    behaviour: 'Coming out of a portal onto an active fizzler only fizzles on the next frame, so stepping off on that very frame keeps both portals.',
+    name: 'portal_onto_fizzler_fizzles_at_once',
+    behaviour: 'Coming out of a portal onto an active fizzler fizzles in the same step, so stepping off at once still loses both portals.',
     chamber: portalOntoFizzler,
-    frames: [
-      '2:blue',
-      '2:up',
-      '2:orange',
-      '2:up',
-      '0:left',
+    actions: [
+      'blue',
+      'up',
+      'orange',
+      'up',
+      'left',
     ],
     expected: {
       completed: false,
       moves: 3,
       portals: 2,
-      finalHash: '0bef0ac7',
+      finalHash: 'e3e6fbbd',
     },
   },
   {
-    name: 'portal_onto_fizzler_fires_a_frame_late',
-    behaviour: 'Coming out of a portal onto an active fizzler and staying one frame fizzles then, removing both portals.',
-    chamber: portalOntoFizzler,
-    frames: [
-      '2:blue',
-      '2:up',
-      '2:orange',
-      '2:up',
-      '1:left',
-    ],
-    expected: {
-      completed: false,
-      moves: 3,
-      portals: 2,
-      finalHash: '2df54b1d',
-    },
-  },
-  {
-    name: 'button_releases_behind_carried_box',
-    behaviour: 'A button is released a frame after its box is carried off it, so the subject reaches the door it holds open and the door closes on the subject and box.',
+    name: 'carried_box_off_button_closes_door_at_once',
+    behaviour: 'Carrying a box off a button releases it in the same step, so the door it held open is closed before the subject reaches it.',
     chamber: buttonBehindCarriedBox,
-    frames: [
-      '2:interact',
-      '2:right',
-      '0:right',
-    ],
-    expected: {
-      completed: false,
-      moves: 2,
-      portals: 0,
-      finalHash: '68dd897f',
-    },
-  },
-  {
-    name: 'carried_box_button_released_last',
-    behaviour: 'Carrying a box off a button onto a second button linked to the same door releases the first button after the second is pressed, whatever their order, so the door ends closed and the subject can\'t walk through.',
-    chamber: twoButtonsOneDoor,
-    frames: [
-      '2:interact',
-      '2:right',
-      '2:right',
+    actions: [
+      'interact',
+      'right',
+      'right',
     ],
     expected: {
       completed: false,
       moves: 1,
       portals: 0,
-      finalHash: '9d41bfc1',
+      finalHash: '4d0e555b',
     },
   },
   {
-    name: 'fizzler_flag_kept_across_switched_off_fizzler',
-    behaviour: 'Stepping from a field onto a switched-off fizzler still counts as inside a field, so a portal shot from there survives walking into the next field.',
+    name: 'carried_box_buttons_in_list_order',
+    behaviour: 'Carrying a box off a button onto a second button linked to the same door judges the buttons in list order, so the door ends open and the subject walks into the doorway.',
+    chamber: twoButtonsOneDoor,
+    actions: [
+      'interact',
+      'right',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: 'f87d5783',
+    },
+  },
+  {
+    name: 'fizzler_rule_every_step',
+    behaviour: 'Nothing remembers having been inside a field: a portal shot from a switched-off fizzler closes as the subject walks into the next field that is on.',
     chamber: fizzlersInARow,
-    frames: [
-      '2:right',
-      '2:right',
-      '2:^up',
-      '2:blue',
-      '2:right',
+    actions: [
+      'right',
+      'right',
+      'turnUp',
+      'blue',
+      'right',
     ],
     expected: {
       completed: false,
       moves: 3,
       portals: 1,
-      finalHash: '577471a5',
+      finalHash: 'be0730bd',
     },
   },
   {
-    name: 'walk_out_through_the_edge',
-    behaviour: 'Nothing checks the chamber\'s edge, so the subject walks out of the chamber through an open tile on it.',
+    name: 'edge_is_wall',
+    behaviour: 'Outside the chamber\'s edge is wall, so the subject can\'t walk out through an open tile on the edge.',
     chamber: openEdge,
-    frames: [
-      '2:right',
-      '2:right',
-    ],
-    expected: {
-      completed: false,
-      moves: 2,
-      portals: 0,
-      finalHash: '103272ce',
-    },
-  },
-  {
-    name: 'walk_into_crossing_lasers_first_off',
-    behaviour: 'Of two lasers crossing on a tile, only the first listed keeps the subject out, so with that one switched off it walks into the other, which is still on.',
-    chamber: crossingLasers,
-    frames: [
-      '2:right',
-      '2:interact',
-      '2:right',
-    ],
-    expected: {
-      completed: false,
-      moves: 2,
-      portals: 0,
-      finalHash: 'ea8bf645',
-    },
-  },
-  {
-    name: 'carried_box_link_sends_box_to_start',
-    behaviour: 'Stepping onto a button linked to the box the subject carries sends the box to its start tile for the rest of the frame, so the button there is pressed and opens its door, then the box comes back and the door closes again.',
-    chamber: carriedBoxLink,
-    frames: [
-      '2:right',
-      '2:interact',
-      '2:right',
-      '2:right',
-    ],
-    expected: {
-      completed: false,
-      moves: 3,
-      portals: 0,
-      finalHash: '131fabe7',
-    },
-  },
-  {
-    name: 'undo_back_to_start',
-    behaviour: 'Undo takes back every step, through a portal crossing and a box carried off a button, to the settled start (the hash of replaying no frames). One more undo changes nothing, and undone moves and portals still count.',
-    chamber: buttonBehindCarriedBox,
-    frames: [
-      '2:interact',
-      '2:^up',
-      '2:blue',
-      '2:right',
-      '2:^down',
-      '2:orange',
-      '2:down',
-      '2:undo',
-      '2:undo',
-      '2:undo',
-      '2:undo',
-      '2:undo',
-      '2:undo',
-      '2:undo',
-      '2:undo',
-    ],
-    expected: {
-      completed: false,
-      moves: 2,
-      portals: 2,
-      finalHash: '9e8ac45a',
-    },
-  },
-  {
-    name: 'redo_until_a_new_step',
-    behaviour: 'Redo takes undone steps again until a new step, which forgets the rest: the run ends where the first five steps alone end, and redo then changes nothing. Redo counts no moves or portals.',
-    chamber: buttonBehindCarriedBox,
-    frames: [
-      '2:interact',
-      '2:^up',
-      '2:blue',
-      '2:right',
-      '2:^down',
-      '2:orange',
-      '2:down',
-      '2:undo',
-      '2:undo',
-      '2:undo',
-      '2:undo',
-      '2:undo',
-      '2:redo',
-      '2:redo',
-      '2:^down',
-      '2:redo',
-    ],
-    expected: {
-      completed: false,
-      moves: 2,
-      portals: 2,
-      finalHash: '60db926f',
-    },
-  },
-  {
-    name: 'undo_before_a_late_effect',
-    behaviour: 'Undo on the frame after carrying a box off a button, before the button releases, goes back to the settled state before the step, so the door it holds open never closes.',
-    chamber: buttonBehindCarriedBox,
-    frames: [
-      '2:interact',
-      '2:right',
-      '0:undo',
+    actions: [
+      'right',
+      'right',
     ],
     expected: {
       completed: false,
       moves: 1,
       portals: 0,
-      finalHash: 'ee0ec821',
+      finalHash: '75364d6f',
     },
   },
   {
-    name: 'box_linked_button_release_throws',
-    behaviour: 'Releasing a button linked to a box throws, because a box cannot be deactivated.',
-    chamber: boxLinkedButton,
-    frames: [
-      '2:right',
-      '2:right',
+    name: 'crossing_lasers_either_blocks',
+    behaviour: 'Of two lasers crossing on a tile, the one still on keeps the subject out after the first listed is switched off.',
+    chamber: crossingLasers,
+    actions: [
+      'right',
+      'interact',
+      'right',
     ],
     expected: {
-      error: 'Box 1 cannot be deactivated',
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: '090aa887',
+    },
+  },
+  {
+    name: 'carried_box_link_does_nothing',
+    behaviour: 'Stepping onto a button linked to the box the subject carries leaves the box with the subject, so the button under the box\'s start tile stays up and its door closed.',
+    chamber: carriedBoxLink,
+    actions: [
+      'right',
+      'interact',
+      'right',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 3,
+      portals: 0,
+      finalHash: '8db96a5a',
+    },
+  },
+  {
+    name: 'box_linked_button_release_does_nothing',
+    behaviour: 'Releasing a button linked to a box does nothing to the box.',
+    chamber: boxLinkedButton,
+    actions: [
+      'right',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: 'ebac8183',
+    },
+  },
+  {
+    name: 'undo_back_to_start',
+    behaviour: 'Undo takes back every step, through a portal crossing and a box carried off a button, to the start (the hash of replaying no presses). One more undo changes nothing, and undone moves and portals still count.',
+    chamber: buttonBehindCarriedBox,
+    actions: [
+      'interact',
+      'turnUp',
+      'blue',
+      'right',
+      'turnDown',
+      'orange',
+      'down',
+      'undo',
+      'undo',
+      'undo',
+      'undo',
+      'undo',
+      'undo',
+      'undo',
+      'undo',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 2,
+      finalHash: 'df038ff1',
+    },
+  },
+  {
+    name: 'redo_until_a_new_step',
+    behaviour: 'Redo takes undone steps again until a new step, which forgets the rest: the run ends where the first five presses alone end, and redo then changes nothing. Redo counts no moves or portals.',
+    chamber: buttonBehindCarriedBox,
+    actions: [
+      'interact',
+      'turnUp',
+      'blue',
+      'right',
+      'turnDown',
+      'orange',
+      'down',
+      'undo',
+      'undo',
+      'undo',
+      'undo',
+      'undo',
+      'redo',
+      'redo',
+      'turnDown',
+      'redo',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 2,
+      finalHash: '984c90e5',
+    },
+  },
+  {
+    name: 'undo_after_carrying_a_box_off_a_button',
+    behaviour: 'Undo after carrying a box off a button brings back the state after the pick-up, the button pressed and its door open (the hash of replaying the first press alone).',
+    chamber: buttonBehindCarriedBox,
+    actions: [
+      'interact',
+      'right',
+      'undo',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: 'c71db24b',
     },
   },
 ]
+
+/**
+ * A fixture chamber, named after the first fixture played on it.
+ */
+export type FixtureChamber = {
+  readonly name: string // The first fixture's name
+  readonly chamber: ChamberData // The tiny chamber
+}
+
+/**
+ * Lists each fixture chamber once, for the checks that run on every chamber
+ * rather than on a fixture's presses.
+ * @returns The chambers, in the order the fixtures first use them
+ */
+export function listFixtureChambers(): FixtureChamber[] {
+  const seen = new Set<ChamberData>()
+  const chambers: FixtureChamber[] = []
+
+  for (const fixture of FIXTURES) {
+    if (!seen.has(fixture.chamber)) {
+      seen.add(fixture.chamber)
+      chambers.push({
+        name: fixture.name,
+        chamber: fixture.chamber,
+      })
+    }
+  }
+
+  return chambers
+}

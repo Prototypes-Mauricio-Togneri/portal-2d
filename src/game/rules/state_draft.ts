@@ -8,7 +8,7 @@ import {CLOSED_PORTAL, DIRECTION_INDEX, NO_BOX, NOT_STORED, PORTAL_SLOTS, StateS
 import {StateReader} from '@/game/rules/state_reader'
 
 /**
- * A copy of a state that one step of the v2 rules changes, with the events
+ * A copy of a state that one step of the rules changes, with the events
  * the step reports, in order. The step and the element hooks change it only
  * through these methods, which count every value that actually changes, then
  * the step turns it into a new state.

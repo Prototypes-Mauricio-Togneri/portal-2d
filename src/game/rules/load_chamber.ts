@@ -1,4 +1,4 @@
-import type {ChamberDataV2} from '@/game/chamber_data_v2'
+import type {ChamberData} from '@/game/chamber_data'
 import {parseChamber} from '@/game/rules/chamber_parser'
 import {type ChamberProblem, ChamberProblemLevel} from '@/game/rules/chamber_problem'
 import {upgradeChamber} from '@/game/rules/upgrade_chamber'
@@ -8,7 +8,7 @@ import {validateChamber} from '@/game/rules/validate_chamber'
  * What loading a chamber file gave.
  */
 export type ChamberLoadResult = {
-  readonly chamber: ChamberDataV2 | null // The chamber in the current format, or null when it has an error
+  readonly chamber: ChamberData | null // The chamber in the current format, or null when it has an error
   readonly problems: readonly ChamberProblem[] // Every error and warning found
 }
 
