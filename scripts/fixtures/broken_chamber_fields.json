@@ -1,0 +1,53 @@
+{
+    "version": 2,
+    "size": {
+        "width": 0,
+        "height": 4
+    },
+    "subject": {
+        "x": 1,
+        "y": 1,
+        "direction": "NORTH"
+    },
+    "exit": {
+        "x": 3
+    },
+    "walls": [
+        {
+            "x": 0,
+            "y": 0,
+            "takesPortal": false
+        },
+        {
+            "xFrom": 3,
+            "xTo": 1,
+            "yFrom": 0,
+            "yTo": 0
+        }
+    ],
+    "boxes": "none",
+    "buttons": [
+        {
+            "x": 1,
+            "y": 1,
+            "links": [0]
+        }
+    ],
+    "doors": [
+        {
+            "x": 1,
+            "y": "2"
+        }
+    ],
+    "lasers": [
+        {
+            "x": 1,
+            "y": 1,
+            "direction": "D"
+        }
+    ],
+    "colour": "blue",
+    "par": {
+        "moves": -1
+    }
+}

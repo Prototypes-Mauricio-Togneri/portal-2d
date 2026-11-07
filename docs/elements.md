@@ -27,7 +27,7 @@ Reference for the elements a chamber file (`src/chambers/*.json`) can contain, c
 
 The rules the v2 engine implements (stage 01, phase E). The game still plays today's rules (`src/game/classic/`) until stage 01 switches over; both behave the same except for the [changes from the original rules](#changes-from-the-original-rules) listed at the end.
 
-Tiles are counted with x growing to the right and y growing upwards from the bottom row, so "up" is towards a higher y. Chambers the validator rejects (unknown or duplicate link ids, invalid overlaps on a tile and the rest of its list) are outside these rules.
+Tiles are counted with x growing to the right and y growing upwards from the bottom row, so "up" is towards a higher y. Chambers the validator rejects (see [what the validator rejects](#what-the-validator-rejects)) are outside these rules.
 
 ### Blocking
 
@@ -95,7 +95,7 @@ A button is held down while the subject or any box is on its tile. Each pass jud
 
 ### Links
 
-A button or switch names its links by element id. Only barriers, ditches, boxes, fizzlers, doors, lasers and the exit can be linked.
+A button or switch names its links by element id. Only barriers, ditches, boxes, fizzlers, doors, lasers and the exit can be linked. A link can also name a link group (format 2), which stands for its elements: they act at the group's place in the list, in the group's order.
 
 | # | Element | Unblocked (button pressed, switch used) | Blocked (button released) |
 |---|---------|-----------------------------------------|---------------------------|
@@ -122,6 +122,18 @@ A door or the exit closing, a barrier rising, a ditch opening or a laser turning
 ### Outside the chamber
 
 Outside the chamber's edge counts as a wall that takes no portals, and the validator requires enclosed chambers.
+
+### What the validator rejects
+
+A chamber file is upgraded to the current format, then read field by field, then checked as a whole (`src/game/rules/`, run on every chamber by `npm run chamber:check`). Each problem names its field and, where it has one, its tile. Errors keep a chamber from loading:
+
+- **Fields:** a missing field, an unknown or misspelled one, a value of the wrong kind (coordinates and ids are whole numbers, ids 1 or more, a size at least 1, directions `UP`, `DOWN`, `LEFT` or `RIGHT`, a laser `H` or `V`), a wall rectangle whose from corner is past its to corner, or a format newer than the game plays.
+- **Ids and links:** an id used twice (elements and groups share the ids), a link naming an id nothing has, and a group naming another group.
+- **Bounds:** anything outside the chamber, and the same wall tile listed twice.
+- **What shares a tile:** a wall holds nothing but at most one barrier, so the subject and the exit are never inside a wall. A floor tile holds at most one of a barrier, ditch, door, exit, fizzler, arrow, button, switch or laser, except two lasers that cross (one `H`, one `V`). A box and the subject start on plain floor or a button, with at most one box per tile; the subject and a box may share it.
+- **The edge:** every tile on the chamber's edge holds a wall, a barrier, a door or the exit, so the chamber is enclosed.
+
+One warning doesn't keep a chamber from loading: a button linked to a box, since releasing the button does nothing to the box.
 
 ### Changes from the original rules
 

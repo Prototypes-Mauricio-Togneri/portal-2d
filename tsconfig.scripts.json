@@ -28,6 +28,7 @@
   "include": [
     "scripts/**/*.ts",
     "src/game/classic/**/*.ts",
+    "src/game/rules/**/*.ts",
     "src/game/chamber_data.ts",
     "src/game/chamber_data_v2.ts",
     "src/game/direction.ts",

@@ -2,7 +2,7 @@
     "format": 1,
     "ruleset": "classic",
     "chamberId": 1,
-    "chamberHash": "acda664f",
+    "chamberHash": "986fde15",
     "frames": [
         "8:blue",
         "8:^left",
@@ -218,6 +218,6 @@
         "completed": true,
         "moves": 163,
         "portals": 22,
-        "finalHash": "19d60690"
+        "finalHash": "e88f6e36"
     }
 }
