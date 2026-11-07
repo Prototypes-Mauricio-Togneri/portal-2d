@@ -2,10 +2,13 @@ import type {ChamberData} from '@/game/chamber_data'
 import type {ReplayExpectation} from '@/game/replay_data'
 import boxLinkedButton from '@scripts/fixtures/box_linked_button.json'
 import buttonBehindCarriedBox from '@scripts/fixtures/button_behind_carried_box.json'
+import fizzlersInARow from '@scripts/fixtures/fizzlers_in_a_row.json'
+import openEdge from '@scripts/fixtures/open_edge.json'
 import portalOntoClosedExit from '@scripts/fixtures/portal_onto_closed_exit.json'
 import portalOntoDitch from '@scripts/fixtures/portal_onto_ditch.json'
 import portalOntoFizzler from '@scripts/fixtures/portal_onto_fizzler.json'
 import portalOntoLaser from '@scripts/fixtures/portal_onto_laser.json'
+import twoButtonsOneDoor from '@scripts/fixtures/two_buttons_one_door.json'
 
 // Short replays that pin today's odd behaviour, each on a tiny chamber made
 // for it (the JSON files next to this one), outside the catalogue, and a few
@@ -139,6 +142,55 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 2,
       portals: 0,
       finalHash: '68dd897f',
+    },
+  },
+  {
+    name: 'carried_box_button_released_last',
+    behaviour: 'Carrying a box off a button onto a second button linked to the same door releases the first button after the second is pressed, whatever their order, so the door ends closed and the subject can\'t walk through.',
+    chamber: twoButtonsOneDoor,
+    frames: [
+      '2:interact',
+      '2:right',
+      '2:right',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: '9d41bfc1',
+    },
+  },
+  {
+    name: 'fizzler_flag_kept_across_switched_off_fizzler',
+    behaviour: 'Stepping from a field onto a switched-off fizzler still counts as inside a field, so a portal shot from there survives walking into the next field.',
+    chamber: fizzlersInARow,
+    frames: [
+      '2:right',
+      '2:right',
+      '2:^up',
+      '2:blue',
+      '2:right',
+    ],
+    expected: {
+      completed: false,
+      moves: 3,
+      portals: 1,
+      finalHash: '577471a5',
+    },
+  },
+  {
+    name: 'walk_out_through_the_edge',
+    behaviour: 'Nothing checks the chamber\'s edge, so the subject walks out of the chamber through an open tile on it.',
+    chamber: openEdge,
+    frames: [
+      '2:right',
+      '2:right',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: '103272ce',
     },
   },
   {

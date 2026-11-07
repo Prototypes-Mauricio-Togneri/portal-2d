@@ -8,6 +8,8 @@ import {Subject} from '@/game/classic/subject'
 import {FRAME_KEYS, type FrameInput, type FrameKey} from '@/game/frame_input'
 import {formatHash} from '@/game/text_hash'
 import {CHAMBER_FILES, listChamberFiles} from '@scripts/chamber_files'
+import {readNumberOption} from '@scripts/number_option'
+import {createRandom} from '@scripts/seeded_random'
 
 // Plays seeded random inputs on every chamber with today's rules as a step
 // function under Node. Every step must settle within the cap and nothing may
@@ -51,25 +53,6 @@ type RestoreCheck = {
 type WalkResult = {
   readonly milliseconds: number // Time spent walking, restore checks left out
   readonly restoreChecks: number // Restore checks that ran and passed
-}
-
-/**
- * A seeded source of random numbers (mulberry32), so a failing walk can be
- * run again exactly.
- * @param seed - Any 32-bit integer
- * @returns A function giving the next number from 0 up to, not including, 1
- */
-function createRandom(seed: number): () => number {
-  let current = seed >>> 0
-
-  return (): number => {
-    current = (current + 0x6d2b79f5) >>> 0
-
-    let mixed = Math.imul(current ^ (current >>> 15), current | 1)
-    mixed ^= mixed + Math.imul(mixed ^ (mixed >>> 7), mixed | 61)
-
-    return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296
-  }
 }
 
 /**
@@ -200,28 +183,6 @@ function walkChamber(data: ChamberData, steps: number, seed: number): WalkResult
     milliseconds: performance.now() - startTime - checkMilliseconds,
     restoreChecks: restoreChecks,
   }
-}
-
-/**
- * Reads a whole-number option.
- * @param value - The option as typed, or undefined when absent
- * @param fallback - The value when absent
- * @param name - The option's name, for the error
- * @returns The number
- * @throws Error when the option is not a positive whole number
- */
-function readNumberOption(value: string | undefined, fallback: number, name: string): number {
-  if (value === undefined) {
-    return fallback
-  }
-
-  const number = Number(value)
-
-  if ((!Number.isSafeInteger(number)) || (number < 1)) {
-    throw new Error(`--${name} must be a positive whole number`)
-  }
-
-  return number
 }
 
 /**

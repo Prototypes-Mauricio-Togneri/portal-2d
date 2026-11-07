@@ -1,0 +1,50 @@
+{
+    "size": {
+        "width": 3,
+        "height": 4
+    },
+    "subject": {
+        "x": 1,
+        "y": 1,
+        "direction": "RIGHT"
+    },
+    "exit": {
+        "x": 1,
+        "y": 2
+    },
+    "walls": [
+        {
+            "xFrom": 0,
+            "xTo": 2,
+            "yFrom": 0,
+            "yTo": 0
+        },
+        {
+            "xFrom": 0,
+            "xTo": 2,
+            "yFrom": 3,
+            "yTo": 3
+        },
+        {
+            "x": 0,
+            "y": 1
+        },
+        {
+            "x": 0,
+            "y": 2
+        },
+        {
+            "x": 2,
+            "y": 2
+        }
+    ],
+    "barriers": [],
+    "ditches": [],
+    "boxes": [],
+    "buttons": [],
+    "arrows": [],
+    "fizzlers": [],
+    "doors": [],
+    "switches": [],
+    "lasers": []
+}
