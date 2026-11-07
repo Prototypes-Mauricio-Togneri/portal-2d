@@ -1,7 +1,7 @@
 # Stage 05 — Creator platform
 
 Status: Draft
-Last revised: 2026-11-06
+Last revised: 2026-11-07
 
 ## Goal
 
@@ -13,7 +13,7 @@ This stage assumes the following exist when it starts. Re-check each when revisi
 
 - **Stage 01 (engine v2)**
   - Chamber format v2 with a version number and automatic upgrades from every older version. Shared links live forever, so every format version ever shipped must stay decodable.
-  - Elements described by data (a registry saying what each element type blocks, holds and how it is drawn). The editor's palette reads it, so stage 03's mechanics appear in the editor without editor changes.
+  - Elements described by data (a registry saying what each element type blocks and holds, and its draw layer), with each type's drawing kept browser-side in the renderer, looked up by element kind (stage 01, E10). The editor's palette reads the registry and draws through the renderer, so stage 03's mechanics appear in the editor without editor changes.
   - The pure step (*state + key → next state*) and a compact replay format (a list of keys).
   - An engine that loads under Node with no browser (sounds are no longer played by the rules). Stage A replays links headless in the browser; Stage B runs the same engine in Cloud Functions.
   - A defined behaviour for releasing a button linked to a box (today it throws, `src/game/chamber.ts:323-325`), or a rule the editor enforces to forbid it.

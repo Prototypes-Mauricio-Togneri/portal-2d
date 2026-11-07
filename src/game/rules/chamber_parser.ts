@@ -11,8 +11,8 @@ export type ParseResult = {
   readonly problems: readonly ChamberProblem[] // Every wrong field, in file order
 }
 
-/** The top-level fields of a format 2 file */
-const CHAMBER_FIELDS = [
+/** The top-level fields of a format 2 file; the chamber check compares them with the element registry */
+export const CHAMBER_FIELDS = [
   'version',
   'size',
   'subject',

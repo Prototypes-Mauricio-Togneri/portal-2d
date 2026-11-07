@@ -1,4 +1,9 @@
+import type {ChamberData} from '@/game/chamber_data'
+import {GameEvent} from '@/game/game_event'
+import {CHAMBER_FIELDS} from '@/game/rules/chamber_parser'
 import {formatChamberProblem} from '@/game/rules/chamber_problem'
+import type {ElementDefinition} from '@/game/rules/element_definition'
+import {CORE_STEP_EVENTS, ELEMENT_REGISTRY} from '@/game/rules/element_registry'
 import {loadChamber} from '@/game/rules/load_chamber'
 import {CHAMBER_FILES, listChamberFiles} from '@scripts/chamber_files'
 import {CHAMBER_CASES, type ChamberCase} from '@scripts/fixtures/format_examples'
@@ -7,8 +12,29 @@ import {CHAMBER_CASES, type ChamberCase} from '@scripts/fixtures/format_examples
 // format, every field read, the layout checked). Every chamber in
 // src/chambers must load without an error, and each case in
 // scripts/fixtures/format_examples.ts must report exactly the problems pinned
-// for it. Prints one line per chamber and case, then any problem below it,
-// and exits non-zero on any failure
+// for it. Then checks the element registry against the format: every
+// element's field is one the parser accepts, the registry holds exactly format
+// 1's elements, and every game event has one owner. Prints one line per
+// chamber, case and registry check, then any problem below it, and exits
+// non-zero on any failure
+
+/** Format 1's element fields: every field of ChamberData but the size and the subject. Typed by ChamberData, so the build fails when one is missing or extra */
+const FORMAT_1_ELEMENT_FIELDS: Readonly<Record<Exclude<keyof ChamberData, 'size' | 'subject'>, true>> = {
+  exit: true,
+  walls: true,
+  barriers: true,
+  ditches: true,
+  boxes: true,
+  buttons: true,
+  arrows: true,
+  fizzlers: true,
+  doors: true,
+  switches: true,
+  lasers: true,
+}
+
+/** The registry's element definitions, read through the plain definition type */
+const DEFINITIONS: readonly ElementDefinition[] = ELEMENT_REGISTRY
 
 /**
  * What loading a chamber file reported, as the check prints it.
@@ -104,7 +130,102 @@ function checkCase(chamberCase: ChamberCase): boolean {
 }
 
 /**
- * Checks every chamber file in src/chambers and every case.
+ * Checks that the parser accepts every element's field.
+ * @returns Whether every element's field is in the parser's field list
+ */
+function checkRegistryFields(): boolean {
+  const notAccepted = DEFINITIONS.filter((definition) => !CHAMBER_FIELDS.includes(definition.fileKey))
+
+  if (notAccepted.length === 0) {
+    console.log('registry fields OK: the parser accepts every element\'s field')
+
+    return true
+  }
+
+  console.error('registry fields FAILED: the parser doesn\'t accept some elements\' fields')
+
+  for (const definition of notAccepted) {
+    console.error(`  ${definition.kind}: ${definition.fileKey} is not in the parser's field list`)
+  }
+
+  return false
+}
+
+/**
+ * Checks that the registry holds exactly format 1's elements, each once.
+ * @returns Whether the registry's fields match format 1's element fields
+ */
+function checkRegistryElements(): boolean {
+  const registered = DEFINITIONS.map((definition) => definition.fileKey)
+  const format1 = Object.keys(FORMAT_1_ELEMENT_FIELDS)
+  const notRegistered = format1.filter((field) => !registered.includes(field))
+  const notInFormat1 = registered.filter((field) => !format1.includes(field))
+  const registeredTwice = registered.filter((field, index) => registered.indexOf(field) !== index)
+
+  if ((notRegistered.length === 0) && (notInFormat1.length === 0) && (registeredTwice.length === 0)) {
+    console.log(`registry elements OK: the ${registered.length} elements of format 1`)
+
+    return true
+  }
+
+  console.error('registry elements FAILED: the registry doesn\'t match format 1\'s elements')
+
+  for (const field of notRegistered) {
+    console.error(`  not registered: ${field}`)
+  }
+
+  for (const field of notInFormat1) {
+    console.error(`  not in format 1: ${field}`)
+  }
+
+  for (const field of registeredTwice) {
+    console.error(`  registered twice: ${field}`)
+  }
+
+  return false
+}
+
+/**
+ * Checks that each game event is reported by exactly one owner: an element
+ * or the core step.
+ * @returns Whether every event has one owner
+ */
+function checkRegistryEvents(): boolean {
+  const events = Object.values(GameEvent)
+  const wrong: string[] = []
+
+  for (const event of events) {
+    const owners = DEFINITIONS.filter((definition) => definition.events.includes(event)).map((definition) => definition.kind)
+
+    if (CORE_STEP_EVENTS.includes(event)) {
+      owners.push('the core step')
+    }
+
+    if (owners.length === 0) {
+      wrong.push(`${event}: no owner`)
+    } else if (owners.length > 1) {
+      wrong.push(`${event}: ${owners.length} owners (${owners.join(', ')})`)
+    }
+  }
+
+  if (wrong.length === 0) {
+    console.log(`registry events OK: ${events.length} events, one owner each`)
+
+    return true
+  }
+
+  console.error('registry events FAILED: some events don\'t have exactly one owner')
+
+  for (const line of wrong) {
+    console.error(`  ${line}`)
+  }
+
+  return false
+}
+
+/**
+ * Checks every chamber file in src/chambers, every case and the element
+ * registry.
  * @returns Whether all of them passed
  */
 function runAll(): boolean {
@@ -117,6 +238,10 @@ function runAll(): boolean {
   for (const chamberCase of CHAMBER_CASES) {
     passed = checkCase(chamberCase) && passed
   }
+
+  passed = checkRegistryFields() && passed
+  passed = checkRegistryElements() && passed
+  passed = checkRegistryEvents() && passed
 
   return passed
 }

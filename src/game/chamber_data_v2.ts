@@ -1,10 +1,13 @@
-import type {ArrowData, BlockableData, BoxData, LaserData, SubjectData, TriggerData, WallData} from '@/game/chamber_data'
+import type {SubjectData, WallData} from '@/game/chamber_data'
+import type {ChamberElementFields} from '@/game/rules/element_registry'
 
 // Format 2 of a chamber file, for the v2 rules (stage 01). The chamber files
 // stay in format 1 (ChamberData) until stage 01 switches over; then this
 // becomes ChamberData. Imported JSON widens literals (2 becomes number, 'UP'
 // becomes string), so every field is typed as the JSON import reads it and
-// the validator checks the values
+// the validator checks the values. The element fields come from the element
+// registry (src/game/rules/element_registry.ts), each typed by its element
+// definition
 
 /**
  * A wall entry in format 2: one tile, or a rectangle of tiles, that may refuse
@@ -34,8 +37,10 @@ export type ParData = {
 }
 
 /**
- * Shape of a chamber file in format 2. A list that is left out means the
- * chamber has none of that element. Never mutated by the game.
+ * Shape of a chamber file in format 2: the version, the size, the subject,
+ * the link groups and the par block, then one field per element type in the
+ * registry (the exit, and a list for each other type). A list that is left
+ * out means the chamber has none of that element. Never mutated by the game.
  */
 export type ChamberDataV2 = {
   readonly version: number // The format's version, 2
@@ -44,17 +49,6 @@ export type ChamberDataV2 = {
     readonly height: number // In tiles
   }
   readonly subject: SubjectData // Where the subject starts and which way it faces
-  readonly exit: BlockableData // The way out
-  readonly walls?: readonly WallDataV2[] // Wall tiles and rectangles
-  readonly barriers?: readonly BlockableData[] // Barriers, which may sit on a wall tile
-  readonly ditches?: readonly BlockableData[] // Ditches
-  readonly boxes?: readonly BoxData[] // Boxes, at their start tiles
-  readonly buttons?: readonly TriggerData[] // Buttons; their links name elements or groups
-  readonly arrows?: readonly ArrowData[] // One-way floor tiles
-  readonly fizzlers?: readonly BlockableData[] // Fizzlers
-  readonly doors?: readonly BlockableData[] // Doors
-  readonly switches?: readonly TriggerData[] // Switches; their links name elements or groups
-  readonly lasers?: readonly LaserData[] // Lasers
   readonly groups?: readonly LinkGroupData[] // Link groups
   readonly par?: ParData // How well the chamber can be solved
-}
+} & ChamberElementFields
