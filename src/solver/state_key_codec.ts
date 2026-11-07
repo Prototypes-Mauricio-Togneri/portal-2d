@@ -316,6 +316,72 @@ export class StateKeyCodec {
   }
 
   /**
+   * The subject's tile in a packed key, the key's first field.
+   * @param low - The key's low word
+   * @returns The tile's number
+   */
+  subjectTileOf(low: number): number {
+    return this.read32(low, 0, this.widths.tile)
+  }
+
+  /**
+   * Puts the subject on another tile, facing another way, in a packed key:
+   * rewrites the key's first two fields, which both sit in the low word. A
+   * carried box goes along, since unpacking puts it on the subject's tile.
+   * @param low - The key's low word
+   * @param tile - The subject's tile
+   * @param facing - The way it faces, as its index in DIRECTIONS
+   * @returns The new low word; the high word stays as it was
+   */
+  placeSubject(low: number, tile: number, facing: number): number {
+    const mask = this.fieldMask(this.widths.tile + FACING_BITS)
+
+    return ((low & ~mask) | tile | (facing << this.widths.tile)) >>> 0
+  }
+
+  /**
+   * The blocked flags in a packed key, the key's last field, as one number:
+   * the first flag in its lowest bit.
+   * @param low - The key's low word
+   * @param high - The key's high word
+   * @returns The flags
+   * @throws Error when the chamber has more flags than a 32-bit number holds
+   */
+  flagsOf(low: number, high: number): number {
+    const flagCount = this.index.chamber.stateLayout.flagCount
+
+    if (flagCount > WORD_BITS) {
+      throw new Error(`The chamber has ${flagCount} flags, more than ${WORD_BITS} can be read as one number`)
+    }
+
+    this.low = low
+    this.high = high
+    this.position = this.widths.total - flagCount
+
+    return this.read(flagCount)
+  }
+
+  /**
+   * The mask covering a field's bits at the start of a word.
+   * @param width - The field's width, at most WORD_BITS
+   * @returns The mask
+   */
+  private fieldMask(width: number): number {
+    return (width >= WORD_BITS) ? 0xffffffff : (((1 << width) >>> 0) - 1)
+  }
+
+  /**
+   * Reads a field that lies inside one word.
+   * @param word - The word
+   * @param position - The field's first bit
+   * @param width - The field's width
+   * @returns The field's value
+   */
+  private read32(word: number, position: number, width: number): number {
+    return ((word >>> position) & this.fieldMask(width)) >>> 0
+  }
+
+  /**
    * Skips the tile field of the carried box, which is on the subject's tile.
    * @param subjectTile - The subject's tile
    * @returns The subject's tile

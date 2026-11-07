@@ -58,7 +58,7 @@ const COST_SCALE = 2 ** 20
  * @returns The cost
  * @throws Error when the tie-breaking count reaches COST_SCALE
  */
-function costOf(objective: Objective, moves: number, portals: number): number {
+export function costOf(objective: Objective, moves: number, portals: number): number {
   const first = (objective === Objective.MOVES) ? moves : portals
   const second = (objective === Objective.MOVES) ? portals : moves
 

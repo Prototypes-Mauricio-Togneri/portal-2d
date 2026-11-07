@@ -4,8 +4,10 @@ import {fileURLToPath} from 'node:url'
 import {parseArgs} from 'node:util'
 import {CompiledChamber} from '@/game/rules/compiled_chamber'
 import {loadChamber} from '@/game/rules/load_chamber'
+import {runRulesReplay} from '@/game/rules/replay_runner'
 import {Objective, searchBaseline} from '@/solver/baseline_search'
 import {ChamberIndex} from '@/solver/chamber_index'
+import {MacroSearch, SearchMode} from '@/solver/macro_search'
 import {StateKeyCodec} from '@/solver/state_key_codec'
 import {CHAMBERS_DIRECTORY, listChamberFiles} from '@scripts/chamber_files'
 import {readNumberOption} from '@scripts/number_option'
@@ -15,12 +17,23 @@ import {readNumberOption} from '@scripts/number_option'
 // the wall sides a portal can open on, the blocked flags, boxes and buttons
 // the state holds, the rough upper bound on its states, and its state key's
 // width. With --baseline, also runs the reference search for both pars
-// (fewest moves, fewest portals) and prints each route. Exits non-zero when
-// a chamber fails to load or its key doesn't fit.
-// Options: --baseline, --max-states=<number> for the search (default 1000000)
+// (fewest moves, fewest portals); with --solvable, the macro search for any
+// route; with --par, the macro search for both pars. Each search prints what
+// it found, its states and effort, time and peak memory, and the route found,
+// which a macro search also replays through the rules. Exits non-zero when a
+// chamber fails to load, its key doesn't fit, or a route doesn't replay.
+// Options: --baseline, --solvable, --par, --max-states=<number> for each
+// search (default 1000000), --max-seconds=<number> for each macro search
+// (default 300)
 
-/** States the reference search keeps unless --max-states says otherwise */
+/** States a search keeps unless --max-states says otherwise */
 const DEFAULT_MAX_STATES = 1_000_000
+
+/** Seconds a macro search runs unless --max-seconds says otherwise */
+const DEFAULT_MAX_SECONDS = 300
+
+/** Bytes in a mebibyte, for the report */
+const MEBIBYTE = 1024 * 1024
 
 /**
  * The rough upper bound on a chamber's states, as a power of ten: every
@@ -80,6 +93,42 @@ function describeSearch(chamber: CompiledChamber, objective: Objective, maxState
 }
 
 /**
+ * Runs the macro search in one mode and describes what it found, replaying
+ * the route through the rules.
+ * @param chamber - The chamber
+ * @param mode - What to look for
+ * @param maxStates - The most states to keep
+ * @param maxSeconds - The longest to run
+ * @returns One line, then the route as JSON when it found one
+ * @throws Error when the route found doesn't replay to the counts found
+ */
+function describeMacro(chamber: CompiledChamber, mode: SearchMode, maxStates: number, maxSeconds: number): string {
+  const startTime = performance.now()
+  let peakRss = process.memoryUsage().rss
+
+  const result = new MacroSearch(chamber, mode, maxStates).run(maxSeconds * 1000, () => {
+    peakRss = Math.max(peakRss, process.memoryUsage().rss)
+  })
+
+  peakRss = Math.max(peakRss, process.memoryUsage().rss)
+
+  const seconds = ((performance.now() - startTime) / 1000).toFixed(1)
+  const effort = `${result.states} states, ${result.expanded} expanded, ${result.steps} steps (${result.shots} shots, ${result.interacts} interacts, ${result.moveTries} other moves), ${seconds} s, peak rss ${(peakRss / MEBIBYTE).toFixed(0)} MiB`
+
+  if (!result.solved) {
+    return `  macro ${mode}: ${(result.gaveUp === null) ? 'unsolvable' : `gave up (${result.gaveUp})`} (${effort})`
+  }
+
+  const replay = runRulesReplay(chamber, result.actions)
+
+  if ((!replay.completed) || (replay.moves !== result.moves) || (replay.portals !== result.portals)) {
+    throw new Error(`the macro ${mode} route doesn't replay to ${result.moves} moves and ${result.portals} portals`)
+  }
+
+  return `  macro ${mode}: ${result.moves} moves, ${result.portals} portals (${effort})\n    ${JSON.stringify(result.actions)}`
+}
+
+/**
  * Lists the chamber files to solve.
  * @param positionals - The paths given on the command line
  * @returns Each file's path
@@ -106,9 +155,19 @@ function runAll(): boolean {
       'max-states': {
         type: 'string',
       },
+      'max-seconds': {
+        type: 'string',
+      },
+      'par': {
+        type: 'boolean',
+      },
+      'solvable': {
+        type: 'boolean',
+      },
     },
   })
   const maxStates = readNumberOption(parsed.values['max-states'], DEFAULT_MAX_STATES, 'max-states')
+  const maxSeconds = readNumberOption(parsed.values['max-seconds'], DEFAULT_MAX_SECONDS, 'max-seconds')
   let passed = true
 
   for (const path of listPaths(parsed.positionals)) {
@@ -129,6 +188,15 @@ function runAll(): boolean {
       if (parsed.values.baseline === true) {
         console.log(describeSearch(chamber, Objective.MOVES, maxStates))
         console.log(describeSearch(chamber, Objective.PORTALS, maxStates))
+      }
+
+      if (parsed.values.solvable === true) {
+        console.log(describeMacro(chamber, SearchMode.SOLVABLE, maxStates, maxSeconds))
+      }
+
+      if (parsed.values.par === true) {
+        console.log(describeMacro(chamber, SearchMode.MOVES, maxStates, maxSeconds))
+        console.log(describeMacro(chamber, SearchMode.PORTALS, maxStates, maxSeconds))
       }
     } catch (error) {
       console.error(`${name} FAILED: ${error instanceof Error ? error.message : String(error)}`)

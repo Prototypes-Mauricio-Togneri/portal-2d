@@ -8,6 +8,7 @@ import {PORTAL_COLORS, PortalColor} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
 import {StateDraft} from '@/game/rules/state_draft'
 import {NO_BOX} from '@/game/rules/state_layout'
+import type {StateReader} from '@/game/rules/state_reader'
 
 // The rules as a pure step, as docs/elements.md writes them under "Rules":
 // an action, then the carried box follows, then passes of the fizzler rule
@@ -162,14 +163,15 @@ const EVERY_PASS_HOOKS = collectHooks('everyPass')
 
 /**
  * Whether the elements on a tile let the subject move a way: a one-way tile
- * (an arrow) allows only its own way, both into it and out of it.
- * @param draft - The step's state
+ * (an arrow) allows only its own way, both into it and out of it. Exported
+ * for the solver, which reads walking from the rules rather than copying it.
+ * @param draft - The state, a step's draft or a settled state
  * @param x - Column
  * @param y - Row
  * @param direction - The way the subject moves
  * @returns True when nothing on the tile points another way
  */
-function allowsWay(draft: StateDraft, x: number, y: number, direction: Direction): boolean {
+export function allowsWay(draft: StateReader, x: number, y: number, direction: Direction): boolean {
   for (const kind of ONE_WAY) {
     for (let index = draft.chamber.elementAt(kind, x, y); index !== NO_ELEMENT; index = draft.chamber.nextOnTile(kind, index)) {
       if (draft.chamber.directionOf(kind, index) !== direction) {
@@ -184,13 +186,14 @@ function allowsWay(draft: StateDraft, x: number, y: number, direction: Direction
 /**
  * Whether the subject can step onto a tile, moving or coming out of a portal
  * a way: not a wall, nor outside the chamber, nor a tile something blocks.
- * @param draft - The step's state
+ * Exported for the solver, like allowsWay.
+ * @param draft - The state, a step's draft or a settled state
  * @param x - Column
  * @param y - Row
  * @param direction - The way the subject moves onto it
  * @returns True when it can
  */
-function canEnter(draft: StateDraft, x: number, y: number, direction: Direction): boolean {
+export function canEnter(draft: StateReader, x: number, y: number, direction: Direction): boolean {
   if (draft.chamber.isWall(x, y)) {
     return false
   }
