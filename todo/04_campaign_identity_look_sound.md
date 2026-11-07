@@ -12,13 +12,13 @@ The game becomes its own thing and grows to full length: an original name, facil
 These are assumptions about what earlier stages delivered. Re-check each when revisiting this stage.
 
 - **00 Fixes:** completions and best times keyed by permanent id; the game canvas sharp on high-DPI screens; analytics sending quits on tab close, an attempt counter and first-completion and new-best flags, collecting since 00 shipped (months of history by now); one local check command.
-- **01 Engine v2:** a pure step (state + key → next state) with the frame loop only animating and drawing; replays and recorded solutions checked locally; undo, with "moves" counting decided (open decision 1, counting side); chamber format v2 (versioned, optional lists); elements described by data, each declaring how it is drawn; the engine runs under Node; game sounds emitted as events, not played by the rules; the input rewrite with remappable keys and gamepad (decision 2 put those there, so this stage does not touch input).
+- **01 Engine v2:** a pure step (state + key → next state) with the frame loop only animating and drawing; replays and recorded solutions checked locally; undo, with "moves" counting decided (open decision 1, counting side); chamber format v2 (versioned, optional lists); elements described by data, each declaring how it is drawn; the engine runs under Node; game sounds emitted as events, not played by the rules; the input rewrite with remappable keys (decision 2 put input there, so this stage does not touch it; the gamepad was dropped, decision 9).
 - **02 Solver:** every chamber proven solvable in the local checks; par for fewest moves and fewest portals stored per chamber; the shortcut finder report. Whether a solver difficulty score exists was settled there (open decision 2). If 02's prototype failed its go/no-go, par falls back to the best recorded solution (see Go/no-go points).
 - **03 Mechanics:** each new mechanic exists with its teach → test → twist → combine plan, at least one chamber, a recorded solution, a solver run and a `docs/elements.md` entry. The wing list below follows whatever 03 actually shipped.
 
 ## Decisions made
 
-- 2026-11-06 — Colour-blind palettes and relaxed mode belong to this stage; remappable keys and gamepad went to stage 01 (README decision 2).
+- 2026-11-06 — Colour-blind palettes and relaxed mode belong to this stage; remappable keys went to stage 01 (README decision 2); the gamepad, also sent there, was later dropped (README decision 9).
 - 2026-11-06 — Chamber links (`/chamber/N`, by position) stay as they are until this stage picks the numbering scheme (README decision 4).
 - 2026-11-06 — The identity must be settled before stage 05 shares anything publicly (README open decision 5).
 - Unchanged from `AGENTS.md`: desktop only; colour meanings (blue interaction and success, orange the second portal, red caution, green a completed chamber); `localStorage` keys keep the `portal-2d.` prefix and analytics event and parameter names never change, even after a rename (changing either splits or loses history).

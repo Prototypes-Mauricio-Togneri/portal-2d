@@ -5,7 +5,7 @@ Last revised: 2026-11-07
 
 ## Goal
 
-The rules become a pure, savable step: _state + one action → next state + events_. Players get unlimited undo and redo, keys they can remap, gamepad support, and rules without the inherited bugs. The author gets recorded solutions that are replayed by a local command on every change, element types described by data (a new mechanic is mostly one file), and a chamber format with a version number. Today's engine is kept only as a reference to prove v2 behaves the same, then deleted.
+The rules become a pure, savable step: _state + one action → next state + events_. Players get unlimited undo and redo, keys they can remap, and rules without the inherited bugs. The author gets recorded solutions that are replayed by a local command on every change, element types described by data (a new mechanic is mostly one file), and a chamber format with a version number. Today's engine is kept only as a reference to prove v2 behaves the same, then deleted.
 
 The stage ships in slices that are each useful on their own: A and B (no player change, replays exist), C (undo), D (input), then E to G (v2 replaces the old rules).
 
@@ -32,11 +32,11 @@ The stage ships in slices that are each useful on their own: A and B (no player 
 - 2026-11-06 — Solutions are saved in development with a dev-only "Download solution" button in the completion dialog, the file named after the chamber (was open decision 9; built in B6).
 - 2026-11-07 — Keys are bound by physical position (`KeyboardEvent.code`), with the player's layout labels shown wherever keys appear; AZERTY players' default portal key moves to the key labelled Q (was open decision 6; built in D1 and D4).
 - 2026-11-07 — Live play applies the next queued press only once the state has settled, so live play matches the step function (was open decision 7; built in D2).
-- 2026-11-07 — The gamepad reaches the game through an app-wide bridge in `src/services/`, so chambers, menus and dialogs all work with a pad (was open decision 8; built in D8).
+- 2026-11-07 — No gamepad support: the gamepad bridge (was open decision 8, step D8) is dropped, and no other stage plans it (README decision 9).
 - 2026-11-07 — One key per action. A left/right modifier pair counts as one key, so the default turn key is either Ctrl (D1, D6).
 - 2026-11-07 — Escape, Tab, Alt, Meta and the F-keys can't be bound: Escape and Tab belong to the screens, Alt and Meta combinations and the F-keys to the browser (bound to turn, Alt+Left would go Back mid-chamber) (D6).
-- 2026-11-07 — D1 to D7 ship as one release, so binding by position never ships while the legend still shows fixed letters; the gamepad (D8) ships after it, each with its part of D9.
-- 2026-11-07 — No analytics for remapping or gamepad use for now: event names are permanent, so one is added only when it will be used.
+- 2026-11-07 — D1 to D7 ship as one release with D9, so binding by position never ships while the legend still shows fixed letters.
+- 2026-11-07 — No analytics for remapping for now: event names are permanent, so one is added only when it will be used.
 
 ## Open decisions
 
@@ -100,8 +100,7 @@ No behaviour changes. Verify by playing every chamber in `npm run dev` and heari
 - [x] **D5. Saved bindings.** A service (next to the settings service, or inside it) stores `portal-2d.key-bindings` as JSON, with `try`/`catch` per AGENTS.md. It validates on read: an unknown action or code, or a duplicate, falls back to that action's default. It has a reset to defaults and passes the bindings into `Level` through `chamber_screen.vue` (the game can't read `localStorage`). Verify: change a binding, reload, and it's kept; corrupt the stored JSON by hand and the defaults return.
 - [x] **D6. Controls settings UI.** Under Settings, a "Controls" row that opens a third column listing each action with its key caps. Enter or a click starts rebinding and captures the next key; Escape cancels; Escape, Tab, Alt, Meta and the F-keys can't be bound; a key already in use is swapped. A final "Reset controls" row. Use the `frontend-design` skill and follow the home-menu keyboard rules in AGENTS.md (Right or Enter steps in, Left or Escape steps back, one Tab stop per column). Verify: the whole flow by keyboard only, then by mouse.
 - [x] **D7. Legend from bindings.** `chamber_legend.vue` shows the bound keys' labels instead of fixed caps. Verify: rebind A to Q and the legend says Q.
-- [ ] **D8. Gamepad bridge** (open decision 8). A service polls `navigator.getGamepads()` on animation frames, with a dead zone for the stick and repeat for held directions, and turns the standard mapping into actions. In a chamber: D-pad or left stick move, X blue portal, B orange portal, A interact, LB held turn, Y undo, RB redo, Start pause (Escape). In menus and dialogs: D-pad moves, A is Enter, B is Escape. It knows whether a chamber is being played from the route. Verify: a full chamber and the menus with a pad only; nothing happens with no pad connected.
-- [ ] **D9. Docs and changelog.** AGENTS.md: keyboard ownership (bindings, queue, browser defaults, gamepad), persistence (the bindings key), and the Settings column. A changelog release ("Change the controls", "Play with a gamepad"). Verify: re-read against the code.
+- [x] **D9. Docs and changelog.** AGENTS.md: keyboard ownership (bindings, queue, browser defaults), persistence (the bindings key), and the Settings column. A changelog release ("Change the controls"). Verify: re-read against the code.
 
 ### Phase E — v2 rules
 
@@ -117,7 +116,7 @@ Write the rules down first, build the comparison tool, then port one element at 
 - [ ] **E8. Actions and the pure step.** `step(chamber, state, action) → {state, events}`. Actions: move up, down, left or right; turn to each direction (today's Ctrl plus arrow); blue; orange; interact. Undo and redo are not actions, they live in `Level`. Implement the order from E1 and the shot trace with today's blocking rules and portal-side rules. Verify: build. Behaviour is checked from E9 on, with the comparison tool.
 - [ ] **E9. Port elements one at a time.** Order: walls and floor, portals and the shot, barrier, door, exit, ditch, laser, arrow, box, button, switch, fizzler. After each one, run the comparison tool on random walks limited to chambers or fixtures that use only the elements ported so far, and on the recorded solutions once everything is in. Verify: the comparison tool passes, apart from listed differences.
 - [ ] **E10. Renderer for v2.** The renderer draws from the element definitions by layer, with today's exact drawing code, colours and sizes (the visuals stay frozen until stage 04). A dev-only page renders every state along every recorded solution with both renderers at a fixed pixel ratio and compares pixels (`getImageData`), reporting the first mismatch. Verify: zero mismatches.
-- [ ] **E11. `Level` runs v2 behind a dev flag.** In dev only (`?rules=v2`), the chamber screen plays v2: input presses become actions, each fully resolved by `step` (no settling), undo and redo become a stack of immutable states, and events drive sounds, counters and completion. Verify: play every chamber with undo, remapped keys and a gamepad.
+- [ ] **E11. `Level` runs v2 behind a dev flag.** In dev only (`?rules=v2`), the chamber screen plays v2: input presses become actions, each fully resolved by `step` (no settling), undo and redo become a stack of immutable states, and events drive sounds, counters and completion. Verify: play every chamber with undo and remapped keys.
 - [ ] **E12. Measure.** Steps per second under Node on random walks and state size per chamber, compared with the B9 baseline. Verify: numbers written into "Notes for later stages".
 
 ### Phase F — Prove v2 matches the old rules
@@ -136,7 +135,7 @@ Write the rules down first, build the comparison tool, then port one element at 
 - [ ] **G5. AGENTS.md.** Replace "Game behaviour is frozen" with: the rules are defined in `docs/elements.md` and pinned by recorded solutions; a rule change needs an explicit ask, re-recorded solutions and a docs update; drawing, colours and sizes stay frozen until stage 04. Also update: the game/Vue boundary (`Level`'s API: undo, redo, bindings, replay, counters from events), keyboard ownership, persistence, analytics (`undos`, `rules_version`), TypeScript projects, the layout, and the local checks. Verify: re-read against the code.
 - [ ] **G6. `docs/elements.md`.** Format v2 (version, optional lists, groups, `takesPortals`), the rules, and the changes list. Verify: an element's every field is documented.
 - [ ] **G7. Changelog.** A release listing what players notice (the fixes, in plain words). Verify: shows under About.
-- [ ] **G8. Final pass.** Lint, build, every local check, and a full playthrough of all chambers by keyboard, by gamepad, with remapped keys and with undo. Verify: all pass; tick "Done when".
+- [ ] **G8. Final pass.** Lint, build, every local check, and a full playthrough of all chambers by keyboard, with remapped keys and with undo. Verify: all pass; tick "Done when".
 
 ## Local checks added
 
@@ -155,7 +154,7 @@ Each one joins stage 00's local check command when it appears, and leaves it whe
 - [ ] The rules are a pure step on a compact immutable state, and no rules file imports anything that needs a browser (the build proves it).
 - [ ] Every chamber has a recorded v2 solution, and the replay check passes.
 - [ ] Undo and redo work for every step, with `undos` in analytics.
-- [ ] Keys can be remapped and are saved; a gamepad can play chambers and use the menus.
+- [ ] Keys can be remapped and are saved.
 - [ ] Two keys pressed in one frame are both applied, in order.
 - [ ] The inherited bugs are gone, and each change is listed in `docs/elements.md`.
 - [ ] Element types are described by data in `src/game/rules/`; adding one means a definition file, a registry entry, its JSON list, its docs and its drawing.
@@ -178,7 +177,7 @@ Each one joins stage 00's local check command when it appears, and leaves it whe
 - **Three solutions don't cover everything.** The seeded random comparison (F2) and the fixtures (B10) are the cover; widen the random inputs if differences show up late.
 - **Two engines at once (E–F).** Freeze rule changes on classic while v2 is built; keep E and F short.
 - **The layout change for AZERTY players** (open decision 6). Their default portal key moves to a different label. The legend and settings show real labels, and remapping fixes it; mention it in the changelog.
-- **Keyboard rules get more complex** (undo, remapping, a Settings column, gamepad). Update AGENTS.md in the same step as each change, not at the end.
+- **Keyboard rules get more complex** (undo, remapping, a Settings column). Update AGENTS.md in the same step as each change, not at the end.
 - **Visual drift in the renderer port.** The pixel comparison (E10) must reach zero before G1.
 - **Best times before and after the fixes** may not be comparable if a route relied on a bug. Check every recorded solution's route in F4; the `rules_version` parameter separates analytics.
 - **Scope.** This is the largest stage. Ship C and D as soon as each is done rather than holding them for v2.
