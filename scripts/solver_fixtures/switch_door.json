@@ -1,0 +1,79 @@
+{
+    "version": 2,
+    "size": {
+        "width": 7,
+        "height": 5
+    },
+    "subject": {
+        "x": 1,
+        "y": 2,
+        "direction": "RIGHT"
+    },
+    "exit": {
+        "x": 1,
+        "y": 0,
+        "blocked": false
+    },
+    "walls": [
+        {
+            "xFrom": 0,
+            "xTo": 6,
+            "yFrom": 4,
+            "yTo": 4,
+            "takesPortals": false
+        },
+        {
+            "x": 0,
+            "y": 3,
+            "takesPortals": false
+        },
+        {
+            "x": 0,
+            "y": 2
+        },
+        {
+            "xFrom": 0,
+            "xTo": 0,
+            "yFrom": 0,
+            "yTo": 1,
+            "takesPortals": false
+        },
+        {
+            "x": 6,
+            "y": 3,
+            "takesPortals": false
+        },
+        {
+            "x": 6,
+            "y": 2
+        },
+        {
+            "xFrom": 2,
+            "xTo": 6,
+            "yFrom": 0,
+            "yTo": 1,
+            "takesPortals": false
+        }
+    ],
+    "lasers": [
+        {
+            "x": 3,
+            "y": 2,
+            "direction": "V"
+        }
+    ],
+    "doors": [
+        {
+            "x": 1,
+            "y": 1,
+            "id": 1
+        }
+    ],
+    "switches": [
+        {
+            "x": 5,
+            "y": 2,
+            "links": [1]
+        }
+    ]
+}

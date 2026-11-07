@@ -217,6 +217,49 @@ export default withVueTs(
     },
   },
   {
+    // The solver (stage 02) runs under Node now and in a Web Worker later, so
+    // it may use the rules and the files they share, but neither the browser
+    // nor Node: the rules' bans, plus the scripts, Node's modules and process
+    files: ['src/solver/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            '@/game/sound',
+            '@/game/music',
+            '@/game/audio_sources',
+            '@/game/renderer',
+            '@/game/input',
+            '@/game/level',
+            '@/game/tile_painter',
+            '@/game/element_drawings',
+          ],
+          patterns: [
+            '@/chambers/*',
+            '@/components/*',
+            '@/services/*',
+            '@scripts/*',
+            'node:*',
+            'vue',
+            'vue-router',
+          ],
+        },
+      ],
+      'no-restricted-globals': [
+        'error',
+        'localStorage',
+        'sessionStorage',
+        'window',
+        'document',
+        'Audio',
+        'requestAnimationFrame',
+        'performance',
+        'process',
+      ],
+    },
+  },
+  {
     // Engine scripts run under Node (tsconfig.scripts.json)
     files: ['scripts/**/*.ts'],
     languageOptions: {

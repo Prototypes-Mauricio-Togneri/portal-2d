@@ -1,0 +1,73 @@
+{
+    "version": 2,
+    "size": {
+        "width": 7,
+        "height": 6
+    },
+    "subject": {
+        "x": 1,
+        "y": 1,
+        "direction": "UP"
+    },
+    "exit": {
+        "x": 6,
+        "y": 1,
+        "blocked": false
+    },
+    "walls": [
+        {
+            "xFrom": 0,
+            "xTo": 6,
+            "yFrom": 0,
+            "yTo": 0,
+            "takesPortals": false
+        },
+        {
+            "xFrom": 0,
+            "xTo": 6,
+            "yFrom": 5,
+            "yTo": 5,
+            "takesPortals": false
+        },
+        {
+            "xFrom": 0,
+            "xTo": 0,
+            "yFrom": 1,
+            "yTo": 4,
+            "takesPortals": false
+        },
+        {
+            "xFrom": 6,
+            "xTo": 6,
+            "yFrom": 2,
+            "yTo": 4,
+            "takesPortals": false
+        },
+        {
+            "xFrom": 2,
+            "xTo": 2,
+            "yFrom": 2,
+            "yTo": 3,
+            "takesPortals": false
+        },
+        {
+            "xFrom": 4,
+            "xTo": 4,
+            "yFrom": 2,
+            "yTo": 3,
+            "takesPortals": false
+        }
+    ],
+    "arrows": [
+        {
+            "x": 3,
+            "y": 3,
+            "direction": "DOWN"
+        },
+        {
+            "x": 3,
+            "y": 1,
+            "direction": "LEFT"
+        }
+    ]
+}

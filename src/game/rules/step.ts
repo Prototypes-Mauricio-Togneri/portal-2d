@@ -34,7 +34,7 @@ type KindHook<Hook> = {
 /**
  * A column and row step.
  */
-type Delta = {
+export type Delta = {
   readonly dx: number // Column step
   readonly dy: number // Row step
 }
@@ -48,7 +48,7 @@ type PlacedElement = Extract<RegisteredElement, {readonly kind: PlacedKind}>
 export const PASS_CAP = 32
 
 /** The step one tile each way takes */
-const DELTAS: Readonly<Record<Direction, Delta>> = {
+export const DELTAS: Readonly<Record<Direction, Delta>> = {
   [Direction.UP]: {
     dx: 0,
     dy: 1,

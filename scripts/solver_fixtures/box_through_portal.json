@@ -1,0 +1,81 @@
+{
+    "version": 2,
+    "size": {
+        "width": 7,
+        "height": 5
+    },
+    "subject": {
+        "x": 1,
+        "y": 1,
+        "direction": "RIGHT"
+    },
+    "exit": {
+        "x": 5,
+        "y": 3,
+        "id": 1
+    },
+    "walls": [
+        {
+            "xFrom": 0,
+            "xTo": 6,
+            "yFrom": 0,
+            "yTo": 0,
+            "takesPortals": false
+        },
+        {
+            "xFrom": 0,
+            "xTo": 6,
+            "yFrom": 4,
+            "yTo": 4,
+            "takesPortals": false
+        },
+        {
+            "x": 0,
+            "y": 1
+        },
+        {
+            "xFrom": 0,
+            "xTo": 0,
+            "yFrom": 2,
+            "yTo": 3,
+            "takesPortals": false
+        },
+        {
+            "x": 6,
+            "y": 1
+        },
+        {
+            "xFrom": 6,
+            "xTo": 6,
+            "yFrom": 2,
+            "yTo": 3,
+            "takesPortals": false
+        },
+        {
+            "xFrom": 3,
+            "xTo": 4,
+            "yFrom": 2,
+            "yTo": 3,
+            "takesPortals": false
+        }
+    ],
+    "ditches": [
+        {
+            "x": 3,
+            "y": 1
+        }
+    ],
+    "boxes": [
+        {
+            "x": 2,
+            "y": 2
+        }
+    ],
+    "buttons": [
+        {
+            "x": 4,
+            "y": 1,
+            "links": [1]
+        }
+    ]
+}

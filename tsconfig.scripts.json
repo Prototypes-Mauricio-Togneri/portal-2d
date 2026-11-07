@@ -28,6 +28,7 @@
   "include": [
     "scripts/**/*.ts",
     "src/game/rules/**/*.ts",
+    "src/solver/**/*.ts",
     "src/game/chamber_data.ts",
     "src/game/direction.ts",
     "src/game/frame_input.ts",
@@ -36,6 +37,7 @@
     "src/game/replay_data.ts",
     "src/game/text_hash.ts",
     "src/chambers/*.json",
-    "scripts/fixtures/*.json"
+    "scripts/fixtures/*.json",
+    "scripts/solver_fixtures/*.json"
   ]
 }

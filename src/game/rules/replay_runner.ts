@@ -1,10 +1,10 @@
-import {GameEvent} from '@/game/game_event'
 import {GameKey} from '@/game/game_key'
 import type {ReplayStep} from '@/game/replay_data'
 import type {CompiledChamber} from '@/game/rules/compiled_chamber'
 import type {RulesState} from '@/game/rules/rules_state'
 import {StateHistory} from '@/game/rules/state_history'
 import {startChamber, step} from '@/game/rules/step'
+import {countPortalsOpened, countsAsMove} from '@/game/rules/step_counts'
 
 /**
  * What replaying a recording on the rules gave.
@@ -14,16 +14,8 @@ export type RulesReplayResult = {
   readonly moves: number // Tiles stepped onto, counted as the chamber screen counts them
   readonly portals: number // Portals opened on a wall, misses not counted
   readonly finalState: RulesState // The state after the last press
+  readonly states: readonly RulesState[] // The settled start, then the state after each press
   readonly stepHashes: readonly string[] // Hash of the state after each press, to compare with the live run
-}
-
-/**
- * Counts the portals opened among a step's events.
- * @param events - What happened
- * @returns How many portals were opened on a wall
- */
-function countPortals(events: readonly GameEvent[]): number {
-  return events.filter((event) => (event === GameEvent.BLUE_PORTAL_OPENED) || (event === GameEvent.ORANGE_PORTAL_OPENED)).length
 }
 
 /**
@@ -39,14 +31,16 @@ function countPortals(events: readonly GameEvent[]): number {
 export function runRulesReplay(chamber: CompiledChamber, steps: readonly ReplayStep[]): RulesReplayResult {
   const start = startChamber(chamber)
   const history = new StateHistory()
+  const states: RulesState[] = [start.state]
   const stepHashes: string[] = []
   let state: RulesState = start.state
   let moves = 0
-  let portals = countPortals(start.events)
+  let portals = countPortalsOpened(start.events)
 
   for (const replayStep of steps) {
     // The live game takes no press once the chamber is completed
     if (state.completed) {
+      states.push(state)
       stepHashes.push(state.hash)
       continue
     }
@@ -60,15 +54,15 @@ export function runRulesReplay(chamber: CompiledChamber, steps: readonly ReplayS
 
       history.record(state, result.state)
 
-      // Only moves change the subject's tile, so a new tile is one step
-      if ((result.state.subjectX !== state.subjectX) || (result.state.subjectY !== state.subjectY)) {
+      if (countsAsMove(state, result.state)) {
         moves++
       }
 
-      portals += countPortals(result.events)
+      portals += countPortalsOpened(result.events)
       state = result.state
     }
 
+    states.push(state)
     stepHashes.push(state.hash)
   }
 
@@ -77,6 +71,7 @@ export function runRulesReplay(chamber: CompiledChamber, steps: readonly ReplayS
     moves: moves,
     portals: portals,
     finalState: state,
+    states: states,
     stepHashes: stepHashes,
   }
 }
