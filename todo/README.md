@@ -99,6 +99,7 @@ These replace the rougher claims in the original roadmap. Re-check them when rev
 | 5 | 2026-11-06 | `TODO.md` deleted: its two ideas are planned in stage 04 (tutorial chambers) and stage 05 (uploaded chambers with name, author, date, rating and thumbnail) |
 | 6 | 2026-11-06 | The engineering backbone is woven into every stage as local tools, run on demand. No cloud CI |
 | 7 | 2026-11-06 | Every stage is detailed now and revisited right before it starts |
+| 8 | 2026-11-06 | Moves count every step taken, undone ones included, and redo counts nothing (open decision 1's counting half, settled in stage 01); whether ranked runs allow undo waits for stage 04 |
 
 ## Open decisions
 
@@ -106,7 +107,7 @@ Each one belongs to the stage that must settle it, and appears there with option
 
 | # | Question | Recommendation | Settled in |
 |---|---|---|---|
-| 1 | How is "moves" counted once undo exists, and do ranked runs allow undo? | Count steps taken, undone ones included; undo allowed but shown on the result | 01 (counting), 04 (medals) |
+| 1 | Do ranked runs allow undo? (How moves are counted was settled in 01, decision 8) | Undo allowed but shown on the result | 04 (medals) |
 | 2 | Is the solver's difficulty score worth building? | No: use measured clear rates; keep solver metrics as a designer aid | 02 |
 | 3 | Echo (a ghost replaying your previous attempt): build it? | Design it last or cut it: the ghost's whole input history becomes part of the state | 03 |
 | 4 | GPU renderer or the current 2D canvas? | Stay on the 2D canvas; move only if profiling shows a real need | 04 |
