@@ -7,6 +7,7 @@ import type {RulesState} from '@/game/rules/rules_state'
 import {DIRECTIONS} from '@/game/rules/state_layout'
 import {DELTAS, startChamber, step} from '@/game/rules/step'
 import {countPortalsOpened} from '@/game/rules/step_counts'
+import {ActionFilter} from '@/solver/action_filter'
 import {Objective, searchBaseline} from '@/solver/baseline_search'
 import {ChamberIndex, NO_NUMBER} from '@/solver/chamber_index'
 import {MOVE_ACTIONS, TURN_ACTIONS} from '@/solver/macro_action'
@@ -31,8 +32,10 @@ import {SOLVER_FIXTURES, type SolverFixture, type SolverRoute} from '@scripts/so
 // turning gives the state the solver builds for that facing; each shot from
 // each tile a walk reaches, each way and colour, gives through the rules'
 // step the state the solver builds from the shot it shares with its line;
-// and a tile a walk reaches shares the start's region exactly when a walk
-// from it gets back to the start. The searches:
+// each interact and move the solver skips changes nothing through the rules'
+// step but where the subject faces; and a tile a walk reaches shares the
+// start's region exactly when a walk from it gets back to the start. The
+// searches:
 // on every solver fixture (scripts/solver_fixtures/), the reference search
 // and the macro search find both hand-counted pars, the macro search also
 // finds a route in its solvable mode, every route replays to the counts
@@ -276,6 +279,69 @@ function checkShots(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
 }
 
 /**
+ * Checks the interacts and moves the solver skips (ActionFilter) against
+ * the rules' step from each of a list of states: from every tile a walk
+ * reaches, each interact and each move it rules out gives through the rules'
+ * step the state the subject stood in, but for where it faces.
+ * @param codec - The chamber's state key
+ * @param graph - The chamber's walk graph
+ * @param states - The states to walk from
+ * @returns How many skipped interacts and moves it checked
+ * @throws Error naming the first that changes something
+ */
+function checkSkips(codec: StateKeyCodec, graph: WalkGraph, states: readonly RulesState[]): number {
+  const chamber = codec.index.chamber
+  const filter = new ActionFilter(codec.index)
+  const words = new Uint32Array(2)
+  let checked = 0
+
+  for (const state of states.filter((candidate) => !candidate.completed)) {
+    encodeCanonical(codec, graph, state, words)
+
+    const low = words[0] ?? 0
+    const high = words[1] ?? 0
+    const flags = codec.flagsOf(low, high)
+    const reachedCount = graph.walk(graph.edgesFor(state, flags), codec.subjectTileOf(low))
+
+    filter.begin(state, flags)
+
+    for (let position = 0; position < reachedCount; position++) {
+      const tile = graph.reachedTile(position)
+      const standingLow = codec.placeSubject(low, tile, graph.facingOf(tile))
+
+      words[0] = standingLow
+      words[1] = high
+
+      // checkWalks proves this is the state walking there gives
+      const standing = codec.decode(words, 0)
+
+      if (!filter.mayInteract(tile)) {
+        checked++
+
+        if (step(chamber, standing, Action.INTERACT).state.key !== standing.key) {
+          throw new Error(`interact on tile ${tile} changes the state, but the solver skips it (state ${state.hash})`)
+        }
+      }
+
+      DIRECTIONS.forEach((direction, directionIndex) => {
+        if (filter.mayMove(tile, directionIndex)) {
+          return
+        }
+
+        checked++
+        encodeCanonical(codec, graph, step(chamber, standing, MOVE_ACTIONS[directionIndex] ?? Action.UP).state, words)
+
+        if ((words[0] !== standingLow) || (words[1] !== high)) {
+          throw new Error(`moving ${direction} from tile ${tile} changes the state, but the solver skips it (state ${state.hash})`)
+        }
+      })
+    }
+  }
+
+  return checked
+}
+
+/**
  * Checks the regions against walks from each of a list of states: a tile
  * the walk from the subject's tile reaches has the same region exactly when
  * a walk from it reaches the subject's tile back, and no tile of that region
@@ -350,9 +416,10 @@ function checkChamberKey(file: string, data: unknown): string {
   const walked = walkStates(chamber, (state) => checkRoundTrip(codec, state, words))
   const walks = checkWalks(codec, graph, solutionStates)
   const shots = checkShots(codec, graph, solutionStates)
+  const skips = checkSkips(codec, graph, solutionStates)
   const regions = checkRegions(codec, graph, solutionStates)
 
-  return `key ${codec.widths.total} bits, ${solutionStates.length + walked} states survive it; ${walks} moves and turns agree with the walk graph; ${shots.checked} shots agree with the shot lines (${shots.reused} reused); ${regions} tiles agree with the regions`
+  return `key ${codec.widths.total} bits, ${solutionStates.length + walked} states survive it; ${walks} moves and turns agree with the walk graph; ${shots.checked} shots agree with the shot lines (${shots.reused} reused); ${skips} skipped interacts and moves change nothing; ${regions} tiles agree with the regions`
 }
 
 /**
@@ -480,6 +547,7 @@ function checkSolverFixture(fixture: SolverFixture): string {
   const graph = new WalkGraph(codec.index, startChamber(chamber).state)
   const walks = checkWalks(codec, graph, states)
   const shots = checkShots(codec, graph, states)
+  const skips = checkSkips(codec, graph, states)
   const regions = checkRegions(codec, graph, states)
   const macro = [
     checkMacro(chamber, SearchMode.SOLVABLE, null),
@@ -487,7 +555,7 @@ function checkSolverFixture(fixture: SolverFixture): string {
     checkMacro(chamber, SearchMode.PORTALS, fixture.fewestPortals),
   ]
 
-  return `reference ${fewestMoves.summary}; ${fewestPortals.summary}; key ${codec.widths.total} bits; ${walks} moves and turns agree with the walk graph; ${shots.checked} shots agree with the shot lines (${shots.reused} reused); ${regions} tiles agree with the regions; macro ${macro.join('; ')}`
+  return `reference ${fewestMoves.summary}; ${fewestPortals.summary}; key ${codec.widths.total} bits; ${walks} moves and turns agree with the walk graph; ${shots.checked} shots agree with the shot lines (${shots.reused} reused); ${skips} skipped interacts and moves change nothing; ${regions} tiles agree with the regions; macro ${macro.join('; ')}`
 }
 
 /**

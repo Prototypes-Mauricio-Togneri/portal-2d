@@ -215,6 +215,26 @@ export function canEnter(draft: StateReader, x: number, y: number, direction: Di
 }
 
 /**
+ * The portal a move into a wall enters: with both portals open, the one on
+ * the wall's side facing the subject. Exported for the solver, like
+ * allowsWay, so it skips moves into walls that can't change anything.
+ * @param draft - The state, a step's draft or a settled state
+ * @param wallX - Column of the wall
+ * @param wallY - Row of the wall
+ * @param direction - The way the subject walks
+ * @returns The portal entered, or null when the move enters none
+ */
+export function portalEntrance(draft: StateReader, wallX: number, wallY: number, direction: Direction): PortalColor | null {
+  if ((!draft.isPortalOpen(PortalColor.BLUE)) || (!draft.isPortalOpen(PortalColor.ORANGE))) {
+    return null
+  }
+
+  const facingSide = OPPOSITES[direction]
+
+  return PORTAL_COLORS.find((color) => (draft.portalX(color) === wallX) && (draft.portalY(color) === wallY) && (draft.portalSide(color) === facingSide)) ?? null
+}
+
+/**
  * Walks into a wall: if both portals are open and this wall holds one of
  * them on the side facing the subject, the subject comes out in front of the
  * other, facing away from its wall, when it can enter that tile; otherwise
@@ -225,14 +245,9 @@ export function canEnter(draft: StateReader, x: number, y: number, direction: Di
  * @param direction - The way the subject walks
  */
 function crossPortal(draft: StateDraft, wallX: number, wallY: number, direction: Direction): void {
-  if ((!draft.isPortalOpen(PortalColor.BLUE)) || (!draft.isPortalOpen(PortalColor.ORANGE))) {
-    return
-  }
+  const entrance = portalEntrance(draft, wallX, wallY, direction)
 
-  const facingSide = OPPOSITES[direction]
-  const entrance = PORTAL_COLORS.find((color) => (draft.portalX(color) === wallX) && (draft.portalY(color) === wallY) && (draft.portalSide(color) === facingSide))
-
-  if (entrance === undefined) {
+  if (entrance === null) {
     return
   }
 
@@ -388,14 +403,37 @@ function shoot(draft: StateDraft, color: PortalColor): void {
 }
 
 /**
- * The interact key: an element on the subject's tile that takes it (a
- * switch) does; otherwise a carried box is put down, or else the first box
- * on the tile is picked up.
+ * Whether the interact key can do anything on a tile: an element there takes
+ * it (a switch), or a box is carried, or a box lies there. Exported for the
+ * solver, like allowsWay, so it skips interacts that can't change anything.
+ * @param draft - The state, a step's draft or a settled state
+ * @param x - Column of the subject's tile
+ * @param y - Row of the subject's tile
+ * @returns True when it can
+ */
+export function canInteract(draft: StateReader, x: number, y: number): boolean {
+  for (const interactHook of INTERACT_HOOKS) {
+    if (draft.chamber.elementAt(interactHook.kind, x, y) !== NO_ELEMENT) {
+      return true
+    }
+  }
+
+  return draft.isCarrying || (draft.firstBoxAt(x, y) !== NO_BOX)
+}
+
+/**
+ * The interact key, when it can do anything (canInteract): an element on
+ * the subject's tile that takes it (a switch) does; otherwise a carried box
+ * is put down, or else the first box on the tile is picked up.
  * @param draft - The step's state
  */
 function interact(draft: StateDraft): void {
   const x = draft.subjectX
   const y = draft.subjectY
+
+  if (!canInteract(draft, x, y)) {
+    return
+  }
 
   for (const interactHook of INTERACT_HOOKS) {
     for (let index = draft.chamber.elementAt(interactHook.kind, x, y); index !== NO_ELEMENT; index = draft.chamber.nextOnTile(interactHook.kind, index)) {

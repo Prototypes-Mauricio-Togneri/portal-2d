@@ -5,6 +5,7 @@ import {DIRECTIONS} from '@/game/rules/state_layout'
 import {startChamber, step} from '@/game/rules/step'
 import {countPortalsOpened, countsAsMove} from '@/game/rules/step_counts'
 import {costOf, Objective} from '@/solver/baseline_search'
+import {ActionFilter} from '@/solver/action_filter'
 import {ChamberIndex} from '@/solver/chamber_index'
 import {CostHeap} from '@/solver/cost_heap'
 import {MAX_MACRO_TILES, MOVE_ACTIONS, packMacro} from '@/solver/macro_action'
@@ -48,8 +49,10 @@ export type MacroSearchResult = {
   readonly steps: number // Calls to the rules' step
   readonly shots: number // Shots taken through the rules' step
   readonly shotsReused: number // Shots reused from another tile on their line instead
-  readonly interacts: number // Interacts tried
-  readonly moveTries: number // Moves tried that a walk doesn't cover: onto or off an event tile, into a wall or a portal
+  readonly interacts: number // Interacts taken through the rules' step
+  readonly moveTries: number // Moves taken through the rules' step that a walk doesn't cover: onto or off an event tile, into a portal
+  readonly interactsSkipped: number // Interacts skipped, since they couldn't change anything
+  readonly movesSkipped: number // Moves a walk doesn't cover skipped, since they couldn't change anything
 }
 
 /** Expanded states between two looks at the clock */
@@ -66,7 +69,8 @@ export const PROGRESS_INTERVAL = 4096
  * each action whose effect a walk can't have, through the rules' step:
  * interact, both shots each way the subject may face, and each move a walk
  * doesn't cover (onto or off an event tile, into a wall, which crosses a
- * portal there). Each shot line takes its shots through the rules' step once
+ * portal there), but no interact or move that can't change anything
+ * (ActionFilter). Each shot line takes its shots through the rules' step once
  * per state, and its other tiles reuse them (ShotLines). A macro action
  * costs the walk's moves plus what the step counts. States are kept as
  * 64-bit keys in a StateSet, with their costs and macro actions in typed
@@ -83,6 +87,7 @@ export class MacroSearch {
   private readonly codec: StateKeyCodec // The chamber's state key
   private readonly graph: WalkGraph // Where the subject can walk
   private readonly lines: ShotLines // The shots, taken once per line
+  private readonly filter: ActionFilter // The interacts and moves that can't change anything, skipped
   private readonly mode: SearchMode // What the search looks for
   private readonly folded: boolean // Whether states keep the subject on its region's tile, in the solvable mode
   private readonly set: StateSet // Every state found, as keys, with its parent
@@ -95,8 +100,8 @@ export class MacroSearch {
   private gaveUp: GiveUpReason | null = null // Why the search stopped early, or null
   private expanded = 0 // States whose macro actions were tried
   private steps = 0 // Calls to the rules' step
-  private interacts = 0 // Interacts tried
-  private moveTries = 0 // Moves tried that a walk doesn't cover
+  private interacts = 0 // Interacts taken through the rules' step
+  private moveTries = 0 // Moves taken through the rules' step that a walk doesn't cover
 
   /**
    * @param chamber - The chamber
@@ -115,6 +120,7 @@ export class MacroSearch {
     this.codec = new StateKeyCodec(index)
     this.graph = new WalkGraph(index, startChamber(chamber).state)
     this.lines = new ShotLines(this.codec, this.graph)
+    this.filter = new ActionFilter(index)
     this.mode = mode
     this.folded = mode === SearchMode.SOLVABLE
     this.set = new StateSet(maxStates)
@@ -269,22 +275,36 @@ export class MacroSearch {
 
     this.expanded++
     this.lines.begin(state, flags)
+    this.filter.begin(state, flags)
 
     for (let position = 0; position < reachedCount; position++) {
       const tile = this.graph.reachedTile(position)
       const distance = this.graph.distanceTo(tile)
-      const walkedLow = this.codec.placeSubject(low, tile, this.graph.facingOf(tile))
-      const standing = (tile === from) ? state : this.decodeKey(walkedLow, high)
       const standingLow = this.placeStored(low, tile, regions)
-
-      this.interacts++
-      this.tryAction(entry, standing, standingLow, high, Action.INTERACT, tile, distance)
+      const interacting = this.filter.mayInteract(tile)
+      let moving = 0
 
       for (let directionIndex = 0; directionIndex < DIRECTIONS.length; directionIndex++) {
         // A walk covers a walk edge, except off an event tile, where leaving can change the state
-        if (this.graph.isEventTile(tile) || (edges[(tile * DIRECTIONS.length) + directionIndex] === NO_WALK)) {
-          this.moveTries++
-          this.tryAction(entry, standing, standingLow, high, MOVE_ACTIONS[directionIndex] ?? Action.UP, tile, distance)
+        if ((this.graph.isEventTile(tile) || (edges[(tile * DIRECTIONS.length) + directionIndex] === NO_WALK)) && this.filter.mayMove(tile, directionIndex)) {
+          moving |= 1 << directionIndex
+        }
+      }
+
+      // The state standing on the tile is unpacked only when an action there needs the rules' step
+      if (interacting || (moving !== 0)) {
+        const standing = (tile === from) ? state : this.decodeKey(this.codec.placeSubject(low, tile, this.graph.facingOf(tile)), high)
+
+        if (interacting) {
+          this.interacts++
+          this.tryAction(entry, standing, standingLow, high, Action.INTERACT, tile, distance)
+        }
+
+        for (let directionIndex = 0; directionIndex < DIRECTIONS.length; directionIndex++) {
+          if (((moving >> directionIndex) & 1) === 1) {
+            this.moveTries++
+            this.tryAction(entry, standing, standingLow, high, MOVE_ACTIONS[directionIndex] ?? Action.UP, tile, distance)
+          }
         }
       }
 
@@ -465,6 +485,8 @@ export class MacroSearch {
       shotsReused: this.lines.reused,
       interacts: this.interacts,
       moveTries: this.moveTries,
+      interactsSkipped: this.filter.skippedInteracts,
+      movesSkipped: this.filter.skippedMoves,
     }
   }
 }

@@ -113,7 +113,7 @@ function describeMacro(chamber: CompiledChamber, mode: SearchMode, maxStates: nu
   peakRss = Math.max(peakRss, process.memoryUsage().rss)
 
   const seconds = ((performance.now() - startTime) / 1000).toFixed(1)
-  const effort = `${result.states} states, ${result.expanded} expanded, ${result.steps} steps (${result.shots} shots, ${result.interacts} interacts, ${result.moveTries} other moves), ${result.shotsReused} shots reused, ${seconds} s, peak rss ${(peakRss / MEBIBYTE).toFixed(0)} MiB`
+  const effort = `${result.states} states, ${result.expanded} expanded, ${result.steps} steps (${result.shots} shots, ${result.interacts} interacts, ${result.moveTries} other moves), ${result.shotsReused} shots reused, ${result.interactsSkipped} interacts and ${result.movesSkipped} other moves skipped, ${seconds} s, peak rss ${(peakRss / MEBIBYTE).toFixed(0)} MiB`
 
   if (!result.solved) {
     return `  macro ${mode}: ${(result.gaveUp === null) ? 'unsolvable' : `gave up (${result.gaveUp})`} (${effort})`
