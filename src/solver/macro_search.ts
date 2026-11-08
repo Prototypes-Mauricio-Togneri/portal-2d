@@ -53,6 +53,7 @@ export type MacroSearchResult = {
   readonly moveTries: number // Moves taken through the rules' step that a walk doesn't cover: onto or off an event tile, into a portal
   readonly interactsSkipped: number // Interacts skipped, since they couldn't change anything
   readonly movesSkipped: number // Moves a walk doesn't cover skipped, since they couldn't change anything
+  readonly dropsSkipped: number // Box drops skipped in the solvable mode, where they can't matter (A9)
 }
 
 /** Expanded states between two looks at the clock */
@@ -76,7 +77,8 @@ export const PROGRESS_INTERVAL = 4096
  * 64-bit keys in a StateSet, with their costs and macro actions in typed
  * arrays. In the solvable mode it stores the subject on its region's tile
  * (foldSubject), since states that differ only in where the subject stands
- * inside a region reach the same states, searches breadth first and stops
+ * inside a region reach the same states, puts a carried box down only
+ * where that can matter (ActionFilter), searches breadth first and stops
  * at the first completed state; the route's counts are then those of the
  * actions it expands to. In the moves and portals modes it keeps the
  * subject's tile and takes the cheapest state first (Dijkstra's algorithm),
@@ -87,7 +89,7 @@ export class MacroSearch {
   private readonly codec: StateKeyCodec // The chamber's state key
   private readonly graph: WalkGraph // Where the subject can walk
   private readonly lines: ShotLines // The shots, taken once per line
-  private readonly filter: ActionFilter // The interacts and moves that can't change anything, skipped
+  private readonly filter: ActionFilter // The interacts and moves that can't change anything, skipped, and in the solvable mode the box drops that can't matter
   private readonly mode: SearchMode // What the search looks for
   private readonly folded: boolean // Whether states keep the subject on its region's tile, in the solvable mode
   private readonly set: StateSet // Every state found, as keys, with its parent
@@ -120,9 +122,9 @@ export class MacroSearch {
     this.codec = new StateKeyCodec(index)
     this.graph = new WalkGraph(index, startChamber(chamber).state)
     this.lines = new ShotLines(this.codec, this.graph)
-    this.filter = new ActionFilter(index)
     this.mode = mode
     this.folded = mode === SearchMode.SOLVABLE
+    this.filter = new ActionFilter(index, this.folded)
     this.set = new StateSet(maxStates)
     this.moves = new Uint32Array(maxStates)
     this.portals = new Uint32Array(maxStates)
@@ -487,6 +489,7 @@ export class MacroSearch {
       moveTries: this.moveTries,
       interactsSkipped: this.filter.skippedInteracts,
       movesSkipped: this.filter.skippedMoves,
+      dropsSkipped: this.filter.skippedDrops,
     }
   }
 }

@@ -1,0 +1,105 @@
+{
+    "version": 2,
+    "size": {
+        "width": 9,
+        "height": 5
+    },
+    "subject": {
+        "x": 1,
+        "y": 2,
+        "direction": "RIGHT"
+    },
+    "exit": {
+        "x": 5,
+        "y": 0,
+        "id": 2
+    },
+    "walls": [
+        {
+            "xFrom": 0,
+            "xTo": 8,
+            "yFrom": 4,
+            "yTo": 4,
+            "takesPortals": false
+        },
+        {
+            "xFrom": 0,
+            "xTo": 4,
+            "yFrom": 0,
+            "yTo": 0,
+            "takesPortals": false
+        },
+        {
+            "xFrom": 6,
+            "xTo": 8,
+            "yFrom": 0,
+            "yTo": 0,
+            "takesPortals": false
+        },
+        {
+            "xFrom": 0,
+            "xTo": 0,
+            "yFrom": 1,
+            "yTo": 3,
+            "takesPortals": false
+        },
+        {
+            "xFrom": 8,
+            "xTo": 8,
+            "yFrom": 1,
+            "yTo": 3,
+            "takesPortals": false
+        },
+        {
+            "x": 3,
+            "y": 3,
+            "takesPortals": false
+        },
+        {
+            "x": 3,
+            "y": 1,
+            "takesPortals": false
+        },
+        {
+            "xFrom": 6,
+            "xTo": 6,
+            "yFrom": 1,
+            "yTo": 2,
+            "takesPortals": false
+        }
+    ],
+    "arrows": [
+        {
+            "x": 3,
+            "y": 2,
+            "direction": "RIGHT"
+        }
+    ],
+    "doors": [
+        {
+            "x": 7,
+            "y": 2,
+            "id": 1
+        }
+    ],
+    "switches": [
+        {
+            "x": 4,
+            "y": 3,
+            "links": [1]
+        }
+    ],
+    "boxes": [
+        {
+            "x": 2,
+            "y": 2
+        }
+    ],
+    "buttons": [
+        {
+            "x": 7,
+            "y": 1,
+            "links": [2]
+        }
+    ]
+}

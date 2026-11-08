@@ -32,8 +32,9 @@ import {SOLVER_FIXTURES, type SolverFixture, type SolverRoute} from '@scripts/so
 // turning gives the state the solver builds for that facing; each shot from
 // each tile a walk reaches, each way and colour, gives through the rules'
 // step the state the solver builds from the shot it shares with its line;
-// each interact and move the solver skips changes nothing through the rules'
-// step but where the subject faces; and a tile a walk reaches shares the
+// each interact and move the solver skips as changing nothing (not the box
+// drops the any-route search leaves out, a guess this doesn't check) changes
+// nothing through the rules' step but where the subject faces; and a tile a walk reaches shares the
 // start's region exactly when a walk from it gets back to the start. The
 // searches:
 // on every solver fixture (scripts/solver_fixtures/), the reference search
@@ -291,7 +292,8 @@ function checkShots(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
  */
 function checkSkips(codec: StateKeyCodec, graph: WalkGraph, states: readonly RulesState[]): number {
   const chamber = codec.index.chamber
-  const filter = new ActionFilter(codec.index)
+  // Without limited drops, every action it skips must change nothing
+  const filter = new ActionFilter(codec.index, false)
   const words = new Uint32Array(2)
   let checked = 0
 

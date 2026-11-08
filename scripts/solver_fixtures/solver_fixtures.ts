@@ -5,6 +5,7 @@ import arrowTrap from '@scripts/solver_fixtures/arrow_trap.json'
 import boxOnButton from '@scripts/solver_fixtures/box_on_button.json'
 import boxThroughPortal from '@scripts/solver_fixtures/box_through_portal.json'
 import fizzlerBox from '@scripts/solver_fixtures/fizzler_box.json'
+import freeHands from '@scripts/solver_fixtures/free_hands.json'
 import portalWalk from '@scripts/solver_fixtures/portal_walk.json'
 import switchDoor from '@scripts/solver_fixtures/switch_door.json'
 
@@ -362,6 +363,87 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
         moves: 11,
         portals: 0,
         finalHash: 'f5b29422',
+      },
+    },
+  },
+  // No wall takes portals. The exit at (5,0) is open only while the button
+  // at (7,1) is held, and isn't next to it, so the box at (2,2) must be left
+  // on the button. The one-way arrow at (3,2) is the only way right and can't
+  // be crossed back, so the subject carries the box across: 3 moves to
+  // (4,2), the pick-up included. The switch at (4,3), which opens the door at
+  // (7,2) to the button, refuses while the subject carries the box, so the
+  // box is put down off the switch and picked up again: at least 1 move onto
+  // the switch and 1 back, with the box put down on a tile of the 6-move way
+  // from (4,2) to the button, such as (4,2) itself. Then 7 moves back up and
+  // round to the exit: 3 + 2 + 6 + 7 = 18 moves, the same route for both pars
+  {
+    name: 'free_hands',
+    covers: 'Putting a box down to free the hands: the switch that opens the door to the button refuses while the subject carries the box, which a one-way arrow made it bring along.',
+    chamber: freeHands,
+    fewestMoves: {
+      actions: [
+        'right',
+        'interact',
+        'right',
+        'right',
+        'interact',
+        'up',
+        'interact',
+        'down',
+        'interact',
+        'up',
+        'right',
+        'right',
+        'right',
+        'down',
+        'down',
+        'interact',
+        'up',
+        'up',
+        'left',
+        'left',
+        'down',
+        'down',
+        'down',
+      ],
+      expected: {
+        completed: true,
+        moves: 18,
+        portals: 0,
+        finalHash: '4c7fd45d',
+      },
+    },
+    fewestPortals: {
+      actions: [
+        'right',
+        'interact',
+        'right',
+        'right',
+        'interact',
+        'up',
+        'interact',
+        'down',
+        'interact',
+        'up',
+        'right',
+        'right',
+        'right',
+        'down',
+        'down',
+        'interact',
+        'up',
+        'up',
+        'left',
+        'left',
+        'down',
+        'down',
+        'down',
+      ],
+      expected: {
+        completed: true,
+        moves: 18,
+        portals: 0,
+        finalHash: '4c7fd45d',
       },
     },
   },
