@@ -6,7 +6,7 @@
 
 - Stages are done **in order**. Each stage depends only on stages before it, so by the time a stage starts, everything it needs is already built.
 - Every stage is written in as much detail as possible now, then **revisited right before it starts** (re-read against the code as it is then, update, set the status to Ready).
-- Status values: **Draft** (written ahead, expect changes), **Ready** (revisited, safe to start), **In progress**, **Done**.
+- Status values: **Draft** (written ahead, expect changes), **Ready** (revisited, safe to start), **In progress**, **Done**, **Stopped** (ended early by one of its go/no-go points).
 - Steps are checkboxes. Tick one when it is implemented **and** verified. Each step is small enough to finish and check in one sitting.
 - Each stage ends with a **Done when** checklist (the stage is finished only when every box is ticked) and **Go/no-go points** (results that change later plans).
 - The engineering backbone (originally stage 7) is not a stage: its local checks are steps inside each stage, growing as the game grows. Everything runs locally on demand; there is no cloud CI.
@@ -17,7 +17,7 @@
 |---|---|---|---|
 | 1 | `00_fixes.md` (file removed) | Done | Records keyed by permanent id (one-time migration, chamber number taken from list order), high-DPI blur fix, missing analytics events, first local check command |
 | 2 | `01_engine_v2.md` (file removed) | Done | Sounds out of the rules, engine runnable without a browser, replays on today's engine, recorded solutions and a local replay check, undo/redo, input rewrite (remappable keys), v2 rules and chamber format, the three inherited bugs fixed, v2 checked against the old rules, old engine deleted |
-| 3 | `02_solver.md` | Draft | Solver prototype on the current chambers (go/no-go), solvability and par in the local checks, shortcut finder, dead-end warning, hints; generated chambers only if the prototype passes |
+| 3 | `02_solver.md` | Stopped | Solver prototype on the current chambers (go/no-go: no-go on 2026-11-08, decision 10); the rest was dropped: solvability and par in the local checks, shortcut finder, dead-end warning, hints, generated chambers |
 | 4 | `03_mechanics.md` | Draft | Lasers through portals, slide floors, conveyors and rotating arrows, timed buttons, mirror blocks, echo; teach → test → twist → combine |
 | 5 | `04_campaign_identity_look_sound.md` | Draft | Identity, wings and tutorial chambers, a menu and catalogue that scale, chamber numbering and links, difficulty from data, medals, visual rework, colour-blind palettes and relaxed mode, reactive music |
 | 6 | `05_creator_platform.md` | Draft | Stage A (editor, sharing in the link, publish only what you solved), Stage B gated on an audience |
@@ -101,6 +101,7 @@ These replace the rougher claims in the original roadmap. Re-check them when rev
 | 7 | 2026-11-06 | Every stage is detailed now and revisited right before it starts |
 | 8 | 2026-11-06 | Moves count every step taken, undone ones included, and redo counts nothing (open decision 1's counting half, settled in stage 01); whether ranked runs allow undo waits for stage 04 |
 | 9 | 2026-11-07 | No gamepad support: stage 01's gamepad bridge (its step D8) is dropped and no stage plans it |
+| 10 | 2026-11-08 | Stage 02 stops after phase A (its go/no-go 1): the solver can't prove the current chambers solvable within 60 s each. With every pruning built, chamber 3 takes 110 s and chambers 1 and 2 give up after 10 minutes, past 6 million states each. Dropped: solvability and par checks, par in chamber files, the shortcut report, hints and the dead-end warning, solver difficulty metrics (open decision 2 settled: difficulty from measured clear rates) and generated chambers. Stage 03 keeps new mechanics small and relies on recorded solutions; stage 05's "publish only what you solved" relies on the creator's replay alone, with no par. Stages 03–05 must take this in when revisited |
 
 ## Open decisions
 
@@ -109,7 +110,7 @@ Each one belongs to the stage that must settle it, and appears there with option
 | # | Question | Recommendation | Settled in |
 |---|---|---|---|
 | 1 | Do ranked runs allow undo? (How moves are counted was settled in 01, decision 8) | Undo allowed but shown on the result | 04 (medals) |
-| 2 | Is the solver's difficulty score worth building? | No: use measured clear rates; keep solver metrics as a designer aid | 02 |
+| 2 | Is the solver's difficulty score worth building? | No: use measured clear rates; keep solver metrics as a designer aid | 02 (settled by decision 10: no solver metrics) |
 | 3 | Echo (a ghost replaying your previous attempt): build it? | Design it last or cut it: the ghost's whole input history becomes part of the state | 03 |
 | 4 | GPU renderer or the current 2D canvas? | Stay on the 2D canvas; move only if profiling shows a real need | 04 |
 | 5 | The game's name and identity | Settle it in stage 04, before anything is shared publicly in stage 05 | 04 |
@@ -123,7 +124,7 @@ Each one belongs to the stage that must settle it, and appears there with option
 |---|---|---|---|
 | 1 | 00 Fixes | — | Safe reordering of chambers; analytics history for stage 04; first local check |
 | 2 | 01 Engine v2 | 00 | Replays, undo, a browser-free pure step, data-described elements, chamber format v2 |
-| 3 | 02 Solver | 01 | Solvability and par checks, hints, a judge for generated and published chambers |
+| 3 | 02 Solver | 01 | The prototype's measurements only (stopped after phase A, decision 10) |
 | 4 | 03 Mechanics | 01, 02 | New element types, each proven solvable and documented |
 | 5 | 04 Campaign, identity, look, sound | 03 | ~120 chambers in wings, the original identity, the visual and music rework |
 | 6 | 05 Creator platform | 01, 02, 04 | Editor, shared chambers, later accounts and publishing |
@@ -136,7 +137,7 @@ Local commands only, growing stage by stage:
 |---|---|---|
 | 1 | 00 | One command that runs lint, type check and build without changing files (recommended name: `npm run verify`) |
 | 2 | 01 | Engine loads under Node; every recorded solution is replayed and must complete; v2 checked against the old rules |
-| 3 | 02 | Every chamber is solved; par is compared with the stored value |
+| 3 | 02 | The solver check in `npm run verify`; no solvability or par check (stopped after phase A, decision 10) |
 | 4 | 03 | Each new mechanic ships with at least one chamber, a recorded solution and a solver run |
 | 5 | 04–05 | Preview deploys from the local machine (Firebase Hosting preview channels), bundle size watch |
 

@@ -1,6 +1,6 @@
 # Stage 02 — The solver: a game that understands itself
 
-Status: Draft
+Status: Stopped after phase A (no-go, 2026-11-08; see A13)
 Last revised: 2026-11-08
 
 ## Goal
@@ -112,8 +112,10 @@ The upper bound is tiles × 4 facings × (wall sides + 1)² for the two portals 
 
   Reading: test 1 still fails. Since A7, shot lines cut the rules' steps per expanded state 2–6×; skipping no-op actions keeps 87–98% of interacts and 81–92% of other moves away from the step, for 1.25–1.9× more states expanded in 5 minutes; and A9 halves chamber 3's any-route search: 1.13 million states in 110 s instead of 2.26 million in 211 s, the same route (166 moves and 26 portals, not optimal; the recorded solution takes 121 and 28). That search expanded all but 2 of the states it kept, so that is close to all the any-route states chamber 3 has with A9, and passing there needs about 1.8× more speed. Chambers 1 and 2's any-route searches expand at the same rate as before A9 and still give up; chamber 2's now keeps half again as many states as it has expanded, so how many they need in all is still unknown. The par searches don't use A9: their change against the run before (−8% to +11%) is run-to-run noise. Shots are 88–92% of the rules' steps (34–67 first shots on a line per expanded state), at 270,000–450,000 steps a second. What's left: fewer shot steps (a shot that is refused or puts a portal where it already is changes nothing; not measured how many do), or the go/no-go (A13).
 
-- [ ] **A12. Measure in a worker.** Run the macro search in a module Web Worker in the dev build (`new Worker(new URL(…, import.meta.url), {type: 'module'})`) on the slowest chamber, from the start and from 10 states taken along its recorded solution, searching both to the win and to the next milestone (D1). Record time and memory in Chrome. Verified by: numbers in the same table.
-- [ ] **A13. Decision.** Compare A11 and A12 with the thresholds below and write the go/no-go result (and what is dropped) into this file and README.md.
+  Longer runs (2026-11-08, any route only, the three chambers at once with `--max-seconds=600`, which slows each by about 25%: chamber 3 took 137 s, the same 1.13 million states): chamber 1 gave up after 10 minutes with 6,151,720 states kept and 3,784,896 expanded, 2,366,824 still waiting against 66,148 at 5 minutes; chamber 2 with 6,988,696 kept and 4,618,752 expanded, 2,369,944 waiting against 1,555,084. Both keep growing past 6 million states, more than five times chamber 3's total, so passing test 1 would take well over 10× more speed. Every box drop in chambers 1 and 2's recorded solutions is one A9 allows, so the drop limit isn't what keeps them from finishing.
+
+- [ ] **A12. Measure in a worker.** Run the macro search in a module Web Worker in the dev build (`new Worker(new URL(…, import.meta.url), {type: 'module'})`) on the slowest chamber, from the start and from 10 states taken along its recorded solution, searching both to the win and to the next milestone (D1). Record time and memory in Chrome. Verified by: numbers in the same table. Not run: test 1 failed in Node (A13), and go/no-go 1 drops everything test 3 gates.
+- [x] **A13. Decision.** Compare A11 and A12 with the thresholds below and write the go/no-go result (and what is dropped) into this file and README.md. Done 2026-11-08: **no-go** (go/no-go 1). Test 1 fails: in Node, the any-route search proves chamber 3 solvable in 110 s, and chambers 1 and 2 still give up after 10 minutes, past 6 million states each and growing (A11). Test 2 (par) fails with it: no par search finished in 5 minutes. Tests 3 and 4 weren't run, since go/no-go 1 drops what they gate. The stage stops after phase A, so phases B–F are dropped: no solvability or par check, no par in the chamber files, no shortcut report, no hints or dead-end warning, no solver difficulty metrics (README open decision 2 is settled the way recommended: difficulty from measured clear rates) and no generated chambers. A8 and A10 stay open. Stage 03 keeps new mechanics small and relies on recorded solutions; stage 05's "publish only what you solved" relies on the creator's replay alone, with no par and no shortcut report. The solver code and its check stay in the repository (`npm run solve` by hand, `npm run solver:check` in `npm run verify`).
 
 Pass thresholds:
 
@@ -196,7 +198,7 @@ Pass thresholds:
 
 ## Done when
 
-- [ ] The phase A table is filled in and the go/no-go result is recorded here and in README.md.
+- [x] The phase A table is filled in and the go/no-go result is recorded here and in README.md.
 - [ ] (If test 1 passes) the check command proves every catalogue chamber solvable.
 - [ ] (If test 2 passes) par is stored in every chamber file, the check compares it, and no recorded solution beats it.
 - [ ] The shortcut report runs on every chamber, and the author has read the three current ones.
@@ -207,7 +209,7 @@ Pass thresholds:
 
 ## Go/no-go points
 
-1. **Solvability too slow (test 1 fails).** Stop after phase A. No solver checks, hints, dead-end warning or generated chambers. Stage 03 keeps new mechanics small and relies on recorded solutions. Stage 05's "publish only what you solved" relies on the creator's replay alone: no par, no shortcut report.
+1. **Solvability too slow (test 1 fails).** Taken on 2026-11-08 (A13). Stop after phase A. No solver checks, hints, dead-end warning or generated chambers. Stage 03 keeps new mechanics small and relies on recorded solutions. Stage 05's "publish only what you solved" relies on the creator's replay alone: no par, no shortcut report.
 2. **Par too slow (test 2 fails).** Keep the solvability check and the report without par. Stage 04 drops moves and portals medals, or uses par set by the author.
 3. **Worker too slow (test 3 fails).** Drop next-move hints and the dead-end warning; keep nudge and highlight hints from precomputed milestones. Stage 05's publish check replays the creator's solution; par is shown only once the author's machine has solved the chamber, or the editor limits chamber size to what the browser can solve.
 4. **Generator gate (test 4 fails, or F0 fails).** No daily or endless chambers. Stage 05 can offer featured community chambers instead.
