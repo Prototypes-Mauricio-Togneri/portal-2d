@@ -89,8 +89,9 @@ export type LinkGroupData = {
 }
 
 /**
- * How well a chamber can be solved, for medals. Left empty until stage 02's
- * solver fills it, so adding it later needs no new format version.
+ * How well a chamber can be solved, for medals. Reserved: nothing writes it
+ * yet (docs/solver.md), and having it already means filling it later needs
+ * no new format version.
  */
 export type ParData = {
   readonly moves?: number // Fewest tiles stepped onto

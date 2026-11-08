@@ -36,7 +36,7 @@ const DROP_NEXT_TO_KINDS = [
 /**
  * Picks out, for the solver's macro search, the interacts and moves that
  * can't change anything but where the subject faces, so the search skips
- * them instead of calling the rules' step. With limited drops (A9), it also
+ * them instead of calling the rules' step. With limited drops, it also
  * skips putting a carried box down anywhere but where that is likely to
  * matter: on a tile whose element judges what lies on it (a button), at the
  * box's start,

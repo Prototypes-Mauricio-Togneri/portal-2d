@@ -217,7 +217,7 @@ export default withVueTs(
     },
   },
   {
-    // The solver (stage 02) runs under Node now and in a Web Worker later, so
+    // The solver (docs/solver.md) runs under Node and could also run in a Web Worker, so
     // it may use the rules and the files they share, but neither the browser
     // nor Node: the rules' bans, plus the scripts, Node's modules and process
     files: ['src/solver/**/*.ts'],

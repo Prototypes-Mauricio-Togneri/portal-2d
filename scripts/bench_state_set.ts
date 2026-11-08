@@ -3,7 +3,7 @@ import {NO_ENTRY, StateSet} from '@/solver/state_set'
 import {readNumberOption} from '@scripts/number_option'
 import {createRandom} from '@scripts/seeded_random'
 
-// Measures the solver's state set (stage 02, step A4): adds seeded random
+// Measures the solver's state set (docs/solver.md): adds seeded random
 // 64-bit keys, each with a parent and an action, finds every one again with
 // its parent and action, then checks that as many other keys are absent.
 // Prints the times and the memory used; fails when a key is lost, a parent

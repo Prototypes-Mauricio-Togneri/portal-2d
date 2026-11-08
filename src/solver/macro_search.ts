@@ -53,7 +53,7 @@ export type MacroSearchResult = {
   readonly moveTries: number // Moves taken through the rules' step that a walk doesn't cover: onto or off an event tile, into a portal
   readonly interactsSkipped: number // Interacts skipped, since they couldn't change anything
   readonly movesSkipped: number // Moves a walk doesn't cover skipped, since they couldn't change anything
-  readonly dropsSkipped: number // Box drops skipped in the solvable mode, where they can't matter (A9)
+  readonly dropsSkipped: number // Box drops skipped in the solvable mode, where they are unlikely to matter
 }
 
 /** Expanded states between two looks at the clock */
@@ -63,7 +63,7 @@ const CLOCK_INTERVAL = 64
 export const PROGRESS_INTERVAL = 4096
 
 /**
- * The solver's macro search (stage 02, steps A7 and A8). A state is a
+ * The solver's macro search (docs/solver.md). A state is a
  * settled state of the rules with the subject turned to its tile's canonical
  * facing, since turning is free. From each state it walks, without the
  * rules' step, to every tile walk edges reach (WalkGraph), then tries there

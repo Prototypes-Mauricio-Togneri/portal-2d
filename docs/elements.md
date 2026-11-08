@@ -40,7 +40,7 @@ A chamber file is a JSON object in format 2 (`ChamberData` in `src/game/chamber_
 | 9 | `buttons`, `switches` | `x`, `y` and `links`, all required: the ids of the elements and link groups it acts on (see [links](#links)). |
 | 10 | `arrows` | `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required: the one way the subject can enter the tile. |
 | 11 | `groups` | Link groups, each with an `id` and `links`, both required: the ids of the elements it stands for, never another group. |
-| 12 | `par` | How well the chamber can be solved, for medals: optionally `moves` and `portals`, each 0 or more. Left empty until the solver (stage 02) fills it. |
+| 12 | `par` | How well the chamber can be solved, for medals: optionally `moves` and `portals`, each 0 or more. Reserved: nothing writes it yet (see `docs/solver.md`). |
 
 - **`id`:** 1 or more, unique among every element and group, and needed only by what a button, switch or group links to; an element without one can't be linked.
 - **`blocked`:** true when absent (see [blocking](#blocking)).
