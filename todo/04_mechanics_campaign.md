@@ -1,15 +1,19 @@
-# Stage 03 — Mechanics where more things go through portals
+# Stage 04 — Mechanics and campaign
 
 Status: Draft
-Last revised: 2026-11-06
+Last revised: 2026-11-08
 
 ## Goal
 
-Today only the subject and a carried box go through portals; shots and lasers never do, and lasers are fixed tiles. This stage adds a set of original mechanics that send more things through portals or give movement a new shape, while keeping the rules discrete and solvable: slide floors, rotating arrows, live lasers (emitters, beams, receivers, mirror boxes), conveyors, timed buttons, and possibly push blocks and echo. Each mechanic ships complete: exact rules, one element file, chamber format support, flat drawing, solver support, documentation, rule fixtures, a teach chamber and a proof chamber. Stage 04 then builds the wings of chambers around them, using the chamber counts and teach notes this stage hands over.
+Today only the subject and a carried box go through portals; shots and lasers never do, and lasers are fixed tiles. This stage adds a set of original mechanics that send more things through portals or give movement a new shape, while keeping the rules discrete and solvable: slide floors, rotating arrows, live lasers (emitters, beams, receivers, mirror boxes), conveyors, timed buttons, and possibly push blocks and echo. Each mechanic ships complete: exact rules, one element file, chamber format support, drawing in stage 03's reworked look, solver support, documentation, rule fixtures and its chambers. The campaign then grows to its full length: 20 handcrafted chambers in total, numbered 0–19 (stage 03's tutorial as chamber 0, today's three chambers, and 16 new ones built here around the mechanics and the existing elements), in one list with no wings, with a catalogue, links and a Play menu that scale to that many, an order taken from measured difficulty, and medals on time, moves and portals.
 
 ## Depends on
 
-Stage 01 is done: its part below is what it delivered, though Phase 0 still checks each hook. Stage 02's part is an assumption, which Phase 0 checks against what that stage actually delivered.
+Stages 00 and 01 are done: their parts below are what they delivered, though Phase 0 still checks each hook. Stage 02's and stage 03's parts are assumptions, which Phase 0 checks against what those stages actually delivered.
+
+**From stage 00 (fixes)**, done
+
+- Completions and best times keyed by permanent id; the game canvas sharp on high-DPI screens; analytics sending quits on tab close, an attempt counter and first-completion and new-best flags, collecting since 00 shipped (months of history by now); one local check command.
 
 **From stage 01 (engine v2)**, done 2026-11-07
 
@@ -37,7 +41,17 @@ Stage 01 is done: its part below is what it delivered, though Phase 0 still chec
 **From stage 02 (solver)**
 
 - A solver over the v2 state with a compact state encoding, a per-chamber budget (time and states), a local "solve every chamber" check, par storage, the shortcut finder and the dead-end warning.
-- If the solver prototype failed in stage 02, see go/no-go point 6.
+- If the solver prototype failed in stage 02, see go/no-go point 6; for medals, par then falls back to the best recorded solution (go/no-go point 7).
+
+**From stage 03 (identity, look and sound)**
+
+- The new name, facility and voice. The mechanics' working names are chosen to fit it (decision 1).
+- Short lines per chamber (between chambers and on the side rail) stored with the chamber's catalogue entry; each new chamber here gets its own.
+- The palette module in `src/game/` with named colours, the renderer taking a palette, blueprint mode, and the colour-blind palettes with portal shapes; the hex-literal exception in `AGENTS.md` lifted.
+- The animation layer (purely visual interpolation between consecutive states), so the movement new elements cause can animate, with `prefers-reduced-motion` showing plain steps.
+- Music on the Web Audio API, with layers driven by game events.
+- The tutorial as chamber 0 (permanent id 4): chamber numbers count from 0, so today's chambers keep 1–3 and their links. Links still follow position.
+- Preview deploys from the local machine, the bundle-size watch and the unused-asset check.
 
 **How elements work today** (the base the new mechanics extend; the full rules are under "Rules" in `docs/elements.md`, the code in `src/game/rules/`)
 
@@ -49,18 +63,24 @@ Stage 01 is done: its part below is what it delivered, though Phase 0 still chec
 - Arrows: fixed and unlinkable (`elements/arrow.ts`, `blocksWalking: 'alongDirection'`).
 - Boxes: block nothing, and a tile can hold several (the validator allows one per tile at the start). Picking up and putting down are in the core step's `interact`, not a box hook. A carried box moves onto the subject's tile after each action (`carryBoxAlong` in `state_draft.ts`). The fizzler rule sends a carried box back to its start, and a link sends a box back unless it is carried; releasing a button linked to a box does nothing (the validator warns).
 - Barriers can sit on wall tiles (`sitsOn: 'floorOrWall'`; chamber 2 has 8 like this, chamber 3 has 1). A raised barrier stops shots before they reach the wall, so that wall takes portals only while the barrier is down, and raising it closes a portal there (`raiseBarrier` in `elements/barrier.ts`). This is already a switchable portal surface. Format 2 also lets a wall entry refuse portals for good (`takesPortals: false`), which no chamber uses yet.
-- Drawing: `Renderer.render` (`src/game/renderer.ts`) draws layer by layer (`DRAW_LAYERS` in `draw_layer.ts`): floor, arrows, walls, the blockers that are blocked, portals, buttons and switches, boxes, the subject, and fizzlers last. Inside a layer, each element type is drawn in registry order by its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`). Colours are hex literals in `element_drawings.ts`, `renderer.ts` and `tile_painter.ts`.
+- Drawing: `Renderer.render` (`src/game/renderer.ts`) draws layer by layer (`DRAW_LAYERS` in `draw_layer.ts`): floor, arrows, walls, the blockers that are blocked, portals, buttons and switches, boxes, the subject, and fizzlers last. Inside a layer, each element type is drawn in registry order by its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`). Colours are hex literals in `element_drawings.ts`, `renderer.ts` and `tile_painter.ts` until stage 03 moves them into its palette module.
 
 ## Decisions made
 
 | # | Date | Decision |
 |---|---|---|
-| 1 | 2026-11-06 | Mechanics lean original: names, look and combinations are this game's own, not copies of another game's elements. Names here are working names; stage 04 may rename them for the identity |
+| 1 | 2026-11-06 | Mechanics lean original: names, look and combinations are this game's own, not copies of another game's elements. Names here are working names, chosen to fit stage 03's identity when this stage is revisited |
 | 2 | 2026-11-06 | Today's rules are deleted after stage 01 (README decision 3), so new mechanics only need to work in v2 |
 | 3 | 2026-11-06 | The rules stay discrete: everything happens inside one step, nothing depends on time |
 | 4 | 2026-11-06 | No new keys. Every mechanic works with arrows, A, D, Space and Ctrl |
 | 5 | 2026-11-06 | A mechanic the solver cannot judge within budget does not ship (stage 05 publishes only solver-checked chambers) |
-| 6 | 2026-11-06 | This stage builds a teach chamber and one proof chamber per mechanic. Full wings of chambers are stage 04's job |
+| 6 | 2026-11-08 | A mechanic's chambers go into the campaign in this same stage: its teach chamber and the rest of its run, as the campaign plan sets (replaces "a teach and a proof chamber per mechanic; full wings are stage 04's job") |
+| 7 | 2026-11-06 | Chamber links (`/chamber/N`, by position) stay as they are until this stage picks the numbering scheme (README decision 4); stage 03 only made the count start at 0 for the tutorial |
+| 8 | 2026-11-06 | Unchanged from `AGENTS.md`: desktop only; colour meanings (blue interaction and success, orange the second portal, red caution, green a completed chamber); `localStorage` keys keep the `portal-2d.` prefix and analytics event and parameter names never change, even after a rename (changing either splits or loses history) |
+| 9 | 2026-11-08 | Stages 03 and 04 swapped (README decision 11): identity, look and sound come first, so this stage builds on the reworked look and the new name |
+| 10 | 2026-11-08 | The campaign is 20 chambers in total, numbered 0–19: the tutorial (0), today's three (1–3) and 16 new ones built here. No wings: one ordered list, with no wing manifest, wing menu level, wing unlocking, wing music or wing analytics parameter (replaces about 120 chambers in about 10 wings) |
+| 11 | 2026-11-08 | All seven mechanics stay in this plan; how many make the campaign is settled at this stage's revisit (open decision 8) |
+| 12 | 2026-11-08 | Medals and difficulty from data moved here from the old stage 04, since they need the final chambers |
 
 ## Open decisions
 
@@ -74,11 +94,11 @@ Stage 01 is done: its part below is what it delivered, though Phase 0 still chec
 - *A. Keep them as their own element* (a fixed "laser field"). Existing chambers stay unchanged and need no upgrade.
 - *B. Convert them to emitter plus beam* through a format upgrade. One laser family, but today's chambers change behaviour (beams could then bend through portals) and their recorded solutions must be redone.
 - *C. Remove them.* All three current chambers use lasers or would need redesign.
-- **Recommendation: A.** Stage 04 can restyle them so the two read as different things.
+- **Recommendation: A.** R3 draws the two so they read as different things.
 
-**3. Where do this stage's chambers live before stage 04 places them?**
-- *A. A development-only lab list:* lab chambers outside the catalogue, playable only in `npm run dev` and included in the local checks. They get permanent catalogue ids only when stage 04 adds them to the game.
-- *B. Append them to the public catalogue.* Playable straight away, but the Play menu cannot scroll yet (stage 04 fixes that) and the order is temporary.
+**3. Where do a mechanic's chambers live while being built?**
+- *A. A development-only lab list:* lab chambers outside the catalogue, playable only in `npm run dev` and included in the local checks. A chamber moves into the catalogue, with a permanent id, once it is finished (recorded solution, cold playtest).
+- *B. Straight into the public catalogue.* Playable at once, but unfinished chambers reach players and get permanent ids too soon, and the Play menu can't scroll until Phase 10.
 - *C. Keep them only as replay and solver fixtures.* Nobody can play them by hand, so no cold playtest.
 - **Recommendation: A.**
 
@@ -106,6 +126,34 @@ Stage 01 is done: its part below is what it delivered, though Phase 0 still chec
 - *C. The subject only.* Overlaps with slide floors.
 - **Recommendation: A**, falling back to B if the solver budget fails.
 
+**8. Which mechanics make the campaign?** The campaign has 16 new chambers in all (decision 10). A full teach → test → twist → combine run is 10–12 chambers per mechanic, so spread over all seven, each gets about 2 and the existing elements get none.
+- *A. All seven,* about 2 chambers each. Cost: each mechanic is taught and then left behind, with no room for hard chambers.
+- *B. A few,* for example slide floors, rotating arrows and live lasers, about 5 chambers each; the rest are cut or left for later. Cost: fewer new ideas in the campaign.
+- *C. More than 20 chambers.* Cost: reopens README decision 11.
+- **Recommendation: settle it at this stage's revisit, after stage 03.** The answer also sets which of Phases 1–7 run.
+
+**9. Chamber numbering and links** (README open decision 6). Stage 03 counts chambers from 0 (the tutorial is `/chamber/0`), and links still follow position. This stage inserts 16 chambers among the existing ones, and the difficulty phase below reorders them, so any link built from position will shift.
+- *A. Links by permanent id* (`/chamber/<id>`); the screen shows the position number. Cost: the number in the address differs from the one on screen.
+- *B. Links by a permanent slug per chamber* (`/chamber/<slug>`). Cost: every chamber needs a unique title, kept forever like an id.
+- *C. Links by position* (`/chamber/N`), as today. Cost: shifts whenever this stage inserts or reorders chambers; contradicts the difficulty phase.
+- **Recommendation: A.** Add slugs later as aliases if chambers get titles. Either way, the old `/chamber/0`–`/chamber/3` links keep opening their chambers through a fixed redirect table.
+
+**10. Medals and undo** (README open decision 1, medals side; counting is settled in 01).
+- *A. Moves count every step taken, undone ones included; undo is allowed and shown on the result.* Cost: undo costs moves, which some players may find harsh.
+- *B. Undo allowed in casual play, disabled in a "ranked" run.* Cost: two modes to explain and build.
+- *C. Moves count the final path only.* Cost: anyone reaches par by undoing; the medal is meaningless.
+- **Recommendation: A**, matching the README.
+
+**11. Medal thresholds.**
+- Moves and portals: gold at par, silver within 125 % of par (rounded up), bronze for completing. Time has no solver par, so the time thresholds start from the author's own best run × a factor and are re-tuned from data (for example the top 10 % of times).
+- **Recommendation: as above.** Revisit the 125 % once data exists.
+
+**12. The "histogram of all players".** A static site has no aggregated data, and GA4 cannot be queried from the browser: it needs credentials.
+- *A. Baked at build time:* a local script queries the BigQuery export of GA4, writes per-chamber distributions as JSON into `src/`, and the next deploy ships them. Cost: BigQuery setup; data only as fresh as the last deploy; the export only covers data from the day it was linked.
+- *B. Deferred to stage 05 Stage B* (Firestore aggregates). Cost: no histogram until accounts exist.
+- *C. Medals only, no histogram.*
+- **Recommendation: ship C first.** Build A only if the difficulty phase already has the BigQuery pipeline working (it is the same data); otherwise wait for B.
+
 ## Steps
 
 ### Mechanic order
@@ -128,21 +176,47 @@ Every mechanic phase repeats these seven steps (R1–R7). Each phase below gives
 
 - **R1 Rules spec.** Finalise the draft spec in this file and fill the mechanic's row of the interaction table (Phase 0). Verified by checking every column: portals (subject, shots, beams), loose and carried boxes, fizzlers, buttons, switches, arrows, ditches, barriers, doors, exit, laser fields and every earlier new mechanic.
 - **R2 Element and format.** One element definition file in stage 01's layout, plus an optional list in format v2 whose type accepts the JSON import without a cast. Add an upgrade only if an existing element changes. Verified by the build, and by every existing replay still passing unchanged.
-- **R3 Drawing and sound events.** Flat drawing in the current look (the rework is stage 04), hex colours in `src/game/`, no portal blue or orange, and none of the UI's meanings (red = caution, green = completed). Sound events reuse existing sounds as placeholders. Verified in `npm run dev` at 1× and 2× pixel ratio, with the sound setting off silencing it.
+- **R3 Drawing and sound events.** Drawing in stage 03's look: colours from its palette module, in every palette (standard and colour-blind) and in blueprint mode, distinct from every existing element; no portal blue or orange, and none of the UI's meanings (red = caution, green = completed). Movement the mechanic causes animates through stage 03's animation layer, and reduced motion shows plain steps. Sound events get sounds in the new identity's style, or reuse existing sounds until those exist. Verified in `npm run dev` at 1× and 2× pixel ratio, in each palette and in blueprint mode, with the sound setting off silencing it.
 - **R4 Rule fixtures.** One tiny chamber and recorded inputs for each spec bullet and edge case, each asserting its expected outcome. Verified by the local replay check passing, and failing once when the rule is deliberately broken (a one-off spot check, then reverted).
 - **R5 Solver.** Successor generation and state encoding. Record the states explored and the time on the fixtures and the teach chamber. Verified by staying within stage 02's budget.
 - **R6 Docs.** A `docs/elements.md` row, notes and interactions; AGENTS.md if rules text or keyboard ownership changes. Verified by reading the docs against the spec.
-- **R7 Chambers.** A teach chamber and one proof chamber (test or twist) in the lab, each with a recorded solution, par from the solver and a clean shortcut-finder report. The author plays each cold and writes down any confusion as signage notes for stage 04. Verified by the local checks plus the playtest notes.
+- **R7 Chambers.** A teach chamber and one proof chamber (test or twist) in the lab, each with a recorded solution, par from the solver and a clean shortcut-finder report; they join the campaign as the campaign plan sets (open decision 8). The author plays each cold and writes down any confusion as signage notes in the campaign plan table. Verified by the local checks plus the playtest notes.
+
+### Campaign plan
+
+**Teach → test → twist → combine.** Each mechanic, and each existing element the campaign teaches, gets a run of chambers:
+- *Teach*: the mechanic alone, with no way to fail at understanding it.
+- *Test*: the mechanic alone, but you must use it on purpose.
+- *Twist*: an unexpected consequence of the rules (a fizzler mid-slide, a beam blocking your own path).
+- *Combine*: with earlier mechanics.
+
+A full run was planned at 10–12 chambers per mechanic (1–2 teach, about 3 test, about 3 twist, 3–4 combine). With 16 new chambers for the whole campaign (decision 10), that no longer fits: a run shrinks to a teach chamber and one or two more, or some mechanics are left out (open decision 8). A combine chamber can serve two mechanics at once.
+
+The existing elements need chambers too (portal basics, boxes and buttons, doors and switches, barriers and ditches, fizzlers, arrows, laser fields); the tutorial (chamber 0) and today's three chambers already cover some of them. Barriers over walls (switchable portal surfaces, already used in chambers 2 and 3) deserve a teach chamber of their own.
+
+**Campaign plan table** (chamber counts set at the revisit by open decision 8; the rest filled in from the playtests during the mechanic phases and Phase 8):
+
+| # | Mechanic or element | New chambers | Teach notes (signage, confusion seen) | Sounds needed | Colours (every palette) |
+|---|---|---|---|---|---|
+| 1 | Existing elements | — | — | — | — |
+| 2 | Slide floors | — | — | Slide start, slide stop | Slide floor |
+| 3 | Rotating arrows | — | — | Arrow turn | Turned-arrow notch |
+| 4 | Live lasers | — | — | Beam hum, receiver on/off | Beam, emitter, receiver, mirror box |
+| 5 | Conveyors | — | — | Conveyor movement | Conveyor |
+| 6 | Timed buttons | — | — | Countdown tick, release | Countdown marks |
+| 7 | Push blocks (if built) | — | — | Push | Push block |
+| 8 | Echo (if built) | — | — | Echo start, ghost | Ghost, echo pad |
+| 9 | Total | 16 (20 with chambers 0–3) | | | |
 
 ### Phase 0 — Ready the stage
 
-- [ ] **Revisit.** Re-read stage 01's element definition contract, format v2 and replay format, and stage 02's state encoding and budget. Rename everything in this file to their real names; set the status to Ready.
+- [ ] **Revisit.** Re-read stage 01's element definition contract, format v2 and replay format, stage 02's state encoding and budget, and stage 03's palette module, animation layer and identity. Rename everything in this file to their real names; set the status to Ready.
 - [ ] **Hook check.** Compare the six hooks under *Depends on* with what stage 01's element system supports. For each missing hook, either add it to the engine once, as its own step here, with replays proving no change to existing chambers, or drop the mechanics that need it (go/no-go point 1).
-- [ ] **Settle open decisions 2–7.** Record the answers under *Decisions made* (echo waits for Phase 7).
+- [ ] **Settle open decisions 2–8.** Record the answers under *Decisions made* (echo waits for Phase 7). Open decision 8 also sets the chamber counts in the campaign plan table and which of Phases 1–7 run.
 - [ ] **Lab chambers.** Set up the home chosen in open decision 3. For option A: a lab folder of chamber files, a development-only way to open one (registered only when `import.meta.env.DEV`, so it never ships), and the local checks covering it. Verified by opening a lab chamber in `npm run dev` and confirming the production build contains none.
 - [ ] **Interaction table.** Add a section to `docs/elements.md` listing every element against every other. Each cell is a rule, "can't happen" (chamber validation forbids it) or "to do". Existing elements fill their cells first, from the current rules.
 - [ ] **Outcome assertions in replays.** Confirm stage 01's replay format can assert an outcome: completes, does not complete, or reaches an expected state hash. Add it if missing. Verified by one passing and one deliberately failing fixture.
-- [ ] **Names and colours.** Choose working names and flat colours for the new elements (decision 1, R3 constraints) and record them in `docs/elements.md`.
+- [ ] **Names and colours.** Choose names that fit stage 03's identity and colours from its palette module for the new elements, in every palette and in blueprint mode (decision 1, R3 constraints), and record them in `docs/elements.md`.
 
 ### Phase 1 — Slide floors
 
@@ -288,12 +362,58 @@ Draft spec for option B (only if chosen):
 - [ ] **If built, R1–R7.** Run the recipe as in the earlier phases, with fixtures for: the ghost holding a button, the ghost stopped by a portal wall, the recording cap, and the reset on the echo pad.
 - [ ] **If cut.** Record the reason under *Decisions made* and remove the echo pad from the names list.
 
-### Phase 8 — Wrap-up
+### Phase 8 — Mechanics wrap-up
 
 - [ ] **Interaction table complete.** No "to do" cells left; each cell is backed by a rule fixture or forbidden by chamber validation.
 - [ ] **Docs and AGENTS.md.** `docs/elements.md` covers every element; AGENTS.md's layout and rules mention the new elements and the lab chambers.
-- [ ] **Hand-off to stage 04.** Fill in the table under *Notes for later stages* with real numbers from the playtests.
-- [ ] **README.** Update the stage status, close open decision 3, and record any new decisions.
+- [ ] **Campaign plan table.** Fill in its teach notes, sounds and colours with real results from the playtests. Verify: every row the plan keeps is filled in.
+
+### Phase 9 — Catalogue and links that scale
+
+- [ ] **Load chambers without a hand-kept list.** Replace the static imports in `src/services/chamber_catalogue.ts` with `import.meta.glob`, excluding stage 01's recorded solutions, which sit next to the chamber files as `chamber_N.solution.json` (for example `['@/chambers/chamber_*.json', '!@/chambers/*.solution.json']`). The play order stays one typed list of permanent ids; chamber files stay named by permanent id (`chamber_<id>.json`), and display numbers come from position, never typed by hand. Renaming a chamber file renames its solution file too. Start eager (every chamber in the bundle; 20 chambers ≈ 12–16 KB gzipped); switch to lazy loading only if stage 03's bundle-size watch flags it. Verify: build output size recorded before and after.
+- [ ] **Catalogue check.** A local check that every chamber file appears in the play order exactly once, ids are unique, retired ids (kept in a list) are never reused, and every chamber has a recorded solution and stored par (from the 01 and 02 checks). Verify: break each rule once on purpose and the check fails.
+- [ ] **Numbering and links** (open decision 9). Change the chamber route in `src/router.ts` to the chosen scheme; add the fixed redirect table for `/chamber/0`, `/chamber/1`, `/chamber/2` and `/chamber/3`; unknown chambers still fall back home. Verify: in `npm run preview`, each old link opens the right chamber and an unknown one goes home.
+- [ ] **Hosting headers.** In `firebase.json`, make the no-cache headers match the new route patterns and remove the stale `/settings` entry if stage 00 didn't. Verify: after a preview deploy, `curl -I` on a chamber address shows `Cache-Control: no-cache`.
+- [ ] **Everything keyed by id.** The chamber screen takes the chamber's id instead of its number; `last_chamber.ts` keeps the id; progress is already keyed by id (00). Verify: reorder two chambers in the play order locally; completions, best times and the highlight on return follow the chamber.
+- [ ] **Analytics stays comparable.** `chamber_number` keeps meaning the position in the list (0 for the tutorial, then 1, 2, 3…), whatever link scheme open decision 9 picks; no new parameter is needed. Verify: a production preview build sends the position as `chamber_number` (GA4 DebugView).
+
+### Phase 10 — A Play menu that scales
+
+- [ ] **Design the scrolling chamber list** (uses the frontend-design skill). Today the home menu has up to three columns (sections, rows, detail) and the Play list can't scroll. Twenty chambers don't fit as fixed-height rows, so the chamber column scrolls, with the map staying in the third column. It must keep the keyboard model in `AGENTS.md` (Up/Down within a column with wrapping, Right/Enter steps in, Left/Escape steps back, one Tab stop per column, hover highlights, held Enter ignored), and leave room for stage 05's Editor and, later, Community entries. Verify: the design is written down here before building.
+- [ ] **Build the scrolling chamber list** (uses the frontend-design skill). The highlighted row scrolls into view, the cascade still lines up with `--menu-row-height`, and interface sounds play as `AGENTS.md` lists. Verify: keyboard-only and pointer-only walks through all 20 chambers, wrapping from the last to the first; `prefers-reduced-motion` respected.
+- [ ] **Daily and endless chambers (only if stage 02's phase F passed)** (uses the frontend-design skill). A menu entry and route for the pre-generated daily chamber and endless packs, with the route's no-cache header in `firebase.json`; their records follow stage 05's key space for chambers outside the catalogue. Skip and tick with "not applicable" if phase F was a no-go. Verify: today's daily opens from the menu and directly by address.
+- [ ] **Back from a chamber.** Play opens with that chamber highlighted, focused and scrolled into view, as today. Verify: back from the first, a middle and the last chamber.
+- [ ] **Update `AGENTS.md`.** Keyboard ownership, the layout description and the UI direction for the new menu.
+
+### Phase 11 — Campaign content
+
+- [ ] **Chamber plan.** List the 16 new chambers in this file, in play order together with chambers 0–3, each with its mechanic or element and its part (teach, test, twist or combine), following the campaign plan table and open decision 8. Starting order: the existing elements first, then the new mechanics in the order built. Verify: every mechanic this stage shipped has chambers or a recorded reason it doesn't, and the total is 20.
+- [ ] **Authoring workflow before the editor.** Until stage 05's editor exists: hand-write chamber v2 JSON; a development-only route (behind `import.meta.env.DEV`, never in production builds) that loads a chamber file from disk and reloads on save, extending this stage's lab route (Phase 0) rather than adding a second one; record the solution by playing it with 01's recorder; run 02's solver for par and the shortcut report; tick a per-chamber checklist (solution recorded, par stored, shortcut report read, voice and rail lines written, one playtest by someone else). Verify: one chamber goes through the whole workflow; a production build has no development route.
+- [ ] **Place chambers 0–3 in the campaign.** The tutorial and today's three chambers keep permanent ids 4 and 1–3; if the plan moves them, their old links go through the redirect table. Verify: their completions and best times survive.
+- [ ] **Author release 1** (about four new chambers; each release ships with a changelog entry in `src/services/changelog.ts`). Verify: catalogue check, replay check and solver check pass; playtested; reviewed on a preview channel.
+- [ ] **Author release 2.** Same checks.
+- [ ] **Author release 3.** Same checks.
+- [ ] **Author release 4.** Same checks; the campaign reaches 20 chambers.
+
+### Phase 12 — Difficulty from data
+
+- [ ] **Define the per-chamber measures.** Starts, unique starters, completions, clear rate (completions ÷ unique starters), quit rate (including tab closes from 00), median time, median moves, median attempts before the first completion (00's attempt counter), restarts per completion. List the events and parameters each one needs and confirm they are registered as custom dimensions or metrics in GA4 (an admin action only the author can do). Verify: each measure maps to events that DebugView shows.
+- [ ] **Data pipeline.** A local script, never shipped, that pulls per-chamber aggregates. GA4 can't be queried from the browser, so results reach the game only by being baked into a build. Options: the BigQuery export (raw events, so distributions and medians work; not retroactive, so it only has data from the day it was linked) or the GA4 Data API with a service account (aggregates only). Recommendation: BigQuery. Verify: the script prints the measures for the current chambers.
+- [ ] **Minimum sample.** Don't reorder a chamber on fewer than about 50 unique first-time players (a rule of thumb; GA4 also hides small counts behind its data thresholds). Below that, order by playtests. Verify: the script marks chambers below the threshold.
+- [ ] **Ordering rule.** Order by median attempts before the first completion, with clear rate as the tie-break, but mechanic dependencies come first: a chamber never moves before the chambers that teach what it needs, and the tutorial stays first. Write each reorder in the changelog. Verify: after a reorder, progress and links still follow each chamber (Phase 9's id keying).
+
+### Phase 13 — Medals
+
+- [ ] **Store the best moves and portals.** Extend `src/services/progress.ts` to keep the best moves and fewest portals per chamber id alongside the best time, inside stage 00's single versioned progress record (bump its version, migrate in the same merge style; every access in `try`/`catch`, cleared by Reset progress). Update `AGENTS.md`'s persistence section. Verify: complete a chamber twice with different results; reload; Reset progress clears all three.
+- [ ] **Medal rules** (open decisions 10 and 11). A small service that turns best values and par into medals on three axes; relaxed runs follow stage 03's relaxed-mode decision. Verify: worked examples in a table here match its output for edge cases (exactly par, one over, no par stored).
+- [ ] **Medals on the result dialog and chamber rows** (uses the frontend-design skill). Three axes, plus an "undo used" mark on the result when it applies. Colours keep their `AGENTS.md` meanings; medals must not rely on colour alone. Verify: keyboard flow in the chamber-complete dialog unchanged; contrast checked.
+- [ ] **Analytics.** Add medal parameters to `chamber_complete` (new names only; never rename existing ones). Verify: DebugView.
+- [ ] **Histogram** (open decision 12). Do nothing in this stage unless the BigQuery pipeline from Phase 12 already works; then bake per-chamber distributions into a JSON file at build time and draw them on the result dialog (uses the frontend-design skill).
+
+### Phase 14 — Wrap-up
+
+- [ ] **Docs.** `AGENTS.md` (keyboard model, layout, persistence, analytics parameters, chamber numbering and links), `docs/elements.md` and the changelog match what shipped.
+- [ ] **README.** Update the stage status, close open decisions 1, 3 and 6, and record any new decisions.
 - [ ] **Status.** Set this file to Done once every *Done when* box is ticked.
 
 ## Local checks added
@@ -303,17 +423,23 @@ Draft spec for option B (only if chosen):
 - Chamber validation: forbidden element overlaps (Phases 1, 4, 6); emitters and receivers sit on wall tiles with an open face; `holdTicks` within 1–9; every element type a chamber uses has solver support.
 - Oscillation warning: any chamber in which the solver meets a repeating receiver state is reported.
 - Per-chamber solver cost (states and time) is printed, so growth from each mechanic stays visible.
+- Catalogue check: every chamber file in the play order exactly once, ids unique and never reused, every chamber with a recorded solution and par.
 
 ## Done when
 
-- [ ] Slide floors, rotating arrows, live lasers (emitter, receiver, mirror box), conveyors and timed buttons have each passed R1–R7.
-- [ ] Push blocks are built and passed R1–R7, or were dropped by go/no-go point 4 with the reason recorded.
+- [ ] Slide floors, rotating arrows, live lasers (emitter, receiver, mirror box), conveyors and timed buttons have each passed R1–R7, or were left out by open decision 8 with the reason recorded.
+- [ ] Push blocks are built and passed R1–R7, or were dropped by go/no-go point 4 or open decision 8 with the reason recorded.
 - [ ] Echo is decided (README open decision 3 closed), and either built through R1–R7 or cut with the reason recorded.
 - [ ] The interaction table is complete, each cell backed by a fixture or forbidden by validation.
-- [ ] Local checks pass: every chamber and fixture replays with its expected outcome; every chamber solves within budget; shipped chambers raise no oscillation warnings.
 - [ ] No mechanic needed engine changes outside its own files beyond the hooks added in Phase 0, or the exceptions are listed here.
+- [ ] The campaign plan table is filled in.
+- [ ] 20 chambers ship, numbered 0–19, each with a recorded solution and passing the catalogue, replay and solver checks with par stored.
+- [ ] Old `/chamber/0`–`/chamber/3` links open their chambers; progress, best times and the return highlight follow chambers by id after a reorder.
+- [ ] The scrolling Play menu works fully by keyboard and by pointer, and `AGENTS.md` describes it.
+- [ ] Medals on three axes show on results and rows, are stored by id and are cleared by Reset progress.
+- [ ] Chamber order has been reviewed against data for every chamber above the sample threshold.
+- [ ] Local checks pass: every chamber and fixture replays with its expected outcome; every chamber solves within budget; shipped chambers raise no oscillation warnings; each release was reviewed on a preview channel before going to production.
 - [ ] `docs/elements.md`, AGENTS.md and `todo/README.md` are up to date.
-- [ ] The hand-off table for stage 04 is filled in.
 
 ## Go/no-go points
 
@@ -323,40 +449,28 @@ Draft spec for option B (only if chosen):
 4. **Push blocks (Phase 6).** Build them only if mirror boxes can't express the laser puzzles the author wants, and stage 02's dead-end warning exists.
 5. **Echo (Phase 7).** Build it only if the two-phase search solves its teach chamber within budget; otherwise cut it.
 6. **No solver from stage 02.** Mechanics still ship with replays and rule fixtures, but the costly ones (timed buttons, push blocks, echo) are dropped, and stage 05's "publish only what the solver checked" rule must be rethought.
+7. **Medal par (from 02).** If 02's prototype was a no-go, par becomes the best recorded solution, and the moves and portals medals are labelled "target" rather than "par".
+8. **Data volume.** If chambers stay below the sample threshold after about two months, order by playtests and leave the histogram to stage 05.
 
 ## Risks
 
 - **Interactions multiply.** Each new element must be defined against every other. The interaction table and fixtures exist so that gaps show up as "to do" cells, not as player bug reports.
 - **Beams settle in surprising ways.** Feedback through receivers and loops through portals are handled by deterministic rules and warnings, but they can still confuse players. Watch the playtest notes.
 - **Solver growth.** Conveyors (boxes drift every tick), timed buttons (counters), push blocks (dead ends) and echo (histories) each multiply the states. The printed per-chamber cost shows it early.
-- **Readability before stage 04.** In the flat look, new tiles can be confused with old ones: slide floor with plain floor, conveyor with arrow, beam with laser field. The cold playtests catch this; stage 04 fixes it properly.
+- **New elements must read clearly in every palette.** Slide floor and plain floor, conveyor and arrow, beam and laser field must stay distinct in the standard look, blueprint mode, the colour-blind palettes and greyscale. R3's check in every palette and the cold playtests catch this.
 - **"Moves" changes meaning.** A slide or a conveyor ride moves many tiles on one key. Follow stage 01's definition and note any change in meaning, because analytics parameter names are permanent and their history spans the change.
-- **Lab chambers leaking.** If lab chambers reach the public catalogue early, the Play menu overflows (it can't scroll until stage 04) and they would need permanent ids too soon.
-- **Feeling borrowed.** Keep names, looks and combinations original (decision 1); stage 04 owns the final identity.
+- **Lab chambers leaking.** If lab chambers reach the public catalogue early, they get permanent ids too soon, and the Play menu overflows until Phase 10 makes it scroll.
+- **Feeling borrowed.** Keep names, looks and combinations original (decision 1), in line with stage 03's identity.
+- **Mechanics barely used.** With 16 new chambers, a mechanic may get only one or two. Open decision 8 settles the fit before anything is built.
+- **Content volume.** 16 chambers are most of the campaign phases' work. Ship them in small releases, so the game grows instead of waiting.
+- **Reordering surprises players.** Display numbers change after a data-driven reorder. Progress is safe (keyed by id); say what changed in the changelog.
+- **Thin or hidden data.** Low traffic, plus GA4's thresholds for small counts, may leave most chambers without usable numbers. Playtests are the fallback.
 
 ## Notes for later stages
 
-**Teach → test → twist → combine (input for stage 04's wings).** Each mechanic gets a run of chambers:
-- *Teach*: the mechanic alone, with no way to fail at understanding it. 1–2 chambers.
-- *Test*: the mechanic alone, but you must use it on purpose. About 3 chambers.
-- *Twist*: an unexpected consequence of the rules (a fizzler mid-slide, a beam blocking your own path). About 3 chambers.
-- *Combine*: with earlier mechanics. 3–4 chambers.
-
-That's 10–12 chambers per mechanic, which matches the roadmap's ~12 per wing.
-
-**Hand-off table for stage 04** (filled in during Phase 8):
-
-| # | Mechanic | Chambers for its wing | Teach notes (signage, confusion seen) | Sounds needed | Colours to rework |
-|---|---|---|---|---|---|
-| 1 | Slide floors | 10–12 | — | Slide start, slide stop | Slide floor |
-| 2 | Rotating arrows | 6–8 (could share a wing with slides) | — | Arrow turn | Turned-arrow notch |
-| 3 | Live lasers | 12+ (could be two wings) | — | Beam hum, receiver on/off | Beam, emitter, receiver, mirror box |
-| 4 | Conveyors | 10–12 | — | Conveyor movement | Conveyor |
-| 5 | Timed buttons | 8–10 | — | Countdown tick, release | Countdown marks |
-| 6 | Push blocks (if built) | 8–10 | — | Push | Push block |
-| 7 | Echo (if built) | 8–10 | — | Echo start, ghost | Ghost, echo pad |
-
-- **Stage 04:** the existing elements need wings too (portal basics, boxes and buttons, fizzlers, barriers and doors, arrows, laser fields, ditches). Barriers over walls (switchable portal surfaces, already used in chambers 2 and 3) deserve a teach chamber of their own.
-- **Stage 04:** the chamber screen's controls legend needs no new keys (decision 4), but the visual rework must give every new element a distinct, readable look, including in blueprint and colour-blind modes.
 - **Stage 05:** the editor needs a palette entry for each element, placement validation (the same rules as the local chamber validation), link editing for receivers, timed buttons, rotating arrows and conveyors, and must offer only elements the solver supports.
+- **Stage 05:** the editor reuses the chamber format, the solution recorder and the per-chamber authoring checklist.
+- **Stage 05:** the links scheme chosen here is the pattern for shared and published chambers; any new route needs a no-cache header in `firebase.json`.
+- **Stage 05 Stage B** replaces the baked histogram (if built) with live aggregates and can reuse the medal rules and thresholds for published chambers.
 - **Stage 02:** the state encoding grows with each mechanic (mirror box and push block positions, timed button counters, link flags for arrows, conveyors and emitters). Plan its format so new fields can be added without breaking stored par values.
+- Notes (filled in during this stage): the campaign plan table, the chamber plan, the Play menu design, medal worked examples, the per-chamber difficulty data.

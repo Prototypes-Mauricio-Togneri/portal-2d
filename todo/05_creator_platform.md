@@ -1,7 +1,7 @@
 # Stage 05 — Creator platform
 
 Status: Draft
-Last revised: 2026-11-07
+Last revised: 2026-11-08
 
 ## Goal
 
@@ -13,7 +13,7 @@ This stage assumes the following exist when it starts. Re-check each when revisi
 
 - **Stage 01 (engine v2)**, done 2026-11-07
   - Chamber format 2 with a version number and an upgrader that chains one step per format version (`src/game/rules/upgrade_chamber.ts`, which still reads format 1). The chamber loader reports each problem with its field and tile (`src/game/rules/load_chamber.ts`). Shared links live forever, so every format version ever shipped must stay decodable.
-  - Elements described by data: the element registry (`src/game/rules/element_registry.ts`) says what each element type blocks and holds, and its draw layer. Each type's drawing stays browser-side in `src/game/element_drawings.ts`, looked up by element kind. The editor's palette reads the registry and draws through the renderer, so stage 03's mechanics appear in the editor without editor changes.
+  - Elements described by data: the element registry (`src/game/rules/element_registry.ts`) says what each element type blocks and holds, and its draw layer. Each type's drawing stays browser-side in `src/game/element_drawings.ts`, looked up by element kind. The editor's palette reads the registry and draws through the renderer, so stage 04's mechanics appear in the editor without editor changes.
   - The pure step: `step(chamber, state, action)` gives the next state and its events. The replay format is compact: `ReplayData` format 2 (`src/game/replay_data.ts`), a list of presses (each an action, or undo or redo) with the expected result and the hash of the chamber it was recorded on.
   - An engine that loads under Node with no browser (the rules report events and play no sounds). Stage A replays links headless in the browser; Stage B runs the same engine in Cloud Functions.
   - Releasing a button linked to a box does nothing to the box. The validator warns about a button linked to a box but still loads the chamber, so the editor can show that warning, or forbid the link if it chooses.
@@ -22,9 +22,10 @@ This stage assumes the following exist when it starts. Re-check each when revisi
 - **Stage 02 (solver)**
   - The solver runs in a Web Worker with a time limit and reports par (fewest moves, fewest portals) and shortcuts ("solvable without ever opening door 2").
   - If 02's prototype was a no-go, publishing still works (the author's replay proves solvability) but shows no par or shortcuts. See Go/no-go points.
-- **Stage 04 (campaign, identity, look, sound)**
+- **Stage 03 (identity, look and sound)**
   - The identity is settled: no Valve name or logo anywhere a shared link or community page can reach (README open decision 5).
   - The reworked renderer, including the "blueprint" look if built, with the high-DPI fix from stage 00. The editor draws with it.
+- **Stage 04 (mechanics and campaign)**
   - A home menu that scales and has room for Editor and, later, Community entries.
   - The chamber numbering and links decision (README open decision 6), so the new routes don't collide with it.
   - Difficulty taken from measured data, and medal definitions, which Stage B reuses for community chambers.
@@ -77,7 +78,7 @@ This stage assumes the following exist when it starts. Re-check each when revisi
 
 - [ ] **A1.1 Write the link format.** Settle open decisions 2 and 3. Describe the byte layout in a new `docs/chamber_link.md`: format version, ruleset version, size, tile layer (element codes from 01's registry), linked elements and their links, subject and exit, optional name and author (UTF-8, length-capped), optional replay. Verify: every element type in the registry and every field of v2's chamber type has a place in the layout.
 - [ ] **A1.2 Encoder and decoder.** Plain TypeScript with no Vue import, so Stage B's Cloud Functions can reuse it (for example `src/game/chamber_link.ts`, inside the lint boundary in `eslint.config.js`). Encode → deflate-raw → base64url, and back. Note that `CompressionStream` is asynchronous. Verify: a local check round-trips every bundled chamber to an identical result.
-- [ ] **A1.3 Size limits.** Reject encoded text above a cap (proposal: 8 KB) before decoding. Stop decompressing above a cap (proposal: 64 KB) while streaming, so a "zip bomb" can't freeze the tab. Cap the grid (proposal: 40×40, confirm against stage 04's camera) and the element counts. Verify: oversized and bomb fixtures are rejected within milliseconds.
+- [ ] **A1.3 Size limits.** Reject encoded text above a cap (proposal: 8 KB) before decoding. Stop decompressing above a cap (proposal: 64 KB) while streaming, so a "zip bomb" can't freeze the tab. Cap the grid (proposal: 40×40, confirm against stage 03's camera) and the element counts. Verify: oversized and bomb fixtures are rejected within milliseconds.
 - [ ] **A1.4 Runtime validation of untrusted chambers.** Today `ChamberData` (`src/game/chamber_data.ts`) is only checked by the type checker at build time; a link needs a runtime check. Reuse 01's v2 validator if it has one; otherwise build it here. Check: everything inside the grid; exactly one subject and one exit; links point at existing linkable ids; no duplicate ids; allowed element combinations per tile (from the registry); the box-linked-button rule; name and author length and characters. Return a list of problems with tile positions, so the editor can show them. Verify: each bad fixture produces its expected error, and every bundled chamber passes.
 - [ ] **A1.5 Measure link length.** Encode every bundled chamber (stage 04's campaign by then) with and without its recorded solution. Write the smallest, middle and largest lengths into this file. Budget: 2,000 characters with the replay. Verify: a local check fails if a bundled chamber's link goes over budget.
 
@@ -92,7 +93,7 @@ This stage assumes the following exist when it starts. Re-check each when revisi
 #### Phase A3 — The editor
 
 - [ ] **A3.1 Editor route and screen.** Add `/editor` to `src/router.ts` with its no-cache header in `firebase.json`, a new `src/components/screens/editor_screen.vue`, and an entry in the home menu placed by stage 04's menu. Use the frontend-design skill. Verify: reachable and usable with the keyboard only.
-- [ ] **A3.2 Draw with the game's renderer.** Draw the draft with stage 04's renderer (the blueprint look if it exists), at the screen's pixel ratio, plus a grid and a cursor overlay. Verify: a bundled chamber opened in the editor looks exactly as in the game, apart from the overlay.
+- [ ] **A3.2 Draw with the game's renderer.** Draw the draft with stage 03's renderer (the blueprint look if it exists), at the screen's pixel ratio, plus a grid and a cursor overlay. Verify: a bundled chamber opened in the editor looks exactly as in the game, apart from the overlay.
 - [ ] **A3.3 Keyboard-first tools.** Arrows move the cursor; a palette, read from 01's element registry, picks the element type; keys place, erase, set the subject and exit, and turn directional elements; mouse click-and-drag paints. Use the frontend-design skill for the palette and the element inspector. Verify: rebuild chamber 1 from scratch with the keyboard only.
 - [ ] **A3.4 Link tool.** Pick a button or switch, then its targets; links are drawn as lines; ids are assigned automatically (authors never type ids). Use the frontend-design skill. Verify: links survive a round trip through the link; deleting a target removes its links.
 - [ ] **A3.5 Resize and wall fill.** Change the size within the caps; fill the border with walls; fill a rectangle with walls. The current format already accepts wall rectangles (`WallRangeData` in `chamber_data.ts`), though no bundled chamber uses them. Verify: shrinking warns before it drops elements.
@@ -259,7 +260,7 @@ Stage B (only if the gate says go):
 - **Moderation:** offensive names, spam publishing, copied chambers. Keep free text to short names and moderate after publishing, with auto-hide; budget the hours up front (B0.4).
 - **Cost:** Firestore reads from browsing and writes from per-run records grow with players. Watch weekly, page lists, aggregate in functions.
 - **Abuse:** fake clears, rating manipulation, report brigading. The server verifier, ratings only after a verified clear, rate limits, App Check, distinct-reporter thresholds.
-- **IP exposure:** sharing and a community make the game far more visible. Nothing public may carry the Valve name or logo; this depends on stage 04's identity work. Players may also recreate levels from other games; the content policy and the "copied" report reason cover it.
+- **IP exposure:** sharing and a community make the game far more visible. Nothing public may carry the Valve name or logo; this depends on stage 03's identity work. Players may also recreate levels from other games; the content policy and the "copied" report reason cover it.
 - **Privacy and legal:** accounts bring personal data, EU and UK consent rules and minimum-age questions. Handled with legal input in B0, before any account code ships.
 - **Format and rules drift:** a shared link lives forever. Every format version stays decodable, and a rules change after v2 must version replays, or old solutions fail.
 - **Untrusted data:** giant or malformed chambers could freeze the tab or the solver. Size caps before decoding, a runtime validator, the solver in a worker with a time limit.
