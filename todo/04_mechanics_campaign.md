@@ -43,15 +43,13 @@ Stages 00 and 01 are done: their parts below are what they delivered, though Pha
 - A solver over the v2 state with a compact state encoding, a per-chamber budget (time and states), a local "solve every chamber" check, par storage, the shortcut finder and the dead-end warning.
 - If the solver prototype failed in stage 02, see go/no-go point 6; for medals, par then falls back to the best recorded solution (go/no-go point 7).
 
-**From stage 03 (identity, look and sound)**
+**From stage 03 (look and sound)**
 
-- The new name, facility and voice. The mechanics' working names are chosen to fit it (decision 1).
-- Short lines per chamber (between chambers and on the side rail) stored with the chamber's catalogue entry; each new chamber here gets its own.
-- The palette module in `src/game/` with named colours, the renderer taking a palette, blueprint mode, and the colour-blind palettes with portal shapes; the hex-literal exception in `AGENTS.md` lifted.
+- The palette module in `src/game/` with named colours, the renderer taking a palette, and blueprint mode; the hex-literal exception in `AGENTS.md` lifted.
 - The animation layer (purely visual interpolation between consecutive states), so the movement new elements cause can animate, with `prefers-reduced-motion` showing plain steps.
 - Music on the Web Audio API, with layers driven by game events.
 - The tutorial as chamber 0 (permanent id 4): chamber numbers count from 0, so today's chambers keep 1–3 and their links. Links still follow position.
-- Preview deploys from the local machine, the bundle-size watch and the unused-asset check.
+- The bundle-size watch and the unused-asset check.
 
 **How elements work today** (the base the new mechanics extend; the full rules are under "Rules" in `docs/elements.md`, the code in `src/game/rules/`)
 
@@ -69,7 +67,7 @@ Stages 00 and 01 are done: their parts below are what they delivered, though Pha
 
 | # | Date | Decision |
 |---|---|---|
-| 1 | 2026-11-06 | Mechanics lean original: names, look and combinations are this game's own, not copies of another game's elements. Names here are working names, chosen to fit stage 03's identity when this stage is revisited |
+| 1 | 2026-11-06 | Mechanics lean original: names, look and combinations are this game's own, not copies of another game's elements. Names here are working names, settled when this stage is revisited |
 | 2 | 2026-11-06 | Today's rules are deleted after stage 01 (README decision 3), so new mechanics only need to work in v2 |
 | 3 | 2026-11-06 | The rules stay discrete: everything happens inside one step, nothing depends on time |
 | 4 | 2026-11-06 | No new keys. Every mechanic works with arrows, A, D, Space and Ctrl |
@@ -77,7 +75,7 @@ Stages 00 and 01 are done: their parts below are what they delivered, though Pha
 | 6 | 2026-11-08 | A mechanic's chambers go into the campaign in this same stage: its teach chamber and the rest of its run, as the campaign plan sets (replaces "a teach and a proof chamber per mechanic; full wings are stage 04's job") |
 | 7 | 2026-11-06 | Chamber links (`/chamber/N`, by position) stay as they are until this stage picks the numbering scheme (README decision 4); stage 03 only made the count start at 0 for the tutorial |
 | 8 | 2026-11-06 | Unchanged from `AGENTS.md`: desktop only; colour meanings (blue interaction and success, orange the second portal, red caution, green a completed chamber); `localStorage` keys keep the `portal-2d.` prefix and analytics event and parameter names never change, even after a rename (changing either splits or loses history) |
-| 9 | 2026-11-08 | Stages 03 and 04 swapped (README decision 11): identity, look and sound come first, so this stage builds on the reworked look and the new name |
+| 9 | 2026-11-08 | Stages 03 and 04 swapped (README decision 11): look and sound come first, so this stage builds on the reworked look and sound |
 | 10 | 2026-11-08 | The campaign is 20 chambers in total, numbered 0–19: the tutorial (0), today's three (1–3) and 16 new ones built here. No wings: one ordered list, with no wing manifest, wing menu level, wing unlocking, wing music or wing analytics parameter (replaces about 120 chambers in about 10 wings) |
 | 11 | 2026-11-08 | All seven mechanics stay in this plan; how many make the campaign is settled at this stage's revisit (open decision 8) |
 | 12 | 2026-11-08 | Medals and difficulty from data moved here from the old stage 04, since they need the final chambers |
@@ -176,7 +174,7 @@ Every mechanic phase repeats these seven steps (R1–R7). Each phase below gives
 
 - **R1 Rules spec.** Finalise the draft spec in this file and fill the mechanic's row of the interaction table (Phase 0). Verified by checking every column: portals (subject, shots, beams), loose and carried boxes, fizzlers, buttons, switches, arrows, ditches, barriers, doors, exit, laser fields and every earlier new mechanic.
 - **R2 Element and format.** One element definition file in stage 01's layout, plus an optional list in format v2 whose type accepts the JSON import without a cast. Add an upgrade only if an existing element changes. Verified by the build, and by every existing replay still passing unchanged.
-- **R3 Drawing and sound events.** Drawing in stage 03's look: colours from its palette module, in every palette (standard and colour-blind) and in blueprint mode, distinct from every existing element; no portal blue or orange, and none of the UI's meanings (red = caution, green = completed). Movement the mechanic causes animates through stage 03's animation layer, and reduced motion shows plain steps. Sound events get sounds in the new identity's style, or reuse existing sounds until those exist. Verified in `npm run dev` at 1× and 2× pixel ratio, in each palette and in blueprint mode, with the sound setting off silencing it.
+- **R3 Drawing and sound events.** Drawing in stage 03's look: colours from its palette module, in the standard look and in blueprint mode, distinct from every existing element; no portal blue or orange, and none of the UI's meanings (red = caution, green = completed). Movement the mechanic causes animates through stage 03's animation layer, and reduced motion shows plain steps. Sound events get sounds in the style of stage 03's sound, or reuse existing sounds until those exist. Verified in `npm run dev` at 1× and 2× pixel ratio, in the standard look and in blueprint mode, with the sound setting off silencing it.
 - **R4 Rule fixtures.** One tiny chamber and recorded inputs for each spec bullet and edge case, each asserting its expected outcome. Verified by the local replay check passing, and failing once when the rule is deliberately broken (a one-off spot check, then reverted).
 - **R5 Solver.** Successor generation and state encoding. Record the states explored and the time on the fixtures and the teach chamber. Verified by staying within stage 02's budget.
 - **R6 Docs.** A `docs/elements.md` row, notes and interactions; AGENTS.md if rules text or keyboard ownership changes. Verified by reading the docs against the spec.
@@ -196,7 +194,7 @@ The existing elements need chambers too (portal basics, boxes and buttons, doors
 
 **Campaign plan table** (chamber counts set at the revisit by open decision 8; the rest filled in from the playtests during the mechanic phases and Phase 8):
 
-| # | Mechanic or element | New chambers | Teach notes (signage, confusion seen) | Sounds needed | Colours (every palette) |
+| # | Mechanic or element | New chambers | Teach notes (signage, confusion seen) | Sounds needed | Colours |
 |---|---|---|---|---|---|
 | 1 | Existing elements | — | — | — | — |
 | 2 | Slide floors | — | — | Slide start, slide stop | Slide floor |
@@ -210,13 +208,13 @@ The existing elements need chambers too (portal basics, boxes and buttons, doors
 
 ### Phase 0 — Ready the stage
 
-- [ ] **Revisit.** Re-read stage 01's element definition contract, format v2 and replay format, stage 02's state encoding and budget, and stage 03's palette module, animation layer and identity. Rename everything in this file to their real names; set the status to Ready.
+- [ ] **Revisit.** Re-read stage 01's element definition contract, format v2 and replay format, stage 02's state encoding and budget, and stage 03's palette module and animation layer. Rename everything in this file to their real names; set the status to Ready.
 - [ ] **Hook check.** Compare the six hooks under *Depends on* with what stage 01's element system supports. For each missing hook, either add it to the engine once, as its own step here, with replays proving no change to existing chambers, or drop the mechanics that need it (go/no-go point 1).
 - [ ] **Settle open decisions 2–8.** Record the answers under *Decisions made* (echo waits for Phase 7). Open decision 8 also sets the chamber counts in the campaign plan table and which of Phases 1–7 run.
 - [ ] **Lab chambers.** Set up the home chosen in open decision 3. For option A: a lab folder of chamber files, a development-only way to open one (registered only when `import.meta.env.DEV`, so it never ships), and the local checks covering it. Verified by opening a lab chamber in `npm run dev` and confirming the production build contains none.
 - [ ] **Interaction table.** Add a section to `docs/elements.md` listing every element against every other. Each cell is a rule, "can't happen" (chamber validation forbids it) or "to do". Existing elements fill their cells first, from the current rules.
 - [ ] **Outcome assertions in replays.** Confirm stage 01's replay format can assert an outcome: completes, does not complete, or reaches an expected state hash. Add it if missing. Verified by one passing and one deliberately failing fixture.
-- [ ] **Names and colours.** Choose names that fit stage 03's identity and colours from its palette module for the new elements, in every palette and in blueprint mode (decision 1, R3 constraints), and record them in `docs/elements.md`.
+- [ ] **Names and colours.** Choose names for the new elements and colours for them from stage 03's palette module, in the standard look and in blueprint mode (decision 1, R3 constraints), and record them in `docs/elements.md`.
 
 ### Phase 1 — Slide floors
 
@@ -373,7 +371,7 @@ Draft spec for option B (only if chosen):
 - [ ] **Load chambers without a hand-kept list.** Replace the static imports in `src/services/chamber_catalogue.ts` with `import.meta.glob`, excluding stage 01's recorded solutions, which sit next to the chamber files as `chamber_N.solution.json` (for example `['@/chambers/chamber_*.json', '!@/chambers/*.solution.json']`). The play order stays one typed list of permanent ids; chamber files stay named by permanent id (`chamber_<id>.json`), and display numbers come from position, never typed by hand. Renaming a chamber file renames its solution file too. Start eager (every chamber in the bundle; 20 chambers ≈ 12–16 KB gzipped); switch to lazy loading only if stage 03's bundle-size watch flags it. Verify: build output size recorded before and after.
 - [ ] **Catalogue check.** A local check that every chamber file appears in the play order exactly once, ids are unique, retired ids (kept in a list) are never reused, and every chamber has a recorded solution and stored par (from the 01 and 02 checks). Verify: break each rule once on purpose and the check fails.
 - [ ] **Numbering and links** (open decision 9). Change the chamber route in `src/router.ts` to the chosen scheme; add the fixed redirect table for `/chamber/0`, `/chamber/1`, `/chamber/2` and `/chamber/3`; unknown chambers still fall back home. Verify: in `npm run preview`, each old link opens the right chamber and an unknown one goes home.
-- [ ] **Hosting headers.** In `firebase.json`, make the no-cache headers match the new route patterns and remove the stale `/settings` entry if stage 00 didn't. Verify: after a preview deploy, `curl -I` on a chamber address shows `Cache-Control: no-cache`.
+- [ ] **Hosting headers.** In `firebase.json`, make the no-cache headers match the new route patterns and remove the stale `/settings` entry if stage 00 didn't. Verify: after a deploy, `curl -I` on a chamber address shows `Cache-Control: no-cache`.
 - [ ] **Everything keyed by id.** The chamber screen takes the chamber's id instead of its number; `last_chamber.ts` keeps the id; progress is already keyed by id (00). Verify: reorder two chambers in the play order locally; completions, best times and the highlight on return follow the chamber.
 - [ ] **Analytics stays comparable.** `chamber_number` keeps meaning the position in the list (0 for the tutorial, then 1, 2, 3…), whatever link scheme open decision 9 picks; no new parameter is needed. Verify: a production preview build sends the position as `chamber_number` (GA4 DebugView).
 
@@ -388,9 +386,9 @@ Draft spec for option B (only if chosen):
 ### Phase 11 — Campaign content
 
 - [ ] **Chamber plan.** List the 16 new chambers in this file, in play order together with chambers 0–3, each with its mechanic or element and its part (teach, test, twist or combine), following the campaign plan table and open decision 8. Starting order: the existing elements first, then the new mechanics in the order built. Verify: every mechanic this stage shipped has chambers or a recorded reason it doesn't, and the total is 20.
-- [ ] **Authoring workflow before the editor.** Until stage 05's editor exists: hand-write chamber v2 JSON; a development-only route (behind `import.meta.env.DEV`, never in production builds) that loads a chamber file from disk and reloads on save, extending this stage's lab route (Phase 0) rather than adding a second one; record the solution by playing it with 01's recorder; run 02's solver for par and the shortcut report; tick a per-chamber checklist (solution recorded, par stored, shortcut report read, voice and rail lines written, one playtest by someone else). Verify: one chamber goes through the whole workflow; a production build has no development route.
+- [ ] **Authoring workflow before the editor.** Until stage 05's editor exists: hand-write chamber v2 JSON; a development-only route (behind `import.meta.env.DEV`, never in production builds) that loads a chamber file from disk and reloads on save, extending this stage's lab route (Phase 0) rather than adding a second one; record the solution by playing it with 01's recorder; run 02's solver for par and the shortcut report; tick a per-chamber checklist (solution recorded, par stored, shortcut report read, one playtest by someone else). Verify: one chamber goes through the whole workflow; a production build has no development route.
 - [ ] **Place chambers 0–3 in the campaign.** The tutorial and today's three chambers keep permanent ids 4 and 1–3; if the plan moves them, their old links go through the redirect table. Verify: their completions and best times survive.
-- [ ] **Author release 1** (about four new chambers; each release ships with a changelog entry in `src/services/changelog.ts`). Verify: catalogue check, replay check and solver check pass; playtested; reviewed on a preview channel.
+- [ ] **Author release 1** (about four new chambers; each release ships with a changelog entry in `src/services/changelog.ts`). Verify: catalogue check, replay check and solver check pass; playtested.
 - [ ] **Author release 2.** Same checks.
 - [ ] **Author release 3.** Same checks.
 - [ ] **Author release 4.** Same checks; the campaign reaches 20 chambers.
@@ -405,7 +403,7 @@ Draft spec for option B (only if chosen):
 ### Phase 13 — Medals
 
 - [ ] **Store the best moves and portals.** Extend `src/services/progress.ts` to keep the best moves and fewest portals per chamber id alongside the best time, inside stage 00's single versioned progress record (bump its version, migrate in the same merge style; every access in `try`/`catch`, cleared by Reset progress). Update `AGENTS.md`'s persistence section. Verify: complete a chamber twice with different results; reload; Reset progress clears all three.
-- [ ] **Medal rules** (open decisions 10 and 11). A small service that turns best values and par into medals on three axes; relaxed runs follow stage 03's relaxed-mode decision. Verify: worked examples in a table here match its output for edge cases (exactly par, one over, no par stored).
+- [ ] **Medal rules** (open decisions 10 and 11). A small service that turns best values and par into medals on three axes. Verify: worked examples in a table here match its output for edge cases (exactly par, one over, no par stored).
 - [ ] **Medals on the result dialog and chamber rows** (uses the frontend-design skill). Three axes, plus an "undo used" mark on the result when it applies. Colours keep their `AGENTS.md` meanings; medals must not rely on colour alone. Verify: keyboard flow in the chamber-complete dialog unchanged; contrast checked.
 - [ ] **Analytics.** Add medal parameters to `chamber_complete` (new names only; never rename existing ones). Verify: DebugView.
 - [ ] **Histogram** (open decision 12). Do nothing in this stage unless the BigQuery pipeline from Phase 12 already works; then bake per-chamber distributions into a JSON file at build time and draw them on the result dialog (uses the frontend-design skill).
@@ -438,7 +436,7 @@ Draft spec for option B (only if chosen):
 - [ ] The scrolling Play menu works fully by keyboard and by pointer, and `AGENTS.md` describes it.
 - [ ] Medals on three axes show on results and rows, are stored by id and are cleared by Reset progress.
 - [ ] Chamber order has been reviewed against data for every chamber above the sample threshold.
-- [ ] Local checks pass: every chamber and fixture replays with its expected outcome; every chamber solves within budget; shipped chambers raise no oscillation warnings; each release was reviewed on a preview channel before going to production.
+- [ ] Local checks pass: every chamber and fixture replays with its expected outcome; every chamber solves within budget; shipped chambers raise no oscillation warnings.
 - [ ] `docs/elements.md`, AGENTS.md and `todo/README.md` are up to date.
 
 ## Go/no-go points
@@ -457,10 +455,10 @@ Draft spec for option B (only if chosen):
 - **Interactions multiply.** Each new element must be defined against every other. The interaction table and fixtures exist so that gaps show up as "to do" cells, not as player bug reports.
 - **Beams settle in surprising ways.** Feedback through receivers and loops through portals are handled by deterministic rules and warnings, but they can still confuse players. Watch the playtest notes.
 - **Solver growth.** Conveyors (boxes drift every tick), timed buttons (counters), push blocks (dead ends) and echo (histories) each multiply the states. The printed per-chamber cost shows it early.
-- **New elements must read clearly in every palette.** Slide floor and plain floor, conveyor and arrow, beam and laser field must stay distinct in the standard look, blueprint mode, the colour-blind palettes and greyscale. R3's check in every palette and the cold playtests catch this.
+- **New elements must read clearly in both looks.** Slide floor and plain floor, conveyor and arrow, beam and laser field must stay distinct in the standard look and blueprint mode. R3's check in both looks and the cold playtests catch this.
 - **"Moves" changes meaning.** A slide or a conveyor ride moves many tiles on one key. Follow stage 01's definition and note any change in meaning, because analytics parameter names are permanent and their history spans the change.
 - **Lab chambers leaking.** If lab chambers reach the public catalogue early, they get permanent ids too soon, and the Play menu overflows until Phase 10 makes it scroll.
-- **Feeling borrowed.** Keep names, looks and combinations original (decision 1), in line with stage 03's identity.
+- **Feeling borrowed.** Keep names, looks and combinations original (decision 1).
 - **Mechanics barely used.** With 16 new chambers, a mechanic may get only one or two. Open decision 8 settles the fit before anything is built.
 - **Content volume.** 16 chambers are most of the campaign phases' work. Ship them in small releases, so the game grows instead of waiting.
 - **Reordering surprises players.** Display numbers change after a data-driven reorder. Progress is safe (keyed by id); say what changed in the changelog.

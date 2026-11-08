@@ -22,8 +22,7 @@ This stage assumes the following exist when it starts. Re-check each when revisi
 - **Stage 02 (solver)**
   - The solver runs in a Web Worker with a time limit and reports par (fewest moves, fewest portals) and shortcuts ("solvable without ever opening door 2").
   - If 02's prototype was a no-go, publishing still works (the author's replay proves solvability) but shows no par or shortcuts. See Go/no-go points.
-- **Stage 03 (identity, look and sound)**
-  - The identity is settled: no Valve name or logo anywhere a shared link or community page can reach (README open decision 5).
+- **Stage 03 (look and sound)**
   - The reworked renderer, including the "blueprint" look if built, with the high-DPI fix from stage 00. The editor draws with it.
 - **Stage 04 (mechanics and campaign)**
   - A home menu that scales and has room for Editor and, later, Community entries.
@@ -78,7 +77,7 @@ This stage assumes the following exist when it starts. Re-check each when revisi
 
 - [ ] **A1.1 Write the link format.** Settle open decisions 2 and 3. Describe the byte layout in a new `docs/chamber_link.md`: format version, ruleset version, size, tile layer (element codes from 01's registry), linked elements and their links, subject and exit, optional name and author (UTF-8, length-capped), optional replay. Verify: every element type in the registry and every field of v2's chamber type has a place in the layout.
 - [ ] **A1.2 Encoder and decoder.** Plain TypeScript with no Vue import, so Stage B's Cloud Functions can reuse it (for example `src/game/chamber_link.ts`, inside the lint boundary in `eslint.config.js`). Encode → deflate-raw → base64url, and back. Note that `CompressionStream` is asynchronous. Verify: a local check round-trips every bundled chamber to an identical result.
-- [ ] **A1.3 Size limits.** Reject encoded text above a cap (proposal: 8 KB) before decoding. Stop decompressing above a cap (proposal: 64 KB) while streaming, so a "zip bomb" can't freeze the tab. Cap the grid (proposal: 40×40, confirm against stage 03's camera) and the element counts. Verify: oversized and bomb fixtures are rejected within milliseconds.
+- [ ] **A1.3 Size limits.** Reject encoded text above a cap (proposal: 8 KB) before decoding. Stop decompressing above a cap (proposal: 64 KB) while streaming, so a "zip bomb" can't freeze the tab. Cap the grid (proposal: 40×40, or smaller: there is no camera (stage 03), so the cap must keep a chamber fitting the screen) and the element counts. Verify: oversized and bomb fixtures are rejected within milliseconds.
 - [ ] **A1.4 Runtime validation of untrusted chambers.** Today `ChamberData` (`src/game/chamber_data.ts`) is only checked by the type checker at build time; a link needs a runtime check. Reuse 01's v2 validator if it has one; otherwise build it here. Check: everything inside the grid; exactly one subject and one exit; links point at existing linkable ids; no duplicate ids; allowed element combinations per tile (from the registry); the box-linked-button rule; name and author length and characters. Return a list of problems with tile positions, so the editor can show them. Verify: each bad fixture produces its expected error, and every bundled chamber passes.
 - [ ] **A1.5 Measure link length.** Encode every bundled chamber (stage 04's campaign by then) with and without its recorded solution. Write the smallest, middle and largest lengths into this file. Budget: 2,000 characters with the replay. Verify: a local check fails if a bundled chamber's link goes over budget.
 
@@ -114,7 +113,7 @@ This stage assumes the following exist when it starts. Re-check each when revisi
 
 - [ ] **A5.1 Editor and shared-chamber events.** In `src/services/analytics.ts` (the event list is its `EventName` union). Proposed names, permanent once shipped: `editor_open`; `editor_test_play`; `editor_share` (`width`, `height`, `elements`, `par_moves`, −1 when unknown); `shared_chamber_open` (`chamber_hash`, `verified`); `shared_chamber_complete` (`chamber_hash`, `time_ms`, `moves`, `portals`). No chamber content or names go into events. Skip `shared_chamber_open` when the opener's own draft has that hash, so authors don't inflate the gate numbers. The author registers the custom parameters in Google Analytics. Verify: events arrive in DebugView. `npm run preview` serves a production build that sends real events, so test on a preview channel or accept the noise.
 - [ ] **A5.2 Docs.** `AGENTS.md`: layout (editor screen, link encoding), routes, keyboard ownership, analytics events, storage keys. `docs/elements.md`: point to `docs/chamber_link.md`. Verify: a read-through.
-- [ ] **A5.3 Release.** Deploy to a Firebase Hosting preview channel from the local machine (`firebase hosting:channel:deploy <name>`), try links across browsers, then `npm run deploy`. Verify: a link made on the preview opens on production.
+- [ ] **A5.3 Release.** Try links across browsers locally with `npm run preview`, then `npm run deploy`. Verify: a link made locally opens on production.
 
 ### Gate — before Stage B
 
@@ -260,7 +259,7 @@ Stage B (only if the gate says go):
 - **Moderation:** offensive names, spam publishing, copied chambers. Keep free text to short names and moderate after publishing, with auto-hide; budget the hours up front (B0.4).
 - **Cost:** Firestore reads from browsing and writes from per-run records grow with players. Watch weekly, page lists, aggregate in functions.
 - **Abuse:** fake clears, rating manipulation, report brigading. The server verifier, ratings only after a verified clear, rate limits, App Check, distinct-reporter thresholds.
-- **IP exposure:** sharing and a community make the game far more visible. Nothing public may carry the Valve name or logo; this depends on stage 03's identity work. Players may also recreate levels from other games; the content policy and the "copied" report reason cover it.
+- **IP exposure:** sharing and a community make the game far more visible. The game keeps Valve's name and logo as a private fan game (README decision 12), so opening sharing beyond friends brings that risk back. Players may also recreate levels from other games; the content policy and the "copied" report reason cover it.
 - **Privacy and legal:** accounts bring personal data, EU and UK consent rules and minimum-age questions. Handled with legal input in B0, before any account code ships.
 - **Format and rules drift:** a shared link lives forever. Every format version stays decodable, and a rules change after v2 must version replays, or old solutions fail.
 - **Untrusted data:** giant or malformed chambers could freeze the tab or the solver. Size caps before decoding, a runtime validator, the solver in a worker with a time limit.
