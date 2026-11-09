@@ -6,7 +6,8 @@
  * chambers, settings or About rows in the second column, starting level with
  * the section's row. The third follows the highlight there: Play shows the
  * chamber's map, About shows a list of pages or the changelog, and Settings'
- * Controls row the key bound to each game key, from the top of the menu.
+ * Controls row the key bound to each game key (turning in place, undo and
+ * redo hidden for now), from the top of the menu.
  * Right, Enter or a click steps from an About row into its pages or changelog,
  * or from Controls into its keys. Up and Down move the highlight (or scroll
  * the changelog) in the column that has the keyboard, Left and Escape step
@@ -175,7 +176,8 @@ const settings: SettingEntry[] = [
 const CONTROLS_INDEX = settings.length // The Controls row comes after the switches
 const RESET_PROGRESS_INDEX = settings.length + 1 // Reset progress comes last
 
-const CONTROLS: ControlEntry[] = [
+// Every game key, in the order its row would show
+const ALL_CONTROLS: ControlEntry[] = [
   {
     gameKey: GameKey.UP,
     label: 'Move up',
@@ -227,6 +229,17 @@ const CONTROLS: ControlEntry[] = [
     portal: null,
   },
 ]
+
+// Game keys whose rows are hidden for now, as in the chamber's legend, kept so they can be shown
+// again; their keys still work
+const HIDDEN_CONTROLS: ReadonlySet<GameKey> = new Set([
+  GameKey.TURN,
+  GameKey.UNDO,
+  GameKey.REDO,
+])
+
+// The rows of the Controls column
+const CONTROLS = ALL_CONTROLS.filter((control) => !HIDDEN_CONTROLS.has(control.gameKey))
 
 const RESET_CONTROLS_INDEX = CONTROLS.length // Reset controls comes after the keys
 
@@ -784,7 +797,7 @@ function captureKey(event: KeyboardEvent, gameKey: GameKey): void {
   }
   const control = CONTROLS.find((entry) => entry.gameKey === gameKey)
   const previousKey = keyBindings.value[gameKey]
-  const swapped = CONTROLS.find((entry) => entry.gameKey !== gameKey && keyBindings.value[entry.gameKey] === key)
+  const swapped = ALL_CONTROLS.find((entry) => entry.gameKey !== gameKey && keyBindings.value[entry.gameKey] === key)
   bindKey(gameKey, key)
   waitingControl.value = null
   refusedKey.value = null
