@@ -1,29 +1,29 @@
 {
     "version": 2,
     "size": {
-        "width": 16,
-        "height": 11
+        "width": 12,
+        "height": 10
     },
     "subject": {
-        "x": 2,
-        "y": 8,
-        "direction": "RIGHT"
+        "x": 1,
+        "y": 5,
+        "direction": "UP"
     },
     "exit": {
         "x": 0,
-        "y": 4,
+        "y": 3,
         "blocked": false
     },
     "walls": [
         {
             "xFrom": 0,
-            "xTo": 15,
-            "yFrom": 10,
-            "yTo": 10
+            "xTo": 11,
+            "yFrom": 9,
+            "yTo": 9
         },
         {
             "xFrom": 0,
-            "xTo": 15,
+            "xTo": 11,
             "yFrom": 0,
             "yTo": 0
         },
@@ -31,64 +31,40 @@
             "xFrom": 0,
             "xTo": 0,
             "yFrom": 1,
-            "yTo": 3
+            "yTo": 2
         },
         {
             "xFrom": 0,
             "xTo": 0,
-            "yFrom": 5,
-            "yTo": 9
+            "yFrom": 4,
+            "yTo": 8
         },
         {
-            "xFrom": 15,
-            "xTo": 15,
+            "xFrom": 11,
+            "xTo": 11,
             "yFrom": 1,
-            "yTo": 9
-        },
-        {
-            "x": 6,
-            "y": 6
+            "yTo": 8
         },
         {
             "xFrom": 6,
             "xTo": 6,
-            "yFrom": 8,
-            "yTo": 9
+            "yFrom": 5,
+            "yTo": 7
         },
         {
             "xFrom": 1,
-            "xTo": 13,
-            "yFrom": 5,
-            "yTo": 5
-        },
-        {
-            "x": 5,
-            "y": 1
+            "xTo": 9,
+            "yFrom": 4,
+            "yTo": 4
         },
         {
             "xFrom": 5,
-            "xTo": 5,
-            "yFrom": 3,
-            "yTo": 4
-        },
-        {
-            "xFrom": 6,
-            "xTo": 13,
-            "yFrom": 3,
-            "yTo": 4
-        },
-        {
-            "xFrom": 6,
-            "xTo": 14,
-            "yFrom": 1,
-            "yTo": 1
+            "xTo": 9,
+            "yFrom": 2,
+            "yTo": 3
         }
     ],
     "ditches": [
-        {
-            "x": 3,
-            "y": 9
-        },
         {
             "x": 3,
             "y": 8
@@ -100,24 +76,28 @@
         {
             "x": 3,
             "y": 6
+        },
+        {
+            "x": 3,
+            "y": 5
         }
     ],
     "boxes": [
         {
-            "x": 9,
-            "y": 8
+            "x": 8,
+            "y": 5
         }
     ],
     "buttons": [
         {
-            "x": 11,
-            "y": 6,
+            "x": 8,
+            "y": 7,
             "links": [
                 1
             ]
         },
         {
-            "x": 14,
+            "x": 10,
             "y": 2,
             "links": [
                 2
@@ -126,13 +106,13 @@
     ],
     "doors": [
         {
-            "x": 14,
-            "y": 5,
+            "x": 10,
+            "y": 4,
             "id": 1
         },
         {
             "x": 5,
-            "y": 2,
+            "y": 1,
             "id": 2
         }
     ]
