@@ -26,10 +26,10 @@ defineProps<ChamberRowProps>()
         number: String(chamber.number),
       },
     }"
-    :aria-label="`Chamber ${chamber.number}${completed ? ', completed' : ''}${bestTime !== null ? `, best time ${formatTime(bestTime)}` : ''}`"
+    :aria-label="`${chamber.name}${completed ? ', completed' : ''}${bestTime !== null ? `, best time ${formatTime(bestTime)}` : ''}`"
     @click="Sound.START.play()"
   >
-    <span class="menu-row-label">Chamber {{ chamber.number }}</span>
+    <span class="menu-row-label">{{ chamber.name }}</span>
     <span v-if="bestTime !== null" class="chamber-row-time">{{ formatTime(bestTime) }}</span>
     <span
       class="chamber-row-subject"

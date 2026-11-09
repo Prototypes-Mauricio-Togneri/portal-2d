@@ -5,7 +5,7 @@
 import DialogFrame from '@/components/dialog_frame.vue'
 
 export interface PauseDialogProps {
-  chamberNumber: number
+  chamberName: string // What the player sees the chamber called, such as "Chamber 2" or "Tutorial"
 }
 
 defineProps<PauseDialogProps>()
@@ -19,7 +19,7 @@ const emit = defineEmits<{
 
 <template>
   <DialogFrame title="Paused" tone="interaction">
-    <p>Chamber {{ chamberNumber }}</p>
+    <p>{{ chamberName }}</p>
     <template #actions>
       <button class="button button-interaction" type="button" @click="emit('continue')">
         Continue

@@ -18,7 +18,7 @@ import type {ReplayData} from '@/game/replay_data'
 import {Sound} from '@/game/sound'
 import {trackChamberAbandon, trackChamberComplete, trackChamberQuit, trackChamberRestart, trackChamberStart} from '@/services/analytics'
 import type {RunProgress} from '@/services/analytics'
-import {findChamber} from '@/services/chamber_catalogue'
+import {findChamber, nameInSentence} from '@/services/chamber_catalogue'
 import {keyBindings} from '@/services/key_bindings'
 import {formatTime} from '@/services/format_time'
 import {rememberChamber} from '@/services/last_chamber'
@@ -56,6 +56,7 @@ const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
 const chamber = computed(() => findChamber(props.chamberNumber))
 const nextChamber = computed(() => findChamber(props.chamberNumber + 1)) // The chamber after this one; undefined after the last
 const signNumber = computed(() => String(props.chamberNumber).padStart(2, '0')) // Two digits, as on a test chamber sign
+const chamberName = computed(() => chamber.value?.name ?? `Chamber ${props.chamberNumber}`) // What the player sees it called, such as "Chamber 2" or "Tutorial"
 const dialog = ref<ChamberDialog>('none')
 const timeReadout = useTemplateRef<HTMLElement>('timeReadout')
 const timerStarted = ref(false) // Whether the clock has started; changes only on the first key and on reset
@@ -488,14 +489,14 @@ onBeforeUnmount(() => {
 
     <PauseDialog
       v-if="dialog === 'pause'"
-      :chamber-number="chamberNumber"
+      :chamber-name="chamberName"
       @continue="resume"
       @reset="dialog = 'confirm-reset'"
       @exit="dialog = 'confirm-exit'"
     />
     <ConfirmDialog
       v-else-if="dialog === 'confirm-reset'"
-      :title="`Reset chamber ${chamberNumber}?`"
+      :title="`Reset ${nameInSentence(chamberName)}?`"
       message="You'll start again from the entrance. Portals, boxes, buttons and switches go back to how they began."
       confirm-label="Reset chamber"
       @confirm="confirmReset"
@@ -503,7 +504,7 @@ onBeforeUnmount(() => {
     />
     <ConfirmDialog
       v-else-if="dialog === 'confirm-exit'"
-      :title="`Exit chamber ${chamberNumber}?`"
+      :title="`Exit ${nameInSentence(chamberName)}?`"
       message="You'll go back to the chamber list. Your progress in this chamber won't be kept."
       confirm-label="Exit chamber"
       @confirm="confirmExit"
@@ -511,7 +512,7 @@ onBeforeUnmount(() => {
     />
     <CompletionDialog
       v-else-if="dialog === 'completed'"
-      :chamber-number="chamberNumber"
+      :chamber-name="chamberName"
       :time="completedRun?.time ?? 0"
       :best-time="completedRun?.bestTime ?? 0"
       :new-best="completedRun?.newBest ?? false"

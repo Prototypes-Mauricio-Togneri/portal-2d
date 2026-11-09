@@ -1,9 +1,11 @@
 {
-    "chamberHash": "66506e8c",
+    "chamberHash": "679d3869",
     "actions": [
-        "right",
-        "right",
-        "right",
+        "blue",
+        "left",
+        "left",
+        "orange",
+        "left",
         "down",
         "right",
         "right",
@@ -34,8 +36,8 @@
     ],
     "expected": {
         "completed": true,
-        "moves": 24,
-        "portals": 2,
-        "finalHash": "3e96d602"
+        "moves": 23,
+        "portals": 4,
+        "finalHash": "30b5e893"
     }
 }

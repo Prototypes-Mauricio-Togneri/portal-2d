@@ -9,7 +9,7 @@ import DialogFrame from '@/components/dialog_frame.vue'
 import {formatTime} from '@/services/format_time'
 
 export interface CompletionDialogProps {
-  chamberNumber: number
+  chamberName: string // What the player sees the chamber called, such as "Chamber 2" or "Tutorial"
   time: number // This run's time, in hundredths of a second
   bestTime: number // The chamber's best time after this run, in hundredths of a second
   newBest: boolean // Whether this run set the best time
@@ -32,7 +32,7 @@ const canDownloadSolution = import.meta.env.DEV === true
 </script>
 
 <template>
-  <DialogFrame tone="success" :title="`Chamber ${chamberNumber} complete`">
+  <DialogFrame tone="success" :title="`${chamberName} complete`">
     <p class="completion-time">
       <span class="completion-time-label">Your time</span>
       <span class="completion-time-value">{{ formatTime(time) }}</span>

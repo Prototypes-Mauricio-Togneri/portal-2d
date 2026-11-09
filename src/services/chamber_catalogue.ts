@@ -10,12 +10,14 @@ import type {ChamberData} from '@/game/chamber_data'
 export type ChamberEntry = {
   id: number // Permanent, 0 or more: 0 is the tutorial's, the others are given in the order chambers were created; it names the chamber's files, keys its stored progress and is sent as the analytics chamber_id, so changing one splits that chamber's analytics history
   number: number // Position in the list below, counted from 0, shown to the player and used in the address; derived, never typed by hand
+  name: string // What the player sees it called, in sentence case: its listing's name, or "Chamber N"
   data: ChamberData // Layout loaded into the game
 }
 
 /** A chamber as listed: its number comes from where it sits in the list. */
 type ChamberListing = {
   id: number // Permanent id, see ChamberEntry
+  name?: string // Shown instead of "Chamber N", in sentence case
   data: ChamberData // Layout loaded into the game
 }
 
@@ -23,6 +25,7 @@ type ChamberListing = {
 const CHAMBER_LISTINGS: ChamberListing[] = [
   {
     id: 0,
+    name: 'Tutorial',
     data: chamberZeroData,
   },
   {
@@ -42,6 +45,7 @@ const CHAMBER_LISTINGS: ChamberListing[] = [
 export const CHAMBERS: ChamberEntry[] = CHAMBER_LISTINGS.map((listing, index) => ({
   id: listing.id,
   number: index,
+  name: listing.name ?? `Chamber ${index}`,
   data: listing.data,
 }))
 
@@ -72,4 +76,14 @@ if (import.meta.env.DEV) {
  */
 export function findChamber(chamberNumber: number): ChamberEntry | undefined {
   return CHAMBERS.find((chamber) => chamber.number === chamberNumber)
+}
+
+/**
+ * Writes a chamber's name as it reads inside a sentence, such as "Reset
+ * chamber 2?" or "Reset tutorial?".
+ * @param name - The chamber's name, in sentence case
+ * @returns The name with its first letter in lower case
+ */
+export function nameInSentence(name: string): string {
+  return name.charAt(0).toLowerCase() + name.slice(1)
 }
