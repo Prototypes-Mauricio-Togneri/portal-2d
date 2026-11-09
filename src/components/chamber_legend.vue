@@ -3,7 +3,8 @@
  * The controls legend shown beside the chamber: moving, turning in place,
  * both portals and interacting, then undo and redo, each on the key the
  * player has bound to it, and Escape for the pause dialog, each with what it
- * does. The keys show what the player's keyboard prints on them.
+ * does. The keys show what the player's keyboard prints on them. Turning in
+ * place, undo and redo are hidden for now; their keys still work.
  */
 import {computed, onMounted} from 'vue'
 import {GameKey} from '@/game/game_key'
@@ -42,6 +43,13 @@ const keys = computed(() => ({
   [GameKey.REDO]: legendKey(GameKey.REDO),
 }))
 
+// Game keys whose rows are hidden for now, kept so they can be shown again; the keys still work
+const HIDDEN_KEYS: ReadonlySet<GameKey> = new Set([
+  GameKey.TURN,
+  GameKey.UNDO,
+  GameKey.REDO,
+])
+
 // The player may have switched keyboard layouts since the labels were read
 onMounted(refreshKeyLabels)
 </script>
@@ -62,7 +70,7 @@ onMounted(refreshKeyLabels)
           <span class="action-detail">Navigate the chamber</span>
         </dd>
       </div>
-      <div class="legend-row">
+      <div v-if="!HIDDEN_KEYS.has(GameKey.TURN)" class="legend-row">
         <dt>
           <kbd
             class="keycap"
@@ -122,7 +130,7 @@ onMounted(refreshKeyLabels)
           <span class="action-detail">Use switches, pick up and drop boxes</span>
         </dd>
       </div>
-      <div class="legend-row">
+      <div v-if="!HIDDEN_KEYS.has(GameKey.UNDO)" class="legend-row">
         <dt>
           <kbd
             class="keycap"
@@ -137,7 +145,7 @@ onMounted(refreshKeyLabels)
           <span class="action-detail">Take back the last step</span>
         </dd>
       </div>
-      <div class="legend-row">
+      <div v-if="!HIDDEN_KEYS.has(GameKey.REDO)" class="legend-row">
         <dt>
           <kbd
             class="keycap"
