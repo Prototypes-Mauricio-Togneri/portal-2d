@@ -7,7 +7,7 @@ import chamberThreeData from '@/chambers/chamber_3.json'
 import type {ChamberData} from '@/game/chamber_data'
 
 export type ChamberEntry = {
-  id: number // Permanent, given in the order chambers were created: it names the chamber's files, keys its stored progress and is sent as the analytics chamber_id, so changing one splits that chamber's analytics history
+  id: number // Permanent, 0 or more: 0 is the tutorial's, the others are given in the order chambers were created; it names the chamber's files, keys its stored progress and is sent as the analytics chamber_id, so changing one splits that chamber's analytics history
   number: number // Position in the list below, counted from 0, shown to the player and used in the address; derived, never typed by hand
   data: ChamberData // Layout loaded into the game
 }
@@ -41,14 +41,14 @@ export const CHAMBERS: ChamberEntry[] = CHAMBER_LISTINGS.map((listing, index) =>
 }))
 
 /**
- * Logs an error for every chamber whose id is not a positive integer or is
- * already taken by an earlier chamber. Run in development only.
+ * Logs an error for every chamber whose id is not a whole number of 0 or
+ * more, or is already taken by an earlier chamber. Run in development only.
  */
 function reportInvalidIds(): void {
   const seenIds = new Set<number>()
   for (const chamber of CHAMBERS) {
-    if (!Number.isInteger(chamber.id) || chamber.id < 1) {
-      console.error(`Chamber ${chamber.number} has id ${chamber.id}, which is not a positive integer`)
+    if (!Number.isInteger(chamber.id) || chamber.id < 0) {
+      console.error(`Chamber ${chamber.number} has id ${chamber.id}, which is not a whole number of 0 or more`)
     } else if (seenIds.has(chamber.id)) {
       console.error(`Chamber ${chamber.number} has id ${chamber.id}, already used by an earlier chamber`)
     }

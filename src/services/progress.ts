@@ -110,7 +110,8 @@ function readStoredProgress(): ProgressRecord {
     ] of Object.entries(stored.chambers)) {
       const chamberId = Number(key)
       const record = parseChamberRecord(value)
-      if (Number.isInteger(chamberId) && chamberId > 0 && record !== null) {
+      // The key must be the id as saves write it, so a malformed key such as '' or '00' can't pass as id 0
+      if (Number.isInteger(chamberId) && chamberId >= 0 && String(chamberId) === key && record !== null) {
         progress.chambers[String(chamberId)] = record
       }
     }
