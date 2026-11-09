@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Render profile</title>
+    <style>
+      body {
+        margin: 1rem;
+        font-family: sans-serif;
+        color: rgba(32, 32, 32, 1);
+        background: rgba(255, 255, 255, 1);
+      }
+
+      /* Results, aligned so the numbers line up */
+      #result {
+        font-size: 0.875rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Render profile</h1>
+    <p>Development only. Redraws chamber 3's settled start every frame at pixel ratio 1, then 2, sized as the chamber screen sizes it in a 1920 × 1080 window, and reports the draw time and the frame interval. Keep this tab in front while it runs; reload to run again.</p>
+    <pre id="result">Starting…</pre>
+    <canvas id="canvas"></canvas>
+    <script type="module" src="./render_profile.ts"></script>
+  </body>
+</html>

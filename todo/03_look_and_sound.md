@@ -56,7 +56,7 @@ These are assumptions about what earlier stages delivered. Re-check each when re
 
 ### Phase B — Visual rework
 
-- [ ] **Profile first.** Measure frame time on the largest chamber at `devicePixelRatio` 1 and 2. Today the level redraws only when the state changes (`level.ts`, frame loop), so animation means drawing every frame while something moves. Verify: numbers recorded here, as the baseline for the 60 fps checks below.
+- [x] **Profile first.** Measure frame time on the largest chamber at `devicePixelRatio` 1 and 2. Today the level redraws only when the state changes (`level.ts`, frame loop), so animation means drawing every frame while something moves. Verify: numbers recorded here, as the baseline for the 60 fps checks below.
 - [ ] **Palette module** (open decision 1). Move the game's hex literals into named `rgba()` colours in one module in `src/game/`; the renderer takes a palette. Lift the hex-literal exception in `AGENTS.md`. The drawing stays identical. Verify: a screenshot of each chamber's start state before and after matches.
 - [ ] **Animation layer** (uses the frontend-design skill). Purely visual interpolation between consecutive states from 01's pure step. A new key never waits: it snaps the running animation to its end. The clock is unaffected; `prefers-reduced-motion` turns interpolation off. Verify: the replay check still passes (rules untouched); fast key mashing feels as responsive as before.
 - [ ] **Smooth steps** (uses the frontend-design skill). The subject and a carried box glide between tiles. Verify: visual check; reduced motion shows plain steps.
@@ -113,4 +113,11 @@ These are assumptions about what earlier stages delivered. Re-check each when re
 - Links stay by position in stage 04 too (README decision 13 settled open decision 6): inserting or reordering chambers shifts them, with no redirect table.
 - Every chamber must fit the screen whole, since there is no camera: stage 04's chambers and stage 05's grid cap stay within that.
 - Stage 05's editor reuses the chamber format, the renderer (blueprint mode suits editing) and the solution recorder.
-- Notes (filled in during this stage): profiling numbers.
+- Profiling baseline (2026-11-09, the "Profile first" step): chamber 3 (23 × 17, the largest canvas and the most elements), its settled start redrawn every frame, sized as the chamber screen sizes it in a 1920 × 1080 window. Chrome 155 on Linux, Intel UHD Graphics 620 (Mesa, through ANGLE), 8 cores, a 59.9 Hz display at pixel ratio 1, so ratio 2 is simulated by the canvas size (drawn at twice the size and shown at half). Median of 3 runs of 600 frames each, the range in brackets where runs differed:
+
+  | # | Pixel ratio | Canvas | Draw time median / p95 / max | Frame interval median / p95 | Frames skipping a refresh |
+  |---|---|---|---|---|---|
+  | 1 | 1 | 1357 × 1003 | 0.5 / 0.7 / 1.0 ms (max 0.9–2.0) | 16.7 / 16.7 ms (p95 16.7–16.8) | 0 |
+  | 2 | 2 | 2737 × 2023 | 0.5 / 0.7 / 1.0 ms (p95 0.7–0.8, max 0.9–1.1) | 16.7 / 16.8 ms | 0 |
+
+  Both ratios hold 60 fps with a wide margin: drawing takes about 3 % of a frame, and no frame missed a refresh. About a quarter (ratio 1) to half (ratio 2) of the intervals read 16.8 ms instead of 16.7, which is timer rounding at a 59.9 Hz display, not a dropped frame. Draw time is what the canvas calls take on the main thread; the GPU's share shows only in the frame interval. The page draws on a plain background, while the chamber screen draws over a blurred photo beside the rail, so the real screen may cost more; recheck it there once the animation layer draws every frame. To run it again, open `/src/dev/render_profile.html` in `npm run dev`, with the window in front (a covered or minimized window slows its frames, and the page then says its numbers are not valid).
