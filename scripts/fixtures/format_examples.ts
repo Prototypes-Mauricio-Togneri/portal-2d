@@ -1,13 +1,12 @@
 import type {ChamberData} from '@/game/chamber_data'
 import brokenChamberFields from '@scripts/fixtures/broken_chamber_fields.json'
 import brokenChamberLayout from '@scripts/fixtures/broken_chamber_layout.json'
-import formatV1Example from '@scripts/fixtures/format_v1_example.json'
 import formatV2Example from '@scripts/fixtures/format_v2_example.json'
 
 // Chamber files for the chamber check (npm run chamber:check), outside the
 // catalogue: a format 2 example, typed here without a cast so the build
-// fails when it doesn't fit the format, a format 1 file for the upgrade, and
-// cases that pin exactly what loading a file reports, broken ones included
+// fails when it doesn't fit the format, and cases that pin exactly what
+// loading a file reports, broken ones included
 
 /** A format 2 chamber using every addition (walls refusing portals, a link group named by a button and a switch, an empty par) and leaving out every list it doesn't need */
 export const FORMAT_V2_EXAMPLE: ChamberData = formatV2Example
@@ -29,23 +28,13 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
     problems: [],
   },
   {
-    name: 'format_1_with_id_0',
-    // Format 1 read an id of 0 as no id, so upgrading removes it
-    data: {
-      ...formatV1Example,
-      exit: {
-        ...formatV1Example.exit,
-        id: 0,
-      },
-    },
-    problems: [],
-  },
-  {
     name: 'newer_format',
+    // The example in every field but the version, so only the version is reported
     data: {
+      ...FORMAT_V2_EXAMPLE,
       version: 3,
     },
-    problems: ['error version: format 3 is newer than this game plays (2)'],
+    problems: ['error version: is not 2, the only format this game reads'],
   },
   {
     name: 'not_an_object',

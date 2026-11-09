@@ -9,35 +9,18 @@ import {CHAMBER_FILES, listChamberFiles} from '@scripts/chamber_files'
 import {listFixtureChambers} from '@scripts/fixtures/fixtures'
 import {CHAMBER_CASES, type ChamberCase, FORMAT_V2_EXAMPLE} from '@scripts/fixtures/format_examples'
 
-// Loads every chamber file the way the game does (brought to the current
-// format, every field read, the layout checked). Every chamber in
-// src/chambers must load without an error, and each case in
-// scripts/fixtures/format_examples.ts must report exactly the problems pinned
-// for it. The format 2 example, compiled, must reach exactly the pinned links
-// (its link group expanded) and refuse portals on exactly the pinned walls.
-// Every chamber file, fixture chamber and the format 2 example, compiled,
-// must answer wall, no portals and no element on the ring of tiles just
-// outside its edge. Then checks the
-// element registry against the format: every element's field is one the
-// parser accepts, the registry holds exactly format 1's elements, and every
-// game event has one owner. Prints one line per chamber, case, compiled
-// example and registry check, then any problem below it, and exits non-zero
-// on any failure
-
-/** Format 1's element fields: every field of a format 1 file but the size and the subject. Format 1 never changes, so they are written out */
-const FORMAT_1_ELEMENT_FIELDS: readonly string[] = [
-  'exit',
-  'walls',
-  'barriers',
-  'ditches',
-  'boxes',
-  'buttons',
-  'arrows',
-  'fizzlers',
-  'doors',
-  'switches',
-  'lasers',
-]
+// Loads every chamber file the way the game does (every field read, the
+// layout checked). Every chamber in src/chambers must load without an error,
+// and each case in scripts/fixtures/format_examples.ts must report exactly
+// the problems pinned for it. The format 2 example, compiled, must reach
+// exactly the pinned links (its link group expanded) and refuse portals on
+// exactly the pinned walls. Every chamber file, fixture chamber and the
+// format 2 example, compiled, must answer wall, no portals and no element on
+// the ring of tiles just outside its edge. Then checks the element registry
+// against the format: every element's field is one the parser accepts and
+// is registered once, and every game event has one owner. Prints one line
+// per chamber, case, compiled example and registry check, then any problem
+// below it, and exits non-zero on any failure
 
 /** What each button's and switch's links reach in the compiled format 2 example: its group stands for the door and the barrier, in that order */
 const EXAMPLE_LINKS: readonly string[] = [
@@ -294,31 +277,20 @@ function checkRegistryFields(): boolean {
 }
 
 /**
- * Checks that the registry holds exactly format 1's elements, each once.
- * @returns Whether the registry's fields match format 1's element fields
+ * Checks that no two elements share a field of the chamber file.
+ * @returns Whether each element's field is registered once
  */
 function checkRegistryElements(): boolean {
   const registered = DEFINITIONS.map((definition) => definition.fileKey)
-  const format1 = FORMAT_1_ELEMENT_FIELDS
-  const notRegistered = format1.filter((field) => !registered.includes(field))
-  const notInFormat1 = registered.filter((field) => !format1.includes(field))
   const registeredTwice = registered.filter((field, index) => registered.indexOf(field) !== index)
 
-  if ((notRegistered.length === 0) && (notInFormat1.length === 0) && (registeredTwice.length === 0)) {
-    console.log(`registry elements OK: the ${registered.length} elements of format 1`)
+  if (registeredTwice.length === 0) {
+    console.log(`registry elements OK: ${registered.length} elements, each field registered once`)
 
     return true
   }
 
-  console.error('registry elements FAILED: the registry doesn\'t match format 1\'s elements')
-
-  for (const field of notRegistered) {
-    console.error(`  not registered: ${field}`)
-  }
-
-  for (const field of notInFormat1) {
-    console.error(`  not in format 1: ${field}`)
-  }
+  console.error('registry elements FAILED: some fields are registered twice')
 
   for (const field of registeredTwice) {
     console.error(`  registered twice: ${field}`)

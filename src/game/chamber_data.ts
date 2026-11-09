@@ -4,8 +4,7 @@ import type {ChamberElementFields} from '@/game/rules/element_registry'
 // number, 'UP' becomes string), so every field is typed as the JSON import
 // reads it and the validator checks the values. The element fields come from
 // the element registry (src/game/rules/element_registry.ts), each typed by
-// its element definition. Older files are upgraded when read
-// (src/game/rules/upgrade_chamber.ts)
+// its element definition
 
 /**
  * A single tile of the chamber, in chamber coordinates: x grows to the right

@@ -1,7 +1,4 @@
 {
-    "format": 2,
-    "ruleset": "v2",
-    "chamberId": 3,
     "chamberHash": "aa0b3d05",
     "actions": [
         "down",

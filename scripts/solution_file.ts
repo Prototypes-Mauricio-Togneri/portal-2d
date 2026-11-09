@@ -1,4 +1,4 @@
-import {parseReplayStep, type ReplayExpectation, type ReplayStep, type SolutionData} from '@/game/replay_data'
+import {parseReplayStep, type ReplayData, type ReplayExpectation, type ReplayStep} from '@/game/replay_data'
 
 // Reads a recorded solution file (src/chambers/chamber_N.solution.json),
 // checking every field, for the scripts that replay solutions
@@ -75,21 +75,9 @@ function readExpectation(value: unknown): ReplayExpectation {
  * @returns The solution
  * @throws Error naming the first field that is missing or wrong
  */
-export function parseSolutionData(value: unknown): SolutionData {
+export function parseSolutionData(value: unknown): ReplayData {
   if (!isRecord(value)) {
     throw new Error('the solution is not an object')
-  }
-
-  if (value.format !== 2) {
-    throw new Error('format is not 2')
-  }
-
-  if (value.ruleset !== 'v2') {
-    throw new Error('ruleset is not "v2"')
-  }
-
-  if ((typeof value.chamberId !== 'number') || (!Number.isInteger(value.chamberId)) || (value.chamberId < 1)) {
-    throw new Error('chamberId is not a positive whole number')
   }
 
   if (!Array.isArray(value.actions)) {
@@ -108,9 +96,6 @@ export function parseSolutionData(value: unknown): SolutionData {
   }
 
   return {
-    format: value.format,
-    ruleset: value.ruleset,
-    chamberId: value.chamberId,
     chamberHash: readHash(value.chamberHash, 'chamberHash'),
     actions: actions,
     expected: readExpectation(value.expected),

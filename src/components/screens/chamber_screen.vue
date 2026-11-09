@@ -14,7 +14,7 @@ import ConfirmDialog from '@/components/confirm_dialog.vue'
 import PauseDialog from '@/components/pause_dialog.vue'
 import PortalLogo from '@/components/portal_logo.vue'
 import {Level} from '@/game/level'
-import type {SolutionData} from '@/game/replay_data'
+import type {ReplayData} from '@/game/replay_data'
 import {Sound} from '@/game/sound'
 import {trackChamberAbandon, trackChamberComplete, trackChamberQuit, trackChamberRestart, trackChamberStart} from '@/services/analytics'
 import type {RunProgress} from '@/services/analytics'
@@ -310,18 +310,9 @@ function downloadSolution(): void {
   if (!import.meta.env.DEV || level === null || chamber.value === undefined) {
     return
   }
-  let solution: SolutionData
+  let solution: ReplayData
   try {
-    const replay = level.createReplay()
-    // Written in the order the file lists them
-    solution = {
-      format: replay.format,
-      ruleset: replay.ruleset,
-      chamberId: chamber.value.id,
-      chamberHash: replay.chamberHash,
-      actions: replay.actions,
-      expected: replay.expected,
-    }
+    solution = level.createReplay()
   } catch (error) {
     console.error('Solution not saved:', error)
     solutionFailed.value = true

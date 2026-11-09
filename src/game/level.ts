@@ -218,8 +218,6 @@ export class Level {
     }
 
     return {
-      format: 2,
-      ruleset: 'v2',
       chamberHash: this.chamberHash,
       actions: actions,
       expected: {

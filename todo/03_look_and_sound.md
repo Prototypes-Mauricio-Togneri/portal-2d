@@ -1,7 +1,7 @@
 # Stage 03 — Look and sound
 
 Status: Draft
-Last revised: 2026-11-08
+Last revised: 2026-11-09
 
 ## Goal
 
@@ -20,7 +20,7 @@ These are assumptions about what earlier stages delivered. Re-check each when re
 ## Decisions made
 
 - 2026-11-06 — Remappable keys went to stage 01 (README decision 2); the gamepad, also sent there, was later dropped (README decision 9).
-- 2026-11-06 — Chamber links (`/chamber/N`, by position) stay as they are until stage 04 picks the numbering scheme (README decision 4, written when that work was still planned for this stage). This stage only starts the count at 0.
+- 2026-11-06 — Chamber links (`/chamber/N`, by position) stay as they are until stage 04 picks the numbering scheme (README decision 4, written when that work was still planned for this stage). This stage only starts the count at 0. Since 2026-11-09 (README decision 13) links may follow position freely: old links needn't keep working.
 - 2026-11-08 — This stage and the mechanics stage swapped places (README decision 11): look and sound come first, and the new mechanics and the rest of the campaign follow in stage 04, once this stage is right.
 - 2026-11-08 — Only one new chamber here: the tutorial, numbered 0, so chambers 1–3 keep their numbers and links. The campaign has 20 chambers in total (0–19); stage 04 adds the other 16.
 - 2026-11-08 — The catalogue and links that scale, the Play menu that scales, the campaign content, difficulty from data and medals moved to stage 04, with their open decisions (chamber numbering and links, medals and undo, medal thresholds, the histogram).
@@ -30,7 +30,8 @@ These are assumptions about what earlier stages delivered. Re-check each when re
 - 2026-11-08 — No camera: every chamber fits the screen, so the whole chamber is always shown.
 - 2026-11-08 — No preview deploys: releases go straight to production with `npm run deploy`.
 - 2026-11-08 — The renderer stays on the 2D canvas (README open decision 4). The profiling step can reopen it (see Go/no-go points).
-- Unchanged from `AGENTS.md`: desktop only; colour meanings (blue interaction and success, orange the second portal, red caution, green a completed chamber); `localStorage` keys keep the `portal-2d.` prefix and analytics event and parameter names never change (changing either splits or loses history).
+- 2026-11-09 — The author is the only player during development, and a few friends play later (README decision 13): no compatibility work, so saves and settings may be reset by updates, with no migrations, and old links may break. Numbering the tutorial 0 protects nothing worth keeping (the analytics history so far is only the author's own play), so whether it stays 0 or chambers 1–3 shift up is settled at this stage's revisit (Phase A).
+- Unchanged from `AGENTS.md`: desktop only; colour meanings (blue interaction and success, orange the second portal, red caution, green a completed chamber); `localStorage` keys keep the `portal-2d.` prefix, as a convention, and analytics event and parameter names never change (renaming one splits its history).
 
 ## Open decisions
 
@@ -47,10 +48,10 @@ These are assumptions about what earlier stages delivered. Re-check each when re
 
 ### Phase A — Tutorial chamber
 
-- [ ] **Count chamber numbers from 0.** The catalogue derives each chamber's number from its place in the list, today starting at 1 (`index + 1` in `src/services/chamber_catalogue.ts`). Start it at 0, in the same change that puts the tutorial first, so the tutorial is chamber 0 (`/chamber/0`, its sign showing "00") and chambers 1–3 keep their numbers, their links and their `chamber_number` in analytics. The route (`/chamber/:number(\d+)` in `src/router.ts`) already accepts 0; check every place that assumes the first chamber is 1 (the catalogue's comments and lookup, the chamber sign, the Play menu's rows, Next chamber, the last chamber kept in memory). Links stay by position; the scheme for when chambers are inserted between existing ones is stage 04's. Verify: in `npm run preview`, `/chamber/1`, `/chamber/2` and `/chamber/3` open the same chambers as before and `/chamber/0` opens the tutorial; Next chamber from 0 goes to 1; the Play menu shows all four rows at 1280×720.
+- [ ] **Count chamber numbers from 0.** The catalogue derives each chamber's number from its place in the list, today starting at 1 (`index + 1` in `src/services/chamber_catalogue.ts`). Start it at 0, in the same change that puts the tutorial first, so the tutorial is chamber 0 (`/chamber/0`, its sign showing "00") and chambers 1–3 keep their numbers. Starting at 0 is no longer needed to protect links or analytics (README decision 13: old links may break, and the analytics history so far is only the author's own play), so this stage's revisit decides between it and counting from 1 with chambers 1–3 shifting up to 2–4 (then this step only checks the tutorial is chamber 1). The route (`/chamber/:number(\d+)` in `src/router.ts`) already accepts 0; check every place that assumes the first chamber is 1 (the catalogue's comments and lookup, the chamber sign, the Play menu's rows, Next chamber, the last chamber kept in memory). Links stay by position, in stage 04 too (README decision 13). Verify: in `npm run preview`, each number opens the chamber at that place in the list, the tutorial first; Next chamber from the tutorial goes to the next one; the Play menu shows all four rows at 1280×720.
 - [ ] **Author the tutorial chamber.** Hand-written format 2 JSON (`docs/elements.md`, "Chamber format") with the next unused permanent id, 4, named by it like the others (`src/chambers/chamber_4.json`), listed in `scripts/chamber_files.ts` and first in `src/services/chamber_catalogue.ts`, with a recorded solution next to it (Download solution in `npm run dev`). It introduces one control at a time (move, turn with Ctrl, shoot with A and D, carry with Space) and one element at a time, using the rail's legend. Verify: `npm run verify` passes (the replay and chamber checks included); a first-time player finishes it without being told the keys.
-- [ ] **Progress follows the id.** The tutorial's completion, best time and attempts are stored under its id like every chamber's (stage 00), and Reset progress clears them. Verify: complete chamber 0 and reload; its row shows the best time; the records of chambers 1–3 are untouched.
-- [ ] **Update `AGENTS.md`.** The chamber numbering text (a number is the chamber's place in the list counted from 0; the tutorial is chamber 0). Verify: a read-through matches the behaviour.
+- [ ] **Progress follows the id.** The tutorial's completion, best time and attempts are stored under its id like every chamber's (stage 00), and Reset progress clears them. Verify: complete the tutorial and reload; its row shows the best time; the records of chambers 1–3 are untouched.
+- [ ] **Update `AGENTS.md`.** The chamber numbering text (a number is the chamber's place in the list, counted from 0 or 1 as the first step settles; the tutorial is the first chamber). Verify: a read-through matches the behaviour.
 
 ### Phase B — Visual rework
 
@@ -86,7 +87,7 @@ These are assumptions about what earlier stages delivered. Re-check each when re
 
 ## Done when
 
-- [ ] The tutorial ships as chamber 0 with a recorded solution; `/chamber/1`–`/chamber/3` still open the same chambers, and their progress and best times are intact.
+- [ ] The tutorial ships first in the list with a recorded solution; chambers 1–3 keep their progress and best times.
 - [ ] The visual rework ships with blueprint mode; reduced motion is respected; the replay check still passes.
 - [ ] Reactive music ships within the download budget.
 - [ ] All local checks pass.
@@ -100,7 +101,7 @@ These are assumptions about what earlier stages delivered. Re-check each when re
 
 ## Risks
 
-- **Counting from 0 misses a spot.** Code or copy that assumes the first chamber is number 1 shows up as a wrong sign, a missing row or Next chamber skipping a chamber. Phase A's checks walk chambers 0 to 3 and the old links.
+- **Counting from 0 misses a spot.** Code or copy that assumes the first chamber is number 1 shows up as a wrong sign, a missing row or Next chamber skipping a chamber. Phase A's checks walk every chamber, the tutorial first.
 - **Animation hurting the feel.** Interpolation that delays input makes a discrete puzzle game feel sluggish. The snap-on-key rule and the mashing test guard against it.
 - **Colours drifting apart.** Canvas colours and CSS tokens are kept in step by hand. Check both together in the palette and blueprint steps.
 - **Stems.** Layers need separate stems of the chamber track; if today's track can't be split cleanly, new music has to be composed or commissioned, which adds unplanned audio work.
@@ -108,7 +109,7 @@ These are assumptions about what earlier stages delivered. Re-check each when re
 ## Notes for later stages
 
 - Stage 04 draws its new mechanics in this stage's look: colours in the palette module and in blueprint mode, each distinct from every existing element; and it gives them sounds that fit this stage's sound.
-- Stage 04 picks the link scheme for when chambers are inserted between existing ones (README open decision 6) and, if the scheme changes them, redirects `/chamber/0`–`/chamber/3` through a fixed table.
+- Links stay by position in stage 04 too (README decision 13 settled open decision 6): inserting or reordering chambers shifts them, with no redirect table.
 - Every chamber must fit the screen whole, since there is no camera: stage 04's chambers and stage 05's grid cap stay within that.
 - Stage 05's editor reuses the chamber format, the renderer (blueprint mode suits editing) and the solution recorder.
 - Notes (filled in during this stage): profiling numbers.

@@ -44,7 +44,7 @@ A chamber file is a JSON object in format 2 (`ChamberData` in `src/game/chamber_
 
 - **`id`:** 1 or more, unique among every element and group, and needed only by what a button, switch or group links to; an element without one can't be linked.
 - **`blocked`:** true when absent (see [blocking](#blocking)).
-- **Older files:** a file without a `version` is format 1, upgraded when read (`src/game/rules/upgrade_chamber.ts`): it gets `version: 2`, and an `id` of 0, which format 1 read as no id, is removed. A file with a newer version than the game plays is refused.
+- **Other versions:** a file whose `version` is missing or not 2 is refused.
 
 ## Rules
 
@@ -148,9 +148,9 @@ Outside the chamber's edge counts as a wall that takes no portals, and the valid
 
 ### What the validator rejects
 
-A chamber file is upgraded to the current format, then read field by field, then checked as a whole (`src/game/rules/`, run on every chamber by `npm run chamber:check`). Each problem names its field and, where it has one, its tile. Errors keep a chamber from loading:
+A chamber file is read field by field, then checked as a whole (`src/game/rules/`, run on every chamber by `npm run chamber:check`). Each problem names its field and, where it has one, its tile. Errors keep a chamber from loading:
 
-- **Fields:** a missing field, an unknown or misspelled one, a value of the wrong kind or out of range (see the [chamber format](#chamber-format)), a wall rectangle whose from corner is past its to corner, or a format newer than the game plays.
+- **Fields:** a missing field, an unknown or misspelled one, a value of the wrong kind or out of range (see the [chamber format](#chamber-format)), a wall rectangle whose from corner is past its to corner, or a `version` other than 2.
 - **Ids and links:** an id used twice (elements and groups share the ids), a link naming an id nothing has, and a group naming another group.
 - **Bounds:** anything outside the chamber, and the same wall tile listed twice.
 - **What shares a tile:** a wall holds nothing but at most one barrier, so the subject and the exit are never inside a wall. A floor tile holds at most one of a barrier, ditch, door, exit, fizzler, arrow, button, switch or laser, except two lasers that cross (one `H`, one `V`). A box and the subject start on plain floor or a button, with at most one box per tile; the subject and a box may share it.
@@ -186,4 +186,4 @@ Element types are described by data in `src/game/rules/`, but a new one still to
 7. **Drawing:** its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`).
 8. **Docs and fixtures:** its row in the table at the top, its field under [chamber format](#chamber-format), its rule under [rules](#rules) and [what the validator rejects](#what-the-validator-rejects); behaviour fixtures in `scripts/fixtures/fixtures.ts`, and a case in `scripts/fixtures/format_examples.ts` for each new validator problem.
 
-The upgrader (`upgrade_chamber.ts`) changes only when an existing element's fields change, and the recorded solutions only when an existing chamber or its route changes. The build catches a missing drawing or sound. `npm run chamber:check` catches a field missing from the reader's field list, an event with no owner or two, and an element that blocks only while blocked but has no blocked flag; it also pins the registry to format 1's elements (`scripts/check_chambers.ts`), so that check must learn the new one. Nothing catches a validator line left out.
+The recorded solutions change only when an existing chamber or its route changes. The build catches a missing drawing or sound. `npm run chamber:check` catches a field missing from the reader's field list or used by two elements, an event with no owner or two, and an element that blocks only while blocked but has no blocked flag. Nothing catches a validator line left out.

@@ -19,8 +19,8 @@
 | 2 | `01_engine_v2.md` (file removed) | Done | Sounds out of the rules, engine runnable without a browser, replays on today's engine, recorded solutions and a local replay check, undo/redo, input rewrite (remappable keys), v2 rules and chamber format, the three inherited bugs fixed, v2 checked against the old rules, old engine deleted |
 | 3 | `02_solver.md` (file removed; see `docs/solver.md`) | Stopped | Solver prototype on the current chambers (go/no-go: no-go on 2026-11-08, decision 10); the rest was dropped: solvability and par in the local checks, shortcut finder, dead-end warning, hints, generated chambers |
 | 4 | `03_look_and_sound.md` | Draft | Visual rework with blueprint mode, reactive music, one tutorial chamber (chamber 0) |
-| 5 | `04_mechanics_campaign.md` | Draft | Lasers through portals, slide floors, conveyors and rotating arrows, timed buttons, mirror blocks, echo; the campaign completed at 20 chambers, a menu and catalogue that scale, chamber numbering and links, difficulty from data, medals |
-| 6 | `05_creator_platform.md` | Draft | Stage A (editor, sharing in the link, publish only what you solved), Stage B gated on an audience |
+| 5 | `04_mechanics_campaign.md` | Draft | Lasers through portals, slide floors, conveyors and rotating arrows, timed buttons, mirror blocks, echo; the campaign completed at 20 chambers, a menu and catalogue that scale, chamber numbering and links, medals |
+| 6 | `05_creator_platform.md` | Draft | Editor, sharing in the link, share only what you solved |
 ## The idea
 
 The moonshot isn't "more chambers". It is turning the rules into a pure function — *current state + one keypress → next state* — with the frame loop only animating and drawing. Once that exists, five things become possible: a solver that understands every chamber, replays, an editor, a daily puzzle, and leaderboards that can be verified by re-running a replay. Almost everything in stages 02–05 hangs off stage 01.
@@ -83,7 +83,7 @@ These replace the rougher claims in the original roadmap. Re-check them when rev
 - Progress is stored by chamber **position**: `portal-2d.completed-chambers` (array of numbers) and `portal-2d.best-times` (number → hundredths). The `/chamber/:number` route is by position too, and each catalogue entry's `number` is typed by hand, separate from the list order.
 - Analytics events carry `chamber_id` and `chamber_number`. Gaps: closing the tab records no quit; no attempt counter; no first-completion or new-best flag (the progress service already knows when a time is a new best); Reset sends `chamber_restart` but no new `chamber_start`; no run id (GA4 adds session ids, but linking a start to its end likely needs the BigQuery export — unverified).
 - No tests, no CI. `npm run check` runs `lint:fix` then `build`; `npm run deploy` builds and runs `firebase deploy --only hosting`.
-- Hosting rewrites every path to `/index.html`. Routes: `/`, `/chamber/<digits>`, and a catch-all that redirects home. The no-cache headers cover `/`, `/index.html`, `/settings` (stale: no such route) and `/chamber/**`; any new route must be added there.
+- Hosting rewrites every path to `/index.html`. Routes: `/`, `/chamber/<digits>`, and a catch-all that redirects home. The no-cache headers cover `/`, `/index.html`, `/settings` (stale: no such route; removed 2026-11-06) and `/chamber/**`; any new route must be added there.
 - Chambers are static imports listed by hand in `chamber_catalogue.ts`, all in the main bundle (about 204 KB today; each chamber adds about 0.6–0.8 KB gzipped). The Play menu draws every chamber as a fixed-height row and cannot scroll.
 - The full `firebase` package is installed but only `firebase/app` and `firebase/analytics` are used; the config holds only `apiKey`, `projectId` and `appId`, and the Firebase app is created only inside analytics startup in production builds.
 - The name "Portal" and the Aperture Science logo on the loading screen belong to Valve.
@@ -104,6 +104,7 @@ These replace the rougher claims in the original roadmap. Re-check them when rev
 | 10 | 2026-11-08 | Stage 02 stops after phase A (its go/no-go 1): the solver can't prove the current chambers solvable within 60 s each. With every pruning built, chamber 3 takes 110 s and chambers 1 and 2 give up after 10 minutes, past 6 million states each. Dropped: solvability and par checks, par in chamber files, the shortcut report, hints and the dead-end warning, solver difficulty metrics (open decision 2 settled: difficulty from measured clear rates) and generated chambers. Stage 03 keeps new mechanics small and relies on recorded solutions; stage 05's "publish only what you solved" relies on the creator's replay alone, with no par. Stages 03–05 must take this in when revisited. What the stage learned, and what a revisit would start from, is in `docs/solver.md` |
 | 11 | 2026-11-08 | Stages 03 and 04 swap. Identity, look and sound come first (now stage 03, `03_identity_look_sound.md`) and add only a tutorial chamber, numbered 0 (chamber numbers count from 0), so chambers 1–3 keep their numbers and links. Mechanics and the rest of the campaign follow (now stage 04, `04_mechanics_campaign.md`), with the catalogue, menu and links that scale, difficulty from data and medals. The campaign has 20 chambers in total (0–19), with no wings. All seven mechanics stay in the plan; how they fit is settled when stage 04 is revisited. In decisions 1–10, "stage 03" means the mechanics stage and "stage 04" the campaign, identity, look and sound stage |
 | 12 | 2026-11-08 | A private fan game: played only by the author and a few friends, never published on Steam or any other platform. It stays "Portal 2D" with Valve's name, logo and assets (open decision 5 settled), so stage 03 drops all identity work and becomes "Look and sound" (`03_look_and_sound.md`). Stage 03 also drops the colour-blind palettes, portal shapes and relaxed mode, the camera (every chamber fits the screen) and preview deploys; the renderer stays on the 2D canvas unless stage 03's profiling shows it can't hold 60 fps (open decision 4 settled). Stages 04 and 05 were updated to match |
+| 13 | 2026-11-09 | The author is the only player during development; a few friends will play later (decision 12). No compatibility work, ever: saves and settings may be reset by updates, with no migrations, and links and the chamber and replay formats may break. Done in the code the same day: chamber format 1 support removed (the upgrader and its example), the progress migration from version 1 and the guard against overwriting a newer save removed, and the format, ruleset and chamber-id fields dropped from recorded solutions. Analytics was removed and restored the same day, so it stays as it was (Firebase events, the attempts counter, the undo count). Kept: permanent chamber ids (they name the chamber files, key stored progress and are analytics' `chamber_id`), the recorded solutions and their checks, and the chamber hash. For the plan: links may follow position with no redirects (open decision 6 settled), no retired-id list, no data migrations. Difficulty from player data and the histogram stay dropped, since a few friends are far below any useful sample (stage 04 had set about 50 players), so the chamber order comes from playtests, with the friends' analytics informing them. Stage 05's Stage B (accounts, community) is removed, since a few friends are no audience (open decisions 7 and 8 settled). Stages 03–05 were updated to match, and stages 04 and 05 now also apply decision 10 in full |
 
 ## Open decisions
 
@@ -116,9 +117,9 @@ Each one belongs to the stage that must settle it, and appears there with option
 | 3 | Echo (a ghost replaying your previous attempt): build it? | Design it last or cut it: the ghost's whole input history becomes part of the state | 04 |
 | 4 | GPU renderer or the current 2D canvas? | Stay on the 2D canvas; move only if profiling shows a real need | 03 (settled by decision 12: the 2D canvas) |
 | 5 | The game's name and identity | Settle it in stage 03, before anything is shared publicly in stage 05 | 03 (settled by decision 12: stays "Portal 2D", a private fan game) |
-| 6 | Chamber numbering and links once chambers are inserted and reordered | Links by permanent id, with old `/chamber/0`–`/chamber/3` redirected (stage 03 only makes the count start at 0) | 04 |
-| 7 | When does Stage B (accounts, publishing) start? | Only once there is an audience; stage 05 sets the threshold | 05 |
-| 8 | Firestore security rules need checking, but AGENTS.md says the project has no tests by design | Allow rules tests against the local emulator as the one exception | 05 |
+| 6 | Chamber numbering and links once chambers are inserted and reordered | Links by permanent id, with old `/chamber/0`–`/chamber/3` redirected (stage 03 only makes the count start at 0) | 04 (settled by decision 13: links stay by position, no redirects) |
+| 7 | When does Stage B (accounts, publishing) start? | Only once there is an audience; stage 05 sets the threshold | 05 (settled by decision 13: never, Stage B removed) |
+| 8 | Firestore security rules need checking, but AGENTS.md says the project has no tests by design | Allow rules tests against the local emulator as the one exception | 05 (settled by decision 13: moot, no Firestore) |
 
 ## Order and dependencies
 
@@ -128,8 +129,8 @@ Each one belongs to the stage that must settle it, and appears there with option
 | 2 | 01 Engine v2 | 00 | Replays, undo, a browser-free pure step, data-described elements, chamber format v2 |
 | 3 | 02 Solver | 01 | The prototype's measurements only (stopped after phase A, decision 10) |
 | 4 | 03 Look and sound | 01 | The visual and music rework, a tutorial chamber |
-| 5 | 04 Mechanics and campaign | 01, 02, 03 | New element types, each proven solvable and documented; 20 chambers, medals, difficulty from data |
-| 6 | 05 Creator platform | 01, 02, 03, 04 | Editor, shared chambers, later accounts and publishing |
+| 5 | 04 Mechanics and campaign | 01, 03 | New element types, each with rule fixtures, docs and chambers with recorded solutions; 20 chambers, medals |
+| 6 | 05 Creator platform | 01, 03, 04 | Editor, shared chambers |
 
 ## Engineering backbone (woven in)
 
@@ -141,13 +142,14 @@ Local commands only, growing stage by stage:
 | 2 | 01 | Engine loads under Node; every recorded solution is replayed and must complete; v2 checked against the old rules |
 | 3 | 02 | The solver check in `npm run verify`; no solvability or par check (stopped after phase A, decision 10) |
 | 4 | 03–05 | Bundle size watch |
-| 5 | 04 | Each new mechanic ships with at least one chamber, a recorded solution and a solver run; the catalogue check |
+| 5 | 04 | Each new mechanic ships with at least one chamber and a recorded solution; the catalogue check |
 
 ## What we deliberately skip
 
 - Real-time physics or 3D: they break the discrete rules that the solver and replays depend on.
-- Chambers made by an LLM as a headline feature: generation judged by the solver does the real work.
+- Chambers made by an LLM as a headline feature. Generated chambers judged by the solver, the alternative, were dropped too (decision 10).
 - Ads or sales: this is a private fan game, never published (decision 12).
+- Compatibility work: saves and settings may be reset by updates (no migrations, ever), and links and the chamber and replay formats may break (decision 13).
 - Cloud CI (GitHub Actions and the like).
 - Mobile layouts and touch controls (the game is desktop only).
 

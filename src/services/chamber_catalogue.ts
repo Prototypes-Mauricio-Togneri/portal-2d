@@ -7,7 +7,7 @@ import chamberThreeData from '@/chambers/chamber_3.json'
 import type {ChamberData} from '@/game/chamber_data'
 
 export type ChamberEntry = {
-  id: number // Permanent, given in the order chambers were created and never reused, so analytics history and stored progress survive reordering
+  id: number // Permanent, given in the order chambers were created: it names the chamber's files, keys its stored progress and is sent as the analytics chamber_id, so changing one splits that chamber's analytics history
   number: number // 1-based position in the list below, shown to the player and used in the address; derived, never typed by hand
   data: ChamberData // Layout loaded into the game
 }

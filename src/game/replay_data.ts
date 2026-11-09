@@ -20,24 +20,14 @@ export type ReplayExpectation = {
 export type ReplayStep = Action | HistoryKey
 
 /**
- * A run recorded press by press, replayable without a browser. Each press is
- * written as its action ("up", "turnLeft", "blue", "interact") or as "undo"
- * or "redo".
+ * A run recorded press by press, replayable without a browser, as a recorded
+ * solution saved next to its chamber's file. Each press is written as its
+ * action ("up", "turnLeft", "blue", "interact") or as "undo" or "redo".
  */
 export type ReplayData = {
-  readonly format: 2 // Version of this layout; format 1, frame by frame on the original rules, is no longer read
-  readonly ruleset: 'v2' // The rules the presses were recorded on, as named when the original rules still ran beside them
-  readonly chamberHash: string // Hash of the chamber the run was recorded on, read in the current format; editing the chamber changes it
+  readonly chamberHash: string // Hash of the chamber the run was recorded on, as read; editing the chamber changes it
   readonly actions: readonly ReplayStep[] // The presses, in order
   readonly expected: ReplayExpectation // What replaying the presses gives
-}
-
-/**
- * A recorded solution of a chamber in the catalogue, as saved next to the
- * chamber's file.
- */
-export type SolutionData = ReplayData & {
-  readonly chamberId: number // The chamber's permanent id in the catalogue
 }
 
 /** Every press a recorded run can hold: the actions, then undo and redo */
@@ -65,9 +55,8 @@ export function parseReplayStep(text: string): ReplayStep {
 
 /**
  * The hash that ties a replay to the chamber it was recorded on, taken from
- * the chamber as read in the current format, so the browser and Node agree
- * on it, and upgrading a chamber file to the current format keeps it.
- * @param chamber - The chamber, read in the current format
+ * the chamber as read, so the browser and Node agree on it.
+ * @param chamber - The chamber, as read
  * @returns Eight hexadecimal digits
  */
 export function getChamberHash(chamber: ChamberData): string {

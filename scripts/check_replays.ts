@@ -122,7 +122,7 @@ function checkSolution(file: string, data: ChamberData): string {
 
   checkCompletedIsFinal(chamber, result.finalState)
 
-  return `chamber id ${solution.chamberId}, ${result.moves} moves, ${result.portals} portals`
+  return `${result.moves} moves, ${result.portals} portals`
 }
 
 /**

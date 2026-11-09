@@ -10,6 +10,9 @@ export type ParseResult = {
   readonly problems: readonly ChamberProblem[] // Every wrong field, in file order
 }
 
+/** The chamber format this game reads */
+const CHAMBER_FORMAT_VERSION = 2
+
 /** The top-level fields of a format 2 file; the chamber check compares them with the element registry */
 export const CHAMBER_FIELDS = [
   'version',
@@ -214,6 +217,16 @@ class ChamberParser {
     }
 
     return value
+  }
+
+  /**
+   * Reads the format's version, which must be the one this game reads.
+   * @param value - The value
+   * @param field - Its path
+   * @returns The version, or null when it is another
+   */
+  private readVersion(value: unknown, field: string): number | null {
+    return (value === CHAMBER_FORMAT_VERSION) ? value : this.fail(field, `is not ${CHAMBER_FORMAT_VERSION}, the only format this game reads`)
   }
 
   /**
@@ -579,7 +592,7 @@ class ChamberParser {
 
   /**
    * Reads a whole file.
-   * @param data - A chamber file in format 2, fields not yet checked
+   * @param data - A chamber file, fields not yet checked
    * @returns The chamber, or null when any field is wrong
    */
   readChamber(data: JsonObject): ChamberData | null {
@@ -589,7 +602,7 @@ class ChamberParser {
       return null
     }
 
-    const version = this.readInteger(file.version, 'version', 1)
+    const version = this.readVersion(file.version, 'version')
     const size = this.readSize(file.size, 'size')
     const subject = this.readSubject(file.subject, 'subject')
     const exit = this.readBlockable(file.exit, 'exit')
@@ -637,9 +650,9 @@ class ChamberParser {
 }
 
 /**
- * Reads a chamber file in the current format, checking every field's
- * presence, name and kind of value.
- * @param data - A chamber file brought to the current format, fields not yet checked
+ * Reads a chamber file, checking every field's presence, name and kind of
+ * value, and that it is in the format this game reads.
+ * @param data - A chamber file, fields not yet checked
  * @returns The typed chamber, or null with every wrong field
  */
 export function parseChamber(data: JsonObject): ParseResult {
