@@ -114,6 +114,17 @@ const NAMED_KEYS: Readonly<Record<string, KeyLabel>> = {
   },
 }
 
+/** The way an arrow key points, drawn on its cap as a triangle. */
+export type KeyArrow = 'up' | 'down' | 'left' | 'right'
+
+/** The arrow keys, by the way each points */
+const ARROW_KEYS: Readonly<Record<string, KeyArrow>> = {
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+}
+
 /** What a US keyboard prints on its punctuation keys */
 const US_PUNCTUATION: Readonly<Record<string, string>> = {
   Minus: '-',
@@ -190,6 +201,15 @@ export function getKeyLabel(key: BoundKey): KeyLabel {
     text: text ?? key,
     name: text ?? key,
   }
+}
+
+/**
+ * Which way an arrow key points, so its cap can show a triangle instead of its text.
+ * @param key - The key
+ * @returns Its direction, or null for any key but the four arrows
+ */
+export function getKeyArrow(key: BoundKey): KeyArrow | null {
+  return ARROW_KEYS[key] ?? null
 }
 
 refreshKeyLabels()

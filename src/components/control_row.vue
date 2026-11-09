@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
  * One game key in the home menu's Controls column: a row with what the key
- * does and, at its right edge, the key it is bound to. Picking the row waits
- * for a new key; the row then shows an empty key asking for one, or says
- * which key it refused.
+ * does and, at its right edge, the key it is bound to (an arrow key as a
+ * small triangle). Picking the row waits for a new key; the row then shows an
+ * empty key asking for one, or says which key it refused.
  */
 import {computed} from 'vue'
+import KeyGlyph from '@/components/key_glyph.vue'
 import type {BoundKey} from '@/game/key_bindings'
 import {getKeyLabel} from '@/services/key_labels'
 
@@ -57,7 +58,7 @@ const accessibleName = computed(() => {
       class="keycap control-row-key"
       :class="portal === null ? null : `control-row-key-${portal}`"
       aria-hidden="true"
-    >{{ keyLabel.text }}</kbd>
+    ><KeyGlyph :bound-key="boundKey" /></kbd>
   </button>
 </template>
 

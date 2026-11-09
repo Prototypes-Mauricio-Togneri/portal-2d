@@ -3,16 +3,20 @@
  * The controls legend shown beside the chamber: moving, turning in place,
  * both portals and interacting, then undo and redo, each on the key the
  * player has bound to it, and Escape for the pause dialog, each with what it
- * does. The keys show what the player's keyboard prints on them. Turning in
- * place, undo and redo are hidden for now; their keys still work.
+ * does. The keys show what the player's keyboard prints on them, and arrow
+ * keys a small triangle pointing their way. Turning in place, undo and redo
+ * are hidden for now; their keys still work.
  */
 import {computed, onMounted} from 'vue'
+import KeyGlyph from '@/components/key_glyph.vue'
 import {GameKey} from '@/game/game_key'
+import type {BoundKey} from '@/game/key_bindings'
 import {keyBindings} from '@/services/key_bindings'
 import {getKeyLabel, type KeyLabel, refreshKeyLabels} from '@/services/key_labels'
 
 /** A key shown in the legend: its label, and whether it is drawn as a spacebar. */
 type LegendKey = KeyLabel & {
+  key: BoundKey // The key itself, which its cap shows
   wide: boolean // Whether the key is Space, drawn as wide as the key column like the bar it is
 }
 
@@ -25,6 +29,7 @@ function legendKey(gameKey: GameKey): LegendKey {
   const key = keyBindings.value[gameKey]
   return {
     ...getKeyLabel(key),
+    key: key,
     wide: key === 'Space',
   }
 }
@@ -60,10 +65,10 @@ onMounted(refreshKeyLabels)
     <dl class="legend-list">
       <div class="legend-row">
         <dt class="arrow-keys">
-          <kbd class="keycap arrow-up" :aria-label="keys.up.name">{{ keys.up.text }}</kbd>
-          <kbd class="keycap arrow-left" :aria-label="keys.left.name">{{ keys.left.text }}</kbd>
-          <kbd class="keycap arrow-down" :aria-label="keys.down.name">{{ keys.down.text }}</kbd>
-          <kbd class="keycap arrow-right" :aria-label="keys.right.name">{{ keys.right.text }}</kbd>
+          <kbd class="keycap arrow-up" :aria-label="keys.up.name"><KeyGlyph :bound-key="keys.up.key" /></kbd>
+          <kbd class="keycap arrow-left" :aria-label="keys.left.name"><KeyGlyph :bound-key="keys.left.key" /></kbd>
+          <kbd class="keycap arrow-down" :aria-label="keys.down.name"><KeyGlyph :bound-key="keys.down.key" /></kbd>
+          <kbd class="keycap arrow-right" :aria-label="keys.right.name"><KeyGlyph :bound-key="keys.right.key" /></kbd>
         </dt>
         <dd class="legend-action">
           <span class="action-name">Move</span>
@@ -78,7 +83,7 @@ onMounted(refreshKeyLabels)
               'keycap-wide': keys.turn.wide,
             }"
             :aria-label="keys.turn.name"
-          >{{ keys.turn.text }}</kbd>
+          ><KeyGlyph :bound-key="keys.turn.key" /></kbd>
         </dt>
         <dd class="legend-action">
           <span class="action-name">Turn in place</span>
@@ -93,7 +98,7 @@ onMounted(refreshKeyLabels)
               'keycap-wide': keys.blue.wide,
             }"
             :aria-label="keys.blue.name"
-          >{{ keys.blue.text }}</kbd>
+          ><KeyGlyph :bound-key="keys.blue.key" /></kbd>
         </dt>
         <dd class="legend-action legend-action-blue">
           <span class="action-name">Blue portal</span>
@@ -108,7 +113,7 @@ onMounted(refreshKeyLabels)
               'keycap-wide': keys.orange.wide,
             }"
             :aria-label="keys.orange.name"
-          >{{ keys.orange.text }}</kbd>
+          ><KeyGlyph :bound-key="keys.orange.key" /></kbd>
         </dt>
         <dd class="legend-action legend-action-orange">
           <span class="action-name">Orange portal</span>
@@ -123,7 +128,7 @@ onMounted(refreshKeyLabels)
               'keycap-wide': keys.interact.wide,
             }"
             :aria-label="keys.interact.name"
-          >{{ keys.interact.text }}</kbd>
+          ><KeyGlyph :bound-key="keys.interact.key" /></kbd>
         </dt>
         <dd class="legend-action">
           <span class="action-name">Interact</span>
@@ -138,7 +143,7 @@ onMounted(refreshKeyLabels)
               'keycap-wide': keys.undo.wide,
             }"
             :aria-label="keys.undo.name"
-          >{{ keys.undo.text }}</kbd>
+          ><KeyGlyph :bound-key="keys.undo.key" /></kbd>
         </dt>
         <dd class="legend-action">
           <span class="action-name">Undo</span>
@@ -153,7 +158,7 @@ onMounted(refreshKeyLabels)
               'keycap-wide': keys.redo.wide,
             }"
             :aria-label="keys.redo.name"
-          >{{ keys.redo.text }}</kbd>
+          ><KeyGlyph :bound-key="keys.redo.key" /></kbd>
         </dt>
         <dd class="legend-action">
           <span class="action-name">Redo</span>
