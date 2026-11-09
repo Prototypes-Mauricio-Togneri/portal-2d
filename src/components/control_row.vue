@@ -8,7 +8,7 @@
 import {computed} from 'vue'
 import KeyGlyph from '@/components/key_glyph.vue'
 import type {BoundKey} from '@/game/key_bindings'
-import {getKeyLabel} from '@/services/key_labels'
+import {getKeyArrow, getKeyLabel} from '@/services/key_labels'
 
 /** A portal key, whose cap carries the portal's colour on its edge. */
 type ControlPortal = 'blue' | 'orange'
@@ -28,6 +28,9 @@ const props = withDefaults(defineProps<ControlRowProps>(), {
 })
 
 const keyLabel = computed(() => getKeyLabel(props.boundKey))
+
+// Whether the bound key is an arrow, whose cap is drawn as square as a letter key's
+const isArrow = computed(() => getKeyArrow(props.boundKey) !== null)
 
 // The row reads as its action and key; while it waits, as what it waits for
 const accessibleName = computed(() => {
@@ -56,7 +59,12 @@ const accessibleName = computed(() => {
     <kbd
       v-else
       class="keycap control-row-key"
-      :class="portal === null ? null : `control-row-key-${portal}`"
+      :class="[
+        portal === null ? null : `control-row-key-${portal}`,
+        {
+          'control-row-key-arrow': isArrow,
+        },
+      ]"
       aria-hidden="true"
     ><KeyGlyph :bound-key="boundKey" /></kbd>
   </button>
@@ -75,6 +83,11 @@ const accessibleName = computed(() => {
 
 .control-row-key-orange {
   border-bottom-color: var(--color-orange);
+}
+
+/* An arrow's triangle needs no side padding, so its cap keeps the letter keys' width */
+.control-row-key-arrow {
+  padding: 0;
 }
 
 /* Waiting: an empty key, outlined where the cap was, breathing until a key is pressed */
