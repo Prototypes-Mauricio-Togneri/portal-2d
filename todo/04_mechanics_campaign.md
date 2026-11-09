@@ -48,7 +48,7 @@ Stages 00 and 01 are done: their parts below are what they delivered, though Pha
 - The palette module in `src/game/` with named colours, the renderer taking a palette, and blueprint mode; the hex-literal exception in `AGENTS.md` lifted.
 - The animation layer (purely visual interpolation between consecutive states), so the movement new elements cause can animate, with `prefers-reduced-motion` showing plain steps.
 - Music on the Web Audio API, with layers driven by game events.
-- The tutorial first in the list (permanent id 4), as chamber 0 unless stage 03's revisit chose to count from 1 (README decision 13 left that open). Links still follow position.
+- The tutorial first in the list (permanent id 0), as chamber 0 (stage 03 settled that numbers count from 0). Links still follow position.
 - The bundle-size watch and the unused-asset check.
 
 **How elements work today** (the base the new mechanics extend; the full rules are under "Rules" in `docs/elements.md`, the code in `src/game/rules/`)
@@ -391,7 +391,7 @@ Draft spec for option B (only if chosen):
 
 - [ ] **Chamber plan.** List the 16 new chambers in this file, in play order together with chambers 0–3, each with its mechanic or element and its part (teach, test, twist or combine), following the campaign plan table and open decision 8. Starting order: the existing elements first, then the new mechanics in the order built. Later reorders follow playtests, with the friends' analytics informing them: a chamber never moves before the chambers that teach what it needs, the tutorial stays first, and each reorder goes in the changelog. Verify: every mechanic this stage shipped has chambers or a recorded reason it doesn't, and the total is 20.
 - [ ] **Authoring workflow before the editor.** Until stage 05's editor exists: hand-write chamber v2 JSON; a development-only route (behind `import.meta.env.DEV`, never in production builds) that loads a chamber file from disk and reloads on save, extending this stage's lab route (Phase 0, if open decision 3 chose A) rather than adding a second one; record the solution by playing it with 01's recorder; tick a per-chamber checklist (solution recorded, one playtest by someone else). Verify: one chamber goes through the whole workflow; a production build has no development route.
-- [ ] **Place chambers 0–3 in the campaign.** The tutorial and today's three chambers keep permanent ids 4 and 1–3 wherever the plan puts them; their links follow their new places. Verify: their completions and best times survive.
+- [ ] **Place chambers 0–3 in the campaign.** The tutorial and today's three chambers keep permanent ids 0 and 1–3 wherever the plan puts them; their links follow their new places. Verify: their completions and best times survive.
 - [ ] **Author release 1** (about four new chambers; each release ships with a changelog entry in `src/services/changelog.ts`). Verify: `npm run verify` and the catalogue check pass; playtested.
 - [ ] **Author release 2.** Same checks.
 - [ ] **Author release 3.** Same checks.
