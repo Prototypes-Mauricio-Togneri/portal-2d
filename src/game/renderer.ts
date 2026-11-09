@@ -1,5 +1,6 @@
 import {Direction} from '@/game/direction'
 import {BOX_STYLE, ELEMENT_DRAWINGS} from '@/game/element_drawings'
+import {PALETTE} from '@/game/palette'
 import {DRAW_LAYERS, type DrawLayer} from '@/game/rules/draw_layer'
 import {ELEMENT_REGISTRY} from '@/game/rules/element_registry'
 import {PortalColor} from '@/game/rules/portal_color'
@@ -15,37 +16,22 @@ type PortalStyle = {
   readonly borderWidth: number // Edge width in pixels
 }
 
-/** A floor tile */
-const FLOOR_FILL = '#F0F0F0'
-
-/** A floor tile's edge */
-const FLOOR_BORDER = '#828282'
-
 /** A floor tile's edge width, in pixels */
 const FLOOR_BORDER_WIDTH = 0.1
-
-/** The subject's body */
-const SUBJECT_FILL = '#00A064'
-
-/** The subject's edge */
-const SUBJECT_BORDER = '#828282'
 
 /** The subject's edge width, in pixels */
 const SUBJECT_BORDER_WIDTH = 0.1
 
-/** The subject's facing triangle while it carries no box */
-const SUBJECT_ARROW = '#FFFFFF'
-
 /** Each portal's look */
 const PORTAL_STYLES: Readonly<Record<PortalColor, PortalStyle>> = {
   [PortalColor.BLUE]: {
-    fillColor: '#288CDC',
-    borderColor: '#227ABF',
+    fillColor: PALETTE.bluePortalFill,
+    borderColor: PALETTE.bluePortalBorder,
     borderWidth: 1,
   },
   [PortalColor.ORANGE]: {
-    fillColor: '#FFA01E',
-    borderColor: '#D18011',
+    fillColor: PALETTE.orangePortalFill,
+    borderColor: PALETTE.orangePortalBorder,
     borderWidth: 1,
   },
 }
@@ -101,7 +87,7 @@ export class Renderer {
 
     for (let x = 0; x < state.chamber.width; x++) {
       for (let y = 0; y < state.chamber.height; y++) {
-        this.painter.drawBlock(x, y, size, size, FLOOR_FILL, FLOOR_BORDER, FLOOR_BORDER_WIDTH)
+        this.painter.drawBlock(x, y, size, size, PALETTE.floorFill, PALETTE.floorBorder, FLOOR_BORDER_WIDTH)
       }
     }
   }
@@ -152,8 +138,8 @@ export class Renderer {
     const y = state.subjectY
     const size = this.painter.blockSize
 
-    this.painter.drawBlock(x, y, size, size, SUBJECT_FILL, SUBJECT_BORDER, SUBJECT_BORDER_WIDTH)
-    this.painter.drawTriangleTowards(state.facing, x, y, state.isCarrying ? BOX_STYLE.fillColor : SUBJECT_ARROW)
+    this.painter.drawBlock(x, y, size, size, PALETTE.subjectFill, PALETTE.subjectBorder, SUBJECT_BORDER_WIDTH)
+    this.painter.drawTriangleTowards(state.facing, x, y, state.isCarrying ? BOX_STYLE.fillColor : PALETTE.subjectArrow)
   }
 
   /**

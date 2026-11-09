@@ -45,7 +45,7 @@ Stages 00 and 01 are done: their parts below are what they delivered, though Pha
 
 **From stage 03 (look and sound)**
 
-- The palette module in `src/game/` with named colours, the renderer taking a palette, and blueprint mode; the hex-literal exception in `AGENTS.md` lifted.
+- The palette module (`src/game/palette.ts`) with named `rgba()` colours, imported directly by the drawing code, and blueprint mode; the hex-literal exception in `AGENTS.md` lifted.
 - The animation layer (purely visual interpolation between consecutive states), so the movement new elements cause can animate, with `prefers-reduced-motion` showing plain steps.
 - Music on the Web Audio API, with layers driven by game events.
 - The tutorial first in the list (permanent id 0), as chamber 0 (stage 03 settled that numbers count from 0). Links still follow position.
@@ -61,7 +61,7 @@ Stages 00 and 01 are done: their parts below are what they delivered, though Pha
 - Arrows: fixed and unlinkable (`elements/arrow.ts`, `blocksWalking: 'alongDirection'`).
 - Boxes: block nothing, and a tile can hold several (the validator allows one per tile at the start). Picking up and putting down are in the core step's `interact`, not a box hook. A carried box moves onto the subject's tile after each action (`carryBoxAlong` in `state_draft.ts`). The fizzler rule sends a carried box back to its start, and a link sends a box back unless it is carried; releasing a button linked to a box does nothing (the validator warns).
 - Barriers can sit on wall tiles (`sitsOn: 'floorOrWall'`; chamber 2 has 8 like this, chamber 3 has 1). A raised barrier stops shots before they reach the wall, so that wall takes portals only while the barrier is down, and raising it closes a portal there (`raiseBarrier` in `elements/barrier.ts`). This is already a switchable portal surface. Format 2 also lets a wall entry refuse portals for good (`takesPortals: false`), which no chamber uses yet.
-- Drawing: `Renderer.render` (`src/game/renderer.ts`) draws layer by layer (`DRAW_LAYERS` in `draw_layer.ts`): floor, arrows, walls, the blockers that are blocked, portals, buttons and switches, boxes, the subject, and fizzlers last. Inside a layer, each element type is drawn in registry order by its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`). Colours are hex literals in `element_drawings.ts`, `renderer.ts` and `tile_painter.ts` until stage 03 moves them into its palette module.
+- Drawing: `Renderer.render` (`src/game/renderer.ts`) draws layer by layer (`DRAW_LAYERS` in `draw_layer.ts`): floor, arrows, walls, the blockers that are blocked, portals, buttons and switches, boxes, the subject, and fizzlers last. Inside a layer, each element type is drawn in registry order by its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`). Colours are named `rgba()` colours in stage 03's palette module, `src/game/palette.ts`, which `element_drawings.ts`, `renderer.ts` and `tile_painter.ts` import.
 
 ## Decisions made
 

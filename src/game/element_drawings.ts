@@ -1,3 +1,4 @@
+import {PALETTE} from '@/game/palette'
 import {NO_ELEMENT} from '@/game/rules/compiled_chamber'
 import type {BlockableKind, ElementKind} from '@/game/rules/element_registry'
 import type {RulesState} from '@/game/rules/rules_state'
@@ -5,8 +6,8 @@ import type {LineOrientation, TilePainter} from '@/game/tile_painter'
 
 // How each element type is drawn by the renderer, looked up by kind: the
 // rules can't touch the canvas, so drawing stays on the browser side. The
-// original game's drawing code, colours and sizes; the visuals stay frozen
-// until stage 04
+// original game's drawing code, colours (named in the palette) and sizes;
+// the visuals stay frozen until stage 03 reworks them
 
 /**
  * Draws every element of one type in a state.
@@ -24,63 +25,48 @@ type BlockStyle = {
 
 /** A wall tile */
 const WALL_STYLE: BlockStyle = {
-  fillColor: '#9C9C9C',
-  borderColor: '#3C3C3C',
+  fillColor: PALETTE.wallFill,
+  borderColor: PALETTE.wallBorder,
   borderWidth: 0.1,
 }
 
 /** A door, and the exit, while closed */
 const DOOR_STYLE: BlockStyle = {
-  fillColor: '#A35087',
-  borderColor: '#B304B3',
+  fillColor: PALETTE.doorFill,
+  borderColor: PALETTE.doorBorder,
   borderWidth: 0.1,
 }
 
 /** A floor button */
 const BUTTON_STYLE: BlockStyle = {
-  fillColor: '#DC3C32',
-  borderColor: '#BA332B',
+  fillColor: PALETTE.buttonFill,
+  borderColor: PALETTE.buttonBorder,
   borderWidth: 0.1,
 }
 
 /** A switch */
 const SWITCH_STYLE: BlockStyle = {
-  fillColor: '#F27A22',
-  borderColor: '#B52A2A',
+  fillColor: PALETTE.switchFill,
+  borderColor: PALETTE.switchBorder,
   borderWidth: 0.1,
 }
 
 /** A box; its fill also colours the subject's facing triangle while it carries one */
 export const BOX_STYLE: BlockStyle = {
-  fillColor: '#BE785A',
-  borderColor: '#8F5B45',
+  fillColor: PALETTE.boxFill,
+  borderColor: PALETTE.boxBorder,
   borderWidth: 0.1,
 }
 
 /** A fizzler while it is on, drawn at half opacity */
 const FIZZLER_STYLE: BlockStyle = {
-  fillColor: '#687DB3',
-  borderColor: '#4949E3',
+  fillColor: PALETTE.fizzlerFill,
+  borderColor: PALETTE.fizzlerBorder,
   borderWidth: 0.1,
 }
 
 /** Opacity of a fizzler */
 const FIZZLER_OPACITY = 0.5
-
-/** Colour of an arrow's triangle */
-const ARROW_COLOR = '#8C8C8C'
-
-/** A raised barrier's gradient: lighter at the centre */
-const BARRIER_DARK = '#B8B8B8'
-
-/** A raised barrier's gradient edge */
-const BARRIER_LIGHT = '#404040'
-
-/** An open ditch */
-const DITCH_COLOR = '#303030'
-
-/** A laser beam that is on */
-const LASER_COLOR = '#FC1996'
 
 /** The beam is this many times thinner than a tile */
 const LASER_WIDTH_RATIO = 6
@@ -142,7 +128,7 @@ function drawArrows(painter: TilePainter, state: RulesState): void {
     const direction = chamber.directionOf('arrow', i)
 
     if (direction !== null) {
-      painter.drawTriangleTowards(direction, position.x, position.y, ARROW_COLOR)
+      painter.drawTriangleTowards(direction, position.x, position.y, PALETTE.arrow)
     }
   }
 }
@@ -182,7 +168,7 @@ function drawBarriers(painter: TilePainter, state: RulesState): void {
     const finalPosition = painter.getFinalPosition(position.x, position.y)
     const x = finalPosition.x + (size / 2)
     const y = finalPosition.y - size + (size / 2)
-    const gradient = painter.createRadialGradient(x, y, size, BARRIER_DARK, BARRIER_LIGHT)
+    const gradient = painter.createRadialGradient(x, y, size, PALETTE.barrierCenter, PALETTE.barrierEdge)
 
     painter.renderBlock(finalPosition.x, finalPosition.y, size, size, gradient, null, 0)
   }
@@ -200,7 +186,7 @@ function drawDitches(painter: TilePainter, state: RulesState): void {
     if (state.isBlocked('ditch', i)) {
       const position = chamber.positionOf('ditch', i)
 
-      painter.drawBlock(position.x, position.y, painter.blockSize, painter.blockSize, DITCH_COLOR, null, 0)
+      painter.drawBlock(position.x, position.y, painter.blockSize, painter.blockSize, PALETTE.ditch, null, 0)
     }
   }
 }
@@ -218,7 +204,7 @@ function drawLasers(painter: TilePainter, state: RulesState): void {
     const orientation = readOrientation(entry.direction)
 
     if ((orientation !== null) && state.isBlocked('laser', i)) {
-      painter.drawLine(orientation, entry.x, entry.y, painter.blockSize, painter.blockSize, LASER_COLOR, LASER_COLOR, 0, 1, LASER_WIDTH_RATIO)
+      painter.drawLine(orientation, entry.x, entry.y, painter.blockSize, painter.blockSize, PALETTE.laser, PALETTE.laser, 0, 1, LASER_WIDTH_RATIO)
     }
   })
 }

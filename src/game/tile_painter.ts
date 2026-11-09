@@ -1,4 +1,5 @@
 import {Direction} from '@/game/direction'
+import {PALETTE} from '@/game/palette'
 
 /**
  * Orientation of a line through a tile: H for horizontal, V for vertical.
@@ -104,7 +105,7 @@ export class TilePainter {
    * previous frame left set; the floor then covers all of it.
    */
   clear(): void {
-    this.context.fillStyle = '#202020'
+    this.context.fillStyle = PALETTE.chamber
     this.context.fillRect(0, 0, this.canvas.width, this.canvas.height)
   }
 

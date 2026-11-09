@@ -183,7 +183,7 @@ Element types are described by data in `src/game/rules/`, but a new one still to
 4. **Reader:** its field in `CHAMBER_FIELDS` and its list read in `chamber_parser.ts`.
 5. **Validator:** its kind in `validate_chamber.ts`, placed on its tiles, and in the lists of what may share a tile, what may stand on the edge and what links can reach.
 6. **Events:** each new one in `src/game/game_event.ts`, with its sound in `Level` (`src/game/level.ts`).
-7. **Drawing:** its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`).
+7. **Drawing:** its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`), with its colours added to the palette (`src/game/palette.ts`).
 8. **Docs and fixtures:** its row in the table at the top, its field under [chamber format](#chamber-format), its rule under [rules](#rules) and [what the validator rejects](#what-the-validator-rejects); behaviour fixtures in `scripts/fixtures/fixtures.ts`, and a case in `scripts/fixtures/format_examples.ts` for each new validator problem.
 
 The recorded solutions change only when an existing chamber or its route changes. The build catches a missing drawing or sound. `npm run chamber:check` catches a field missing from the reader's field list or used by two elements, an event with no owner or two, and an element that blocks only while blocked but has no blocked flag. Nothing catches a validator line left out.

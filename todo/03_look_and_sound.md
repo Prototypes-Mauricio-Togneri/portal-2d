@@ -32,14 +32,13 @@ These are assumptions about what earlier stages delivered. Re-check each when re
 - 2026-11-08 — The renderer stays on the 2D canvas (README open decision 4). The profiling step can reopen it (see Go/no-go points).
 - 2026-11-09 — The author is the only player during development, and a few friends play later (README decision 13): no compatibility work, so saves and settings may be reset by updates, with no migrations, and old links may break. Numbering the tutorial 0 protects nothing worth keeping (the analytics history so far is only the author's own play), so whether it stays 0 or chambers 1–3 shift up is settled at this stage's revisit (Phase A).
 - 2026-11-09 — Chamber numbers count from 0 (Phase A's first step settled): until the tutorial is added first, today's three chambers are numbered 0–2.
+- 2026-11-09 — Where the game's colours live (open decision 1) settled: (a), one palette module, `src/game/palette.ts`, of named `rgba()` colours, which the drawing code imports directly. A palette is passed to the renderer only once something needs a second one, since blueprint mode keeps today's colours. The CSS tokens mirror some of its colours by hand.
 - Unchanged from `AGENTS.md`: desktop only; colour meanings (blue interaction and success, orange the second portal, red caution, green a completed chamber); `localStorage` keys keep the `portal-2d.` prefix, as a convention, and analytics event and parameter names never change (renaming one splits its history).
 
 ## Open decisions
 
-1. **Where the game's colours live** once the hex-literal exception in `AGENTS.md` is lifted. Today the renderer and element files hold hex literals.
-   - (a) One palette module in `src/game/` with named `rgba()` colours; the screen passes the palette to the renderer. CSS tokens mirror it by hand.
-   - (b) The renderer reads the CSS tokens at runtime. Cost: makes the engine depend on the DOM, which breaks running it under Node.
-   - Recommendation: (a).
+Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisions made.
+
 2. **Music loading.** The loading screen downloads every file under `src/assets/audio/` (`asset_preloader.ts`, `import.meta.glob`). Today that is about 3.6 MB (`menu.mp3` 2.2 MB, `game.mp3` 1.2 MB, sound effects about 0.2 MB). The layers (several stems per track) are what grow it.
    - (a) Keep preloading everything. Cost: a longer first load.
    - (b) Preload the menu music and the effects; fetch the chamber track's layers as in-memory copies when the first chamber opens (same reason as today: Firebase varies responses by encoding). Cost: changes the loading-screen rule in `AGENTS.md`; a short wait the first time a chamber opens.
@@ -57,7 +56,7 @@ These are assumptions about what earlier stages delivered. Re-check each when re
 ### Phase B — Visual rework
 
 - [x] **Profile first.** Measure frame time on the largest chamber at `devicePixelRatio` 1 and 2. Today the level redraws only when the state changes (`level.ts`, frame loop), so animation means drawing every frame while something moves. Verify: numbers recorded here, as the baseline for the 60 fps checks below.
-- [ ] **Palette module** (open decision 1). Move the game's hex literals into named `rgba()` colours in one module in `src/game/`; the renderer takes a palette. Lift the hex-literal exception in `AGENTS.md`. The drawing stays identical. Verify: a screenshot of each chamber's start state before and after matches.
+- [x] **Palette module** (open decision 1, settled). Move the game's hex literals into named `rgba()` colours in one module, `src/game/palette.ts`, which the drawing code imports directly (no palette is passed to the renderer until something needs a second one). Lift the hex-literal exception in `AGENTS.md`. The drawing stays identical. Verify: the pixels of every state along each chamber's recorded solution, at pixel ratio 1 and 2, hash the same before and after.
 - [ ] **Animation layer** (uses the frontend-design skill). Purely visual interpolation between consecutive states from 01's pure step. A new key never waits: it snaps the running animation to its end. The clock is unaffected; `prefers-reduced-motion` turns interpolation off. Verify: the replay check still passes (rules untouched); fast key mashing feels as responsive as before.
 - [ ] **Smooth steps** (uses the frontend-design skill). The subject and a carried box glide between tiles. Verify: visual check; reduced motion shows plain steps.
 - [ ] **Laser glow** (uses the frontend-design skill). Verify: 60 fps on the largest chamber at `devicePixelRatio` 2.
