@@ -8,7 +8,7 @@ import type {ChamberData} from '@/game/chamber_data'
 
 export type ChamberEntry = {
   id: number // Permanent, given in the order chambers were created: it names the chamber's files, keys its stored progress and is sent as the analytics chamber_id, so changing one splits that chamber's analytics history
-  number: number // 1-based position in the list below, shown to the player and used in the address; derived, never typed by hand
+  number: number // Position in the list below, counted from 0, shown to the player and used in the address; derived, never typed by hand
   data: ChamberData // Layout loaded into the game
 }
 
@@ -36,7 +36,7 @@ const CHAMBER_LISTINGS: ChamberListing[] = [
 
 export const CHAMBERS: ChamberEntry[] = CHAMBER_LISTINGS.map((listing, index) => ({
   id: listing.id,
-  number: index + 1,
+  number: index,
   data: listing.data,
 }))
 
@@ -62,7 +62,7 @@ if (import.meta.env.DEV) {
 
 /**
  * Looks up a chamber by its number.
- * @param chamberNumber - 1-based chamber number
+ * @param chamberNumber - Chamber number, counted from 0
  * @returns The chamber, or undefined when no chamber has that number
  */
 export function findChamber(chamberNumber: number): ChamberEntry | undefined {

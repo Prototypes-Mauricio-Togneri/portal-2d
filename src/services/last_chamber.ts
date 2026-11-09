@@ -7,7 +7,7 @@ let lastChamberNumber: number | null = null // None until a chamber opens
 
 /**
  * Records the chamber that has just opened.
- * @param chamberNumber - 1-based chamber number
+ * @param chamberNumber - Chamber number, counted from 0
  */
 export function rememberChamber(chamberNumber: number): void {
   lastChamberNumber = chamberNumber
@@ -15,7 +15,7 @@ export function rememberChamber(chamberNumber: number): void {
 
 /**
  * Reads the chamber opened most recently during this visit.
- * @returns Its 1-based number, or null when no chamber has opened yet
+ * @returns Its number, counted from 0, or null when no chamber has opened yet
  */
 export function lastChamber(): number | null {
   return lastChamberNumber
