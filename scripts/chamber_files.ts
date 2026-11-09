@@ -1,4 +1,5 @@
 import {readdirSync} from 'node:fs'
+import chamber0 from '@/chambers/chamber_0.json'
 import chamber1 from '@/chambers/chamber_1.json'
 import chamber2 from '@/chambers/chamber_2.json'
 import chamber3 from '@/chambers/chamber_3.json'
@@ -10,6 +11,7 @@ import type {ChamberData} from '@/game/chamber_data'
 
 /** Every chamber file, by file name; the engine scripts fail on a chamber file missing here */
 export const CHAMBER_FILES: Readonly<Record<string, ChamberData>> = {
+  'chamber_0.json': chamber0,
   'chamber_1.json': chamber1,
   'chamber_2.json': chamber2,
   'chamber_3.json': chamber3,

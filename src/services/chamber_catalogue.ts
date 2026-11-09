@@ -1,6 +1,7 @@
 /**
  * The chambers bundled with the game, in play order.
  */
+import chamberZeroData from '@/chambers/chamber_0.json'
 import chamberOneData from '@/chambers/chamber_1.json'
 import chamberTwoData from '@/chambers/chamber_2.json'
 import chamberThreeData from '@/chambers/chamber_3.json'
@@ -20,6 +21,10 @@ type ChamberListing = {
 
 // Play order: moving an entry renumbers the chambers, its id stays
 const CHAMBER_LISTINGS: ChamberListing[] = [
+  {
+    id: 0,
+    data: chamberZeroData,
+  },
   {
     id: 1,
     data: chamberOneData,
