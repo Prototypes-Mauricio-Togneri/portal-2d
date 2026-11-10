@@ -2,6 +2,7 @@ import {PALETTE} from '@/game/palette'
 import {NO_ELEMENT} from '@/game/rules/compiled_chamber'
 import type {BlockableKind, ElementKind} from '@/game/rules/element_registry'
 import type {RulesState} from '@/game/rules/rules_state'
+import type {StepTransition} from '@/game/step_animation'
 import type {LineOrientation, TilePainter} from '@/game/tile_painter'
 
 // How each element type is drawn by the renderer, looked up by kind: the
@@ -10,9 +11,10 @@ import type {LineOrientation, TilePainter} from '@/game/tile_painter'
 // the visuals stay frozen until stage 03 reworks them
 
 /**
- * Draws every element of one type in a state.
+ * Draws every element of one type in a state, given the step being drawn,
+ * if any, whose `to` is that state.
  */
-export type ElementDrawing = (painter: TilePainter, state: RulesState) => void
+export type ElementDrawing = (painter: TilePainter, state: RulesState, transition: StepTransition | null) => void
 
 /**
  * The colours and edge width of a tile drawn as a filled block.

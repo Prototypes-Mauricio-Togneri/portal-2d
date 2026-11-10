@@ -5,6 +5,7 @@ import {DRAW_LAYERS, type DrawLayer} from '@/game/rules/draw_layer'
 import {ELEMENT_REGISTRY} from '@/game/rules/element_registry'
 import {PortalColor} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
+import type {StepTransition} from '@/game/step_animation'
 import {TilePainter} from '@/game/tile_painter'
 
 /**
@@ -147,8 +148,9 @@ export class Renderer {
    * registry order.
    * @param state - The state drawn
    * @param layer - The layer
+   * @param transition - The step being drawn, ending on the state drawn, or null to draw the state as it is
    */
-  private drawLayer(state: RulesState, layer: DrawLayer): void {
+  private drawLayer(state: RulesState, layer: DrawLayer, transition: StepTransition | null): void {
     switch (layer) {
       case 'floor':
         this.drawFloor(state)
@@ -166,7 +168,7 @@ export class Renderer {
 
     for (const definition of ELEMENT_REGISTRY) {
       if (definition.layer === layer) {
-        ELEMENT_DRAWINGS[definition.kind](this.painter, state)
+        ELEMENT_DRAWINGS[definition.kind](this.painter, state, transition)
       }
     }
   }
@@ -174,14 +176,15 @@ export class Renderer {
   /**
    * Draws a whole frame, back to front.
    * @param state - The state to draw
+   * @param transition - The step being drawn, ending on the state drawn, or null (the default) to draw the state as it is
    */
-  render(state: RulesState): void {
+  render(state: RulesState, transition: StepTransition | null = null): void {
     // Drawn at whatever opacity the previous frame left set; the floor then
     // covers all of it
     this.painter.clear()
 
     for (const layer of DRAW_LAYERS) {
-      this.drawLayer(state, layer)
+      this.drawLayer(state, layer, transition)
     }
   }
 }

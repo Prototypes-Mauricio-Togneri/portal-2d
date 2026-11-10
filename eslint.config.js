@@ -194,6 +194,7 @@ export default withVueTs(
             '@/game/level',
             '@/game/tile_painter',
             '@/game/element_drawings',
+            '@/game/step_animation',
           ],
           patterns: [
             '@/chambers/*',
@@ -234,6 +235,7 @@ export default withVueTs(
             '@/game/level',
             '@/game/tile_painter',
             '@/game/element_drawings',
+            '@/game/step_animation',
           ],
           patterns: [
             '@/chambers/*',

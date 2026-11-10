@@ -14,14 +14,18 @@ import type {RulesState} from '@/game/rules/rules_state'
 import {StateHistory} from '@/game/rules/state_history'
 import {startChamber, step} from '@/game/rules/step'
 import {Sound} from '@/game/sound'
+import {StepAnimation} from '@/game/step_animation'
 
 /**
  * Plays a chamber on a canvas, driven by the chamber screen. Each frame takes
  * the oldest waiting key press, if any, as one action, fully resolved by the
  * rules' step, plays a sound for each thing that happened and redraws when
- * the state changed. Undo and redo bring back earlier states from the run's
- * history, silently. Every press it acts on is logged, so the run since the
- * last load can be replayed without a browser.
+ * the state changed. A step that changes the state is then drawn over a few
+ * frames, redrawn every frame until it ends, paused or not; the next press
+ * ends it at once, and nothing is drawn over time when the player asks for
+ * reduced motion. Undo and redo bring back earlier states from the run's
+ * history, silently and at once. Every press it acts on is logged, so the run
+ * since the last load can be replayed without a browser.
  */
 export class Level {
   /** Keys that start the clock: moving, turning, both portals and interacting */
@@ -67,6 +71,8 @@ export class Level {
   private portalCount = 0 // Portals opened on a wall since the last load, misses not counted
   private undoCount = 0 // Steps taken back with undo since the last load
   private readonly renderer: Renderer // Draws the state
+  private readonly animation = new StepAnimation() // The step being drawn over a few frames, if any
+  private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time a step could be drawn over time
   private readonly input: Input // The keyboard, listening from construction until dispose()
   private initialized = false // Whether the frame loop has started
   private isPaused = false // Whether the loop skips updates and the input ignores keydown
@@ -84,6 +90,7 @@ export class Level {
    */
   constructor(canvas: HTMLCanvasElement, bindings: KeyBindings, screenWidth: number, screenHeight: number, pixelRatio = 1) {
     this.renderer = new Renderer(canvas, screenWidth, screenHeight, pixelRatio)
+    this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     this.input = new Input(bindings)
     document.addEventListener('visibilitychange', this.onVisibilityChange)
   }
@@ -117,6 +124,7 @@ export class Level {
     this.stepCount = 0
     this.portalCount = 0
     this.undoCount = 0
+    this.animation.finish()
 
     this.playEvents(start.events)
 
@@ -125,7 +133,7 @@ export class Level {
       this.run()
     }
 
-    this.render()
+    this.render(performance.now())
   }
 
   /**
@@ -137,7 +145,8 @@ export class Level {
 
   /**
    * Pauses or resumes. While paused the state does not update and keydown is
-   * ignored. Resuming forgets every key, pressed and held, first.
+   * ignored, but a step being drawn still runs to its end. Resuming forgets
+   * every key, pressed and held, first.
    */
   set paused(value: boolean) {
     this.isPaused = value
@@ -240,7 +249,7 @@ export class Level {
 
     if (this.chamber !== null) {
       this.renderer.setSize(this.chamber.width, this.chamber.height)
-      this.render()
+      this.render(performance.now())
     }
   }
 
@@ -260,11 +269,12 @@ export class Level {
   }
 
   /**
-   * Draws the current state.
+   * Draws the current state, part way through the step being drawn, if any.
+   * @param time - Now, in milliseconds on the frame clock
    */
-  private render(): void {
+  private render(time: number): void {
     if (this.state !== null) {
-      this.renderer.render(this.state)
+      this.renderer.render(this.state, this.animation.transitionAt(time))
     }
   }
 
@@ -284,15 +294,16 @@ export class Level {
   }
 
   /**
-   * Runs one frame: takes the oldest waiting press, if any, and steps
-   * through the history for undo or redo, or runs the rules' step for any
-   * other key. Then forgets which keys went down during the frame, for the
-   * clock.
+   * Runs one frame: takes the oldest waiting press, if any, ends the step
+   * being drawn, and steps through the history for undo or redo, or runs the
+   * rules' step for any other key. Then forgets which keys went down during
+   * the frame, for the clock.
    * @param delta - Seconds since the previous frame
    * @param input - The keyboard
+   * @param time - The frame's time, in milliseconds on the frame clock
    * @returns Whether the state changed
    */
-  private update(delta: number, input: Input): boolean {
+  private update(delta: number, input: Input, time: number): boolean {
     let updated = false
 
     // The clock counts from the frame after the first key, so the wait before it is not included
@@ -305,10 +316,16 @@ export class Level {
     if ((this.chamber !== null) && (this.state !== null)) {
       const press = input.takePress()
 
+      // A press never waits for the step being drawn: it ends it at once,
+      // even when the press itself changes nothing
+      if (press !== null) {
+        this.animation.finish()
+      }
+
       if (typeof press === 'string') {
         updated = this.updateHistory(this.state, press)
       } else if (press !== null) {
-        updated = this.updateRules(this.chamber, this.state, press)
+        updated = this.updateRules(this.chamber, this.state, press, time)
       }
     }
 
@@ -319,14 +336,16 @@ export class Level {
 
   /**
    * Runs one step of the rules for a press, records it in the history and
-   * the log, counts the move and plays the sounds of what happened. Nothing
-   * runs once the chamber is completed.
+   * the log, counts the move, starts drawing the step when it changed the
+   * state and plays the sounds of what happened. Nothing runs once the
+   * chamber is completed.
    * @param chamber - The chamber being played
    * @param state - The state before the step
    * @param press - The press, one key and whether the turn key was held
+   * @param time - The frame's time, in milliseconds on the frame clock
    * @returns Whether the state changed
    */
-  private updateRules(chamber: CompiledChamber, state: RulesState, press: FrameInput): boolean {
+  private updateRules(chamber: CompiledChamber, state: RulesState, press: FrameInput, time: number): boolean {
     const action = actionOfPress(press)
 
     if ((action === null) || state.completed) {
@@ -345,6 +364,11 @@ export class Level {
     }
 
     this.state = next
+
+    if ((next !== state) && !this.reducedMotion.matches) {
+      this.animation.start(state, next, result.events, time)
+    }
+
     this.playEvents(result.events)
 
     if (next.completed) {
@@ -355,8 +379,8 @@ export class Level {
   }
 
   /**
-   * Undoes or redoes a step, silently, and logs the press. Nothing can be
-   * undone once the chamber is completed.
+   * Undoes or redoes a step, silently and at once, and logs the press.
+   * Nothing can be undone once the chamber is completed.
    * @param state - The state now
    * @param key - Undo or redo
    * @returns Whether a step was undone or redone
@@ -398,7 +422,7 @@ export class Level {
    */
   private run(): void {
     this.startTime = Date.now()
-    this.onFrame()
+    this.onFrame(performance.now())
   }
 
   /**
@@ -413,18 +437,24 @@ export class Level {
 
   /**
    * Runs one frame, then requests the next. A frame that throws ends the loop.
+   * @param time - The frame's time, in milliseconds on the frame clock (the page's, as `performance.now()` reads it)
    */
-  private readonly onFrame = (): void => {
+  private readonly onFrame = (time: number): void => {
     const currentTime = Date.now()
     const delta = (currentTime - this.startTime) / 1000
     this.startTime = currentTime
 
-    if (!this.isPaused) {
-      const stateUpdated = this.update(delta, this.input)
+    // A step still being drawn needs this frame, paused or not: part way
+    // through, or its end once it is over or a press ended it
+    const wasAnimating = this.animation.running
+    let stateUpdated = false
 
-      if (stateUpdated) {
-        this.render()
-      }
+    if (!this.isPaused) {
+      stateUpdated = this.update(delta, this.input, time)
+    }
+
+    if (stateUpdated || wasAnimating) {
+      this.render(time)
     }
 
     // A callback during the frame may have disposed of the level
