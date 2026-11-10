@@ -6,6 +6,7 @@ import {ELEMENT_REGISTRY} from '@/game/rules/element_registry'
 import {PortalColor} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
 import type {StepTransition} from '@/game/step_animation'
+import {subjectPose} from '@/game/subject_pose'
 import {TilePainter} from '@/game/tile_painter'
 
 /**
@@ -42,7 +43,9 @@ const PORTAL_STYLES: Readonly<Record<PortalColor, PortalStyle>> = {
  * back to front. The core step's layers (floor, portals, subject) are drawn
  * here; every other layer draws its element types in registry order, each by
  * its drawing in ELEMENT_DRAWINGS. Tiles are square, sized to fit the chamber
- * in the screen area, and row 0 is at the bottom.
+ * in the screen area, and row 0 is at the bottom. Part way through a step,
+ * the subject and a box it carries are drawn at the subject's pose; the rest
+ * is drawn as the state after the step.
  */
 export class Renderer {
   private readonly painter: TilePainter // Paints the tiles
@@ -131,16 +134,19 @@ export class Renderer {
 
   /**
    * Draws the subject with a triangle showing where it faces, in the box
-   * colour while it carries one.
+   * colour while it carries one, at its pose: where it stands, or part way
+   * through the step being drawn.
    * @param state - The state drawn
+   * @param transition - The step being drawn, ending on the state drawn, or null to draw the state as it is
    */
-  private drawSubject(state: RulesState): void {
-    const x = state.subjectX
-    const y = state.subjectY
+  private drawSubject(state: RulesState, transition: StepTransition | null): void {
+    const pose = subjectPose(state, transition, this.painter.blockSize)
     const size = this.painter.blockSize
 
-    this.painter.drawBlock(x, y, size, size, PALETTE.subjectFill, PALETTE.subjectBorder, SUBJECT_BORDER_WIDTH)
-    this.painter.drawTriangleTowards(state.facing, x, y, state.isCarrying ? BOX_STYLE.fillColor : PALETTE.subjectArrow)
+    this.painter.drawClippedToTile(pose.clip, () => {
+      this.painter.drawBlock(pose.x, pose.y, size, size, PALETTE.subjectFill, PALETTE.subjectBorder, SUBJECT_BORDER_WIDTH)
+      this.painter.drawTriangleTowards(pose.facing, pose.x, pose.y, state.isCarrying ? BOX_STYLE.fillColor : PALETTE.subjectArrow)
+    })
   }
 
   /**
@@ -162,7 +168,7 @@ export class Renderer {
         break
 
       case 'subject':
-        this.drawSubject(state)
+        this.drawSubject(state, transition)
         break
     }
 

@@ -70,7 +70,7 @@ export const DELTAS: Readonly<Record<Direction, Delta>> = {
 }
 
 /** The way opposite each way */
-const OPPOSITES: Readonly<Record<Direction, Direction>> = {
+export const OPPOSITES: Readonly<Record<Direction, Direction>> = {
   [Direction.UP]: Direction.DOWN,
   [Direction.DOWN]: Direction.UP,
   [Direction.LEFT]: Direction.RIGHT,

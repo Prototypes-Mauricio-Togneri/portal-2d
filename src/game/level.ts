@@ -72,6 +72,7 @@ export class Level {
   private undoCount = 0 // Steps taken back with undo since the last load
   private readonly renderer: Renderer // Draws the state
   private readonly animation = new StepAnimation() // The step being drawn over a few frames, if any
+  private frameTime = 0 // The latest frame's time, in milliseconds on the frame clock; redraws outside a frame use it, so a step being drawn never goes back
   private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time a step could be drawn over time
   private readonly input: Input // The keyboard, listening from construction until dispose()
   private initialized = false // Whether the frame loop has started
@@ -133,7 +134,7 @@ export class Level {
       this.run()
     }
 
-    this.render(performance.now())
+    this.render(this.frameTime)
   }
 
   /**
@@ -239,7 +240,8 @@ export class Level {
   }
 
   /**
-   * Fits the current chamber to a new screen area or pixel ratio and redraws it.
+   * Fits the current chamber to a new screen area or pixel ratio and redraws
+   * it as the latest frame drew it, part way through a step being drawn too.
    * @param screenWidth - Width available to the chamber, in canvas pixels
    * @param screenHeight - Height available to the chamber, in canvas pixels
    * @param pixelRatio - Canvas pixels per page pixel; 1 by default
@@ -249,7 +251,7 @@ export class Level {
 
     if (this.chamber !== null) {
       this.renderer.setSize(this.chamber.width, this.chamber.height)
-      this.render(performance.now())
+      this.render(this.frameTime)
     }
   }
 
@@ -440,6 +442,8 @@ export class Level {
    * @param time - The frame's time, in milliseconds on the frame clock (the page's, as `performance.now()` reads it)
    */
   private readonly onFrame = (time: number): void => {
+    this.frameTime = time
+
     const currentTime = Date.now()
     const delta = (currentTime - this.startTime) / 1000
     this.startTime = currentTime

@@ -3,12 +3,14 @@ import {NO_ELEMENT} from '@/game/rules/compiled_chamber'
 import type {BlockableKind, ElementKind} from '@/game/rules/element_registry'
 import type {RulesState} from '@/game/rules/rules_state'
 import type {StepTransition} from '@/game/step_animation'
+import {boxCarriedThrough, subjectPose} from '@/game/subject_pose'
 import type {LineOrientation, TilePainter} from '@/game/tile_painter'
 
 // How each element type is drawn by the renderer, looked up by kind: the
 // rules can't touch the canvas, so drawing stays on the browser side. The
 // original game's drawing code, colours (named in the palette) and sizes;
-// the visuals stay frozen until stage 03 reworks them
+// a settled state's look stays frozen until stage 03 reworks it, which so
+// far only adds the frames part way through a step
 
 /**
  * Draws every element of one type in a state, given the step being drawn,
@@ -212,21 +214,45 @@ function drawLasers(painter: TilePainter, state: RulesState): void {
 }
 
 /**
+ * Draws one box, shrunk to a quarter when on a button so the button shows.
+ * @param painter - Paints on the canvas
+ * @param x - Column, part way between two while it is carried through a step
+ * @param y - Row, part way between two while it is carried through a step
+ * @param onButton - Whether its tile holds a button
+ */
+function drawBox(painter: TilePainter, x: number, y: number, onButton: boolean): void {
+  if (onButton) {
+    painter.drawMiniBlock(x, y, painter.blockSize, painter.blockSize, BOX_STYLE.fillColor, BOX_STYLE.borderColor, BOX_STYLE.borderWidth)
+  } else {
+    drawStyledBlock(painter, x, y, BOX_STYLE)
+  }
+}
+
+/**
  * Draws the boxes, shrunk to a quarter when on a button so the button shows.
+ * A box carried through the step being drawn moves with the subject, which
+ * covers it.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
+ * @param transition - The step being drawn, ending on the state drawn, or null to draw the state as it is
  */
-function drawBoxes(painter: TilePainter, state: RulesState): void {
+function drawBoxes(painter: TilePainter, state: RulesState, transition: StepTransition | null): void {
   const chamber = state.chamber
+  const carried = boxCarriedThrough(state, transition)
 
   for (let i = 0; i < chamber.stateLayout.boxCount; i++) {
     const x = state.boxX(i)
     const y = state.boxY(i)
+    const onButton = chamber.elementAt('button', x, y) !== NO_ELEMENT
 
-    if (chamber.elementAt('button', x, y) !== NO_ELEMENT) {
-      painter.drawMiniBlock(x, y, painter.blockSize, painter.blockSize, BOX_STYLE.fillColor, BOX_STYLE.borderColor, BOX_STYLE.borderWidth)
+    if (i === carried) {
+      const pose = subjectPose(state, transition, painter.blockSize)
+
+      painter.drawClippedToTile(pose.clip, () => {
+        drawBox(painter, pose.x, pose.y, onButton)
+      })
     } else {
-      drawStyledBlock(painter, x, y, BOX_STYLE)
+      drawBox(painter, x, y, onButton)
     }
   }
 }

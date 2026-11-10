@@ -1,3 +1,4 @@
+import type {PositionData} from '@/game/chamber_data'
 import {Direction} from '@/game/direction'
 import {PALETTE} from '@/game/palette'
 
@@ -107,6 +108,40 @@ export class TilePainter {
   clear(): void {
     this.context.fillStyle = PALETTE.chamber
     this.context.fillRect(0, 0, this.canvas.width, this.canvas.height)
+  }
+
+  /**
+   * Runs a drawing clipped to one tile, so nothing it draws shows outside
+   * that tile, or unclipped when no tile is given. The clip never outlasts
+   * the drawing, and the opacity the drawing leaves set stays set, as it
+   * would without the clip.
+   * @param tile - The tile to clip to, or null to draw unclipped
+   * @param draw - The drawing
+   */
+  drawClippedToTile(tile: PositionData | null, draw: () => void): void {
+    if (tile === null) {
+      draw()
+
+      return
+    }
+
+    const corner = this.getFinalPosition(tile.x, tile.y)
+
+    this.context.save()
+
+    try {
+      this.context.beginPath()
+      this.context.rect(corner.x, corner.y - this.tileSize, this.tileSize, this.tileSize)
+      this.context.clip()
+      draw()
+    } finally {
+      // Restoring would also bring back the opacity from before the drawing,
+      // and the next frame's clear fills at the opacity left set
+      const opacity = this.context.globalAlpha
+
+      this.context.restore()
+      this.context.globalAlpha = opacity
+    }
   }
 
   /**
