@@ -967,7 +967,7 @@ onBeforeUnmount(() => {
   <main class="home-screen room">
     <div class="home-inner room-inner">
       <h1 class="room-title">
-        <PortalLogo size="large" />
+        <PortalLogo size="medium" />
       </h1>
 
       <div class="home-menu">
@@ -1245,11 +1245,12 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* The wordmark well clear of the menu below it */
+/* The logo clear of the menu below it; with the logo, as much height as the menu had below the
+   earlier text wordmark, so the open Play section still fits the same windows */
 .home-inner {
   display: flex;
   flex-direction: column;
-  gap: 8.5rem;
+  gap: 3rem;
   min-height: 100%;
 }
 

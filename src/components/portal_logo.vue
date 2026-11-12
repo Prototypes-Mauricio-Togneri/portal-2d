@@ -1,103 +1,68 @@
 <script setup lang="ts">
 /**
- * A sign title set between a blue and an orange portal: the "Portal 2D"
- * wordmark, or a screen's title in the same place and size.
- * The large size opens its portals once when it first appears.
+ * The "Portal 2D" logo: the name between a blue and an orange portal's sweep.
+ * Large on the loading screen, medium on the home screen, small beside a
+ * chamber and on the desktop-only notice. The large and medium sizes fade in
+ * once when they first appear.
  */
+import logoUrl from '@/assets/images/portal_2d_logo.webp'
+
 export interface PortalLogoProps {
   size?: 'large' | 'medium' | 'small'
-  text?: string
 }
 
 withDefaults(defineProps<PortalLogoProps>(), {
   size: 'large',
-  text: 'Portal 2D',
 })
 </script>
 
 <template>
-  <span class="portal-logo" :class="`portal-logo-${size}`">
-    <span class="portal portal-blue" aria-hidden="true"></span>
-    <span class="wordmark">{{ text }}</span>
-    <span class="portal portal-orange" aria-hidden="true"></span>
-  </span>
+  <!-- The file's own size, so its space is kept while it downloads -->
+  <img
+    class="portal-logo"
+    :class="`portal-logo-${size}`"
+    :src="logoUrl"
+    alt="Portal 2D"
+    width="1312"
+    height="729"
+  >
 </template>
 
 <style scoped>
+/* A fixed width, capped by the space there is: a width in percent would leave a box that shrinks
+   to fit it (the loading screen's title) as wide as the file itself, and the logo off centre */
 .portal-logo {
-  display: inline-flex;
-  align-items: stretch;
-  font-family: var(--font-display);
-  font-weight: 700;
-  line-height: 1;
-  color: var(--color-ink);
-}
-
-/* Portal bars flanking the word */
-.portal {
-  flex: none;
-  width: 0.14em;
-  transform-origin: center;
-}
-
-.portal-blue {
-  background: var(--color-blue);
-}
-
-.portal-orange {
-  background: var(--color-orange);
-}
-
-.wordmark {
-  padding: 0.04em 0.16em 0;
-  letter-spacing: -0.01em;
+  display: block;
+  max-width: 100%;
+  height: auto;
 }
 
 /* Sizes */
 .portal-logo-large {
-  font-size: clamp(3.5rem, 7vw, 6rem);
+  width: 28rem;
 }
 
 .portal-logo-medium {
-  font-size: 4rem;
+  width: 20.5rem;
 }
 
 .portal-logo-small {
-  font-size: 1.5rem;
+  width: 13rem;
 }
 
-/* Portals open once on the home screen */
-.portal-logo-large .portal {
-  animation: portal-open 520ms var(--ease-out) both;
+/* The loading and home screens' logo fades in once */
+.portal-logo-large,
+.portal-logo-medium {
+  animation: logo-arrive 520ms var(--ease-out) both;
 }
 
-.portal-logo-large .portal-orange {
-  animation-delay: 140ms;
-}
-
-.portal-logo-large .wordmark {
-  animation: wordmark-arrive 520ms var(--ease-out) 220ms both;
-}
-
-@keyframes portal-open {
-  from {
-    transform: scaleY(0);
-  }
-
-  to {
-    transform: scaleY(1);
-  }
-}
-
-@keyframes wordmark-arrive {
+@keyframes logo-arrive {
   from {
     opacity: 0;
-    transform: translateX(-0.12em);
   }
 
   to {
     opacity: 1;
-    transform: translateX(0);
   }
 }
 </style>

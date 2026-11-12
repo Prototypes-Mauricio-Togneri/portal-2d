@@ -447,7 +447,7 @@ onBeforeUnmount(() => {
 <template>
   <main class="chamber-screen">
     <aside class="chamber-rail">
-      <PortalLogo size="medium" />
+      <PortalLogo size="small" />
       <div class="chamber-sign">
         <h1 class="sign-title">
           <span class="sign-label ruled-label">Chamber</span>
@@ -532,7 +532,7 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
-/* Side rail: wordmark, chamber sign and controls on a light panel, casting a soft shadow on the room */
+/* Side rail: logo, chamber sign and controls on a light panel, casting a soft shadow on the room */
 .chamber-rail {
   position: relative;
   z-index: 1;
