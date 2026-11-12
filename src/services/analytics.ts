@@ -6,7 +6,7 @@
  *
  * Run events carry the attempt they belong to: the chamber's attempt count on
  * this device, kept with the progress and cleared by Reset progress. Every
- * opening, Reset chamber and Play again starts a new attempt, but Reset chamber
+ * opening, Restart chamber and Play again starts a new attempt, but Restart chamber
  * sends no chamber_start of its own, so runs = chamber_start + chamber_restart.
  * A restart ends attempt N, and the run after it is N + 1.
  */
@@ -129,7 +129,7 @@ export function trackChamberStart(chamber: ChamberEntry, attempt: number): void 
 }
 
 /**
- * The player confirmed Reset chamber, ending the run. The next run starts
+ * The player confirmed Restart chamber, ending the run. The next run starts
  * without a chamber_start event.
  * @param chamber - The chamber
  * @param attempt - The attempt number of the run that ended

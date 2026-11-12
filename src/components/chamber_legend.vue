@@ -61,7 +61,7 @@ onMounted(refreshKeyLabels)
 
 <template>
   <section class="legend" aria-labelledby="legend-heading">
-    <h2 id="legend-heading" class="legend-heading ruled-label">Controls</h2>
+    <h2 id="legend-heading" class="legend-heading ruled-label">Controls<span class="legend-heading-mark" aria-hidden="true"></span></h2>
     <dl class="legend-list">
       <div class="legend-row">
         <dt class="arrow-keys">
@@ -183,20 +183,29 @@ onMounted(refreshKeyLabels)
   gap: 1.75rem;
 }
 
-/* Section sign: a slanted blue mark, then the label and its rule */
+/* Section sign: the label between a slanted blue mark and an orange one, then its rule */
 .legend-heading {
   font-size: 1.0625rem;
   letter-spacing: 0.22em;
 }
 
-.legend-heading::before {
+.legend-heading::before,
+.legend-heading-mark {
   content: '';
   flex: none;
   width: 0.625rem;
   height: 1rem;
+  transform: skewX(-24deg);
+}
+
+.legend-heading::before {
   margin-right: -0.25rem;
   background: var(--color-blue);
-  transform: skewX(-24deg);
+}
+
+.legend-heading-mark {
+  margin-left: -0.25rem;
+  background: var(--color-orange);
 }
 
 /* One key column shared by every row, as wide as the arrow cluster or the widest key bound,
@@ -215,8 +224,10 @@ onMounted(refreshKeyLabels)
   align-items: center;
 }
 
+/* A single key sits in the middle of the key column, under the arrow cluster */
 .legend-row dt {
   display: flex;
+  justify-content: center;
 }
 
 /* What the key does, behind a divider: thin and grey, or a portal's colour */

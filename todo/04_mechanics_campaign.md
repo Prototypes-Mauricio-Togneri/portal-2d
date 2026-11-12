@@ -342,7 +342,7 @@ Draft spec:
 - Walking into it pushes it one tile if the tile beyond is free for a block (not a wall, active barrier, closed door, closed exit, open ditch, another block, the exit, or a switch); otherwise the move is refused.
 - Pushed into a wall holding a portal (open side facing it, both portals open), it comes out of the other portal if that exit tile is free for it.
 - Pushed onto an active fizzler, it resets to its start.
-- Pushing can create dead ends (a block in a corner). No warning reports them (README decision 10): undo and Reset chamber get the player out.
+- Pushing can create dead ends (a block in a corner). No warning reports them (README decision 10): undo and Restart chamber get the player out.
 
 Chambers. Teach: push a block onto a button. Test: push it so its mirror sends a beam to a receiver. Twist: push it through a portal. Combine: a beam, a block and a mirror box together.
 
@@ -441,7 +441,7 @@ Revised 2026-11-09 (decisions 13 and 14): the solver budget, no-solver, medal pa
 
 1. **Hook check (Phase 0).** If a hook a mechanic needs is missing from stage 01 and adding it would reshape the step itself, redesign the mechanic to avoid it or drop it.
 2. **Laser oscillation (Phase 3).** If oscillations show up in natural play (fixtures or playtests), restrict them. Either forbid a receiver from linking to anything a beam reaching it passes through (checked by validation), or make receivers latch on like switches.
-3. **Push blocks (Phase 6).** Build them only if mirror boxes can't express the laser puzzles the author wants. No warning reports a dead end (README decision 10): undo and Reset chamber get the player out of one.
+3. **Push blocks (Phase 6).** Build them only if mirror boxes can't express the laser puzzles the author wants. No warning reports a dead end (README decision 10): undo and Restart chamber get the player out of one.
 4. **Echo (Phase 7).** Build it only if a teach chamber sketched by hand shows it is worth its cost (open decision 1); otherwise cut it.
 
 ## Risks

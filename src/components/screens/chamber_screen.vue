@@ -209,7 +209,7 @@ function restartChamber(): void {
 }
 
 /**
- * Starts the chamber over once the player has confirmed Reset chamber.
+ * Starts the chamber over once the player has confirmed Restart chamber.
  */
 function confirmReset(): void {
   if (chamber.value !== undefined) {
@@ -489,16 +489,15 @@ onBeforeUnmount(() => {
 
     <PauseDialog
       v-if="dialog === 'pause'"
-      :chamber-name="chamberName"
       @continue="resume"
       @reset="dialog = 'confirm-reset'"
       @exit="dialog = 'confirm-exit'"
     />
     <ConfirmDialog
       v-else-if="dialog === 'confirm-reset'"
-      :title="`Reset ${nameInSentence(chamberName)}?`"
+      :title="`Restart ${nameInSentence(chamberName)}?`"
       message="You'll start again from the entrance. Portals, boxes, buttons and switches go back to how they began."
-      confirm-label="Reset chamber"
+      confirm-label="Restart chamber"
       @confirm="confirmReset"
       @cancel="dialog = 'pause'"
     />

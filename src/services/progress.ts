@@ -14,7 +14,7 @@ const PROGRESS_VERSION = 2 // Format of the stored record; a record of any other
 type ChamberRecord = {
   completed: boolean // Whether the subject has reached the exit at least once
   bestTime: number | null // Fastest finished run, in whole hundredths of a second; null when there is none
-  attempts: number // Runs started: each opening, Reset chamber and Play again
+  attempts: number // Runs started: each opening, Restart chamber and Play again
 }
 
 /** Everything stored, as written to localStorage. */

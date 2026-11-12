@@ -2,7 +2,8 @@
 /**
  * Shown when the player reaches the exit of a chamber, with the run's time
  * and how it compares with the chamber's best. Its main action opens the next
- * chamber, or goes back to the menu after the last one. In development it also
+ * chamber, followed by Play again and Back to menu; after the last chamber it
+ * goes back to the menu, followed by Play again. In development it also
  * offers to download the run as the chamber's recorded solution.
  */
 import DialogFrame from '@/components/dialog_frame.vue'
@@ -49,23 +50,16 @@ const canDownloadSolution = import.meta.env.DEV === true
       Not saved: the run doesn't replay the same way. The console says which check failed.
     </p>
     <template #actions>
-      <button
-        v-if="hasNextChamber"
-        class="button button-interaction"
-        type="button"
-        @click="emit('next')"
-      >
-        Next chamber
-      </button>
-      <button
-        class="button"
-        :class="hasNextChamber ? 'button-quiet' : 'button-interaction'"
-        type="button"
-        @click="emit('menu')"
-      >
-        Back to menu
-      </button>
-      <button class="button button-quiet" type="button" @click="emit('replay')">Play again</button>
+      <template v-if="hasNextChamber">
+        <button class="button button-interaction" type="button" @click="emit('next')">Next chamber</button>
+        <button class="button button-quiet" type="button" @click="emit('replay')">Play again</button>
+        <button class="button button-quiet" type="button" @click="emit('menu')">Back to menu</button>
+      </template>
+      <!-- After the last chamber the menu is the way on, so it stays the main action, first -->
+      <template v-else>
+        <button class="button button-interaction" type="button" @click="emit('menu')">Back to menu</button>
+        <button class="button button-quiet" type="button" @click="emit('replay')">Play again</button>
+      </template>
       <button
         v-if="canDownloadSolution"
         class="button button-quiet completion-solution"
