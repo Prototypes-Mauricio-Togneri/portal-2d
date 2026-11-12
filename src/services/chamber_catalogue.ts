@@ -77,13 +77,3 @@ if (import.meta.env.DEV) {
 export function findChamber(chamberNumber: number): ChamberEntry | undefined {
   return CHAMBERS.find((chamber) => chamber.number === chamberNumber)
 }
-
-/**
- * Writes a chamber's name as it reads inside a sentence, such as "Reset
- * chamber 2?" or "Reset tutorial?".
- * @param name - The chamber's name, in sentence case
- * @returns The name with its first letter in lower case
- */
-export function nameInSentence(name: string): string {
-  return name.charAt(0).toLowerCase() + name.slice(1)
-}

@@ -18,7 +18,7 @@ import type {ReplayData} from '@/game/replay_data'
 import {Sound} from '@/game/sound'
 import {trackChamberAbandon, trackChamberComplete, trackChamberQuit, trackChamberRestart, trackChamberStart} from '@/services/analytics'
 import type {RunProgress} from '@/services/analytics'
-import {findChamber, nameInSentence} from '@/services/chamber_catalogue'
+import {findChamber} from '@/services/chamber_catalogue'
 import {keyBindings} from '@/services/key_bindings'
 import {formatTime} from '@/services/format_time'
 import {rememberChamber} from '@/services/last_chamber'
@@ -495,17 +495,17 @@ onBeforeUnmount(() => {
     />
     <ConfirmDialog
       v-else-if="dialog === 'confirm-reset'"
-      :title="`Restart ${nameInSentence(chamberName)}?`"
-      message="You'll start again from the entrance. Portals, boxes, buttons and switches go back to how they began."
-      confirm-label="Restart chamber"
+      title="Restart chamber?"
+      message="Your progress will be lost."
+      confirm-label="Restart"
       @confirm="confirmReset"
       @cancel="dialog = 'pause'"
     />
     <ConfirmDialog
       v-else-if="dialog === 'confirm-exit'"
-      :title="`Exit ${nameInSentence(chamberName)}?`"
-      message="You'll go back to the chamber list. Your progress in this chamber won't be kept."
-      confirm-label="Exit chamber"
+      title="Exit chamber?"
+      message="Your progress will be lost."
+      confirm-label="Exit"
       @confirm="confirmExit"
       @cancel="cancelExit"
     />
