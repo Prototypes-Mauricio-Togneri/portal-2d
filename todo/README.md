@@ -86,7 +86,7 @@ These replace the rougher claims in the original roadmap. Re-check them when rev
 - Hosting rewrites every path to `/index.html`. Routes: `/`, `/chamber/<digits>`, and a catch-all that redirects home. The no-cache headers cover `/`, `/index.html`, `/settings` (stale: no such route; removed 2026-11-06) and `/chamber/**`; any new route must be added there.
 - Chambers are static imports listed by hand in `chamber_catalogue.ts`, all in the main bundle (about 204 KB today; each chamber adds about 0.6–0.8 KB gzipped). The Play menu draws every chamber as a fixed-height row and cannot scroll.
 - The full `firebase` package is installed but only `firebase/app` and `firebase/analytics` are used; the config holds only `apiKey`, `projectId` and `appId`, and the Firebase app is created only inside analytics startup in production builds.
-- The name "Portal" and the Aperture Science logo on the loading screen belong to Valve.
+- The name "Portal" belongs to Valve.
 
 ## Decisions made
 

@@ -90,7 +90,6 @@ onMounted(() => {
 <template>
   <main class="loading-screen wall">
     <div class="loading-content">
-      <span class="emblem" aria-hidden="true"></span>
       <h1 class="loading-title">
         <PortalLogo size="large" />
       </h1>
@@ -183,15 +182,6 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   width: min(36rem, 100%);
-}
-
-/* Aperture Science logo, muted so the title leads; drawn as a mask so it takes the wall's ink */
-.emblem {
-  width: 8rem;
-  aspect-ratio: 1;
-  margin-bottom: 2.5rem;
-  background: rgba(var(--color-ink-rgb), 0.32);
-  mask: url('@/assets/images/aperture_science.svg') center / contain no-repeat;
 }
 
 .loading-title {
