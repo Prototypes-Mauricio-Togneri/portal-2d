@@ -2,7 +2,7 @@
  * What is printed on each key of the player's keyboard, for showing bound
  * keys. Letters, digits and punctuation follow the player's layout where the
  * browser can tell it (Chromium's keyboard layout map), and a US keyboard
- * otherwise; every other key has a fixed name.
+ * otherwise; every other key, and each mouse button, has a fixed name.
  */
 import {shallowRef} from 'vue'
 import type {BoundKey} from '@/game/key_bindings'
@@ -18,8 +18,16 @@ type KeyboardLayoutReader = {
   getLayoutMap(): Promise<ReadonlyMap<string, string>> // The character each writing key types, by KeyboardEvent.code
 }
 
-/** Keys whose label doesn't depend on the layout */
+/** Keys and mouse buttons whose label doesn't depend on the layout */
 const NAMED_KEYS: Readonly<Record<string, KeyLabel>> = {
+  MouseLeft: {
+    text: 'Left click',
+    name: 'Left mouse button',
+  },
+  MouseRight: {
+    text: 'Right click',
+    name: 'Right mouse button',
+  },
   ArrowUp: {
     text: '↑',
     name: 'Up arrow',

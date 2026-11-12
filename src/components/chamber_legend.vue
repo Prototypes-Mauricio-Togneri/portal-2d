@@ -4,11 +4,12 @@
  * both portals and interacting, then undo and redo, each on the key the
  * player has bound to it, and Escape for the pause dialog, each with what it
  * does. The keys show what the player's keyboard prints on them, and arrow
- * keys a small triangle pointing their way. Turning in place, undo and redo
- * are hidden for now; their keys still work.
+ * keys a small triangle pointing their way, and a mouse button a small mouse
+ * with that button filled in. Turning in place, undo and redo are hidden for
+ * now; their keys still work.
  */
 import {computed, onMounted} from 'vue'
-import KeyGlyph from '@/components/key_glyph.vue'
+import KeyCap from '@/components/key_cap.vue'
 import {GameKey} from '@/game/game_key'
 import type {BoundKey} from '@/game/key_bindings'
 import {keyBindings} from '@/services/key_bindings'
@@ -65,10 +66,10 @@ onMounted(refreshKeyLabels)
     <dl class="legend-list">
       <div class="legend-row">
         <dt class="arrow-keys">
-          <kbd class="keycap arrow-up" :aria-label="keys.up.name"><KeyGlyph :bound-key="keys.up.key" /></kbd>
-          <kbd class="keycap arrow-left" :aria-label="keys.left.name"><KeyGlyph :bound-key="keys.left.key" /></kbd>
-          <kbd class="keycap arrow-down" :aria-label="keys.down.name"><KeyGlyph :bound-key="keys.down.key" /></kbd>
-          <kbd class="keycap arrow-right" :aria-label="keys.right.name"><KeyGlyph :bound-key="keys.right.key" /></kbd>
+          <KeyCap class="arrow-up" :bound-key="keys.up.key" :aria-label="keys.up.name" />
+          <KeyCap class="arrow-left" :bound-key="keys.left.key" :aria-label="keys.left.name" />
+          <KeyCap class="arrow-down" :bound-key="keys.down.key" :aria-label="keys.down.name" />
+          <KeyCap class="arrow-right" :bound-key="keys.right.key" :aria-label="keys.right.name" />
         </dt>
         <dd class="legend-action">
           <span class="action-name">Move</span>
@@ -77,13 +78,13 @@ onMounted(refreshKeyLabels)
       </div>
       <div v-if="!HIDDEN_KEYS.has(GameKey.TURN)" class="legend-row">
         <dt>
-          <kbd
-            class="keycap"
+          <KeyCap
             :class="{
               'keycap-wide': keys.turn.wide,
             }"
+            :bound-key="keys.turn.key"
             :aria-label="keys.turn.name"
-          ><KeyGlyph :bound-key="keys.turn.key" /></kbd>
+          />
         </dt>
         <dd class="legend-action">
           <span class="action-name">Turn in place</span>
@@ -92,13 +93,14 @@ onMounted(refreshKeyLabels)
       </div>
       <div class="legend-row">
         <dt>
-          <kbd
-            class="keycap"
+          <KeyCap
             :class="{
               'keycap-wide': keys.blue.wide,
             }"
+            :bound-key="keys.blue.key"
+            portal="blue"
             :aria-label="keys.blue.name"
-          ><KeyGlyph :bound-key="keys.blue.key" /></kbd>
+          />
         </dt>
         <dd class="legend-action legend-action-blue">
           <span class="action-name">Blue portal</span>
@@ -107,13 +109,14 @@ onMounted(refreshKeyLabels)
       </div>
       <div class="legend-row">
         <dt>
-          <kbd
-            class="keycap"
+          <KeyCap
             :class="{
               'keycap-wide': keys.orange.wide,
             }"
+            :bound-key="keys.orange.key"
+            portal="orange"
             :aria-label="keys.orange.name"
-          ><KeyGlyph :bound-key="keys.orange.key" /></kbd>
+          />
         </dt>
         <dd class="legend-action legend-action-orange">
           <span class="action-name">Orange portal</span>
@@ -122,13 +125,13 @@ onMounted(refreshKeyLabels)
       </div>
       <div class="legend-row">
         <dt>
-          <kbd
-            class="keycap"
+          <KeyCap
             :class="{
               'keycap-wide': keys.interact.wide,
             }"
+            :bound-key="keys.interact.key"
             :aria-label="keys.interact.name"
-          ><KeyGlyph :bound-key="keys.interact.key" /></kbd>
+          />
         </dt>
         <dd class="legend-action">
           <span class="action-name">Interact</span>
@@ -137,13 +140,13 @@ onMounted(refreshKeyLabels)
       </div>
       <div v-if="!HIDDEN_KEYS.has(GameKey.UNDO)" class="legend-row">
         <dt>
-          <kbd
-            class="keycap"
+          <KeyCap
             :class="{
               'keycap-wide': keys.undo.wide,
             }"
+            :bound-key="keys.undo.key"
             :aria-label="keys.undo.name"
-          ><KeyGlyph :bound-key="keys.undo.key" /></kbd>
+          />
         </dt>
         <dd class="legend-action">
           <span class="action-name">Undo</span>
@@ -152,13 +155,13 @@ onMounted(refreshKeyLabels)
       </div>
       <div v-if="!HIDDEN_KEYS.has(GameKey.REDO)" class="legend-row">
         <dt>
-          <kbd
-            class="keycap"
+          <KeyCap
             :class="{
               'keycap-wide': keys.redo.wide,
             }"
+            :bound-key="keys.redo.key"
             :aria-label="keys.redo.name"
-          ><KeyGlyph :bound-key="keys.redo.key" /></kbd>
+          />
         </dt>
         <dd class="legend-action">
           <span class="action-name">Redo</span>
@@ -283,6 +286,11 @@ onMounted(refreshKeyLabels)
 .arrow-keys .keycap {
   min-width: 0;
   padding: 0 0.5rem;
+}
+
+/* A mouse button bound to a move keeps its own size, in the middle of its key's place */
+.arrow-keys .mouse-glyph {
+  justify-self: center;
 }
 
 .arrow-up {

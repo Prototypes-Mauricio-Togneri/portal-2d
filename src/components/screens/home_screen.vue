@@ -8,35 +8,33 @@
  * or a click on Play starts the tutorial instead, and only Right opens its
  * list. The third column follows the highlight there: Play shows the
  * chamber's map, About shows a list of pages or the changelog, and Settings'
- * Controls row the key bound to each game key (turning in place, undo and
- * redo hidden for now), from the top of the menu.
+ * Controls row the layouts of controls, Arrow keys, WASD and mouse and
+ * Custom, level with it, the one in use lit.
  * Right, Enter or a click steps from an About row into its pages or changelog,
- * or from Controls into its keys. Up and Down move the highlight (or scroll
+ * or from Controls into its layouts. Up and Down move the highlight (or scroll
  * the changelog) in the column that has the keyboard, Left and Escape step
  * back a column, closing the section from the second. Every move of the
- * highlight clicks. Picking a key's row waits for the next key, which takes
- * the whole keyboard until it is pressed or Escape cancels. Settings ends
- * with Reset progress, which asks first in a dialog; while it is open the
- * menu ignores the keyboard and Escape closes it.
+ * highlight clicks. Picking a layout puts it in use; picking Custom also
+ * opens its dialog, where each key is set. Settings ends with Reset progress,
+ * which asks first in a dialog. While either dialog is open the menu ignores
+ * the keyboard and Escape closes it.
  */
-import {computed, nextTick, onBeforeUnmount, onMounted, ref, useId, useTemplateRef, watch} from 'vue'
+import {computed, nextTick, onBeforeUnmount, onMounted, ref, useId, useTemplateRef} from 'vue'
 import type {Ref} from 'vue'
 import {useRouter} from 'vue-router'
 import ChamberMap from '@/components/chamber_map.vue'
 import ChamberRow from '@/components/chamber_row.vue'
 import ChangelogList from '@/components/changelog_list.vue'
 import ConfirmDialog from '@/components/confirm_dialog.vue'
-import ControlRow from '@/components/control_row.vue'
+import CustomControlsDialog from '@/components/custom_controls_dialog.vue'
+import LayoutRow from '@/components/layout_row.vue'
 import LinkRow from '@/components/link_row.vue'
 import PortalLogo from '@/components/portal_logo.vue'
 import SettingsSwitch from '@/components/settings_switch.vue'
-import {GameKey} from '@/game/game_key'
-import {getBoundKey} from '@/game/key_bindings'
 import {Sound} from '@/game/sound'
 import {trackChangelogOpen, trackFeedbackOpen, trackLinkOpen, trackProgressReset} from '@/services/analytics'
 import {CHAMBERS} from '@/services/chamber_catalogue'
-import {bindKey, keyBindings, resetKeyBindings} from '@/services/key_bindings'
-import {getKeyLabel, refreshKeyLabels} from '@/services/key_labels'
+import {chooseControlLayout, ControlLayout, controlLayout} from '@/services/key_bindings'
 import {lastChamber} from '@/services/last_chamber'
 import {bestTime, hasStartedAnyChamber, isCompleted, resetProgress} from '@/services/progress'
 import {musicEnabled, playMusic, soundEnabled} from '@/services/settings'
@@ -59,11 +57,10 @@ type SettingEntry = {
   enabled: Ref<boolean> // The preference the row switches
 }
 
-/** A game key listed in the Controls column, with the key bound to it. */
-type ControlEntry = {
-  gameKey: GameKey // The game key the row rebinds
-  label: string // What the key does, on the row
-  portal: 'blue' | 'orange' | null // The portal the key shoots, if any
+/** A layout of controls listed in the Controls column. */
+type LayoutEntry = {
+  layout: ControlLayout // The layout the row puts in use
+  label: string // Name on the row
 }
 
 /** A page outside the game, listed in the third column and opened in a new tab. */
@@ -179,72 +176,23 @@ const settings: SettingEntry[] = [
 const CONTROLS_INDEX = settings.length // The Controls row comes after the switches
 const RESET_PROGRESS_INDEX = settings.length + 1 // Reset progress comes last
 
-// Every game key, in the order its row would show
-const ALL_CONTROLS: ControlEntry[] = [
+// The rows of the Controls column
+const LAYOUTS: LayoutEntry[] = [
   {
-    gameKey: GameKey.UP,
-    label: 'Move up',
-    portal: null,
+    layout: ControlLayout.ARROW_KEYS,
+    label: 'Arrow keys',
   },
   {
-    gameKey: GameKey.DOWN,
-    label: 'Move down',
-    portal: null,
+    layout: ControlLayout.WASD_MOUSE,
+    label: 'WASD and mouse',
   },
   {
-    gameKey: GameKey.LEFT,
-    label: 'Move left',
-    portal: null,
-  },
-  {
-    gameKey: GameKey.RIGHT,
-    label: 'Move right',
-    portal: null,
-  },
-  {
-    gameKey: GameKey.TURN,
-    label: 'Turn in place',
-    portal: null,
-  },
-  {
-    gameKey: GameKey.BLUE,
-    label: 'Blue portal',
-    portal: 'blue',
-  },
-  {
-    gameKey: GameKey.ORANGE,
-    label: 'Orange portal',
-    portal: 'orange',
-  },
-  {
-    gameKey: GameKey.INTERACT,
-    label: 'Interact',
-    portal: null,
-  },
-  {
-    gameKey: GameKey.UNDO,
-    label: 'Undo',
-    portal: null,
-  },
-  {
-    gameKey: GameKey.REDO,
-    label: 'Redo',
-    portal: null,
+    layout: ControlLayout.CUSTOM,
+    label: 'Custom',
   },
 ]
 
-// Game keys whose rows are hidden for now, as in the chamber's legend, kept so they can be shown
-// again; their keys still work
-const HIDDEN_CONTROLS: ReadonlySet<GameKey> = new Set([
-  GameKey.TURN,
-  GameKey.UNDO,
-  GameKey.REDO,
-])
-
-// The rows of the Controls column
-const CONTROLS = ALL_CONTROLS.filter((control) => !HIDDEN_CONTROLS.has(control.gameKey))
-
-const RESET_CONTROLS_INDEX = CONTROLS.length // Reset controls comes after the keys
+const CUSTOM_LAYOUT_INDEX = LAYOUTS.findIndex((entry) => entry.layout === ControlLayout.CUSTOM) // The Custom row, which the keyboard goes back to when its dialog closes
 
 const TUTORIAL_ID = 0 // The tutorial's permanent chamber id, which Play opens straight away until any chamber has been opened
 
@@ -265,15 +213,13 @@ const highlightedChamber = ref(Math.max(rememberedChamber, 0))
 const highlightedSetting = ref(0)
 const highlightedAbout = ref(0)
 const highlightedLink = ref(0)
-const highlightedControl = ref(0)
+const highlightedLayout = ref(layoutInUseIndex())
 const resetDialogOpen = ref(false)
-const waitingControl = ref<GameKey | null>(null) // The game key whose row waits for a new key, or null
-const refusedKey = ref<string | null>(null) // The key last refused while waiting, by name, or null
+const controlsDialogOpen = ref(false) // Whether the Custom controls dialog is open
 const controlStatus = ref('') // What the Controls column last did, read aloud by screen readers
 
 let pointerSection: MenuSection | null = null // Section row under the pointer, so only moving onto a row takes the keyboard
 let pointerItem: number | null = null // Item row under the pointer, so moving within an About or Controls row just clicked leaves the keyboard in its third column
-let capturedCode: string | null = null // The key last taken while waiting, whose keyup must not press the focused row again
 
 const sectionColumn = useTemplateRef<HTMLElement>('sectionColumn')
 const itemColumn = useTemplateRef<HTMLElement>('itemColumn')
@@ -304,16 +250,17 @@ const highlightedLinks = computed(() => {
   const entry = highlightedAboutEntry.value
   return openSection.value === 'about' && entry?.kind === 'links' ? entry.links : []
 })
-// The third column's rows: About's pages, or the keys with Reset controls
-const detailRowCount = computed(() => controlsShown.value ? CONTROLS.length + 1 : highlightedLinks.value.length)
-const highlightedDetail = computed(() => controlsShown.value ? highlightedControl.value : highlightedLink.value)
-// The game key of the row that has the keyboard in the Controls column, or null
-const activeControl = computed(() => {
-  if (activeColumn.value !== 'details' || !controlsShown.value) {
-    return null
-  }
-  return CONTROLS[highlightedControl.value]?.gameKey ?? null
-})
+// The third column's rows: About's pages, or the layouts
+const detailRowCount = computed(() => controlsShown.value ? LAYOUTS.length : highlightedLinks.value.length)
+const highlightedDetail = computed(() => controlsShown.value ? highlightedLayout.value : highlightedLink.value)
+
+/**
+ * Finds the layout in use in the Controls column.
+ * @returns Its row's index
+ */
+function layoutInUseIndex(): number {
+  return Math.max(LAYOUTS.findIndex((entry) => entry.layout === controlLayout.value), 0)
+}
 
 /**
  * Counts the rows of the open section.
@@ -382,21 +329,21 @@ function highlightItem(index: number): void {
     }
     highlightedAbout.value = index
   } else {
-    // Coming back to Controls starts its keys at the top, as another About row does
+    // Coming back to Controls starts on the layout in use
     if (index !== highlightedSetting.value) {
-      highlightedControl.value = 0
+      highlightedLayout.value = layoutInUseIndex()
     }
     highlightedSetting.value = index
   }
 }
 
 /**
- * Highlights a row of the third column: a page under About, or a key under Controls.
+ * Highlights a row of the third column: a page under About, or a layout under Controls.
  * @param index - The row's index in the third column
  */
 function highlightDetail(index: number): void {
   if (controlsShown.value) {
-    highlightedControl.value = index
+    highlightedLayout.value = index
   } else {
     highlightedLink.value = index
   }
@@ -429,7 +376,7 @@ function focusRow(column: MenuColumn, index: number, preventScroll = false): voi
 }
 
 /**
- * Gives the third column the keyboard: the highlighted page or key, or the changelog.
+ * Gives the third column the keyboard: the highlighted page or layout, or the changelog.
  */
 function focusDetail(): void {
   if (changelogShown.value) {
@@ -545,7 +492,7 @@ function closeSection(): void {
 
 /**
  * Steps from the highlighted About row into its pages or changelog in the
- * third column, or from Controls into its keys, with a click. Does nothing
+ * third column, or from Controls into its layouts, with a click. Does nothing
  * anywhere else, or for Feedback, which has nothing there.
  */
 function openDetail(): void {
@@ -556,10 +503,6 @@ function openDetail(): void {
   Sound.MENU_BUTTON.play()
   if (changelogShown.value) {
     trackChangelogOpen()
-  }
-  // The player may have switched keyboard layouts since the labels were read
-  if (controlsShown.value) {
-    refreshKeyLabels()
   }
   // A row clicked has only just been highlighted, so its third column may not be drawn yet
   void nextTick(focusDetail)
@@ -723,7 +666,7 @@ function handleItemPointerLeave(): void {
 }
 
 /**
- * Keeps the state in step when a page or key row in the third column gets
+ * Keeps the state in step when a page or layout row in the third column gets
  * the keyboard, such as through Tab, clicking when that moves the highlight.
  * @param index - The row's index in the third column
  */
@@ -737,7 +680,7 @@ function handleDetailFocus(index: number): void {
 }
 
 /**
- * Highlights the page or key row under a moving pointer, with a click. Only
+ * Highlights the page or layout row under a moving pointer, with a click. Only
  * real movement counts, so rows shown under a still pointer never pull the keyboard into them.
  * @param index - The row's index in the third column
  * @param event - Pointer event
@@ -769,78 +712,32 @@ function handleChangelogFocus(): void {
 }
 
 /**
- * Waits for a new key for a game key picked in the Controls column (Enter,
- * Space or a click), with a click. The row is highlighted first, as for a
- * row stepped into, since some browsers (Safari) don't focus a clicked button.
+ * Puts the layout picked in the Controls column (Enter, Space or a click) in
+ * use, with a click; picking Custom also opens its dialog. The row is
+ * highlighted first, as for a row stepped into, since some browsers (Safari)
+ * don't focus a clicked button.
  * @param index - The row's index in the third column
  */
-function chooseControl(index: number): void {
-  const control = CONTROLS[index]
-  if (control === undefined) {
+function chooseLayout(index: number): void {
+  const entry = LAYOUTS[index]
+  if (entry === undefined) {
     return
   }
   handleDetailFocus(index)
-  waitingControl.value = control.gameKey
-  refusedKey.value = null
-  controlStatus.value = `Press a key for ${control.label}, or Escape to cancel`
+  chooseControlLayout(entry.layout)
+  controlStatus.value = `Controls set to ${entry.label}`
+  if (entry.layout === ControlLayout.CUSTOM) {
+    controlsDialogOpen.value = true
+  }
   Sound.MENU_BUTTON.play()
 }
 
 /**
- * Stops waiting for a key, leaving the binding as it was, silently.
+ * Closes the Custom controls dialog and gives the keyboard back to the Custom row.
  */
-function cancelWaiting(): void {
-  if (waitingControl.value === null) {
-    return
-  }
-  waitingControl.value = null
-  refusedKey.value = null
-  controlStatus.value = ''
-}
-
-/**
- * Takes a key pressed while a row waits for one, keeping it from the page and
- * the menu: binds it, with a click (a key bound to another game key is
- * swapped), or refuses it with a note and keeps waiting. Escape cancels; a
- * held key's repeats are ignored, so the key that started the wait can't bind.
- * @param event - Keyboard event
- * @param gameKey - The game key waiting for a key
- */
-function captureKey(event: KeyboardEvent, gameKey: GameKey): void {
-  event.preventDefault()
-  if (event.repeat) {
-    return
-  }
-  capturedCode = event.code
-  if (event.code === 'Escape') {
-    cancelWaiting()
-    return
-  }
-  const key = getBoundKey(event.code)
-  if (key === null) {
-    refusedKey.value = event.key === '' || event.key === 'Unidentified' ? 'that key' : event.key
-    controlStatus.value = `Can't use ${refusedKey.value}. Press another key, or Escape to cancel`
-    return
-  }
-  const control = CONTROLS.find((entry) => entry.gameKey === gameKey)
-  const previousKey = keyBindings.value[gameKey]
-  const swapped = ALL_CONTROLS.find((entry) => entry.gameKey !== gameKey && keyBindings.value[entry.gameKey] === key)
-  bindKey(gameKey, key)
-  waitingControl.value = null
-  refusedKey.value = null
-  const swapNote = swapped === undefined ? '' : `. ${swapped.label} moved to ${getKeyLabel(previousKey).name}`
-  controlStatus.value = `${control?.label ?? 'Key'} set to ${getKeyLabel(key).name}${swapNote}`
-  Sound.MENU_BUTTON.play()
-}
-
-/**
- * Puts every game key back on its default key, with a click.
- */
-function resetControls(): void {
-  cancelWaiting()
-  resetKeyBindings()
-  controlStatus.value = 'Controls reset to the defaults'
-  Sound.MENU_BUTTON.play()
+function closeControlsDialog(): void {
+  controlsDialogOpen.value = false
+  focusRow('details', CUSTOM_LAYOUT_INDEX)
 }
 
 /**
@@ -898,20 +795,20 @@ function handleEnter(event: KeyboardEvent): void {
 }
 
 /**
- * Arrow keys, Enter and Escape drive the menu, unless a row in the Controls
- * column waits for a key, which then takes every key.
+ * Arrow keys, Enter and Escape drive the menu, unless a dialog is open.
  * @param event - Keyboard event
  */
 function handleKeydown(event: KeyboardEvent): void {
-  // Before the modifier check, so Ctrl and Shift can be bound
-  if (waitingControl.value !== null) {
-    captureKey(event, waitingControl.value)
-    return
-  }
-  // While the reset confirmation is open its buttons have the keyboard, and Escape closes it
-  if (resetDialogOpen.value) {
-    if (event.key === 'Escape') {
-      closeResetDialog()
+  // While a dialog is open its rows and buttons have the keyboard, and Escape closes it (a Custom
+  // controls row waiting for a key takes Escape before it gets here; a held Escape that just
+  // cancelled the wait must not close the dialog too)
+  if (resetDialogOpen.value || controlsDialogOpen.value) {
+    if (event.key === 'Escape' && !event.repeat) {
+      if (resetDialogOpen.value) {
+        closeResetDialog()
+      } else {
+        closeControlsDialog()
+      }
     }
     return
   }
@@ -937,7 +834,7 @@ function handleKeydown(event: KeyboardEvent): void {
       stepBack()
       break
     case 'Escape':
-      // A held Escape that just closed the reset confirmation must not close the section too
+      // A held Escape that just closed a dialog must not close the section too
       if (!event.repeat) {
         stepBack()
       }
@@ -954,28 +851,8 @@ function handleKeydown(event: KeyboardEvent): void {
   }
 }
 
-/**
- * Keeps the release of a key just taken for a binding from pressing the
- * focused row again, as Space would, which would start waiting once more.
- * @param event - Keyboard event
- */
-function handleKeyup(event: KeyboardEvent): void {
-  if (capturedCode !== null && event.code === capturedCode) {
-    event.preventDefault()
-    capturedCode = null
-  }
-}
-
-// Moving the keyboard off the waiting row (the pointer, onto another row or column) stops the wait
-watch(activeControl, (gameKey) => {
-  if (gameKey !== waitingControl.value) {
-    cancelWaiting()
-  }
-})
-
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
-  window.addEventListener('keyup', handleKeyup)
   playMusic('menu')
   // The focus handlers find the state already set, so arriving makes no click
   if (activeColumn.value === 'items') {
@@ -987,7 +864,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown)
-  window.removeEventListener('keyup', handleKeyup)
 })
 </script>
 
@@ -1210,56 +1086,40 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- The Controls column runs from the top of the menu, since its keys reach well below
-             the Settings rows -->
+        <!-- The Controls column starts level with the Controls row -->
         <div
           v-else-if="controlsShown"
           :id="detailColumnId"
           ref="detailColumn"
           key="controls"
-          class="home-column home-detail"
+          class="home-column home-detail home-controls-detail"
+          :style="{
+            '--menu-cascade-rows': sectionIndex('settings') + CONTROLS_INDEX,
+          }"
         >
           <ul class="home-row-list home-control-list" :aria-labelledby="settingRowId(CONTROLS_INDEX)">
-            <li v-for="(control, index) in CONTROLS" :key="control.gameKey">
-              <ControlRow
-                :label="control.label"
-                :bound-key="keyBindings[control.gameKey]"
-                :portal="control.portal"
-                :waiting="waitingControl === control.gameKey"
-                :refused-key="refusedKey"
+            <li v-for="(entry, index) in LAYOUTS" :key="entry.layout">
+              <LayoutRow
+                :label="entry.label"
+                :chosen="entry.layout === controlLayout"
                 :class="{
-                  'menu-row-selected': index === highlightedControl,
-                  'menu-row-active': index === highlightedControl && activeColumn === 'details',
+                  'menu-row-selected': index === highlightedLayout,
+                  'menu-row-active': index === highlightedLayout && activeColumn === 'details',
                 }"
-                :tabindex="index === highlightedControl ? 0 : -1"
-                @click="chooseControl(index)"
+                :aria-haspopup="entry.layout === ControlLayout.CUSTOM ? 'dialog' : undefined"
+                :tabindex="index === highlightedLayout ? 0 : -1"
+                @click="chooseLayout(index)"
                 @focus="handleDetailFocus(index)"
                 @pointermove="handleDetailPointerMove(index, $event)"
               />
-            </li>
-            <li>
-              <button
-                class="menu-row"
-                :class="{
-                  'menu-row-selected': highlightedControl === RESET_CONTROLS_INDEX,
-                  'menu-row-active': highlightedControl === RESET_CONTROLS_INDEX && activeColumn === 'details',
-                }"
-                type="button"
-                :tabindex="highlightedControl === RESET_CONTROLS_INDEX ? 0 : -1"
-                @click="resetControls"
-                @focus="handleDetailFocus(RESET_CONTROLS_INDEX)"
-                @pointermove="handleDetailPointerMove(RESET_CONTROLS_INDEX, $event)"
-              >
-                <span class="menu-row-label">Reset controls</span>
-              </button>
             </li>
           </ul>
         </div>
       </div>
     </div>
 
-    <!-- Read aloud as the Controls column waits for, takes or refuses a key -->
-    <p class="home-status" role="status">{{ controlStatus }}</p>
+    <!-- Read aloud as the Controls column puts a layout in use -->
+    <p class="visually-hidden" role="status">{{ controlStatus }}</p>
 
     <ConfirmDialog
       v-if="resetDialogOpen"
@@ -1269,6 +1129,7 @@ onBeforeUnmount(() => {
       @confirm="confirmResetProgress"
       @cancel="closeResetDialog"
     />
+    <CustomControlsDialog v-if="controlsDialogOpen" @close="closeControlsDialog" />
   </main>
 </template>
 
@@ -1311,9 +1172,10 @@ onBeforeUnmount(() => {
 
 /* Cascade: the open section's first item starts level with the section's own row, pushed down by
    one row and gap for every row above it (the count comes from the template); About's third
-   column starts level with the About row it shows */
+   column starts level with the About row it shows, and Controls' with the Controls row */
 .home-items,
-.home-about-detail {
+.home-about-detail,
+.home-controls-detail {
   padding-top: calc(var(--menu-cascade-rows, 0) * (var(--menu-row-height) + var(--menu-row-gap)));
 }
 
@@ -1344,22 +1206,10 @@ onBeforeUnmount(() => {
   aspect-ratio: 4 / 3;
 }
 
-/* Page and key rows as wide as the second column's narrowest, so their arrows and keys stay near the names */
+/* Page and layout rows as wide as the second column's narrowest, so their arrows and lamps stay near the names */
 .home-link-list,
 .home-control-list {
   max-width: 28rem;
-}
-
-/* Heard, not seen */
-.home-status {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }
 
 /* The changelog: text on the wall beside a thin rule, reaching at most as far down as the longest

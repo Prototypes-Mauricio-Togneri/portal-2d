@@ -106,6 +106,18 @@ a {
   outline-offset: 0.1875rem;
 }
 
+/* Heard, not seen: status lines read aloud by screen readers */
+.visually-hidden {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* ============================================
    Facility wall
    ============================================ */

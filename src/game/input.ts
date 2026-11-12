@@ -1,6 +1,6 @@
 import type {FrameInput, FrameKey} from '@/game/frame_input'
 import {GameKey, type HistoryKey} from '@/game/game_key'
-import {type BoundKey, getBoundKey, type KeyBindings} from '@/game/key_bindings'
+import {type BoundKey, getBoundKey, getMouseBoundKey, type KeyBindings} from '@/game/key_bindings'
 
 /**
  * A press waiting for the level, with whether the turn key was held as it
@@ -12,11 +12,13 @@ type KeyPress = {
 }
 
 /**
- * Keyboard state for the game, fed by keydown and keyup on the window. Keys
- * are read by physical position (KeyboardEvent.code) through the player's
- * bindings, so they stay in place on every layout; every other key is
- * ignored. Presses wait in arrival order until the level takes them, one at a
- * time; the turn key is only ever read as held.
+ * Keyboard and mouse state for the game, fed by keydown, keyup, mousedown and
+ * mouseup on the window. Keys are read by physical position
+ * (KeyboardEvent.code) through the player's bindings, so they stay in place on
+ * every layout; a bound mouse button, left or right, counts as a key wherever
+ * it is clicked. Every other key and button is ignored. Presses wait in
+ * arrival order until the level takes them, one at a time; the turn key is
+ * only ever read as held.
  */
 export class Input {
   /**
@@ -48,14 +50,16 @@ export class Input {
     '\'',
   ])
 
-  enabled = true // When false, keydown is ignored entirely; keyup is still tracked
+  private static readonly RIGHT_MOUSE_BUTTON = 2 // MouseEvent.button of the right button, which opens the context menu
+
+  enabled = true // When false, keydown and mousedown are ignored entirely and the context menu opens; keyup and mouseup are still tracked
   private readonly gameKeys: ReadonlyMap<BoundKey, GameKey> // The game key each bound key stands for
   private readonly holding = new Set<GameKey>() // Game keys held down
   private readonly pressed = new Set<GameKey>() // Game keys pressed since the last clear(), auto-repeat included
   private readonly presses: KeyPress[] = [] // Presses not yet taken, oldest first
 
   /**
-   * Starts listening to the keyboard on the window.
+   * Starts listening to the keyboard and the mouse on the window.
    * @param bindings - The key bound to each game key, which is only read
    */
   constructor(bindings: KeyBindings) {
@@ -66,6 +70,9 @@ export class Input {
 
     window.addEventListener('keyup', this.onKeyup, false)
     window.addEventListener('keydown', this.onKeydown, false)
+    window.addEventListener('mousedown', this.onMousedown, false)
+    window.addEventListener('mouseup', this.onMouseup, false)
+    window.addEventListener('contextmenu', this.onContextmenu, false)
   }
 
   /**
@@ -118,11 +125,14 @@ export class Input {
   }
 
   /**
-   * Stops listening to the keyboard.
+   * Stops listening to the keyboard and the mouse.
    */
   dispose(): void {
     window.removeEventListener('keyup', this.onKeyup, false)
     window.removeEventListener('keydown', this.onKeydown, false)
+    window.removeEventListener('mousedown', this.onMousedown, false)
+    window.removeEventListener('mouseup', this.onMouseup, false)
+    window.removeEventListener('contextmenu', this.onContextmenu, false)
   }
 
   /**
@@ -136,7 +146,7 @@ export class Input {
       return
     }
 
-    const gameKey = this.getGameKey(event)
+    const gameKey = this.getGameKey(getBoundKey(event.code))
 
     if (gameKey === null) {
       return
@@ -167,7 +177,7 @@ export class Input {
    * @param event - The keyup event
    */
   readonly onKeyup = (event: KeyboardEvent): void => {
-    const gameKey = this.getGameKey(event)
+    const gameKey = this.getGameKey(getBoundKey(event.code))
 
     if (gameKey === null) {
       return
@@ -181,13 +191,68 @@ export class Input {
   }
 
   /**
-   * The game key a keyboard event's key is bound to.
-   * @param event - The keyboard event
-   * @returns The game key, or null when the key is not bound
+   * Records a bound mouse button going down anywhere in the window, unless
+   * disabled, as a key going down: its press waits for the level, once
+   * however long it is held. A click with Alt or Meta held is left to the
+   * browser and only recorded as held.
+   * @param event - The mousedown event
    */
-  private getGameKey(event: KeyboardEvent): GameKey | null {
-    const key = getBoundKey(event.code)
+  readonly onMousedown = (event: MouseEvent): void => {
+    if (!this.enabled) {
+      return
+    }
 
+    const gameKey = this.getGameKey(getMouseBoundKey(event.button))
+
+    if (gameKey === null) {
+      return
+    }
+
+    this.holding.add(gameKey)
+
+    if (event.altKey || event.metaKey) {
+      return
+    }
+
+    this.pressed.add(gameKey)
+
+    if (gameKey !== GameKey.TURN) {
+      this.presses.push({
+        key: gameKey,
+        turnHeld: this.holding.has(GameKey.TURN),
+      })
+    }
+  }
+
+  /**
+   * Records a bound mouse button going up, even while disabled.
+   * @param event - The mouseup event
+   */
+  readonly onMouseup = (event: MouseEvent): void => {
+    const gameKey = this.getGameKey(getMouseBoundKey(event.button))
+
+    if (gameKey !== null) {
+      this.holding.delete(gameKey)
+    }
+  }
+
+  /**
+   * Keeps the browser's context menu closed while enabled and the right mouse
+   * button is bound, since it plays, unless Alt or Meta is held.
+   * @param event - The contextmenu event
+   */
+  readonly onContextmenu = (event: MouseEvent): void => {
+    if (this.enabled && !event.altKey && !event.metaKey && (this.getGameKey(getMouseBoundKey(Input.RIGHT_MOUSE_BUTTON)) !== null)) {
+      event.preventDefault()
+    }
+  }
+
+  /**
+   * The game key a key or mouse button is bound to.
+   * @param key - The key or mouse button, as the game binds it, or null for one that can't be bound
+   * @returns The game key, or null when it is not bound
+   */
+  private getGameKey(key: BoundKey | null): GameKey | null {
     return (key === null) ? null : (this.gameKeys.get(key) ?? null)
   }
 

@@ -74,9 +74,9 @@ export class Level {
   private readonly animation = new StepAnimation() // The step being drawn over a few frames, if any
   private frameTime = 0 // The latest frame's time, in milliseconds on the frame clock; redraws outside a frame use it, so a step being drawn never goes back
   private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time a step could be drawn over time
-  private readonly input: Input // The keyboard, listening from construction until dispose()
+  private readonly input: Input // The keyboard and mouse, listening from construction until dispose()
   private initialized = false // Whether the frame loop has started
-  private isPaused = false // Whether the loop skips updates and the input ignores keydown
+  private isPaused = false // Whether the loop skips updates and the input ignores keydown and mousedown
   private disposed = false // Whether dispose() has run
   private frameId: number | null = null // The pending animation frame request
   private startTime = 0 // When the previous frame ran, in milliseconds since the epoch
@@ -145,9 +145,9 @@ export class Level {
   }
 
   /**
-   * Pauses or resumes. While paused the state does not update and keydown is
-   * ignored, but a step being drawn still runs to its end. Resuming forgets
-   * every key, pressed and held, first.
+   * Pauses or resumes. While paused the state does not update and keydown and
+   * mousedown are ignored, but a step being drawn still runs to its end.
+   * Resuming forgets every key, pressed and held, first.
    */
   set paused(value: boolean) {
     this.isPaused = value
@@ -301,7 +301,7 @@ export class Level {
    * rules' step for any other key. Then forgets which keys went down during
    * the frame, for the clock.
    * @param delta - Seconds since the previous frame
-   * @param input - The keyboard
+   * @param input - The keyboard and mouse
    * @param time - The frame's time, in milliseconds on the frame clock
    * @returns Whether the state changed
    */
