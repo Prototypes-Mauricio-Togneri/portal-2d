@@ -267,6 +267,16 @@ a {
   color: var(--color-blue-deep);
 }
 
+/* A focused button's ring lies over its own border, with no gap, in ink so it shows on every button */
+.button:focus-visible {
+  outline-color: var(--color-ink);
+  outline-offset: -1px;
+}
+
+.button-sign:focus-visible {
+  outline-offset: -0.125rem;
+}
+
 /* ============================================
    Keycaps
    ============================================ */
