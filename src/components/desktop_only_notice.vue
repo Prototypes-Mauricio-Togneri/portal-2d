@@ -7,8 +7,8 @@ import PortalLogo from '@/components/portal_logo.vue'
 
 <template>
   <main class="desktop-only wall">
-    <PortalLogo size="small" />
-    <p class="message">Portal 2D is currently only available in desktop version</p>
+    <PortalLogo size="medium" />
+    <p class="message">The game is currently available only in desktop</p>
   </main>
 </template>
 
@@ -16,9 +16,9 @@ import PortalLogo from '@/components/portal_logo.vue'
 .desktop-only {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  gap: 1.25rem;
+  gap: 2rem;
   min-height: 100%;
   padding: 2rem 1.5rem;
 }
@@ -29,5 +29,6 @@ import PortalLogo from '@/components/portal_logo.vue'
   font-size: 2rem;
   font-weight: 600;
   line-height: 1.15;
+  text-align: center;
 }
 </style>
