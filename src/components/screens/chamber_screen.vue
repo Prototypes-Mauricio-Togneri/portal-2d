@@ -538,7 +538,7 @@ onBeforeUnmount(() => {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 3rem;
+  gap: 1.5rem;
   padding: 1.75rem 1.375rem;
   border-right: 1px solid var(--color-rule);
   background: var(--color-panel);
@@ -547,14 +547,15 @@ onBeforeUnmount(() => {
 }
 
 /* Label and timer share the top row, the number runs below; the heading's own box is dropped so
-   its two spans can sit in the grid. Extra room under the number sets the sign apart from the controls */
+   its two spans can sit in the grid. Close under the logo, so the rail fits short windows; extra
+   room under the number sets the sign apart from the controls */
 .chamber-sign {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
   column-gap: 1rem;
   row-gap: 1.25rem;
-  margin-bottom: 1rem;
+  margin-bottom: 2.5rem;
 }
 
 .sign-title {

@@ -47,7 +47,7 @@ withDefaults(defineProps<PortalLogoProps>(), {
 }
 
 .portal-logo-small {
-  width: 13rem;
+  width: 10rem;
 }
 
 /* The loading and home screens' logo fades in once */
