@@ -4,7 +4,9 @@
  * lists the sections (Play, Settings and About); moving through it changes
  * nothing else. Opening a section with Enter, Right or a click shows its
  * chambers, settings or About rows in the second column, starting level with
- * the section's row. The third follows the highlight there: Play shows the
+ * the section's row. Until any chamber has been opened on this device, Enter
+ * or a click on Play starts the tutorial instead, and only Right opens its
+ * list. The third column follows the highlight there: Play shows the
  * chamber's map, About shows a list of pages or the changelog, and Settings'
  * Controls row the key bound to each game key (turning in place, undo and
  * redo hidden for now), from the top of the menu.
@@ -19,6 +21,7 @@
  */
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, useId, useTemplateRef, watch} from 'vue'
 import type {Ref} from 'vue'
+import {useRouter} from 'vue-router'
 import ChamberMap from '@/components/chamber_map.vue'
 import ChamberRow from '@/components/chamber_row.vue'
 import ChangelogList from '@/components/changelog_list.vue'
@@ -35,7 +38,7 @@ import {CHAMBERS} from '@/services/chamber_catalogue'
 import {bindKey, keyBindings, resetKeyBindings} from '@/services/key_bindings'
 import {getKeyLabel, refreshKeyLabels} from '@/services/key_labels'
 import {lastChamber} from '@/services/last_chamber'
-import {bestTime, isCompleted, resetProgress} from '@/services/progress'
+import {bestTime, hasStartedAnyChamber, isCompleted, resetProgress} from '@/services/progress'
 import {musicEnabled, playMusic, soundEnabled} from '@/services/settings'
 
 /** A section listed in the first column. */
@@ -243,6 +246,9 @@ const CONTROLS = ALL_CONTROLS.filter((control) => !HIDDEN_CONTROLS.has(control.g
 
 const RESET_CONTROLS_INDEX = CONTROLS.length // Reset controls comes after the keys
 
+const TUTORIAL_ID = 0 // The tutorial's permanent chamber id, which Play opens straight away until any chamber has been opened
+
+const router = useRouter()
 const menuId = useId()
 const itemColumnId = `${menuId}-items`
 const detailColumnId = `${menuId}-details`
@@ -504,6 +510,26 @@ function openHighlightedSection(): void {
 }
 
 /**
+ * Enter, Space or a click on the highlighted section: opens it, except Play
+ * on a device where no chamber has been opened yet, which starts the tutorial
+ * instead. Right always just opens the section.
+ */
+function pressHighlightedSection(): void {
+  const tutorial = CHAMBERS.find((chamber) => chamber.id === TUTORIAL_ID)
+  if (activeColumn.value !== 'sections' || highlightedSection.value !== 'play' || hasStartedAnyChamber() || tutorial === undefined) {
+    openHighlightedSection()
+    return
+  }
+  Sound.START.play()
+  void router.push({
+    name: 'chamber',
+    params: {
+      number: String(tutorial.number),
+    },
+  })
+}
+
+/**
  * Closes the open section, hiding the second and third columns, and gives the
  * keyboard back to its row in the first column, with a click.
  */
@@ -577,13 +603,14 @@ function stepBack(): void {
 }
 
 /**
- * Opens a section picked with the mouse (or Space), just like Enter.
+ * Presses a section picked with the mouse (or Space), just like Enter: opens
+ * it, or starts the tutorial from Play on a first visit.
  * @param section - The section picked
  */
 function chooseSection(section: MenuSection): void {
   highlightedSection.value = section
   activeColumn.value = 'sections'
-  openHighlightedSection()
+  pressHighlightedSection()
 }
 
 /**
@@ -842,7 +869,8 @@ function confirmResetProgress(): void {
 }
 
 /**
- * Enter opens the highlighted section from the first column. In the second
+ * Enter opens the highlighted section from the first column (or starts the
+ * tutorial from Play on a first visit). In the second
  * and third columns the focused row handles it (starting the chamber, flipping
  * the setting, asking to reset progress, stepping into About's third column or
  * opening a page); if the keyboard has left the rows, the highlighted row is
@@ -857,7 +885,7 @@ function handleEnter(event: KeyboardEvent): void {
   }
   if (activeColumn.value === 'sections') {
     event.preventDefault()
-    openHighlightedSection()
+    pressHighlightedSection()
     return
   }
   const row = activeColumn.value === 'items'

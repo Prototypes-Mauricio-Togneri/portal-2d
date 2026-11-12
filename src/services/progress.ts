@@ -181,6 +181,15 @@ export function isCompleted(chamber: ChamberEntry): boolean {
 }
 
 /**
+ * Whether any chamber has been opened on this device since progress was last
+ * reset. Reactive, like isCompleted().
+ * @returns True once any chamber has had an attempt
+ */
+export function hasStartedAnyChamber(): boolean {
+  return Object.values(progress.value.chambers).some((record) => record.attempts > 0)
+}
+
+/**
  * The best time in a chamber. Reactive, like isCompleted().
  * @param chamber - The chamber
  * @returns The fastest finished run in whole hundredths of a second, or null when there is none
