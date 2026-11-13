@@ -253,6 +253,26 @@ export class TilePainter {
   }
 
   /**
+   * Draws a sprite over a tile, with its overhang around it, see-through:
+   * something fading in or out. A raised one's shadow fades with it.
+   * @param name - The sprite
+   * @param x - Column
+   * @param y - Row
+   * @param way - The way it is turned to face, from facing up as drawn
+   * @param opacity - How opaque it is drawn, from 0 (not at all) to 1 (as drawSprite() draws it)
+   */
+  drawSpriteFaded(name: SpriteName, x: number, y: number, way: Direction, opacity: number): void {
+    this.context.save()
+
+    try {
+      this.context.globalAlpha = opacity
+      this.drawSprite(name, x, y, way)
+    } finally {
+      this.context.restore()
+    }
+  }
+
+  /**
    * Draws a sprite over a tile, with its overhang around it, and a raised
    * one over its shadow.
    * @param name - The sprite

@@ -91,7 +91,7 @@ Every sprite is 256 px, or 384 px when it overhangs, except the two strips (1280
 | 13 | `switch` | A switch, used with the interact key. It has no on or off |
 | 14 | `box` | A box. Carried, it is drawn at half size in front of the subject and turned with it, so there is no carrying pose to draw |
 | 15 | `fizzler_on` | A fizzler that is on: the subject walks through it and loses its portals and any box it carries; it stops shots. Drawn over everything, so keep it see-through. A fizzler that is off isn't drawn (see [fizzle](#fizzle)) |
-| 16 | `laser_on` | A laser beam that is on: stops walking, lets shots through. A laser that is off isn't drawn |
+| 16 | `laser_on` | A laser beam that is on: stops walking, lets shots through. A laser that is off isn't drawn; switched, it fades out or in over about 0.25 s, its glow with it |
 | 17 | `laser_glow` | The beam's glow (see [glow](#glow)) |
 | 18 | `arrow` | A floor arrow |
 | 19 | `portal_blue` | The blue portal |
@@ -124,7 +124,7 @@ The three glows are drawn last, over everything, and added to the colours beneat
 
 ## Fizzle
 
-When the subject walks into a fizzler that is on, each portal it loses and a box it carries break up: the game cuts the sprite, as last drawn, into small square pieces, which drift out from its middle, shrink and fade in about 0.6 s, over everything. When a fizzler switches off, its field crumbles the same way in about 0.6 s, but in place, in its own layer: `fizzler_on` is cut into the same pieces, which shrink and fade where they are, one after another, leaving nothing; when it switches back on, they grow back in reverse, and one switched back part way turns back from where it is. There is nothing extra to draw, but the pieces show the sprite's own pixels, so a portal or box drawn as a thin outline breaks into very few. With reduced motion, and in the home menu's map and the gallery, nothing breaks up or forms.
+When the subject walks into a fizzler that is on, each portal it loses and a box it carries break up: the game cuts the sprite, as last drawn, into small square pieces, which drift out from its middle, shrink and fade in about 0.6 s, over everything. When a fizzler switches off, its field crumbles the same way in about 0.4 s, but in place, in its own layer: `fizzler_on` is cut into the same pieces, which shrink and fade where they are, one after another, leaving nothing; when it switches back on, they grow back in reverse, and one switched back part way turns back from where it is. There is nothing extra to draw, but the pieces show the sprite's own pixels, so a portal or box drawn as a thin outline breaks into very few. With reduced motion, and in the home menu's map and the gallery, nothing breaks up or forms.
 
 ## Sliding doors
 

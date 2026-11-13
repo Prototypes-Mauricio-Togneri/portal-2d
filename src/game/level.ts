@@ -26,10 +26,10 @@ import {StepAnimation} from '@/game/step_animation'
  * the state changed. A step that changes the state is then drawn over a few
  * frames, redrawn every frame until it ends, paused or not; the next press
  * ends it at once. When a step fizzles, what it took breaks up over a few
- * frames, a door or the exit a step opens or closes slides open or shut, and
- * a fizzler a step switches crumbles away or forms; no press waits for them
- * nor cuts them short. While anything glows, breaks up, slides or crumbles,
- * every frame is drawn too. Nothing is drawn over time when the player asks for reduced
+ * frames, a door or the exit a step opens or closes slides open or shut, a
+ * fizzler a step switches crumbles away or forms, and a laser a step switches
+ * fades out or in; no press waits for them nor cuts them short. While
+ * anything glows, breaks up or changes, every frame is drawn too. Nothing is drawn over time when the player asks for reduced
  * motion: the glows hold steady. Undo and redo bring back
  * earlier states from the run's history, silently and at once. Every press it acts on is logged, so the run
  * since the last load can be replayed without a browser. When a mouse button
@@ -106,7 +106,7 @@ export class Level {
   private readonly renderer: Renderer // Draws the state
   private readonly animation = new StepAnimation() // The step being drawn over a few frames, if any
   private readonly fizzle = new FizzleParticles() // What the latest fizzle took, breaking up over a few frames, if anything
-  private readonly changes = new ElementTransitions() // The doors, the exit and the fizzlers changing over a few frames after a step switched them, if any
+  private readonly changes = new ElementTransitions() // The doors, the exit, the fizzlers and the lasers changing over a few frames after a step switched them, if any
   private frameTime = 0 // The latest frame's time, in milliseconds on the frame clock; redraws outside a frame use it, so a step being drawn never goes back
   private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time something could be drawn over time
   private ambientDrawn = false // Whether the latest frame was drawn for what moves with time alone, so the frame after it ends draws it still
@@ -312,8 +312,8 @@ export class Level {
   /**
    * Draws the current state, part way through the step being drawn, if any,
    * with what moves with time alone at this time, what breaks up and the
-   * doors, the exit and the fizzlers changing included, or held still when
-   * the player asks for reduced motion.
+   * doors, the exit, the fizzlers and the lasers changing included, or held
+   * still when the player asks for reduced motion.
    * @param time - Now, in milliseconds on the frame clock
    */
   private render(time: number): void {
@@ -503,7 +503,7 @@ export class Level {
   /**
    * Takes a step of the rules: records it in the history and the log,
    * counts the move, starts drawing the step when it changed the state, with
-   * each door, exit and fizzler it switched changing, and what it took
+   * each door, exit, fizzler and laser it switched changing, and what it took
    * breaking up when it fizzled, and plays the sounds of what happened.
    * @param state - The state before the step
    * @param action - The action stepped

@@ -13,14 +13,14 @@ import type {PiecePlacer, TilePainter} from '@/game/tile_painter'
 // off as well as on, except a fizzler or a laser that is off, which isn't
 // drawn at all. Walls and open ditches join their neighbours, quarter by
 // quarter, and doors, the exit and fizzlers are turned to the walls beside
-// them; a door or the exit sliding open or shut, or a fizzler crumbling away
-// or forming, is drawn part way. Beside them, what moves with time alone:
-// the lasers' glow, pulsing with the portals'
+// them; a door or the exit sliding open or shut, a fizzler crumbling away or
+// forming, or a laser fading out or in, is drawn part way. Beside them, what
+// moves with time alone: the lasers' glow, pulsing with the portals'
 
 /**
- * Draws every element of one type in a state, with the doors, the exit and
- * the fizzlers that are changing drawn part way, or every one as the state
- * says when no shares are given.
+ * Draws every element of one type in a state, with the doors, the exit, the
+ * fizzlers and the lasers that are changing drawn part way, or every one as
+ * the state says when no shares are given.
  */
 export type ElementDrawing = (painter: TilePainter, state: RulesState, shares?: BlockedShares | null) => void
 
@@ -347,17 +347,25 @@ function drawDitches(painter: TilePainter, state: RulesState): void {
 
 /**
  * Draws the lasers that are on, each turned to the way it runs; one that is
- * off isn't drawn.
+ * off isn't drawn. One fading out or in is drawn see-through.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
+ * @param shares - How far on the lasers that are changing are drawn, or null (the default) to draw every one as the state says
  */
-function drawLasers(painter: TilePainter, state: RulesState): void {
+function drawLasers(painter: TilePainter, state: RulesState, shares: BlockedShares | null = null): void {
   const entries = state.chamber.entriesOf('laser')
 
   entries.forEach((entry, i) => {
     const orientation = readOrientation(entry.direction)
+    const share = (shares === null) ? null : shares('laser', i)
 
-    if ((orientation !== null) && state.isBlocked('laser', i)) {
+    if (orientation === null) {
+      return
+    }
+
+    if (share !== null) {
+      painter.drawSpriteFaded('laser_on', entry.x, entry.y, LASER_TURNS[orientation], share)
+    } else if (state.isBlocked('laser', i)) {
       painter.drawSprite('laser_on', entry.x, entry.y, LASER_TURNS[orientation])
     }
   })
@@ -377,17 +385,20 @@ export function glowStrength(time: number | null): number {
 
 /**
  * Draws the glow of every laser that is on, added to what lies beneath,
- * turned to the way it runs.
+ * turned to the way it runs; the glow of one fading out or in fades with it.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  * @param strength - How strongly the glows shine, from glowStrength()
+ * @param shares - How far on the lasers that are changing are drawn, or null (the default) to draw every one as the state says
  */
-export function drawLaserGlows(painter: TilePainter, state: RulesState, strength: number): void {
+export function drawLaserGlows(painter: TilePainter, state: RulesState, strength: number, shares: BlockedShares | null = null): void {
   state.chamber.entriesOf('laser').forEach((entry, i) => {
     const orientation = readOrientation(entry.direction)
+    const share = (shares === null) ? null : shares('laser', i)
+    const shine = (share !== null) ? share : (state.isBlocked('laser', i) ? 1 : 0)
 
-    if ((orientation !== null) && state.isBlocked('laser', i)) {
-      painter.drawSpriteAdded('laser_glow', entry.x, entry.y, LASER_TURNS[orientation], strength)
+    if ((orientation !== null) && (shine > 0)) {
+      painter.drawSpriteAdded('laser_glow', entry.x, entry.y, LASER_TURNS[orientation], strength * shine)
     }
   })
 }
