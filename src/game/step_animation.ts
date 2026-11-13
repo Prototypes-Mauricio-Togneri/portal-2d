@@ -45,6 +45,16 @@ export class StepAnimation {
   }
 
   /**
+   * Whether the step being drawn takes the subject to another tile, walking
+   * or through a portal, so it is still on its way there.
+   */
+  get movingSubject(): boolean {
+    const runningStep = this.runningStep
+
+    return (runningStep !== null) && ((runningStep.from.subjectX !== runningStep.to.subjectX) || (runningStep.from.subjectY !== runningStep.to.subjectY))
+  }
+
+  /**
    * Starts drawing a step, replacing any step still being drawn.
    * @param from - The state before the step
    * @param to - The state after the step

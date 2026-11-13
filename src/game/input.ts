@@ -1,6 +1,6 @@
 import type {FrameInput, FrameKey} from '@/game/frame_input'
 import {GameKey, type HistoryKey} from '@/game/game_key'
-import {type BoundKey, getBoundKey, getMouseBoundKey, type KeyBindings} from '@/game/key_bindings'
+import {type BoundKey, getBoundKey, getKeyMouseButton, getMouseBoundKey, type KeyBindings} from '@/game/key_bindings'
 
 /**
  * A press waiting for the level, with whether the turn key was held as it
@@ -12,13 +12,23 @@ type KeyPress = {
 }
 
 /**
- * Keyboard and mouse state for the game, fed by keydown, keyup, mousedown and
- * mouseup on the window. Keys are read by physical position
+ * Where the mouse pointer is in the window, in CSS pixels from its top left
+ * corner, as MouseEvent.clientX and clientY give it.
+ */
+export type PointerPosition = {
+  readonly x: number // Distance from the window's left edge
+  readonly y: number // Distance from the window's top edge
+}
+
+/**
+ * Keyboard and mouse state for the game, fed by keydown, keyup, mousedown,
+ * mouseup and mousemove on the window. Keys are read by physical position
  * (KeyboardEvent.code) through the player's bindings, so they stay in place on
  * every layout; a bound mouse button, left or right, counts as a key wherever
  * it is clicked. Every other key and button is ignored. Presses wait in
  * arrival order until the level takes them, one at a time; the turn key is
- * only ever read as held.
+ * only ever read as held. When a mouse button is bound, it also follows the
+ * pointer, for the level to aim the subject with.
  */
 export class Input {
   /**
@@ -52,11 +62,14 @@ export class Input {
 
   private static readonly RIGHT_MOUSE_BUTTON = 2 // MouseEvent.button of the right button, which opens the context menu
 
-  enabled = true // When false, keydown and mousedown are ignored entirely and the context menu opens; keyup and mouseup are still tracked
+  enabled = true // When false, keydown and mousedown are ignored entirely and the context menu opens; keyup, mouseup and the pointer are still tracked
+  readonly aimsWithPointer: boolean // Whether a mouse button is bound, so the pointer aims the subject
   private readonly gameKeys: ReadonlyMap<BoundKey, GameKey> // The game key each bound key stands for
   private readonly holding = new Set<GameKey>() // Game keys held down
   private readonly pressed = new Set<GameKey>() // Game keys pressed since the last clear(), auto-repeat included
   private readonly presses: KeyPress[] = [] // Presses not yet taken, oldest first
+  private pointerPosition: PointerPosition | null = null // Where the pointer last moved to or clicked, null until then while a mouse button is bound
+  private pointerMoved = false // Whether the pointer moved since the last takePointerMoved()
 
   /**
    * Starts listening to the keyboard and the mouse on the window.
@@ -67,12 +80,42 @@ export class Input {
       bindings[gameKey],
       gameKey,
     ]))
+    this.aimsWithPointer = Object.values(bindings).some((key) => getKeyMouseButton(key) !== null)
 
     window.addEventListener('keyup', this.onKeyup, false)
     window.addEventListener('keydown', this.onKeydown, false)
     window.addEventListener('mousedown', this.onMousedown, false)
     window.addEventListener('mouseup', this.onMouseup, false)
+    window.addEventListener('mousemove', this.onMousemove, false)
     window.addEventListener('contextmenu', this.onContextmenu, false)
+  }
+
+  /**
+   * Where the pointer last moved to or clicked, or null before either while
+   * a mouse button is bound.
+   */
+  get pointer(): PointerPosition | null {
+    return this.pointerPosition
+  }
+
+  /**
+   * The game key of the oldest waiting press, which stays waiting, or null
+   * when no press is waiting.
+   */
+  get nextKey(): FrameKey | HistoryKey | null {
+    return this.presses[0]?.key ?? null
+  }
+
+  /**
+   * Whether the pointer moved since the last call, forgetting it.
+   * @returns True when it moved
+   */
+  takePointerMoved(): boolean {
+    const moved = this.pointerMoved
+
+    this.pointerMoved = false
+
+    return moved
   }
 
   /**
@@ -125,6 +168,15 @@ export class Input {
   }
 
   /**
+   * Whether a game key is held down.
+   * @param key - The game key
+   * @returns True when it is held
+   */
+  isHolding(key: GameKey): boolean {
+    return this.holding.has(key)
+  }
+
+  /**
    * Stops listening to the keyboard and the mouse.
    */
   dispose(): void {
@@ -132,6 +184,7 @@ export class Input {
     window.removeEventListener('keydown', this.onKeydown, false)
     window.removeEventListener('mousedown', this.onMousedown, false)
     window.removeEventListener('mouseup', this.onMouseup, false)
+    window.removeEventListener('mousemove', this.onMousemove, false)
     window.removeEventListener('contextmenu', this.onContextmenu, false)
   }
 
@@ -194,10 +247,18 @@ export class Input {
    * Records a bound mouse button going down anywhere in the window, unless
    * disabled, as a key going down: its press waits for the level, once
    * however long it is held. A click with Alt or Meta held is left to the
-   * browser and only recorded as held.
+   * browser and only recorded as held. When a mouse button is bound, any
+   * click also tells where the pointer is, even before it has moved.
    * @param event - The mousedown event
    */
   readonly onMousedown = (event: MouseEvent): void => {
+    if (this.aimsWithPointer) {
+      this.pointerPosition = {
+        x: event.clientX,
+        y: event.clientY,
+      }
+    }
+
     if (!this.enabled) {
       return
     }
@@ -234,6 +295,23 @@ export class Input {
     if (gameKey !== null) {
       this.holding.delete(gameKey)
     }
+  }
+
+  /**
+   * Follows the pointer when a mouse button is bound, even while disabled,
+   * so the subject faces it as soon as play resumes.
+   * @param event - The mousemove event
+   */
+  readonly onMousemove = (event: MouseEvent): void => {
+    if (!this.aimsWithPointer) {
+      return
+    }
+
+    this.pointerPosition = {
+      x: event.clientX,
+      y: event.clientY,
+    }
+    this.pointerMoved = true
   }
 
   /**
