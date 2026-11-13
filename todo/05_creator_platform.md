@@ -1,7 +1,7 @@
 # Stage 05 — Creator platform
 
 Status: Draft
-Last revised: 2026-11-09
+Last revised: 2026-11-13
 
 ## Goal
 
@@ -21,7 +21,7 @@ This stage assumes the following exist when it starts. Re-check each when revisi
   - JSON imports widen string literals to `string`, which is why format 2 keeps one optional list per element type rather than one list told apart by a `type` string, which would need a cast.
 - **Stage 02 (solver)**, stopped (README decision 10): no par and no shortcut report. The author's replay alone proves a chamber solvable.
 - **Stage 03 (look and sound)**
-  - The reworked renderer, including the "blueprint" look if built, with the high-DPI fix from stage 00. The editor draws with it.
+  - The reworked renderer, with the high-DPI fix from stage 00. The editor draws with it.
 - **Stage 04 (mechanics and campaign)**
   - A home menu that scales and has room for an Editor entry.
   - Chamber links by position (`/chamber/N`, README decision 13, which settled open decision 6), so the new routes don't collide with them.
@@ -73,7 +73,7 @@ This stage assumes the following exist when it starts. Re-check each when revisi
 ### Phase A3 — The editor
 
 - [ ] **A3.1 Editor route and screen.** Add `/editor` to `src/router.ts` with its no-cache header in `firebase.json`, a new `src/components/screens/editor_screen.vue`, and an entry in the home menu placed by stage 04's menu. Use the frontend-design skill. Verify: reachable and usable with the keyboard only.
-- [ ] **A3.2 Draw with the game's renderer.** Draw the draft with stage 03's renderer (the blueprint look if it exists), at the screen's pixel ratio, plus a grid and a cursor overlay. Verify: a bundled chamber opened in the editor looks exactly as in the game, apart from the overlay.
+- [ ] **A3.2 Draw with the game's renderer.** Draw the draft with stage 03's renderer, at the screen's pixel ratio, plus a grid and a cursor overlay. Verify: a bundled chamber opened in the editor looks exactly as in the game, apart from the overlay.
 - [ ] **A3.3 Keyboard-first tools.** Arrows move the cursor; a palette, read from 01's element registry, picks the element type; keys place, erase, set the subject and exit, and turn directional elements; mouse click-and-drag paints. Use the frontend-design skill for the palette and the element inspector. Verify: rebuild chamber 1 from scratch with the keyboard only.
 - [ ] **A3.4 Link tool.** Pick a button or switch, then its targets; links are drawn as lines; ids are assigned automatically (authors never type ids). Use the frontend-design skill. Verify: links survive a round trip through the link; deleting a target removes its links.
 - [ ] **A3.5 Resize and wall fill.** Change the size within the caps; fill the border with walls; fill a rectangle with walls. The current format already accepts wall rectangles (`WallRangeData` in `chamber_data.ts`), though no bundled chamber uses them. Verify: shrinking warns before it drops elements.

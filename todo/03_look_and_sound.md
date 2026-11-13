@@ -1,11 +1,11 @@
 # Stage 03 — Look and sound
 
 Status: Draft
-Last revised: 2026-11-09
+Last revised: 2026-11-13
 
 ## Goal
 
-The game looks and sounds finished before it grows: a reworked look (smooth and sharp, with the flat look kept as "blueprint" mode), music that reacts to play, and one new chamber, a tutorial shown as chamber 0. It stays "Portal 2D", a fan game played only by the author and a few friends and never published (README decision 12). No other chambers are added here: stage 04 adds the new mechanics and completes the campaign (20 chambers in total, numbered 0–19, with no wings) once this stage is right.
+The game looks and sounds finished before it grows: a reworked look (smooth and sharp), music that reacts to play, and one new chamber, a tutorial shown as chamber 0. It stays "Portal 2D", a fan game played only by the author and a few friends and never published (README decision 12). No other chambers are added here: stage 04 adds the new mechanics and completes the campaign (20 chambers in total, numbered 0–19, with no wings) once this stage is right.
 
 ## Depends on
 
@@ -33,6 +33,8 @@ These are assumptions about what earlier stages delivered. Re-check each when re
 - 2026-11-09 — The author is the only player during development, and a few friends play later (README decision 13): no compatibility work, so saves and settings may be reset by updates, with no migrations, and old links may break. Numbering the tutorial 0 protects nothing worth keeping (the analytics history so far is only the author's own play), so whether it stays 0 or chambers 1–3 shift up is settled at this stage's revisit (Phase A).
 - 2026-11-09 — Chamber numbers count from 0 (Phase A's first step settled): until the tutorial is added first, today's three chambers are numbered 0–2.
 - 2026-11-09 — Where the game's colours live (open decision 1) settled: (a), one palette module, `src/game/palette.ts`, of named `rgba()` colours, which the drawing code imports directly. A palette is passed to the renderer only once something needs a second one, since blueprint mode keeps today's colours. The CSS tokens mirror some of its colours by hand.
+- 2026-11-13 — No portal glimpse: portals don't show the tiles in front of the other portal, so the visual rework has no step for it.
+- 2026-11-13 — No blueprint mode: there is no Settings switch back to today's flat drawing, so the reworked look is the only one.
 - Unchanged from `AGENTS.md`: desktop only; colour meanings (blue interaction and success, orange the second portal, red caution, green a completed chamber); `localStorage` keys keep the `portal-2d.` prefix, as a convention, and analytics event and parameter names never change (renaming one splits its history).
 
 ## Open decisions
@@ -60,9 +62,7 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 - [x] **Animation layer** (uses the frontend-design skill). Purely visual interpolation between consecutive states from 01's pure step. A new key never waits: it snaps the running animation to its end. The clock is unaffected; `prefers-reduced-motion` turns interpolation off. Verify: the replay check still passes (rules untouched); fast key mashing feels as responsive as before.
 - [x] **Smooth steps** (uses the frontend-design skill). The subject and a carried box glide between tiles. Verify: visual check; reduced motion shows plain steps.
 - [ ] **Laser glow** (uses the frontend-design skill). Verify: 60 fps on the largest chamber at `devicePixelRatio` 2.
-- [ ] **Portals with a glimpse of the other side** (uses the frontend-design skill). Draw the tiles in front of the other portal, clipped to the portal's shape. Verify: correct for every pair of portal facings.
 - [ ] **Particles when something fizzles** (uses the frontend-design skill). On the fizzler event emitted by 01 (portals cleared, box destroyed). Verify: none with reduced motion.
-- [ ] **Blueprint mode** (uses the frontend-design skill). Today's flat drawing kept as a Settings switch (settings service, a new `portal-2d.` key, `setting_change` with a new `setting` value). The menu's chamber maps stay flat in both modes. Verify: toggling mid-chamber redraws without resetting anything.
 - [ ] **Check high-DPI again.** 00's sharpness fix still holds with every new layer. Verify: 200 % browser zoom and a high-DPI screen.
 
 ### Phase C — Music that reacts to play
@@ -88,7 +88,7 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 ## Done when
 
 - [ ] The tutorial ships first in the list with a recorded solution; chambers 1–3 keep their progress and best times.
-- [ ] The visual rework ships with blueprint mode; reduced motion is respected; the replay check still passes.
+- [ ] The visual rework ships; reduced motion is respected; the replay check still passes.
 - [ ] Reactive music ships within the download budget.
 - [ ] All local checks pass.
 - [ ] The author has played every chamber (0–3) in the new look and sound and signed off on them before stage 04 starts.
@@ -103,15 +103,15 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 
 - **Counting from 0 misses a spot.** Code or copy that assumes the first chamber is number 1 shows up as a wrong sign, a missing row or Next chamber skipping a chamber. Phase A's checks walk every chamber, the tutorial first.
 - **Animation hurting the feel.** Interpolation that delays input makes a discrete puzzle game feel sluggish. The snap-on-key rule and the mashing test guard against it.
-- **Colours drifting apart.** Canvas colours and CSS tokens are kept in step by hand. Check both together in the palette and blueprint steps.
+- **Colours drifting apart.** Canvas colours and CSS tokens are kept in step by hand. Check both together whenever a palette colour changes.
 - **Stems.** Layers need separate stems of the chamber track; if today's track can't be split cleanly, new music has to be composed or commissioned, which adds unplanned audio work.
 
 ## Notes for later stages
 
-- Stage 04 draws its new mechanics in this stage's look: colours in the palette module and in blueprint mode, each distinct from every existing element; and it gives them sounds that fit this stage's sound.
+- Stage 04 draws its new mechanics in this stage's look: colours in the palette module, each distinct from every existing element; and it gives them sounds that fit this stage's sound.
 - Links stay by position in stage 04 too (README decision 13 settled open decision 6): inserting or reordering chambers shifts them, with no redirect table.
 - Every chamber must fit the screen whole, since there is no camera: stage 04's chambers and stage 05's grid cap stay within that.
-- Stage 05's editor reuses the chamber format, the renderer (blueprint mode suits editing) and the solution recorder.
+- Stage 05's editor reuses the chamber format, the renderer and the solution recorder.
 - Profiling baseline (2026-11-09, the "Profile first" step): chamber 3 (23 × 17, the largest canvas and the most elements), its settled start redrawn every frame, sized as the chamber screen sizes it in a 1920 × 1080 window. Chrome 155 on Linux, Intel UHD Graphics 620 (Mesa, through ANGLE), 8 cores, a 59.9 Hz display at pixel ratio 1, so ratio 2 is simulated by the canvas size (drawn at twice the size and shown at half). Median of 3 runs of 600 frames each, the range in brackets where runs differed:
 
   | # | Pixel ratio | Canvas | Draw time median / p95 / max | Frame interval median / p95 | Frames skipping a refresh |

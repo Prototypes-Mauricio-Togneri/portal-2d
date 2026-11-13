@@ -18,7 +18,7 @@
 | 1 | `00_fixes.md` (file removed) | Done | Records keyed by permanent id (one-time migration, chamber number taken from list order), high-DPI blur fix, missing analytics events, first local check command |
 | 2 | `01_engine_v2.md` (file removed) | Done | Sounds out of the rules, engine runnable without a browser, replays on today's engine, recorded solutions and a local replay check, undo/redo, input rewrite (remappable keys), v2 rules and chamber format, the three inherited bugs fixed, v2 checked against the old rules, old engine deleted |
 | 3 | `02_solver.md` (file removed; see `docs/solver.md`) | Stopped | Solver prototype on the current chambers (go/no-go: no-go on 2026-11-08, decision 10); the rest was dropped: solvability and par in the local checks, shortcut finder, dead-end warning, hints, generated chambers |
-| 4 | `03_look_and_sound.md` | Draft | Visual rework with blueprint mode, reactive music, one tutorial chamber (chamber 0) |
+| 4 | `03_look_and_sound.md` | Draft | Visual rework, reactive music, one tutorial chamber (chamber 0) |
 | 5 | `04_mechanics_campaign.md` | Draft | Lasers through portals, slide floors, conveyors and rotating arrows, timed buttons, mirror blocks, echo; the campaign completed at 20 chambers, a menu and catalogue that scale, chamber numbering and links, medals |
 | 6 | `05_creator_platform.md` | Draft | Editor, sharing in the link, share only what you solved |
 ## The idea

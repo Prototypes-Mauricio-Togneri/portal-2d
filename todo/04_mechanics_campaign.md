@@ -1,7 +1,7 @@
 # Stage 04 — Mechanics and campaign
 
 Status: Draft
-Last revised: 2026-11-09
+Last revised: 2026-11-13
 
 ## Goal
 
@@ -45,7 +45,7 @@ Stages 00 and 01 are done: their parts below are what they delivered, though Pha
 
 **From stage 03 (look and sound)**
 
-- The palette module (`src/game/palette.ts`) with named `rgba()` colours, imported directly by the drawing code, and blueprint mode; the hex-literal exception in `AGENTS.md` lifted.
+- The palette module (`src/game/palette.ts`) with named `rgba()` colours, imported directly by the drawing code; the hex-literal exception in `AGENTS.md` lifted.
 - The animation layer (purely visual interpolation between consecutive states), so the movement new elements cause can animate, with `prefers-reduced-motion` showing plain steps.
 - Music on the Web Audio API, with layers driven by game events.
 - The tutorial first in the list (permanent id 0), as chamber 0 (stage 03 settled that numbers count from 0). Links still follow position.
@@ -176,7 +176,7 @@ Every mechanic phase repeats these seven steps (R1–R7). Each phase below gives
 
 - **R1 Rules spec.** Finalise the draft spec in this file and fill the mechanic's row of the interaction table (Phase 0). Verified by checking every column: portals (subject, shots, beams), loose and carried boxes, fizzlers, buttons, switches, arrows, ditches, barriers, doors, exit, laser fields and every earlier new mechanic.
 - **R2 Element and format.** One element definition file in stage 01's layout, plus an optional list in format v2 whose type accepts the JSON import without a cast. If an existing element changes, rewrite the chamber files that use it; there is no upgrader (README decision 13). Verified by the build, and by every existing replay still passing unchanged.
-- **R3 Drawing and sound events.** Drawing in stage 03's look: colours from its palette module, in the standard look and in blueprint mode, distinct from every existing element; no portal blue or orange, and none of the UI's meanings (red = caution, green = completed). Movement the mechanic causes animates through stage 03's animation layer, and reduced motion shows plain steps. Sound events get sounds in the style of stage 03's sound, or reuse existing sounds until those exist. Verified in `npm run dev` at 1× and 2× pixel ratio, in the standard look and in blueprint mode, with the sound setting off silencing it.
+- **R3 Drawing and sound events.** Drawing in stage 03's look: colours from its palette module, distinct from every existing element; no portal blue or orange, and none of the UI's meanings (red = caution, green = completed). Movement the mechanic causes animates through stage 03's animation layer, and reduced motion shows plain steps. Sound events get sounds in the style of stage 03's sound, or reuse existing sounds until those exist. Verified in `npm run dev` at 1× and 2× pixel ratio, with the sound setting off silencing it.
 - **R4 Rule fixtures.** One tiny chamber and recorded inputs for each spec bullet and edge case, each asserting its expected outcome. Verified by the local replay check passing, and failing once when the rule is deliberately broken (a one-off spot check, then reverted).
 - **R5 Solver check.** No solver judges the mechanic (README decision 10), but `npm run verify` runs `npm run solver:check` (`scripts/check_solver.ts`) on every chamber file in `src/chambers/`, and fails when:
   - the chamber's state key needs more than 64 bits. The key holds the subject's tile and facing, the carried box, both portals, each box's tile and one bit per linked element's blocked flag; today's chambers need 52–53, a third box adds 8–9 bits and a fourth doesn't fit;
@@ -221,7 +221,7 @@ The existing elements need chambers too (portal basics, boxes and buttons, doors
 - [ ] **Lab chambers (only once open decision 3 calls for A, when friends play).** A lab folder of chamber files, a development-only way to open one (registered only when `import.meta.env.DEV`, so it never ships), and the local checks covering it. Verified by opening a lab chamber in `npm run dev` and confirming the production build contains none. If friends start playing only later in this stage, build it then; if they never do during it, tick it with "not applicable".
 - [ ] **Interaction table.** Add a section to `docs/elements.md` listing every element against every other. Each cell is a rule, "can't happen" (chamber validation forbids it) or "to do". Existing elements fill their cells first, from the current rules.
 - [ ] **Outcome assertions in replays.** Confirm stage 01's replay format can assert an outcome: completes, does not complete, or reaches an expected state hash. Add it if missing. Verified by one passing and one deliberately failing fixture.
-- [ ] **Names and colours.** Choose names for the new elements and colours for them from stage 03's palette module, in the standard look and in blueprint mode (decision 1, R3 constraints), and record them in `docs/elements.md`.
+- [ ] **Names and colours.** Choose names for the new elements and colours for them from stage 03's palette module (decision 1, R3 constraints), and record them in `docs/elements.md`.
 
 ### Phase 1 — Slide floors
 
@@ -449,7 +449,7 @@ Revised 2026-11-09 (decisions 13 and 14): the solver budget, no-solver, medal pa
 - **Interactions multiply.** Each new element must be defined against every other. The interaction table and fixtures exist so that gaps show up as "to do" cells, not as player bug reports.
 - **Beams settle in surprising ways.** Feedback through receivers and loops through portals are handled by deterministic rules and warnings, but they can still confuse players. Watch the playtest notes.
 - **State growth.** Mirror boxes and push blocks (positions), timed buttons (counters) and echo (histories) each grow the state, and conveyors make far more of it reachable. The printed state size shows it early; each also breaks the solver check unless open decision 12 handles it.
-- **New elements must read clearly in both looks.** Slide floor and plain floor, conveyor and arrow, beam and laser field must stay distinct in the standard look and blueprint mode. R3's check in both looks and the cold playtests catch this.
+- **New elements must read clearly.** Slide floor and plain floor, conveyor and arrow, beam and laser field must stay distinct. R3's check and the cold playtests catch this.
 - **"Moves" changes meaning.** A slide or a conveyor ride moves many tiles on one key. Follow stage 01's definition (one move) and note any change in meaning, because analytics parameter names are permanent and their history spans the change.
 - **Lab chambers leaking.** Once friends play, unfinished chambers in the catalogue reach them, and the Play menu overflows until Phase 10 makes it scroll. Switch to the lab list then (open decision 3).
 - **Feeling borrowed.** Keep names, looks and combinations original (decision 1).
