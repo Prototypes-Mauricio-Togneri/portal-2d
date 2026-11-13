@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    The box (docs/sprites.md): a wooden crate seen from above, about 72 % of
+    the tile, with a bevelled frame and a cross-braced lid. It is also drawn at
+    half size, on a button and carried, so its shapes stay bold.
+  -->
+  <defs>
+    <!-- The frame's bevel: darker at the outer edge, lit towards the lid -->
+    <linearGradient id="frameTop" gradientUnits="userSpaceOnUse" x1="0" y1="36" x2="0" y2="62">
+      <stop offset="0" stop-color="rgb(128, 84, 54)"/>
+      <stop offset="1" stop-color="rgb(176, 124, 86)"/>
+    </linearGradient>
+
+    <!-- Wood grain along the planks -->
+    <filter id="woodGrain" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.35" numOctaves="3" seed="4" result="noise"/>
+      <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0.2  0 0 0 0 0.12  0 0 0 0 0.06  0 0 0 -1.6 1.0"/>
+      <feComposite in2="SourceGraphic" operator="in"/>
+    </filter>
+
+    <!-- One side of the frame, along the top, mitred at its ends -->
+    <g id="frameSide">
+      <polygon points="36,36 220,36 196,60 60,60" fill="url(#frameTop)"/>
+      <polygon points="58,58 198,58 196,60 60,60" fill="rgb(84, 54, 34)"/>
+    </g>
+
+    <clipPath id="crate">
+      <rect x="36" y="36" width="184" height="184" rx="12"/>
+    </clipPath>
+    <clipPath id="lid">
+      <rect x="60" y="60" width="136" height="136"/>
+    </clipPath>
+  </defs>
+
+  <!-- The crate's outline -->
+  <rect x="34" y="34" width="188" height="188" rx="14" fill="rgb(58, 36, 22)"/>
+
+  <!-- The lid: planks under a cross brace -->
+  <rect x="60" y="60" width="136" height="136" fill="rgb(140, 94, 62)"/>
+  <rect x="60" y="60" width="136" height="136" fill="rgb(140, 94, 62)" filter="url(#woodGrain)"/>
+  <g clip-path="url(#lid)">
+    <line x1="60" y1="60" x2="196" y2="196" stroke="rgb(74, 46, 28)" stroke-width="14"/>
+    <line x1="196" y1="60" x2="60" y2="196" stroke="rgb(74, 46, 28)" stroke-width="14"/>
+    <line x1="60" y1="60" x2="196" y2="196" stroke="rgb(166, 114, 78)" stroke-width="9"/>
+    <line x1="196" y1="60" x2="60" y2="196" stroke="rgb(166, 114, 78)" stroke-width="9"/>
+  </g>
+
+  <!-- The frame, its four sides turned from one -->
+  <g clip-path="url(#crate)">
+    <use href="#frameSide"/>
+    <use href="#frameSide" transform="rotate(90 128 128)"/>
+    <use href="#frameSide" transform="rotate(180 128 128)"/>
+    <use href="#frameSide" transform="rotate(270 128 128)"/>
+  </g>
+  <rect x="36.5" y="36.5" width="183" height="183" rx="12" fill="none" stroke="rgb(196, 146, 108)" stroke-width="2"/>
+
+  <!-- Corner bolts -->
+  <g fill="rgb(66, 42, 26)">
+    <circle cx="48" cy="48" r="5"/>
+    <circle cx="208" cy="48" r="5"/>
+    <circle cx="48" cy="208" r="5"/>
+    <circle cx="208" cy="208" r="5"/>
+  </g>
+  <g fill="rgb(206, 160, 120)">
+    <circle cx="47" cy="47" r="1.8"/>
+    <circle cx="207" cy="47" r="1.8"/>
+    <circle cx="47" cy="207" r="1.8"/>
+    <circle cx="207" cy="207" r="1.8"/>
+  </g>
+</svg>

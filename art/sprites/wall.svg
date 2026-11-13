@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="256" viewBox="0 0 1280 256">
+  <!--
+    The wall strip (docs/sprites.md, joins): five 256 px tiles, left to right
+    lone, horizontal run, vertical run, inner corners and solid. Every tile has
+    the same top surface; only its edges differ: a bevel where the wall meets
+    floor, a seam where it continues into more wall. Each edge piece is drawn
+    once, along the top edge, and turned to the other sides, so quarters cut
+    from different tiles always meet exactly.
+  -->
+  <defs>
+    <!-- The bevel's slope: darker at its foot by the floor, lighter towards the top -->
+    <linearGradient id="slope" gradientUnits="userSpaceOnUse" x1="0" y1="3" x2="0" y2="22">
+      <stop offset="0" stop-color="rgb(56, 59, 65)"/>
+      <stop offset="1" stop-color="rgb(84, 87, 94)"/>
+    </linearGradient>
+
+    <!-- Fine grain, repeating every 128 px, so it matches across every quarter -->
+    <filter id="grain" filterUnits="userSpaceOnUse" x="0" y="0" width="1280" height="256" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" seed="7" stitchTiles="stitch" x="0" y="0" width="128" height="128" result="noise"/>
+      <feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.1" x="0" y="0" width="128" height="128" result="speckle"/>
+      <feTile in="speckle" x="0" y="0" width="1280" height="256"/>
+    </filter>
+
+    <!-- The bevel along the top edge, full width: outline, slope, then the lit lip -->
+    <g id="band">
+      <rect x="0" y="0" width="256" height="24" fill="url(#slope)"/>
+      <rect x="0" y="0" width="256" height="3" fill="rgb(34, 36, 40)"/>
+      <rect x="0" y="22" width="256" height="2" fill="rgb(140, 144, 151)"/>
+    </g>
+
+    <!-- The top bevel of a lone wall, mitred into the side bevels at both ends -->
+    <clipPath id="mitre">
+      <polygon points="0,0 256,0 232,24 24,24"/>
+    </clipPath>
+    <g id="bandMitred">
+      <use xlink:href="#band" clip-path="url(#mitre)"/>
+    </g>
+
+    <!-- The inside corner at the top left, where floor touches only the corner:
+         the left bevel of the wall above and the top bevel of the wall to the
+         left meet along the diagonal -->
+    <clipPath id="cornerLeftBevel">
+      <polygon points="0,0 24,0 24,24"/>
+    </clipPath>
+    <clipPath id="cornerTopBevel">
+      <polygon points="0,0 24,24 0,24"/>
+    </clipPath>
+    <g id="innerCorner">
+      <g clip-path="url(#cornerLeftBevel)">
+        <use xlink:href="#band" transform="rotate(-90 128 128)"/>
+      </g>
+      <use xlink:href="#band" clip-path="url(#cornerTopBevel)"/>
+    </g>
+
+    <!-- The seam along the top edge, where the wall continues: a groove and its lit lip -->
+    <g id="seamFull">
+      <rect x="0" y="0" width="256" height="2" fill="rgb(50, 52, 57)"/>
+      <rect x="0" y="2" width="256" height="1.5" fill="rgb(122, 126, 133)"/>
+    </g>
+    <g id="seamInset">
+      <rect x="24" y="0" width="208" height="2" fill="rgb(50, 52, 57)"/>
+      <rect x="24" y="2" width="208" height="1.5" fill="rgb(122, 126, 133)"/>
+    </g>
+  </defs>
+
+  <!-- The top surface of every tile -->
+  <rect x="0" y="0" width="1280" height="256" fill="rgb(97, 100, 106)"/>
+  <rect x="0" y="0" width="1280" height="256" filter="url(#grain)"/>
+
+  <!-- 1. Lone: a bevel on every side -->
+  <g>
+    <use xlink:href="#bandMitred"/>
+    <use xlink:href="#bandMitred" transform="rotate(90 128 128)"/>
+    <use xlink:href="#bandMitred" transform="rotate(180 128 128)"/>
+    <use xlink:href="#bandMitred" transform="rotate(270 128 128)"/>
+  </g>
+
+  <!-- 2. Horizontal run: bevels above and below, seams left and right -->
+  <g transform="translate(256 0)">
+    <use xlink:href="#band"/>
+    <use xlink:href="#band" transform="rotate(180 128 128)"/>
+    <use xlink:href="#seamInset" transform="rotate(90 128 128)"/>
+    <use xlink:href="#seamInset" transform="rotate(270 128 128)"/>
+  </g>
+
+  <!-- 3. Vertical run: bevels left and right, seams above and below -->
+  <g transform="translate(512 0)">
+    <use xlink:href="#band" transform="rotate(90 128 128)"/>
+    <use xlink:href="#band" transform="rotate(270 128 128)"/>
+    <use xlink:href="#seamInset"/>
+    <use xlink:href="#seamInset" transform="rotate(180 128 128)"/>
+  </g>
+
+  <!-- 4. Inner corners: seams on every side, an inside corner in each corner -->
+  <g transform="translate(768 0)">
+    <use xlink:href="#seamInset"/>
+    <use xlink:href="#seamInset" transform="rotate(90 128 128)"/>
+    <use xlink:href="#seamInset" transform="rotate(180 128 128)"/>
+    <use xlink:href="#seamInset" transform="rotate(270 128 128)"/>
+    <use xlink:href="#innerCorner"/>
+    <use xlink:href="#innerCorner" transform="rotate(90 128 128)"/>
+    <use xlink:href="#innerCorner" transform="rotate(180 128 128)"/>
+    <use xlink:href="#innerCorner" transform="rotate(270 128 128)"/>
+  </g>
+
+  <!-- 5. Solid: seams on every side -->
+  <g transform="translate(1024 0)">
+    <use xlink:href="#seamFull"/>
+    <use xlink:href="#seamFull" transform="rotate(90 128 128)"/>
+    <use xlink:href="#seamFull" transform="rotate(180 128 128)"/>
+    <use xlink:href="#seamFull" transform="rotate(270 128 128)"/>
+  </g>
+</svg>

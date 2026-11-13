@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    The test subject (docs/sprites.md), seen from above and facing up: a round
+    green body inside a ring of lit segments, four pads on its diagonals, and
+    a white arrow on top pointing the way it faces. The game turns it.
+  -->
+  <defs>
+    <!-- The body: lit in the middle, darker towards its rim -->
+    <radialGradient id="body" gradientUnits="userSpaceOnUse" cx="128" cy="128" r="76">
+      <stop offset="0" stop-color="rgb(30, 196, 124)"/>
+      <stop offset="0.7" stop-color="rgb(0, 160, 100)"/>
+      <stop offset="1" stop-color="rgb(0, 112, 68)"/>
+    </radialGradient>
+
+    <!-- The soft light around the arrow -->
+    <filter id="arrowGlow" x="-0.5" y="-0.5" width="2" height="2" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+
+    <!-- One pad, on the upper-left diagonal -->
+    <g id="pad">
+      <rect x="-19" y="-13" width="38" height="26" rx="7" fill="rgb(16, 52, 34)" transform="translate(58 58) rotate(-45)"/>
+      <rect x="-15" y="-9" width="30" height="18" rx="5" fill="rgb(196, 238, 214)" transform="translate(58 58) rotate(-45)"/>
+    </g>
+  </defs>
+
+  <!-- Pads -->
+  <use href="#pad"/>
+  <use href="#pad" transform="rotate(90 128 128)"/>
+  <use href="#pad" transform="rotate(180 128 128)"/>
+  <use href="#pad" transform="rotate(270 128 128)"/>
+
+  <!-- The rim: a dark ring holding the lit segments -->
+  <circle cx="128" cy="128" r="94" fill="rgb(16, 52, 34)"/>
+  <circle cx="128" cy="128" r="90" fill="rgb(6, 96, 58)"/>
+  <circle cx="128" cy="128" r="84" fill="none" stroke="rgb(170, 246, 200)" stroke-width="7" stroke-dasharray="36.98 7" transform="rotate(-86 128 128)"/>
+
+  <!-- The body -->
+  <circle cx="128" cy="128" r="78" fill="rgb(0, 84, 50)"/>
+  <circle cx="128" cy="128" r="75" fill="url(#body)"/>
+
+  <!-- The arrow, pointing the way the subject faces -->
+  <polygon points="128,70 172,146 84,146" fill="rgb(255, 255, 255)" opacity="0.55" filter="url(#arrowGlow)"/>
+  <polygon points="128,72 168,142 88,142" fill="rgb(255, 255, 255)" stroke="rgb(255, 255, 255)" stroke-width="6" stroke-linejoin="round"/>
+</svg>
