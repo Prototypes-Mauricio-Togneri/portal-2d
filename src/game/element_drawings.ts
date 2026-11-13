@@ -238,13 +238,14 @@ function drawArrows(painter: TilePainter, state: RulesState): void {
 
 /**
  * Draws every wall tile inside the chamber, joined to the walls around it;
- * outside the chamber counts as wall.
+ * outside the chamber counts as open, so the walls along its edge are
+ * bevelled on their outer side too.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  */
 function drawWalls(painter: TilePainter, state: RulesState): void {
   const chamber = state.chamber
-  const joins: JoinTest = (x, y) => chamber.isWall(x, y)
+  const joins: JoinTest = (x, y) => (x >= 0) && (y >= 0) && (x < chamber.width) && (y < chamber.height) && chamber.isWall(x, y)
 
   for (let x = 0; x < chamber.width; x++) {
     for (let y = 0; y < chamber.height; y++) {

@@ -1,46 +1,108 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <!--
-    A fizzler that is on (docs/sprites.md), drawn for a gap in a wall running
-    left to right, as in the mockup: a steel-blue field filling the tile,
-    still see-through, with bright edge lines along the floor on either side,
-    two soft waves crossing it from wall to wall and a few sparkles. Each
-    wave is one full period across the tile, so neighbouring fizzlers join.
-    The game turns it when the gap runs the other way, and makes it shimmer.
+    A fizzler that is on (docs/sprites.md): the steel-blue
+    see-through field and its bright edge lines, filled with many fine
+    sparkle dots and a few brighter ones, each in a soft glow. No lines
+    cross the field. Drawn for a gap in a wall running left to right.
   -->
   <defs>
-    <!-- The soft light around the edge lines, the waves and the sparkles -->
-    <filter id="glow" x="-0.2" y="-0.2" width="1.4" height="1.4" color-interpolation-filters="sRGB">
+    <!-- The soft light around the edge lines and the particles -->
+    <filter id="glow" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
       <feGaussianBlur stdDeviation="4"/>
+    </filter>
+    <filter id="haze" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="2.5"/>
     </filter>
 
     <clipPath id="tile">
       <rect x="0" y="0" width="256" height="256"/>
     </clipPath>
-
-    <!-- The two main waves, in opposite phase, and a faint one between them -->
-    <g id="waves" fill="none" stroke-linecap="round">
-      <path d="M 0 78 q 64 -36 128 0 t 128 0"/>
-      <path d="M 0 178 q 64 36 128 0 t 128 0"/>
-    </g>
-    <path id="faintWave" d="M 0 128 q 64 -22 128 0 t 128 0" fill="none"/>
-
-    <!-- One sparkle: a bright dot in its own glow -->
-    <g id="sparkle">
-      <circle cx="0" cy="0" r="9" fill="rgb(200, 220, 255)" opacity="0.7" filter="url(#glow)"/>
-      <circle cx="0" cy="0" r="3.5" fill="rgb(255, 255, 255)"/>
-    </g>
   </defs>
 
   <g clip-path="url(#tile)">
     <!-- The field -->
     <rect x="0" y="0" width="256" height="256" fill="rgb(48, 76, 140)" opacity="0.62"/>
 
-    <!-- The waves: a wide soft glow under a fine bright line -->
-    <use href="#waves" stroke="rgb(160, 190, 245)" stroke-width="12" opacity="0.35" filter="url(#glow)"/>
-    <use href="#waves" stroke="rgb(196, 216, 255)" stroke-width="3" opacity="0.85"/>
-    <use href="#faintWave" stroke="rgb(170, 195, 240)" stroke-width="2" opacity="0.4"/>
+    <!-- Fine sparkle dots: many small ones, a few brighter, each over a soft glow of itself -->
+    <use href="#dots" filter="url(#glow)" opacity="0.8"/>
+    <g id="dots">
+      <circle cx="52.9" cy="170.5" r="2" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="158.2" cy="123.3" r="2.3" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="64.4" cy="193.5" r="2.2" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="197" cy="130.8" r="1.4" fill="rgb(214, 228, 255)" opacity="0.8"/>
+      <circle cx="129.1" cy="68.9" r="2.2" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="16.7" cy="99.1" r="2.1" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="147.1" cy="31.5" r="1.9" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="193.8" cy="68" r="2.5" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="68.1" cy="25.5" r="1.5" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="239.5" cy="181.5" r="1.4" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="212" cy="154" r="1.6" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="23.6" cy="89.7" r="2.2" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="127.5" cy="41.9" r="2" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="229.2" cy="98.5" r="2" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="50.7" cy="199.1" r="1.6" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="44" cy="223.9" r="1.9" fill="rgb(214, 228, 255)" opacity="0.8"/>
+      <circle cx="117.5" cy="139.6" r="2.1" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="92.8" cy="124.6" r="2.3" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="57.9" cy="24.3" r="2.3" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="210" cy="68.6" r="1.4" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="190.8" cy="62.7" r="1.5" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="233" cy="216.2" r="1.6" fill="rgb(214, 228, 255)" opacity="0.8"/>
+      <circle cx="185.1" cy="186.9" r="1.7" fill="rgb(214, 228, 255)" opacity="0.8"/>
+      <circle cx="146.1" cy="179.5" r="1.8" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="43.4" cy="122.7" r="1.9" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="201.3" cy="61" r="2.5" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="222.8" cy="214.8" r="2" fill="rgb(214, 228, 255)" opacity="0.8"/>
+      <circle cx="107.8" cy="97.8" r="2.5" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="117.1" cy="102.4" r="2.1" fill="rgb(214, 228, 255)" opacity="0.8"/>
+      <circle cx="238.8" cy="102.6" r="2.3" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="22" cy="36.9" r="1.8" fill="rgb(214, 228, 255)" opacity="0.8"/>
+      <circle cx="176.9" cy="238.4" r="2" fill="rgb(214, 228, 255)" opacity="0.8"/>
+      <circle cx="127.1" cy="126.1" r="1.5" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="139.3" cy="183.6" r="2.6" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="65.7" cy="152.4" r="1.8" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="140.7" cy="155.5" r="1.5" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="56.5" cy="54.1" r="1.5" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="94" cy="223.7" r="2.3" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="93.6" cy="149.8" r="2.1" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="84.7" cy="39.1" r="2.2" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="30.7" cy="198.3" r="2" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="190.1" cy="100" r="1.9" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="169.1" cy="167.4" r="1.5" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="217.3" cy="230.7" r="1.7" fill="rgb(214, 228, 255)" opacity="0.8"/>
+      <circle cx="107.2" cy="237.6" r="2.4" fill="rgb(214, 228, 255)" opacity="0.8"/>
+      <circle cx="231.4" cy="148.3" r="1.9" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="213.8" cy="126" r="1.9" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="100.1" cy="71.4" r="2.2" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="212.3" cy="52.4" r="1.5" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="31.5" cy="196.4" r="2" fill="rgb(214, 228, 255)" opacity="0.8"/>
+      <circle cx="189.4" cy="124.2" r="2.5" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="203.5" cy="27.7" r="2.2" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="73.8" cy="80.9" r="2.2" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="110" cy="54.2" r="2.2" fill="rgb(214, 228, 255)" opacity="0.8"/>
+      <circle cx="31.6" cy="91.7" r="1.7" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="217.4" cy="236.3" r="1.9" fill="rgb(214, 228, 255)" opacity="0.8"/>
+      <circle cx="183.1" cy="123.3" r="2.4" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="72.5" cy="230.8" r="2.6" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="133.7" cy="179.2" r="1.8" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="22.3" cy="63.5" r="1.9" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="203.8" cy="194.1" r="2.1" fill="rgb(214, 228, 255)" opacity="0.6"/>
+      <circle cx="213.4" cy="150.7" r="1.8" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="111.4" cy="146.2" r="2.3" fill="rgb(214, 228, 255)" opacity="0.7"/>
+      <circle cx="206.3" cy="85" r="1.5" fill="rgb(214, 228, 255)" opacity="0.9"/>
+      <circle cx="173.7" cy="62.1" r="3.7" fill="rgb(255, 255, 255)" opacity="1"/>
+      <circle cx="91.1" cy="159.7" r="3.6" fill="rgb(255, 255, 255)" opacity="1"/>
+      <circle cx="168.7" cy="74.4" r="3.8" fill="rgb(255, 255, 255)" opacity="1"/>
+      <circle cx="229.1" cy="88.2" r="3.7" fill="rgb(255, 255, 255)" opacity="1"/>
+      <circle cx="72.9" cy="205.4" r="3.6" fill="rgb(255, 255, 255)" opacity="1"/>
+      <circle cx="50.4" cy="168.6" r="4.4" fill="rgb(255, 255, 255)" opacity="1"/>
+      <circle cx="60.8" cy="149.9" r="3.4" fill="rgb(255, 255, 255)" opacity="1"/>
+      <circle cx="78.1" cy="100.9" r="4.2" fill="rgb(255, 255, 255)" opacity="1"/>
+      <circle cx="226.7" cy="120.6" r="4.3" fill="rgb(255, 255, 255)" opacity="1"/>
+      <circle cx="113.9" cy="154.2" r="4.1" fill="rgb(255, 255, 255)" opacity="1"/>
+    </g>
 
-    <!-- The edge lines along the floor on either side, and fainter ones along the walls -->
+    <!-- The edge lines along the floor on either side, and slightly fainter ones along the walls -->
     <g fill="rgb(200, 222, 255)">
       <rect x="0" y="2" width="256" height="8" opacity="0.6" filter="url(#glow)"/>
       <rect x="0" y="246" width="256" height="8" opacity="0.6" filter="url(#glow)"/>
@@ -51,13 +113,5 @@
       <rect x="0" y="0" width="4" height="256" opacity="0.8"/>
       <rect x="252" y="0" width="4" height="256" opacity="0.8"/>
     </g>
-
-    <!-- Sparkles -->
-    <use href="#sparkle" transform="translate(50 112)"/>
-    <use href="#sparkle" transform="translate(214 118)"/>
-    <use href="#sparkle" transform="translate(128 6)"/>
-    <use href="#sparkle" transform="translate(128 250)"/>
-    <use href="#sparkle" transform="translate(206 46) scale(0.7)"/>
-    <use href="#sparkle" transform="translate(56 214) scale(0.7)"/>
   </g>
 </svg>

@@ -27,7 +27,7 @@ export type JoinBoardKind = 'wall' | 'ditch'
  * vertical run, an L (an outer and an inner corner) and a diagonal of tiles
  * touching only at their corners. Bottom row: a T, a cross, a solid block
  * and a ring. A row and column of floor all round keeps every shape off the
- * edge, which counts as wall.
+ * edge, so each is joined only to its own tiles.
  */
 const JOIN_BOARD: readonly string[] = [
   '.................',

@@ -1,11 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <!--
-    A fizzler that is off (docs/sprites.md), drawn for a gap in a wall
-    running left to right: the field gone, only a faint steel-blue trace
-    with its dim edge lines and waves, so the gap still shows something
-    there. The game turns it when the gap runs the other way.
+    A fizzler that is off (docs/sprites.md): the field gone,
+    only a faint steel-blue trace, its dim edge lines and a few grey dots.
   -->
   <defs>
+    <!-- The soft light around the edge lines and the particles -->
+    <filter id="glow" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+    <filter id="haze" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+
     <clipPath id="tile">
       <rect x="0" y="0" width="256" height="256"/>
     </clipPath>
@@ -15,10 +21,18 @@
     <!-- The faint trace of the field -->
     <rect x="0" y="0" width="256" height="256" fill="rgb(48, 76, 140)" opacity="0.12"/>
 
-    <!-- Its waves, unlit -->
-    <g fill="none" stroke="rgb(110, 124, 150)" stroke-width="3" stroke-linecap="round" opacity="0.35">
-      <path d="M 0 78 q 64 -36 128 0 t 128 0"/>
-      <path d="M 0 178 q 64 36 128 0 t 128 0"/>
+    <!-- A few of its dots, unlit -->
+    <g>
+      <circle cx="173.7" cy="62.1" r="3.7" fill="rgb(140, 150, 170)" opacity="0.3"/>
+      <circle cx="91.1" cy="159.7" r="3.6" fill="rgb(140, 150, 170)" opacity="0.3"/>
+      <circle cx="168.7" cy="74.4" r="3.8" fill="rgb(140, 150, 170)" opacity="0.3"/>
+      <circle cx="229.1" cy="88.2" r="3.7" fill="rgb(140, 150, 170)" opacity="0.3"/>
+      <circle cx="72.9" cy="205.4" r="3.6" fill="rgb(140, 150, 170)" opacity="0.3"/>
+      <circle cx="50.4" cy="168.6" r="4.4" fill="rgb(140, 150, 170)" opacity="0.3"/>
+      <circle cx="60.8" cy="149.9" r="3.4" fill="rgb(140, 150, 170)" opacity="0.3"/>
+      <circle cx="78.1" cy="100.9" r="4.2" fill="rgb(140, 150, 170)" opacity="0.3"/>
+      <circle cx="226.7" cy="120.6" r="4.3" fill="rgb(140, 150, 170)" opacity="0.3"/>
+      <circle cx="113.9" cy="154.2" r="4.1" fill="rgb(140, 150, 170)" opacity="0.3"/>
     </g>
 
     <!-- Its edge lines along the floor, unlit -->

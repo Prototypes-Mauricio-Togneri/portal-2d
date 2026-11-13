@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <!--
     An open door (docs/sprites.md), drawn for a gap in a wall running left
-    to right: its two magenta leaves slid into the walls on either side, so
+    to right: its two deep violet leaves slid into the walls on either side, so
     only their ends show at the left and right edges, each with its lit
     strip, and the way through between them is clear. The left leaf is drawn
     once and turned to the right. The game turns it when the gap runs the
@@ -10,23 +10,23 @@
   <defs>
     <!-- A leaf's face: deep at its outer side, lit at the edge facing the way through -->
     <linearGradient id="leafFace" gradientUnits="userSpaceOnUse" x1="3" y1="0" x2="27" y2="0">
-      <stop offset="0" stop-color="rgb(92, 36, 80)"/>
-      <stop offset="0.35" stop-color="rgb(128, 56, 113)"/>
-      <stop offset="1" stop-color="rgb(150, 72, 132)"/>
+      <stop offset="0" stop-color="rgb(60, 34, 108)"/>
+      <stop offset="0.35" stop-color="rgb(88, 52, 150)"/>
+      <stop offset="1" stop-color="rgb(118, 82, 180)"/>
     </linearGradient>
 
-    <!-- The soft magenta light around a strip -->
+    <!-- The soft light around a strip -->
     <filter id="glow" x="-1" y="-0.2" width="3" height="1.4" color-interpolation-filters="sRGB">
       <feGaussianBlur stdDeviation="4"/>
     </filter>
 
     <!-- The left leaf's end -->
     <g id="leaf">
-      <rect x="0" y="0" width="30" height="256" fill="rgb(48, 18, 42)"/>
+      <rect x="0" y="0" width="30" height="256" fill="rgb(30, 16, 56)"/>
       <rect x="3" y="3" width="24" height="250" fill="url(#leafFace)"/>
-      <rect x="26" y="3" width="1" height="250" fill="rgb(176, 98, 158)"/>
-      <rect x="10" y="22" width="8" height="212" rx="4" fill="rgb(240, 110, 205)" filter="url(#glow)"/>
-      <rect x="11" y="22" width="6" height="212" rx="3" fill="rgb(250, 205, 240)"/>
+      <rect x="26" y="3" width="1" height="250" fill="rgb(140, 108, 200)"/>
+      <rect x="10" y="22" width="8" height="212" rx="4" fill="rgb(170, 120, 250)" filter="url(#glow)"/>
+      <rect x="11" y="22" width="6" height="212" rx="3" fill="rgb(232, 216, 255)"/>
     </g>
   </defs>
 

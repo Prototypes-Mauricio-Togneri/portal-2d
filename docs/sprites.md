@@ -32,7 +32,7 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 | 2 | Orange | 255, 160, 30 | The orange portal |
 | 3 | Red | 220, 60, 50 | The floor button (caution) |
 | 4 | Green | 0, 160, 100 | The subject |
-| 5 | Pink | 252, 25, 150 | Lasers |
+| 5 | Crimson | 235, 30, 55 | Lasers |
 
 ## Turning
 
@@ -66,7 +66,7 @@ Quarters from different strip tiles end up side by side, so:
 - the top surface's texture tiles seamlessly, any edge meeting any other;
 - details (rivets, seams, lights) stay off the 128 px midlines and the tile edges, where they would be cut.
 
-Outside the chamber counts as wall, so walls along the chamber's edge show no bevel on their outer side.
+Outside the chamber counts as open, so walls along the chamber's edge are bevelled on their outer side too, and the chamber reads as a raised block with a finished border.
 
 In the ditch strip, read "wall" as "open ditch" and "floor" as anything else. It shows the pit's inner sides, the same depth everywhere. A bridged ditch is drawn on its own (`ditch_bridged`) and ends the pit.
 

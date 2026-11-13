@@ -1,29 +1,82 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <!--
-    A switch (docs/sprites.md): a squat round steel post with a
-    solid yellow top, nothing else. Its one bright colour makes it the thing
-    to use in a chamber of greys.
+    A switch (docs/sprites.md), used with the interact key: the released
+    floor button's twin in yellow, so the two read as one family. A dark
+    steel plate, a silver ring round a raised yellow dome, and four unlit
+    corner lights pointing at it. Lit from overhead, so it is the same on
+    every side. Unlike the button, the game draws it raised, with a shadow.
   -->
   <defs>
-    <!-- The post's rim: darker at its outer edge -->
-    <radialGradient id="rim" gradientUnits="userSpaceOnUse" cx="128" cy="128" r="76">
-      <stop offset="0.8" stop-color="rgb(104, 108, 115)"/>
-      <stop offset="1" stop-color="rgb(66, 69, 75)"/>
+    <!-- The plate's bevel: darker at its outer edge, lit towards the face -->
+    <linearGradient id="bevel" gradientUnits="userSpaceOnUse" x1="0" y1="31" x2="0" y2="43">
+      <stop offset="0" stop-color="rgb(74, 77, 83)"/>
+      <stop offset="1" stop-color="rgb(108, 112, 119)"/>
+    </linearGradient>
+
+    <!-- The dome: lit in the middle, deep yellow at its edge -->
+    <radialGradient id="dome" gradientUnits="userSpaceOnUse" cx="128" cy="128" r="62">
+      <stop offset="0" stop-color="rgb(255, 224, 110)"/>
+      <stop offset="0.6" stop-color="rgb(240, 192, 40)"/>
+      <stop offset="1" stop-color="rgb(176, 128, 14)"/>
     </radialGradient>
 
-    <!-- The cap: yellow, lit in its middle, deeper at its edge -->
-    <radialGradient id="cap" gradientUnits="userSpaceOnUse" cx="128" cy="128" r="60">
-      <stop offset="0.5" stop-color="rgb(250, 208, 70)"/>
-      <stop offset="1" stop-color="rgb(222, 172, 28)"/>
+    <!-- The soft glint on top of the dome -->
+    <radialGradient id="glint" gradientUnits="userSpaceOnUse" cx="128" cy="128" r="40">
+      <stop offset="0" stop-color="rgb(255, 255, 255)" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="rgb(255, 255, 255)" stop-opacity="0"/>
     </radialGradient>
+
+    <!-- Fine grain on the steel -->
+    <filter id="grain" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" seed="7" result="noise"/>
+      <feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.1"/>
+      <feComposite in2="SourceGraphic" operator="in"/>
+    </filter>
+
+    <clipPath id="plate">
+      <rect x="31" y="31" width="194" height="194" rx="15"/>
+    </clipPath>
+
+    <!-- One side of the plate's bevel, along the top, mitred at its ends -->
+    <g id="bevelSide">
+      <polygon points="31,31 225,31 213,43 43,43" fill="url(#bevel)"/>
+      <polygon points="41,41 215,41 213,43 43,43" fill="rgb(140, 144, 151)"/>
+    </g>
+
+    <!-- One corner light, unlit, in the upper-left corner, pointing at the dome -->
+    <g id="cornerLight">
+      <rect x="-16" y="-8" width="32" height="16" rx="8" fill="rgb(30, 31, 34)" transform="translate(60 60) rotate(45)"/>
+      <rect x="-12" y="-5" width="24" height="10" rx="5" fill="rgb(112, 86, 20)" transform="translate(60 60) rotate(45)"/>
+      <rect x="-8" y="-1.5" width="16" height="3" rx="1.5" fill="rgb(84, 64, 14)" transform="translate(60 60) rotate(45)"/>
+    </g>
   </defs>
 
-  <!-- The post, its outline and lit lip -->
-  <circle cx="128" cy="128" r="78" fill="rgb(34, 36, 40)"/>
-  <circle cx="128" cy="128" r="75" fill="url(#rim)"/>
-  <circle cx="128" cy="128" r="70" fill="none" stroke="rgb(140, 144, 151)" stroke-width="2"/>
+  <!-- The plate: outline, face, then its bevel on every side -->
+  <rect x="28" y="28" width="200" height="200" rx="18" fill="rgb(30, 31, 34)"/>
+  <rect x="31" y="31" width="194" height="194" rx="15" fill="rgb(66, 69, 75)"/>
+  <rect x="31" y="31" width="194" height="194" rx="15" fill="rgb(66, 69, 75)" filter="url(#grain)"/>
+  <g clip-path="url(#plate)">
+    <use href="#bevelSide"/>
+    <use href="#bevelSide" transform="rotate(90 128 128)"/>
+    <use href="#bevelSide" transform="rotate(180 128 128)"/>
+    <use href="#bevelSide" transform="rotate(270 128 128)"/>
+  </g>
 
-  <!-- The cap -->
-  <circle cx="128" cy="128" r="62" fill="rgb(120, 92, 16)"/>
-  <circle cx="128" cy="128" r="59" fill="url(#cap)"/>
+  <!-- Corner lights -->
+  <use href="#cornerLight"/>
+  <use href="#cornerLight" transform="rotate(90 128 128)"/>
+  <use href="#cornerLight" transform="rotate(180 128 128)"/>
+  <use href="#cornerLight" transform="rotate(270 128 128)"/>
+
+  <!-- The well round the dome: a silver ring between two dark gaps -->
+  <circle cx="128" cy="128" r="80" fill="rgb(40, 42, 46)"/>
+  <circle cx="128" cy="128" r="74" fill="none" stroke="rgb(150, 154, 160)" stroke-width="5"/>
+  <circle cx="128" cy="128" r="70.5" fill="none" stroke="rgb(196, 200, 206)" stroke-width="1.5"/>
+  <circle cx="128" cy="128" r="69" fill="rgb(28, 29, 32)"/>
+
+  <!-- The dome, raised -->
+  <circle cx="128" cy="128" r="62" fill="url(#dome)"/>
+  <circle cx="128" cy="128" r="60" fill="none" stroke="rgb(255, 228, 140)" stroke-width="1.5" opacity="0.6"/>
+  <circle cx="128" cy="128" r="61.5" fill="none" stroke="rgb(112, 80, 10)" stroke-width="2"/>
+  <circle cx="128" cy="128" r="40" fill="url(#glint)"/>
 </svg>
