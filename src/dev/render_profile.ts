@@ -4,6 +4,7 @@ import {CompiledChamber} from '@/game/rules/compiled_chamber'
 import {loadChamber} from '@/game/rules/load_chamber'
 import type {RulesState} from '@/game/rules/rules_state'
 import {startChamber} from '@/game/rules/step'
+import {loadSprites} from '@/game/sprite_sources'
 
 // Development only (src/dev/render_profile.html, served by `npm run dev`,
 // never built): the baseline for stage 03's 60 fps checks. Draws chamber 3,
@@ -302,6 +303,9 @@ function tableRow(result: RatioResult, refreshInterval: number): Record<string, 
  * results.
  */
 async function profile(): Promise<void> {
+  // The chamber sprites, which the loading screen hands the game before any chamber opens
+  await loadSprites()
+
   const profiled = loadChamberThree()
   const chamber = profiled.chamber
   const canvas = findCanvas()

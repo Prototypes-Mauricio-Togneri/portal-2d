@@ -196,6 +196,9 @@ export default withVueTs(
             '@/game/element_drawings',
             '@/game/step_animation',
             '@/game/subject_pose',
+            '@/game/sprite_set',
+            '@/game/sprite_sources',
+            '@/game/sprite_placeholders',
           ],
           patterns: [
             '@/chambers/*',
@@ -238,6 +241,9 @@ export default withVueTs(
             '@/game/element_drawings',
             '@/game/step_animation',
             '@/game/subject_pose',
+            '@/game/sprite_set',
+            '@/game/sprite_sources',
+            '@/game/sprite_placeholders',
           ],
           patterns: [
             '@/chambers/*',

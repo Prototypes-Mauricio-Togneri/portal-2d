@@ -5,7 +5,7 @@ Last revised: 2026-11-13
 
 ## Goal
 
-The game looks and sounds finished before it grows: a reworked look (smooth and sharp), music that reacts to play, and one new chamber, a tutorial shown as chamber 0. It stays "Portal 2D", a fan game played only by the author and a few friends and never published (README decision 12). No other chambers are added here: stage 04 adds the new mechanics and completes the campaign (20 chambers in total, numbered 0–19, with no wings) once this stage is right.
+The game looks and sounds finished before it grows: a reworked look drawn from sprites (smooth and sharp), music that reacts to play, and one new chamber, a tutorial shown as chamber 0. It stays "Portal 2D", a fan game played only by the author and a few friends and never published (README decision 12). No other chambers are added here: stage 04 adds the new mechanics and completes the campaign (20 chambers in total, numbered 0–19, with no wings) once this stage is right.
 
 ## Depends on
 
@@ -35,6 +35,9 @@ These are assumptions about what earlier stages delivered. Re-check each when re
 - 2026-11-09 — Where the game's colours live (open decision 1) settled: (a), one palette module, `src/game/palette.ts`, of named `rgba()` colours, which the drawing code imports directly. A palette is passed to the renderer only once something needs a second one, since blueprint mode keeps today's colours. The CSS tokens mirror some of its colours by hand.
 - 2026-11-13 — No portal glimpse: portals don't show the tiles in front of the other portal, so the visual rework has no step for it.
 - 2026-11-13 — No blueprint mode: there is no Settings switch back to today's flat drawing, so the reworked look is the only one.
+- 2026-11-13 — The chamber is drawn from sprites the author makes, which the game composes. They are raster PNG or WebP at 256 px per tile, shrunk once per tile size, seen straight from above under overhead light; the game adds one shared drop shadow and turns anything with a direction. Walls and open ditches join their neighbours from strips of five tiles, cut into quarters. Every switchable element has an on and an off sprite. Sprites are still images: the code adds glow pulses, fizzler shimmer and the fizzle particles, and state changes snap. The colours that carry a meaning are drawn into the sprites, matched by hand to the palette, as the logo's already are; the palette keeps the colours the code still draws. The full spec is `docs/sprites.md`.
+- 2026-11-13 — The code comes first, on placeholders drawn by code (no image library is installed, and they also stand in for stage 04's mechanics until their art exists), with a dev-only gallery; the author swaps in finished files one at a time. A sprite that fails to download shows its placeholder for the rest of the visit.
+- 2026-11-13 — Not in this pass: decorations not tied to the rules (lights on the outer wall, hazard stripes, floor scuffs), a look of its own for walls that refuse portals (until a chamber uses one), and animated sprites.
 - Unchanged from `AGENTS.md`: desktop only; colour meanings (blue interaction and success, orange the second portal, red caution, green a completed chamber); `localStorage` keys keep the `portal-2d.` prefix, as a convention, and analytics event and parameter names never change (renaming one splits its history).
 
 ## Open decisions
@@ -61,9 +64,17 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 - [x] **Palette module** (open decision 1, settled). Move the game's hex literals into named `rgba()` colours in one module, `src/game/palette.ts`, which the drawing code imports directly (no palette is passed to the renderer until something needs a second one). Lift the hex-literal exception in `AGENTS.md`. The drawing stays identical. Verify: the pixels of every state along each chamber's recorded solution, at pixel ratio 1 and 2, hash the same before and after.
 - [x] **Animation layer** (uses the frontend-design skill). Purely visual interpolation between consecutive states from 01's pure step. A new key never waits: it snaps the running animation to its end. The clock is unaffected; `prefers-reduced-motion` turns interpolation off. Verify: the replay check still passes (rules untouched); fast key mashing feels as responsive as before.
 - [x] **Smooth steps** (uses the frontend-design skill). The subject and a carried box glide between tiles. Verify: visual check; reduced motion shows plain steps.
-- [ ] **Laser glow** (uses the frontend-design skill). Verify: 60 fps on the largest chamber at `devicePixelRatio` 2.
+- [x] **Sprite spec.** `docs/sprites.md`: the 25 files (wall and ditch as strips of five tiles, every switchable element on and off, three glows), 256 px tiles or 384 px with overhang, straight from above under overhead light, sprites with a direction drawn once and turned by the game, and the colours that carry a meaning matched by hand to the palette. Verify: the author can start drawing from it alone.
+- [x] **Loading and placeholders.** The game finds each sprite under `src/assets/images/chamber/` by name. The loading screen hands every downloaded sprite over decoded, as it already does audio, and waits for the decoding before Start; dev pages load the sprites themselves. A missing file, one of the wrong size, or one that failed to download is drawn as a placeholder made by code at 256 px from today's palette colours, for the rest of that visit. Verify: loading still finishes; deleting a sprite file shows its placeholder.
+- [ ] **Compositor** (uses the frontend-design skill). The renderer draws every element as its sprite for its state, off states included. It turns the subject, arrows, portals and vertical lasers, draws a box on a button at half size and a carried box at half size in front of the subject, and shrinks each sprite once per tile size and keeps it. The menu map draws the same way. The old flat drawing goes (no blueprint mode). Verify: `npm run verify`; every chamber played through in the browser, glide and portal crossings included; the menu map.
+- [ ] **Gallery.** A dev-only page under `src/dev/`, served by `npm run dev` and never built: every sprite in every state, every wall and ditch join, at 40, 100 and 230 px and at the menu map's size, and each chamber. It saves any placeholder as a PNG to draw over. Verify: it opens in `npm run dev`, and `dist/` has none of it.
+- [ ] **Joins.** Walls and open ditches built from quarter tiles of their strips by their neighbours, outside the chamber counting as wall; doors, the exit and fizzlers turned to the walls beside them. Verify: the gallery shows every combination without a seam.
+- [ ] **Depth** (uses the frontend-design skill). One shared drop shadow, made from each raised sprite's shape. The floor, arrows, walls and the walls' shadow are drawn once per chamber and tile size and reused every frame. Verify: the render profile holds 60 fps on chamber 3 at pixel ratio 1 and 2.
+- [ ] **Ambient life** (uses the frontend-design skill; replaces the planned "Laser glow"). The laser and portal glows are drawn last, added to what lies beneath, their strength pulsing; fizzlers shimmer. The level redraws every frame while anything glows or shimmers. With `prefers-reduced-motion` the glow holds steady and idle frames draw nothing, as today. Verify: 60 fps on the largest chamber at `devicePixelRatio` 2 on the chamber screen; nothing moves with reduced motion.
 - [ ] **Particles when something fizzles** (uses the frontend-design skill). On the fizzler event emitted by 01 (portals cleared, box destroyed). Verify: none with reduced motion.
-- [ ] **Check high-DPI again.** 00's sharpness fix still holds with every new layer. Verify: 200 % browser zoom and a high-DPI screen.
+- [ ] **Check high-DPI again.** 00's sharpness fix still holds with every new layer, and sprites stay sharp up to their 256 px. Verify: 200 % browser zoom and a high-DPI screen.
+- [ ] **The art.** The author replaces the placeholders, file by file, following `docs/sprites.md`. Verify: each new file checked in the gallery and in a chamber; no placeholder left.
+- [ ] **Docs for the new look.** `AGENTS.md` (the frozen-drawing rule replaced, the layout, the loading screen handing sprites over, the sprites' colours matched by hand to the palette), `docs/elements.md` (adding an element needs its sprites in `docs/sprites.md` and a placeholder) and stage 04's notes. Verify: a read-through matches the behaviour.
 
 ### Phase C — Music that reacts to play
 
@@ -88,7 +99,7 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 ## Done when
 
 - [ ] The tutorial ships first in the list with a recorded solution; chambers 1–3 keep their progress and best times.
-- [ ] The visual rework ships; reduced motion is respected; the replay check still passes.
+- [ ] The visual rework ships with every sprite drawn (no placeholder left); reduced motion is respected; the replay check still passes.
 - [ ] Reactive music ships within the download budget.
 - [ ] All local checks pass.
 - [ ] The author has played every chamber (0–3) in the new look and sound and signed off on them before stage 04 starts.
@@ -96,6 +107,7 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 ## Go/no-go points
 
 - **Renderer:** if the 2D canvas can't hold 60 fps at `devicePixelRatio` 2 on the largest chamber with all effects, reopen the renderer decision (README open decision 4): drop or simplify effects, or move to WebGL, directly or through a library such as PixiJS (cost: a large dependency or a lot of code, and a second way to draw the chamber previews).
+- **Sprites:** if a strip can't be made to join cleanly, or a sprite can't be brought into the set's style, that element goes back to being drawn by code (each element's drawing can switch on its own), and the rest stay sprites.
 - **Audio budget:** past about 8 MB of audio, switch to loading the chamber track's layers on demand (open decision 2).
 - **Sign-off:** if the author isn't happy with the look or sound after playing chambers 0–3, this stage goes on and stage 04 waits, since stage 04's mechanics are drawn and given sounds in this stage's look and sound.
 
@@ -103,12 +115,14 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 
 - **Counting from 0 misses a spot.** Code or copy that assumes the first chamber is number 1 shows up as a wrong sign, a missing row or Next chamber skipping a chamber. Phase A's checks walk every chamber, the tutorial first.
 - **Animation hurting the feel.** Interpolation that delays input makes a discrete puzzle game feel sluggish. The snap-on-key rule and the mashing test guard against it.
-- **Colours drifting apart.** Canvas colours and CSS tokens are kept in step by hand. Check both together whenever a palette colour changes.
+- **Colours drifting apart.** Canvas colours, sprite colours and CSS tokens are kept in step by hand. Check all three together whenever a palette colour changes.
+- **Sprites that don't match.** AI-made images drift in light, scale and style, and template strips rarely tile cleanly. The gallery shows every sprite side by side and every join, so a mismatch shows the day its file lands.
+- **Sprites shrunk too far.** Detail can turn to mush at the menu map's size. The gallery shows every sprite at that size.
 - **Stems.** Layers need separate stems of the chamber track; if today's track can't be split cleanly, new music has to be composed or commissioned, which adds unplanned audio work.
 
 ## Notes for later stages
 
-- Stage 04 draws its new mechanics in this stage's look: colours in the palette module, each distinct from every existing element; and it gives them sounds that fit this stage's sound.
+- Stage 04 draws its new mechanics in this stage's look: sprites made to `docs/sprites.md`, every state of each, distinct from every existing element, with a placeholder drawn by code until the art exists; and it gives them sounds that fit this stage's sound.
 - Links stay by position in stage 04 too (README decision 13 settled open decision 6): inserting or reordering chambers shifts them, with no redirect table.
 - Every chamber must fit the screen whole, since there is no camera: stage 04's chambers and stage 05's grid cap stay within that.
 - Stage 05's editor reuses the chamber format, the renderer and the solution recorder.
