@@ -10,7 +10,8 @@ import type {TilePainter} from '@/game/tile_painter'
 // element is drawn as its sprite for its state (docs/sprites.md), switched
 // off as well as on. Walls and open ditches join their neighbours, quarter
 // by quarter, and doors, the exit and fizzlers are turned to the walls
-// beside them
+// beside them. Beside them, what moves with time alone: the lasers' glow,
+// pulsing with the portals', and the shimmer of fizzlers that are on
 
 /**
  * Draws every element of one type in a state.
@@ -61,6 +62,24 @@ const QUARTER_CORNERS: Readonly<Record<TileQuarter, QuarterCorner>> = {
     dy: -1,
   },
 }
+
+/** How long one slow pulse of the glows takes, in milliseconds */
+const GLOW_PERIOD_MILLISECONDS = 3600
+
+/** The glows' faintest strength in a pulse, the brightest being 1 */
+const GLOW_FAINTEST = 0.6
+
+/** How long a glint takes to pass over one fizzler tile and come back to it, in milliseconds */
+const SHIMMER_PERIOD_MILLISECONDS = 1800
+
+/** The most of a fizzler's own sprite a glint adds over it */
+const SHIMMER_BRIGHTEST = 0.55
+
+/** How far behind its neighbour each tile of a field glints, as a share of the period, so the glints travel along the field */
+const SHIMMER_TILE_LAG = 0.18
+
+/** How sharp a glint is: the power its wave is raised to, so the field stays calm between glints */
+const SHIMMER_SHARPNESS = 3
 
 /** Element types that, besides walls and the chamber's edge, line a gap that a door, the exit or a fizzler fills */
 const GAP_SIDE_KINDS: readonly PlacedKind[] = [
@@ -276,6 +295,58 @@ function drawLasers(painter: TilePainter, state: RulesState): void {
       painter.drawSprite(state.isBlocked('laser', i) ? 'laser_on' : 'laser_off', entry.x, entry.y, LASER_TURNS[orientation])
     }
   })
+}
+
+/**
+ * How strongly the glows shine at a time: a slow pulse between their
+ * faintest and full strength, or halfway when nothing moves.
+ * @param time - Now, in milliseconds on the frame clock, or null to hold the glows steady
+ * @returns The strength, from GLOW_FAINTEST to 1
+ */
+export function glowStrength(time: number | null): number {
+  const wave = (time === null) ? 0.5 : 0.5 + (0.5 * Math.sin(2 * Math.PI * time / GLOW_PERIOD_MILLISECONDS))
+
+  return GLOW_FAINTEST + ((1 - GLOW_FAINTEST) * wave)
+}
+
+/**
+ * Draws the glow of every laser that is on, added to what lies beneath,
+ * turned to the way it runs.
+ * @param painter - Paints on the canvas
+ * @param state - The state drawn
+ * @param strength - How strongly the glows shine, from glowStrength()
+ */
+export function drawLaserGlows(painter: TilePainter, state: RulesState, strength: number): void {
+  state.chamber.entriesOf('laser').forEach((entry, i) => {
+    const orientation = readOrientation(entry.direction)
+
+    if ((orientation !== null) && state.isBlocked('laser', i)) {
+      painter.drawSpriteAdded('laser_glow', entry.x, entry.y, LASER_TURNS[orientation], strength)
+    }
+  })
+}
+
+/**
+ * Draws the shimmer of every fizzler that is on: a glint of its own sprite,
+ * added to what lies beneath, travelling along the field.
+ * @param painter - Paints on the canvas
+ * @param state - The state drawn
+ * @param time - Now, in milliseconds on the frame clock
+ */
+export function drawFizzlerShimmer(painter: TilePainter, state: RulesState, time: number): void {
+  const chamber = state.chamber
+
+  for (let i = 0; i < chamber.countOf('fizzler'); i++) {
+    if (!state.isBlocked('fizzler', i)) {
+      continue
+    }
+
+    const position = chamber.positionOf('fizzler', i)
+    const turn = (time / SHIMMER_PERIOD_MILLISECONDS) - ((position.x + position.y) * SHIMMER_TILE_LAG)
+    const wave = 0.5 + (0.5 * Math.sin(2 * Math.PI * turn))
+
+    painter.drawSpriteAdded('fizzler_on', position.x, position.y, gapTurn(chamber, position.x, position.y), SHIMMER_BRIGHTEST * (wave ** SHIMMER_SHARPNESS))
+  }
 }
 
 /**

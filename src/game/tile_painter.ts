@@ -211,6 +211,27 @@ export class TilePainter {
   }
 
   /**
+   * Draws a sprite over a tile, with its overhang around it, added to the
+   * colours beneath, so it only brightens them: a glow, or a glint of light.
+   * @param name - The sprite
+   * @param x - Column
+   * @param y - Row
+   * @param way - The way it is turned to face, from facing up as drawn
+   * @param strength - How much of it is added, from 0 (nothing) to 1 (all of it)
+   */
+  drawSpriteAdded(name: SpriteName, x: number, y: number, way: Direction, strength: number): void {
+    this.context.save()
+
+    try {
+      this.context.globalCompositeOperation = 'lighter'
+      this.context.globalAlpha = strength
+      this.drawSprite(name, x, y, way)
+    } finally {
+      this.context.restore()
+    }
+  }
+
+  /**
    * Draws a sprite over a tile, with its overhang around it, and a raised
    * one over its shadow.
    * @param name - The sprite

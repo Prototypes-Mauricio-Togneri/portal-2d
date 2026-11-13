@@ -2,7 +2,6 @@
 
 ## Portal 2D
 
-https://www.crazygames.com/game/portal-2d
 https://www.youtube.com/watch?v=99egKsmVyhI
 
 ## Flash version

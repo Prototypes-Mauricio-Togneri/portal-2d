@@ -5,7 +5,7 @@ import type {FrameInput} from '@/game/frame_input'
 import {Input} from '@/game/input'
 import type {KeyBindings} from '@/game/key_bindings'
 import {getChamberHash, type ReplayData, type ReplayStep} from '@/game/replay_data'
-import {Renderer} from '@/game/renderer'
+import {hasAmbientLife, Renderer} from '@/game/renderer'
 import {actionOfPress} from '@/game/rules/action'
 import {CompiledChamber} from '@/game/rules/compiled_chamber'
 import {loadChamber} from '@/game/rules/load_chamber'
@@ -22,8 +22,9 @@ import {StepAnimation} from '@/game/step_animation'
  * rules' step, plays a sound for each thing that happened and redraws when
  * the state changed. A step that changes the state is then drawn over a few
  * frames, redrawn every frame until it ends, paused or not; the next press
- * ends it at once, and nothing is drawn over time when the player asks for
- * reduced motion. Undo and redo bring back earlier states from the run's
+ * ends it at once. While anything glows or shimmers, every frame is drawn
+ * too. Nothing is drawn over time when the player asks for reduced motion:
+ * the glows hold steady. Undo and redo bring back earlier states from the run's
  * history, silently and at once. Every press it acts on is logged, so the run
  * since the last load can be replayed without a browser.
  */
@@ -73,7 +74,8 @@ export class Level {
   private readonly renderer: Renderer // Draws the state
   private readonly animation = new StepAnimation() // The step being drawn over a few frames, if any
   private frameTime = 0 // The latest frame's time, in milliseconds on the frame clock; redraws outside a frame use it, so a step being drawn never goes back
-  private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time a step could be drawn over time
+  private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time something could be drawn over time
+  private ambientDrawn = false // Whether the latest frame was drawn for what moves with time alone, so the frame after it ends draws it still
   private readonly input: Input // The keyboard and mouse, listening from construction until dispose()
   private initialized = false // Whether the frame loop has started
   private isPaused = false // Whether the loop skips updates and the input ignores keydown and mousedown
@@ -269,12 +271,14 @@ export class Level {
   }
 
   /**
-   * Draws the current state, part way through the step being drawn, if any.
+   * Draws the current state, part way through the step being drawn, if any,
+   * with what moves with time alone at this time, or held still when the
+   * player asks for reduced motion.
    * @param time - Now, in milliseconds on the frame clock
    */
   private render(time: number): void {
     if (this.state !== null) {
-      this.renderer.render(this.state, this.animation.transitionAt(time))
+      this.renderer.render(this.state, this.animation.transitionAt(time), this.reducedMotion.matches ? null : time)
     }
   }
 
@@ -455,9 +459,15 @@ export class Level {
       stateUpdated = this.update(delta, this.input, time)
     }
 
-    if (stateUpdated || wasAnimating) {
+    // So does anything that glows or shimmers, paused or not, and the first
+    // frame after it stops, which draws it still
+    const ambient = (this.state !== null) && !this.reducedMotion.matches && hasAmbientLife(this.state)
+
+    if (stateUpdated || wasAnimating || ambient || this.ambientDrawn) {
       this.render(time)
     }
+
+    this.ambientDrawn = ambient
 
     // A callback during the frame may have disposed of the level
     if (!this.disposed) {

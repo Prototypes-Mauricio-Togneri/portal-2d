@@ -1,11 +1,12 @@
-import {ELEMENT_DRAWINGS} from '@/game/element_drawings'
+import {drawFizzlerShimmer, drawLaserGlows, ELEMENT_DRAWINGS, glowStrength} from '@/game/element_drawings'
 import type {CompiledChamber} from '@/game/rules/compiled_chamber'
 import {DRAW_LAYERS, type DrawLayer} from '@/game/rules/draw_layer'
 import {ELEMENT_REGISTRY} from '@/game/rules/element_registry'
-import {PortalColor} from '@/game/rules/portal_color'
+import {PORTAL_COLORS, PortalColor} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
 import {NO_BOX} from '@/game/rules/state_layout'
 import type {SpriteName} from '@/game/sprite_set'
+import {spriteOf} from '@/game/sprite_sources'
 import type {StepTransition} from '@/game/step_animation'
 import {subjectPose} from '@/game/subject_pose'
 import {TilePainter} from '@/game/tile_painter'
@@ -23,6 +24,12 @@ type Backdrop = {
 const PORTAL_SPRITES: Readonly<Record<PortalColor, SpriteName>> = {
   [PortalColor.BLUE]: 'portal_blue',
   [PortalColor.ORANGE]: 'portal_orange',
+}
+
+/** Each open portal's glow */
+const PORTAL_GLOWS: Readonly<Record<PortalColor, SpriteName>> = {
+  [PortalColor.BLUE]: 'portal_blue_glow',
+  [PortalColor.ORANGE]: 'portal_orange_glow',
 }
 
 /** How far ahead of the subject's middle a carried box is drawn, the way the subject faces, in tiles */
@@ -75,6 +82,33 @@ export function drawBackdrop(painter: TilePainter, state: RulesState): void {
 }
 
 /**
+ * Whether anything in a state moves with time alone, so it is drawn every
+ * frame while motion is allowed: a fizzler that is on shimmers, and a laser
+ * that is on or an open portal glows when its glow has a file.
+ * @param state - The state drawn
+ * @returns True when something glows or shimmers
+ */
+export function hasAmbientLife(state: RulesState): boolean {
+  const chamber = state.chamber
+
+  for (let i = 0; i < chamber.countOf('fizzler'); i++) {
+    if (state.isBlocked('fizzler', i)) {
+      return true
+    }
+  }
+
+  if (spriteOf('laser_glow') !== null) {
+    for (let i = 0; i < chamber.countOf('laser'); i++) {
+      if (state.isBlocked('laser', i)) {
+        return true
+      }
+    }
+  }
+
+  return PORTAL_COLORS.some((color) => (state.portalSide(color) !== null) && (spriteOf(PORTAL_GLOWS[color]) !== null))
+}
+
+/**
  * Draws a state of the rules onto a canvas from the chamber sprites
  * (docs/sprites.md): the chamber's backdrop (floor, floor marks and walls),
  * drawn once per chamber and tile size and copied every frame, then each
@@ -83,7 +117,10 @@ export function drawBackdrop(painter: TilePainter, state: RulesState): void {
  * registry order, each by its drawing in ELEMENT_DRAWINGS. Tiles are square,
  * sized to fit the chamber in the screen area, and row 0 is at the bottom.
  * Part way through a step, the subject and a box it carries are drawn at the
- * subject's pose; the rest is drawn as the state after the step.
+ * subject's pose; the rest is drawn as the state after the step. Last, over
+ * everything, fizzlers that are on shimmer, and the lasers' and portals'
+ * glows are added to what lies beneath, pulsing; at no time given, nothing
+ * shimmers and the glows hold steady.
  */
 export class Renderer {
   private readonly painter: TilePainter // Paints the tiles
@@ -201,11 +238,31 @@ export class Renderer {
   }
 
   /**
-   * Draws a whole frame, back to front: the backdrop, then every layer above it.
+   * Draws the glows of the lasers that are on and of the open portals, each
+   * added to what lies beneath.
+   * @param state - The state drawn
+   * @param strength - How strongly they shine, from glowStrength()
+   */
+  private drawGlows(state: RulesState, strength: number): void {
+    drawLaserGlows(this.painter, state, strength)
+
+    for (const color of PORTAL_COLORS) {
+      const side = state.portalSide(color)
+
+      if (side !== null) {
+        this.painter.drawSpriteAdded(PORTAL_GLOWS[color], state.portalX(color), state.portalY(color), side, strength)
+      }
+    }
+  }
+
+  /**
+   * Draws a whole frame, back to front: the backdrop, every layer above it,
+   * then the shimmer and the glows.
    * @param state - The state to draw
    * @param transition - The step being drawn, ending on the state drawn, or null (the default) to draw the state as it is
+   * @param time - Now, in milliseconds on the frame clock, for what moves with time alone, or null (the default) to hold it still
    */
-  render(state: RulesState, transition: StepTransition | null = null): void {
+  render(state: RulesState, transition: StepTransition | null = null, time: number | null = null): void {
     // A canvas not yet sized for a chamber has nothing to draw
     if (this.painter.blockSize <= 0) {
       return
@@ -218,5 +275,11 @@ export class Renderer {
         this.drawLayer(state, layer, transition)
       }
     }
+
+    if (time !== null) {
+      drawFizzlerShimmer(this.painter, state, time)
+    }
+
+    this.drawGlows(state, glowStrength(time))
   }
 }

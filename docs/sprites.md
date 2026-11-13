@@ -2,7 +2,7 @@
 
 The art the chamber is drawn from: one image file per sprite, which the game composes tile by tile, choosing each by its element's state and its neighbours. This is the spec to draw them to.
 
-The game draws the chamber and the home menu's map from these files. A sprite whose file is missing, can't be decoded or has the wrong size is drawn as a placeholder made by code (the original flat drawing, switched-off elements faded) instead, so the sprites can arrive one at a time. Stage 03's visual rework (`todo/03_look_and_sound.md`, Phase B) is still adding the rest of this spec: until then, nothing glows. In `npm run dev`, a file in the folder that isn't a sprite's, or of the wrong size, is logged as an error in the browser's console.
+The game draws the chamber and the home menu's map from these files. A sprite whose file is missing, can't be decoded or has the wrong size is drawn as a placeholder made by code (the original flat drawing, switched-off elements faded) instead, so the sprites can arrive one at a time. In `npm run dev`, a file in the folder that isn't a sprite's, or of the wrong size, is logged as an error in the browser's console.
 
 ## Files
 
@@ -121,7 +121,7 @@ The game draws from the bottom up, each later row over the earlier ones:
 
 ## Glow
 
-The three glows are drawn last, over everything, and added to the colours beneath, so they brighten and never darken. Their strength pulses slowly. Draw only the light: colour fading to transparent, with no beam or portal in it. A missing glow file just means no glow. Fizzlers shimmer by code, from `fizzler_on` itself. With reduced motion, the glow holds steady and nothing shimmers.
+The three glows are drawn last, over everything, and added to the colours beneath, so they brighten and never darken. Their strength pulses slowly, all together, between 60 % and full. Draw only the light, at full strength: colour fading to transparent, with no beam or portal in it. A missing glow file just means no glow. Fizzlers that are on shimmer by code, from `fizzler_on` itself: a glint of the same sprite, added over it, travels along the field. With reduced motion, and in the home menu's map and the gallery, the glow holds steady at 80 % and nothing shimmers.
 
 ## Not in the set yet
 
