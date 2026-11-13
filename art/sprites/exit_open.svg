@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    The exit, open (docs/sprites.md), drawn for a gap in a wall running left
+    to right: its two dark steel leaves slid into the walls on either side,
+    so only their ends show at the left and right edges, each with its white
+    strip, and the way out between them is clear. The left leaf is drawn
+    once and turned to the right. The game turns it when the gap runs the
+    other way.
+  -->
+  <defs>
+    <!-- A leaf's face: dark at its outer side, lit at the edge facing the way out -->
+    <linearGradient id="leafFace" gradientUnits="userSpaceOnUse" x1="3" y1="0" x2="27" y2="0">
+      <stop offset="0" stop-color="rgb(46, 48, 53)"/>
+      <stop offset="0.35" stop-color="rgb(62, 65, 71)"/>
+      <stop offset="1" stop-color="rgb(100, 104, 111)"/>
+    </linearGradient>
+
+    <!-- The soft white light around a strip -->
+    <filter id="glow" x="-1" y="-0.2" width="3" height="1.4" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+
+    <!-- The left leaf's end -->
+    <g id="leaf">
+      <rect x="0" y="0" width="30" height="256" fill="rgb(26, 27, 30)"/>
+      <rect x="3" y="3" width="24" height="250" fill="url(#leafFace)"/>
+      <rect x="26" y="3" width="1" height="250" fill="rgb(130, 134, 141)"/>
+      <rect x="9" y="22" width="10" height="212" rx="5" fill="rgb(255, 255, 255)" opacity="0.8" filter="url(#glow)"/>
+      <rect x="11" y="22" width="6" height="212" rx="3" fill="rgb(255, 255, 255)"/>
+    </g>
+  </defs>
+
+  <use href="#leaf"/>
+  <use href="#leaf" transform="rotate(180 128 128)"/>
+</svg>

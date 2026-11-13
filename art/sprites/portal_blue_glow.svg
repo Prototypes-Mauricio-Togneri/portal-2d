@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="384" height="384" viewBox="0 0 384 384">
+  <!--
+    The blue portal's glow (docs/sprites.md, glow): light only, added over
+    everything. Its tile is the centred 256 px square; the light is centred on
+    the portal's oval and spills up into the tile above, fading fully to
+    nothing before the canvas's edges.
+  -->
+  <defs>
+    <!-- Strongest on the portal, fading smoothly outwards -->
+    <radialGradient id="falloff" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="rgb(40, 140, 220)" stop-opacity="0.55"/>
+      <stop offset="0.25" stop-color="rgb(40, 140, 220)" stop-opacity="0.42"/>
+      <stop offset="0.5" stop-color="rgb(40, 140, 220)" stop-opacity="0.2"/>
+      <stop offset="0.75" stop-color="rgb(40, 140, 220)" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="rgb(40, 140, 220)" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="192" cy="112" rx="188" ry="108" fill="url(#falloff)"/>
+</svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    A laser beam that is on (docs/sprites.md): drawn left to right through the
+    tile's middle, its square ends on both edges, so neighbouring laser tiles
+    make one beam. A soft pink haze, the beam, then its white-hot core. The
+    game turns it a quarter turn for a vertical laser.
+  -->
+  <defs>
+    <!-- The haze around the beam, fading out above and below it -->
+    <linearGradient id="haze" gradientUnits="userSpaceOnUse" x1="0" y1="112" x2="0" y2="144">
+      <stop offset="0" stop-color="rgb(252, 25, 150)" stop-opacity="0"/>
+      <stop offset="0.3" stop-color="rgb(252, 25, 150)" stop-opacity="0.35"/>
+      <stop offset="0.5" stop-color="rgb(252, 25, 150)" stop-opacity="0.5"/>
+      <stop offset="0.7" stop-color="rgb(252, 25, 150)" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="rgb(252, 25, 150)" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Haze -->
+  <rect x="0" y="112" width="256" height="32" fill="url(#haze)"/>
+
+  <!-- Beam -->
+  <rect x="0" y="122" width="256" height="12" fill="rgb(252, 25, 150)"/>
+
+  <!-- Core -->
+  <rect x="0" y="126" width="256" height="4" fill="rgb(255, 225, 245)"/>
+</svg>

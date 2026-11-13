@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    The floor button, pressed (docs/sprites.md): the same plate as
+    button_up.svg, its dome sunk flat into the well, darker, and its four
+    corner lights lit. A box on it is drawn at half size in the middle, so the
+    plate's rim and the lights stay in sight around it.
+  -->
+  <defs>
+    <!-- The plate's bevel: darker at its outer edge, lit towards the face -->
+    <linearGradient id="bevel" gradientUnits="userSpaceOnUse" x1="0" y1="31" x2="0" y2="43">
+      <stop offset="0" stop-color="rgb(74, 77, 83)"/>
+      <stop offset="1" stop-color="rgb(108, 112, 119)"/>
+    </linearGradient>
+
+    <!-- The sunk disc: flat, a little darker towards its rim -->
+    <radialGradient id="disc" gradientUnits="userSpaceOnUse" cx="128" cy="128" r="58">
+      <stop offset="0" stop-color="rgb(186, 51, 43)"/>
+      <stop offset="0.75" stop-color="rgb(178, 48, 41)"/>
+      <stop offset="1" stop-color="rgb(140, 37, 31)"/>
+    </radialGradient>
+
+    <!-- Fine grain on the steel -->
+    <filter id="grain" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" seed="7" result="noise"/>
+      <feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.1"/>
+      <feComposite in2="SourceGraphic" operator="in"/>
+    </filter>
+
+    <!-- The red light the lit corner lights spill -->
+    <filter id="lightGlow" x="-1" y="-1" width="3" height="3" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+
+    <clipPath id="plate">
+      <rect x="31" y="31" width="194" height="194" rx="15"/>
+    </clipPath>
+
+    <!-- One side of the plate's bevel, along the top, mitred at its ends -->
+    <g id="bevelSide">
+      <polygon points="31,31 225,31 213,43 43,43" fill="url(#bevel)"/>
+      <polygon points="41,41 215,41 213,43 43,43" fill="rgb(140, 144, 151)"/>
+    </g>
+
+    <!-- One corner light, lit, in the upper-left corner, pointing at the disc -->
+    <g id="cornerLight">
+      <rect x="-16" y="-8" width="32" height="16" rx="8" fill="rgb(30, 31, 34)" transform="translate(60 60) rotate(45)"/>
+      <rect x="-14" y="-7" width="28" height="14" rx="7" fill="rgb(255, 90, 80)" opacity="0.8" filter="url(#lightGlow)" transform="translate(60 60) rotate(45)"/>
+      <rect x="-12" y="-5" width="24" height="10" rx="5" fill="rgb(255, 90, 80)" transform="translate(60 60) rotate(45)"/>
+      <rect x="-8" y="-2" width="16" height="4" rx="2" fill="rgb(255, 222, 214)" transform="translate(60 60) rotate(45)"/>
+    </g>
+  </defs>
+
+  <!-- The plate: outline, face, then its bevel on every side -->
+  <rect x="28" y="28" width="200" height="200" rx="18" fill="rgb(30, 31, 34)"/>
+  <rect x="31" y="31" width="194" height="194" rx="15" fill="rgb(66, 69, 75)"/>
+  <rect x="31" y="31" width="194" height="194" rx="15" fill="rgb(66, 69, 75)" filter="url(#grain)"/>
+  <g clip-path="url(#plate)">
+    <use href="#bevelSide"/>
+    <use href="#bevelSide" transform="rotate(90 128 128)"/>
+    <use href="#bevelSide" transform="rotate(180 128 128)"/>
+    <use href="#bevelSide" transform="rotate(270 128 128)"/>
+  </g>
+
+  <!-- The well round the disc: a silver ring between two dark gaps -->
+  <circle cx="128" cy="128" r="80" fill="rgb(40, 42, 46)"/>
+  <circle cx="128" cy="128" r="74" fill="none" stroke="rgb(150, 154, 160)" stroke-width="5"/>
+  <circle cx="128" cy="128" r="70.5" fill="none" stroke="rgb(196, 200, 206)" stroke-width="1.5"/>
+  <circle cx="128" cy="128" r="69" fill="rgb(28, 29, 32)"/>
+
+  <!-- The disc, sunk flat into the well -->
+  <circle cx="128" cy="128" r="58" fill="url(#disc)"/>
+  <circle cx="128" cy="128" r="55" fill="none" stroke="rgb(120, 32, 27)" stroke-width="6"/>
+
+  <!-- Corner lights, lit -->
+  <use href="#cornerLight"/>
+  <use href="#cornerLight" transform="rotate(90 128 128)"/>
+  <use href="#cornerLight" transform="rotate(180 128 128)"/>
+  <use href="#cornerLight" transform="rotate(270 128 128)"/>
+</svg>

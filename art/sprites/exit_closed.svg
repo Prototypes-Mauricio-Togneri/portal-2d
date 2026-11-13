@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    The exit, closed (docs/sprites.md), drawn for a gap in a wall running
+    left to right: built like a door, but in dark steel with bright white
+    lights, so it can't be taken for one. A chamfered frame drawn once along
+    the top and turned to every side, white strips inside it, a white ring in
+    the middle, and the seam where its two leaves meet, splitting the ring.
+    The game turns it when the gap runs the other way.
+  -->
+  <defs>
+    <!-- The frame's chamfer: dark at the outline, lit towards the leaves -->
+    <linearGradient id="chamfer" gradientUnits="userSpaceOnUse" x1="0" y1="3" x2="0" y2="25">
+      <stop offset="0" stop-color="rgb(46, 48, 53)"/>
+      <stop offset="1" stop-color="rgb(100, 104, 111)"/>
+    </linearGradient>
+
+    <!-- Fine grain on the leaves -->
+    <filter id="grain" filterUnits="userSpaceOnUse" x="25" y="25" width="206" height="206" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" seed="9"/>
+      <feColorMatrix type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.08"/>
+    </filter>
+
+    <!-- The soft white light around the strips and the ring -->
+    <filter id="glow" x="-0.5" y="-0.5" width="2" height="2" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+
+    <!-- One side of the frame, along the top, mitred at its ends -->
+    <polygon id="chamferSide" points="3,3 253,3 231,25 25,25" fill="url(#chamfer)"/>
+
+    <!-- One lit strip, along the top, over its glow -->
+    <g id="strip">
+      <rect x="44" y="31" width="168" height="10" rx="5" fill="rgb(255, 255, 255)" opacity="0.8" filter="url(#glow)"/>
+      <rect x="44" y="33" width="168" height="6" rx="3" fill="rgb(255, 255, 255)"/>
+    </g>
+  </defs>
+
+  <!-- Outline and leaves -->
+  <rect x="0" y="0" width="256" height="256" fill="rgb(26, 27, 30)"/>
+  <rect x="25" y="25" width="206" height="206" fill="rgb(62, 65, 71)"/>
+  <rect x="25" y="25" width="206" height="206" filter="url(#grain)"/>
+
+  <!-- The frame, its four sides turned from one -->
+  <use href="#chamferSide"/>
+  <use href="#chamferSide" transform="rotate(90 128 128)"/>
+  <use href="#chamferSide" transform="rotate(180 128 128)"/>
+  <use href="#chamferSide" transform="rotate(270 128 128)"/>
+  <rect x="24.5" y="24.5" width="207" height="207" fill="none" stroke="rgb(40, 42, 46)" stroke-width="1"/>
+
+  <!-- Lit strips along the four inner edges -->
+  <use href="#strip"/>
+  <use href="#strip" transform="rotate(90 128 128)"/>
+  <use href="#strip" transform="rotate(180 128 128)"/>
+  <use href="#strip" transform="rotate(270 128 128)"/>
+
+  <!-- The ring, over its glow -->
+  <circle cx="128" cy="128" r="28" fill="none" stroke="rgb(255, 255, 255)" stroke-width="18" opacity="0.8" filter="url(#glow)"/>
+  <circle cx="128" cy="128" r="28" fill="none" stroke="rgb(255, 255, 255)" stroke-width="12"/>
+
+  <!-- The seam where the two leaves meet, splitting the ring -->
+  <rect x="124" y="25" width="1" height="206" fill="rgb(104, 108, 115)"/>
+  <rect x="126" y="25" width="4" height="206" fill="rgb(30, 32, 35)"/>
+  <rect x="131" y="25" width="1" height="206" fill="rgb(104, 108, 115)"/>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    The floor arrow (docs/sprites.md): a grey triangle painted flat on the
+    floor, pointing up, the one way the subject may enter its tile. The game
+    turns it to the arrow's way.
+  -->
+  <defs>
+    <!-- The paint, a shade lighter at the tip -->
+    <linearGradient id="paint" gradientUnits="userSpaceOnUse" x1="0" y1="86" x2="0" y2="170">
+      <stop offset="0" stop-color="rgb(120, 120, 125)"/>
+      <stop offset="1" stop-color="rgb(108, 108, 113)"/>
+    </linearGradient>
+  </defs>
+
+  <!-- The triangle, its corners rounded by a stroke of the same paint -->
+  <polygon points="128,92 172,166 84,166" fill="url(#paint)" stroke="url(#paint)" stroke-width="8" stroke-linejoin="round"/>
+</svg>

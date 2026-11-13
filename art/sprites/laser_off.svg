@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    A laser that is off (docs/sprites.md): only a faint pink trace along the
+    beam's line, edge to edge, showing where it would come back. Turned like
+    laser_on.
+  -->
+  <rect x="0" y="126" width="256" height="4" fill="rgb(252, 25, 150)" opacity="0.25"/>
+</svg>

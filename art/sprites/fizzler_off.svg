@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    A fizzler that is off (docs/sprites.md), drawn for a gap in a wall
+    running left to right: the same emitter posts as when it is on, their
+    slits dark, with no field between them. The left post is drawn once and
+    turned to the right. The game turns it when the gap runs the other way.
+  -->
+  <defs>
+    <!-- A post's face: dark at its outer side, lit at the edge facing the gap -->
+    <linearGradient id="postFace" gradientUnits="userSpaceOnUse" x1="3" y1="0" x2="23" y2="0">
+      <stop offset="0" stop-color="rgb(58, 61, 66)"/>
+      <stop offset="1" stop-color="rgb(96, 100, 107)"/>
+    </linearGradient>
+
+    <!-- The left emitter post, its slit dark -->
+    <g id="post">
+      <rect x="0" y="0" width="26" height="256" fill="rgb(34, 36, 40)"/>
+      <rect x="3" y="3" width="20" height="250" fill="url(#postFace)"/>
+      <rect x="17" y="18" width="4" height="220" rx="2" fill="rgb(40, 42, 46)"/>
+    </g>
+  </defs>
+
+  <use href="#post"/>
+  <use href="#post" transform="rotate(180 128 128)"/>
+</svg>
