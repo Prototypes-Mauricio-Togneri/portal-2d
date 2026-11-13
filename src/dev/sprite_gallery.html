@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sprite gallery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:ital,wght@0,400;0,500;0,600;1,400;1,600&display=swap">
+    <style>
+      /* ============================================
+         Page
+         ============================================ */
+
+      /* The seamed facility wall, with the content held clear of its edges */
+      .gallery {
+        min-height: 100%;
+        padding: 2.5rem 2.5rem 6rem;
+      }
+
+      /* Text never runs wider than a comfortable line, while drawings take the full width */
+      .gallery-text {
+        max-width: 44rem;
+      }
+
+      .gallery-title {
+        font-family: var(--font-display);
+        font-size: 3rem;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+
+      .gallery-lead {
+        margin-top: 0.75rem;
+        color: var(--color-ink-muted);
+      }
+
+      .gallery-lead code,
+      .gallery-section-text code {
+        font-family: inherit;
+        font-weight: 600;
+        color: var(--color-ink);
+      }
+
+      .gallery-summary {
+        margin-top: 1rem;
+        font-weight: 600;
+      }
+
+      /* Links to the sections, as a row of sign tabs */
+      .gallery-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+      }
+
+      .gallery-nav a {
+        padding: 0.375rem 0.875rem;
+        border: 1px solid var(--color-rule);
+        border-radius: 0.25rem;
+        background: var(--color-panel);
+        font-family: var(--font-display);
+        font-size: 1.125rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        transition: border-color 120ms ease;
+      }
+
+      .gallery-nav a:hover {
+        border-color: var(--color-ink);
+      }
+
+      /* ============================================
+         Sections
+         ============================================ */
+
+      .gallery-section {
+        margin-top: 4rem;
+        scroll-margin-top: 1.5rem;
+      }
+
+      .gallery-section-title {
+        font-size: 1.25rem;
+        letter-spacing: 0.12em;
+      }
+
+      .gallery-section-text {
+        margin-top: 0.5rem;
+        color: var(--color-ink-muted);
+      }
+
+      /* One tile size: its heading over its drawings */
+      .gallery-size {
+        margin-top: 2rem;
+      }
+
+      .gallery-size-label {
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .gallery-figures {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 1.5rem 2rem;
+        margin-top: 0.75rem;
+      }
+
+      .gallery-figure {
+        max-width: 100%;
+        margin: 0;
+      }
+
+      /* A drawing wider than the page scrolls on its own, so the page never scrolls sideways */
+      .gallery-figure-frame {
+        max-width: 100%;
+        overflow-x: auto;
+      }
+
+      .gallery-figure-frame canvas,
+      .gallery-checkerboard canvas {
+        display: block;
+      }
+
+      .gallery-caption {
+        margin-top: 0.375rem;
+        font-size: 0.875rem;
+        color: var(--color-ink-muted);
+      }
+
+      /* Something the gallery couldn't draw, in the caution red */
+      .gallery-error {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        border-left: 0.25rem solid var(--color-red);
+        background: var(--color-panel);
+        font-weight: 600;
+      }
+
+      /* ============================================
+         Sprite cards
+         ============================================ */
+
+      .gallery-sprites {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+
+      /* A light panel holding the image, as wide as it is */
+      .gallery-sprite {
+        max-width: 100%;
+        padding: 1rem;
+        border: 1px solid var(--color-rule);
+        border-radius: 0.25rem;
+        background: var(--color-panel);
+      }
+
+      /* Transparency shows as a checkerboard behind the image */
+      .gallery-checkerboard {
+        width: fit-content;
+        background-color: var(--color-white);
+        background-image: conic-gradient(rgba(var(--color-ink-rgb), 0.09) 25%, transparent 0 50%, rgba(var(--color-ink-rgb), 0.09) 0 75%, transparent 0);
+        background-size: 1rem 1rem;
+        border: 1px solid var(--color-rule);
+      }
+
+      /* Under a strip, each tile's name, one per tile */
+      .gallery-strip-labels {
+        display: flex;
+        font-size: 0.875rem;
+        color: var(--color-ink-muted);
+      }
+
+      .gallery-strip-labels li {
+        flex: 1;
+        padding-top: 0.25rem;
+        text-align: center;
+      }
+
+      .gallery-sprite-name {
+        margin-top: 0.75rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      .gallery-sprite-size {
+        font-size: 0.875rem;
+        color: var(--color-ink-muted);
+      }
+
+      .gallery-sprite-status {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        max-width: 18rem;
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.35;
+      }
+
+      .gallery-sprite-strip .gallery-sprite-status {
+        max-width: 44rem;
+      }
+
+      /* An indicator lamp, as on the controls' layouts: an unlit ring for no file yet */
+      .gallery-lamp {
+        flex: none;
+        width: 0.875rem;
+        height: 0.875rem;
+        margin-top: 0.0625rem;
+        border: 0.125rem solid rgba(var(--color-ink-rgb), 0.35);
+        border-radius: 50%;
+        background: var(--color-wall);
+      }
+
+      /* Lit blue: its file is drawn */
+      .gallery-lamp-lit {
+        border-color: var(--color-blue-deep);
+        background: var(--color-blue);
+        box-shadow: 0 0 0 0.1875rem rgba(var(--color-blue-rgb), 0.25);
+      }
+
+      /* Red: a file is there but not used, so it needs fixing */
+      .gallery-lamp-refused {
+        border-color: var(--color-red-deep);
+        background: var(--color-red);
+      }
+
+      .gallery-save {
+        min-height: 2.25rem;
+        margin-top: 0.75rem;
+        padding: 0 0.875rem;
+        font-size: 0.875rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="gallery wall">
+      <header class="gallery-text">
+        <h1 class="gallery-title">Sprite gallery</h1>
+        <p class="gallery-lead">Development only. The chamber sprites as the game has them, then drawn by the game itself at the sizes it uses, each canvas pixel on one screen pixel. Drop a file into <code>src/assets/images/chamber/</code> and this page reloads with it (<code>docs/sprites.md</code> has the spec).</p>
+        <p id="summary" class="gallery-summary" role="status">Loading the sprites…</p>
+        <nav class="gallery-nav" aria-label="Sections">
+          <a href="#sprites">Sprites</a>
+          <a href="#specimens">Specimens</a>
+          <a href="#joins">Joins</a>
+          <a href="#chambers">Chambers</a>
+        </nav>
+      </header>
+
+      <section id="sprites" class="gallery-section" aria-labelledby="sprites-title">
+        <h2 id="sprites-title" class="ruled-label gallery-section-title">Sprites</h2>
+        <p class="gallery-text gallery-section-text">Each sprite at full size, as the game has it: its file, or the placeholder drawn in its place. A placeholder can be saved as a PNG of its file's size to draw over.</p>
+        <div id="sprites-list" class="gallery-sprites"></div>
+      </section>
+
+      <section id="specimens" class="gallery-section" aria-labelledby="specimens-title">
+        <h2 id="specimens-title" class="ruled-label gallery-section-title">Specimens</h2>
+        <p class="gallery-text gallery-section-text">One small chamber with every element, drawn by the game twice: with everything on, then everything off. The subject carries a box, both portals are open, and the arrows point all four ways.</p>
+        <div id="specimens-list"></div>
+      </section>
+
+      <section id="joins" class="gallery-section" aria-labelledby="joins-title">
+        <h2 id="joins-title" class="ruled-label gallery-section-title">Joins</h2>
+        <p class="gallery-text gallery-section-text">Every way walls and open ditches meet, drawn by the game: a lone tile, runs, an L, a diagonal, a T, a cross, a solid block and a ring.</p>
+        <div id="joins-list"></div>
+      </section>
+
+      <section id="chambers" class="gallery-section" aria-labelledby="chambers-title">
+        <h2 id="chambers-title" class="ruled-label gallery-section-title">Chambers</h2>
+        <p class="gallery-text gallery-section-text">Each chamber at its start.</p>
+        <div id="chambers-list"></div>
+      </section>
+    </main>
+    <script type="module" src="./sprite_gallery.ts"></script>
+  </body>
+</html>

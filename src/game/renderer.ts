@@ -1,4 +1,5 @@
 import {ELEMENT_DRAWINGS} from '@/game/element_drawings'
+import type {CompiledChamber} from '@/game/rules/compiled_chamber'
 import {DRAW_LAYERS, type DrawLayer} from '@/game/rules/draw_layer'
 import {ELEMENT_REGISTRY} from '@/game/rules/element_registry'
 import {PortalColor} from '@/game/rules/portal_color'
@@ -9,6 +10,15 @@ import type {StepTransition} from '@/game/step_animation'
 import {subjectPose} from '@/game/subject_pose'
 import {TilePainter} from '@/game/tile_painter'
 
+/**
+ * A chamber's backdrop as drawn for a tile size.
+ */
+type Backdrop = {
+  readonly chamber: CompiledChamber // The chamber it was drawn for
+  readonly tileSize: number // The tile size it was drawn at, in pixels
+  readonly layer: TilePainter // The backdrop, on a canvas of its own
+}
+
 /** Each portal's sprite */
 const PORTAL_SPRITES: Readonly<Record<PortalColor, SpriteName>> = {
   [PortalColor.BLUE]: 'portal_blue',
@@ -18,18 +28,66 @@ const PORTAL_SPRITES: Readonly<Record<PortalColor, SpriteName>> = {
 /** How far ahead of the subject's middle a carried box is drawn, the way the subject faces, in tiles */
 const CARRIED_BOX_AHEAD = 0.25
 
+/** The bottom layers, which never change while a chamber is played: drawn once as its backdrop, never each frame */
+const BACKDROP_LAYERS: ReadonlySet<DrawLayer> = new Set<DrawLayer>([
+  'floor',
+  'floorMarks',
+  'structure',
+])
+
+/**
+ * Draws every element type on a layer, in registry order.
+ * @param painter - Paints on the canvas
+ * @param state - The state drawn
+ * @param layer - The layer
+ */
+function drawElementsOn(painter: TilePainter, state: RulesState, layer: DrawLayer): void {
+  for (const definition of ELEMENT_REGISTRY) {
+    if (definition.layer === layer) {
+      ELEMENT_DRAWINGS[definition.kind](painter, state)
+    }
+  }
+}
+
+/**
+ * Draws a chamber's backdrop, the layers that never change while it is
+ * played: the background, the floor of every tile and the floor marks, then
+ * the walls, painted apart and laid down over the shared drop shadow of
+ * their whole mass.
+ * @param painter - Paints on the canvas, already sized for the chamber
+ * @param state - A state of the chamber; the backdrop is the same for every one
+ */
+export function drawBackdrop(painter: TilePainter, state: RulesState): void {
+  painter.clear()
+
+  for (let x = 0; x < state.chamber.width; x++) {
+    for (let y = 0; y < state.chamber.height; y++) {
+      painter.drawSprite('floor', x, y)
+    }
+  }
+
+  drawElementsOn(painter, state, 'floorMarks')
+
+  const structure = painter.createLayer()
+
+  drawElementsOn(structure, state, 'structure')
+  painter.drawLayer(structure, true)
+}
+
 /**
  * Draws a state of the rules onto a canvas from the chamber sprites
- * (docs/sprites.md): the floor, then each draw layer back to front. The core
- * step's layers (floor, portals, subject) are drawn here; every other layer
- * draws its element types in registry order, each by its drawing in
- * ELEMENT_DRAWINGS. Tiles are square, sized to fit the chamber in the screen
- * area, and row 0 is at the bottom. Part way through a step, the subject and
- * a box it carries are drawn at the subject's pose; the rest is drawn as the
- * state after the step.
+ * (docs/sprites.md): the chamber's backdrop (floor, floor marks and walls),
+ * drawn once per chamber and tile size and copied every frame, then each
+ * other draw layer back to front. The core step's layers (floor, portals,
+ * subject) are drawn here; every other layer draws its element types in
+ * registry order, each by its drawing in ELEMENT_DRAWINGS. Tiles are square,
+ * sized to fit the chamber in the screen area, and row 0 is at the bottom.
+ * Part way through a step, the subject and a box it carries are drawn at the
+ * subject's pose; the rest is drawn as the state after the step.
  */
 export class Renderer {
   private readonly painter: TilePainter // Paints the tiles
+  private backdrop: Backdrop | null = null // The backdrop last drawn, kept while the chamber and tile size stay the same
 
   /**
    * Takes over a canvas, collapsing it to 0 × 0 until setSize() is called.
@@ -62,15 +120,27 @@ export class Renderer {
   }
 
   /**
-   * Draws the floor of every tile.
+   * The backdrop of a state's chamber at the current tile size, drawn the
+   * first time it is asked for and kept until the chamber or the tile size
+   * changes.
    * @param state - The state drawn
+   * @returns The backdrop's layer
    */
-  private drawFloor(state: RulesState): void {
-    for (let x = 0; x < state.chamber.width; x++) {
-      for (let y = 0; y < state.chamber.height; y++) {
-        this.painter.drawSprite('floor', x, y)
+  private backdropOf(state: RulesState): TilePainter {
+    const tileSize = this.painter.blockSize
+
+    if ((this.backdrop === null) || (this.backdrop.chamber !== state.chamber) || (this.backdrop.tileSize !== tileSize)) {
+      const layer = this.painter.createLayer()
+
+      drawBackdrop(layer, state)
+      this.backdrop = {
+        chamber: state.chamber,
+        tileSize: tileSize,
+        layer: layer,
       }
     }
+
+    return this.backdrop.layer
   }
 
   /**
@@ -106,45 +176,47 @@ export class Renderer {
   }
 
   /**
-   * Draws one layer: the core step's own, or every element type on it, in
-   * registry order.
+   * Draws one layer above the backdrop: the core step's own, or every
+   * element type on it, in registry order. The shadows of the raised things
+   * on it go down before any of them, so touching ones don't shade each other.
    * @param state - The state drawn
    * @param layer - The layer
    * @param transition - The step being drawn, ending on the state drawn, or null to draw the state as it is
    */
   private drawLayer(state: RulesState, layer: DrawLayer, transition: StepTransition | null): void {
-    switch (layer) {
-      case 'floor':
-        this.drawFloor(state)
-        break
+    this.painter.drawShadowsFirst(() => {
+      switch (layer) {
+        case 'portals':
+          this.drawPortal(state, PortalColor.BLUE)
+          this.drawPortal(state, PortalColor.ORANGE)
+          break
 
-      case 'portals':
-        this.drawPortal(state, PortalColor.BLUE)
-        this.drawPortal(state, PortalColor.ORANGE)
-        break
-
-      case 'subject':
-        this.drawSubject(state, transition)
-        break
-    }
-
-    for (const definition of ELEMENT_REGISTRY) {
-      if (definition.layer === layer) {
-        ELEMENT_DRAWINGS[definition.kind](this.painter, state)
+        case 'subject':
+          this.drawSubject(state, transition)
+          break
       }
-    }
+
+      drawElementsOn(this.painter, state, layer)
+    })
   }
 
   /**
-   * Draws a whole frame, back to front.
+   * Draws a whole frame, back to front: the backdrop, then every layer above it.
    * @param state - The state to draw
    * @param transition - The step being drawn, ending on the state drawn, or null (the default) to draw the state as it is
    */
   render(state: RulesState, transition: StepTransition | null = null): void {
-    this.painter.clear()
+    // A canvas not yet sized for a chamber has nothing to draw
+    if (this.painter.blockSize <= 0) {
+      return
+    }
+
+    this.painter.drawLayer(this.backdropOf(state), false)
 
     for (const layer of DRAW_LAYERS) {
-      this.drawLayer(state, layer, transition)
+      if (!BACKDROP_LAYERS.has(layer)) {
+        this.drawLayer(state, layer, transition)
+      }
     }
   }
 }

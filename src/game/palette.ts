@@ -1,10 +1,11 @@
 /**
  * Every colour the game draws on its canvas by code, named by what it
- * colours: the background behind the floor, and the sprites' placeholders
- * (sprite_placeholders.ts), the original game's colours, unchanged. Some are
- * mirrored by hand in the CSS tokens on `:root` in `src/assets/styles.css`,
- * as each entry's comment says, and the colours that carry a meaning in the
- * sprites (docs/sprites.md): change them together.
+ * colours: the background behind the floor, the sprites' placeholders
+ * (sprite_placeholders.ts), the original game's colours, unchanged, and the
+ * shared drop shadow. Some are mirrored by hand in the CSS tokens on `:root`
+ * in `src/assets/styles.css`, as each entry's comment says, and the colours
+ * that carry a meaning in the sprites (docs/sprites.md): change them
+ * together.
  */
 export const PALETTE = {
   chamber: 'rgba(32, 32, 32, 1)', // Background behind the floor; mirrored by --color-chamber
@@ -34,4 +35,5 @@ export const PALETTE = {
   barrierEdge: 'rgba(64, 64, 64, 1)', // A raised barrier's gradient at its edge, the darker end
   ditch: 'rgba(48, 48, 48, 1)', // An open ditch
   laser: 'rgba(252, 25, 150, 1)', // A laser beam that is on
+  shadow: 'rgba(0, 0, 0, 0.5)', // The shared drop shadow under what stands raised, at its darkest
 } as const

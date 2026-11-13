@@ -20,6 +20,23 @@ export type Sprite = {
   readonly overhang: number // Margin around its tile on every side, in the image's pixels: 0, or SPRITE_OVERHANG
 }
 
+/**
+ * What became of a sprite's file: there is none in the folder ('missing'),
+ * it hasn't been handed over yet, or its download failed ('notLoaded'), the
+ * game draws it ('inUse'), or it was refused because it can't be decoded or
+ * has the wrong size ('refused'). Every sprite but one in use is drawn as its
+ * placeholder.
+ */
+export type SpriteFileStatus = 'missing' | 'notLoaded' | 'inUse' | 'refused'
+
+/**
+ * A sprite's file as the game has it, for the gallery.
+ */
+export type SpriteFileReport = {
+  readonly status: SpriteFileStatus // What became of the file
+  readonly reason: string | null // Why it was refused, or null when it wasn't
+}
+
 /** Extensions a sprite's file may have */
 const SPRITE_EXTENSIONS: readonly string[] = [
   'webp',
@@ -41,6 +58,17 @@ function reportInDevelopment(message: string): void {
   if (import.meta.env.DEV) {
     console.error(message)
   }
+}
+
+/**
+ * Refuses a sprite's file, keeping why for the gallery and logging it in
+ * development.
+ * @param name - The sprite
+ * @param reason - Why its file is refused
+ */
+function refuse(name: SpriteName, reason: string): void {
+  refusals.set(name, reason)
+  reportInDevelopment(`Sprite ${name}'s file is refused: ${reason}`)
 }
 
 /**
@@ -98,6 +126,7 @@ const urlsByName = findSpriteFiles() // The address of each sprite's file, by th
 const namesByUrl = groupNamesByUrl(urlsByName) // The names of the sprites each file's address serves
 const decodedSprites = new Map<SpriteName, Sprite>() // Each sprite whose file has been handed over, decoded and fits, by name
 const placeholders = new Map<SpriteName, Sprite | null>() // Each placeholder drawn so far, by its sprite's name; null for a glow
+const refusals = new Map<SpriteName, string>() // Why each sprite whose file was refused has no file in use, by name
 
 /**
  * Reads how far a sprite's file overhangs its tile from the file's size,
@@ -169,7 +198,9 @@ export async function useSpriteFile(url: string, file: Blob): Promise<void> {
   try {
     image = await createImageBitmap(file)
   } catch (_error) {
-    reportInDevelopment(`The file of sprite ${names.join(', ')} can't be decoded`)
+    for (const name of names) {
+      refuse(name, 'it can\'t be decoded')
+    }
 
     return
   }
@@ -180,7 +211,7 @@ export async function useSpriteFile(url: string, file: Blob): Promise<void> {
     const overhang = overhangFor(name, image.width, image.height)
 
     if (overhang === null) {
-      reportInDevelopment(`Sprite ${name}'s file is ${image.width} × ${image.height} px; it must be ${allowedSizes(name)}`)
+      refuse(name, `it is ${image.width} × ${image.height} px; it must be ${allowedSizes(name)}`)
     } else if (!decodedSprites.has(name)) {
       // Checked again after decoding: the same address may have been decoded meanwhile
       decodedSprites.set(name, {
@@ -238,4 +269,32 @@ export function spriteOf(name: SpriteName): Sprite | null {
   }
 
   return placeholders.get(name) ?? null
+}
+
+/**
+ * What became of a sprite's file, for the gallery.
+ * @param name - The sprite
+ * @returns Its file's status, and why it was refused
+ */
+export function spriteFileReport(name: SpriteName): SpriteFileReport {
+  if (decodedSprites.has(name)) {
+    return {
+      status: 'inUse',
+      reason: null,
+    }
+  }
+
+  const reason = refusals.get(name)
+
+  if (reason !== undefined) {
+    return {
+      status: 'refused',
+      reason: reason,
+    }
+  }
+
+  return {
+    status: urlsByName.has(name) ? 'notLoaded' : 'missing',
+    reason: null,
+  }
 }

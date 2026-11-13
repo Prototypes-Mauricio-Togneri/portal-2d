@@ -1,14 +1,16 @@
 import {Direction} from '@/game/direction'
-import {NO_ELEMENT} from '@/game/rules/compiled_chamber'
+import {type CompiledChamber, NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
 import type {BlockableKind, ElementKind} from '@/game/rules/element_registry'
 import type {RulesState} from '@/game/rules/rules_state'
-import {STRIP_TILE, type SpriteName} from '@/game/sprite_set'
+import {STRIP_TILE, type SpriteName, TILE_QUARTERS, type TileQuarter} from '@/game/sprite_set'
 import type {TilePainter} from '@/game/tile_painter'
 
 // How each element type is drawn by the renderer, looked up by kind: the
 // rules can't touch the canvas, so drawing stays on the browser side. Each
 // element is drawn as its sprite for its state (docs/sprites.md), switched
-// off as well as on
+// off as well as on. Walls and open ditches join their neighbours, quarter
+// by quarter, and doors, the exit and fizzlers are turned to the walls
+// beside them
 
 /**
  * Draws every element of one type in a state.
@@ -19,6 +21,55 @@ export type ElementDrawing = (painter: TilePainter, state: RulesState) => void
  * Which way a laser runs: H for horizontal, V for vertical.
  */
 type LaserOrientation = 'H' | 'V'
+
+/**
+ * Whether a tile counts as part of a joined mass: a wall, or an open ditch.
+ */
+type JoinTest = (x: number, y: number) => boolean
+
+/**
+ * The element types that fill a gap in a wall, turned to the walls beside them.
+ */
+type GapKind = 'door' | 'exit' | 'fizzler'
+
+/**
+ * Where the neighbours of a quarter lie: the column step to the tile beside
+ * its corner left or right, and the row step to the one above or below. The
+ * diagonal between them is both steps.
+ */
+type QuarterCorner = {
+  readonly dx: number // Column step: -1 for a left quarter, 1 for a right one
+  readonly dy: number // Row step: 1 for a top quarter, -1 for a bottom one (rows grow upwards)
+}
+
+/** Where each quarter's corner points */
+const QUARTER_CORNERS: Readonly<Record<TileQuarter, QuarterCorner>> = {
+  topLeft: {
+    dx: -1,
+    dy: 1,
+  },
+  topRight: {
+    dx: 1,
+    dy: 1,
+  },
+  bottomLeft: {
+    dx: -1,
+    dy: -1,
+  },
+  bottomRight: {
+    dx: 1,
+    dy: -1,
+  },
+}
+
+/** Element types that, besides walls and the chamber's edge, line a gap that a door, the exit or a fizzler fills */
+const GAP_SIDE_KINDS: readonly PlacedKind[] = [
+  'door',
+  'exit',
+  'fizzler',
+  'barrier',
+  'ditch',
+]
 
 /** How a laser's sprite, drawn running left to right, is turned for each orientation */
 const LASER_TURNS: Readonly<Record<LaserOrientation, Direction>> = {
@@ -36,6 +87,79 @@ function readOrientation(text: string | undefined): LaserOrientation | null {
 }
 
 /**
+ * Picks the strip tile a quarter of a joined tile is taken from, by the two
+ * tiles beside its corner and the diagonal between them (docs/sprites.md,
+ * joins).
+ * @param joins - Whether a tile is part of the same mass
+ * @param x - The tile's column
+ * @param y - The tile's row
+ * @param tileQuarter - The quarter
+ * @returns The strip tile, from STRIP_TILE
+ */
+function stripTileFor(joins: JoinTest, x: number, y: number, tileQuarter: TileQuarter): number {
+  const corner = QUARTER_CORNERS[tileQuarter]
+  const vertical = joins(x, y + corner.dy)
+  const horizontal = joins(x + corner.dx, y)
+
+  if (!vertical && !horizontal) {
+    return STRIP_TILE.lone
+  }
+
+  if (!vertical) {
+    return STRIP_TILE.horizontalRun
+  }
+
+  if (!horizontal) {
+    return STRIP_TILE.verticalRun
+  }
+
+  return joins(x + corner.dx, y + corner.dy) ? STRIP_TILE.solid : STRIP_TILE.innerCorners
+}
+
+/**
+ * Draws a tile of a joined mass, each quarter from the strip tile its
+ * neighbours pick.
+ * @param painter - Paints on the canvas
+ * @param name - The strip's sprite
+ * @param joins - Whether a tile is part of the same mass
+ * @param x - Column
+ * @param y - Row
+ */
+function drawJoinedTile(painter: TilePainter, name: SpriteName, joins: JoinTest, x: number, y: number): void {
+  for (const tileQuarter of TILE_QUARTERS) {
+    painter.drawStripQuarter(name, stripTileFor(joins, x, y, tileQuarter), tileQuarter, x, y)
+  }
+}
+
+/**
+ * Whether a tile lines a gap: a wall, outside the chamber, or a door, the
+ * exit, a fizzler, a barrier or a ditch, in any state.
+ * @param chamber - The chamber
+ * @param x - Column
+ * @param y - Row
+ * @returns True when it lines a gap
+ */
+function linesGap(chamber: CompiledChamber, x: number, y: number): boolean {
+  return chamber.isWall(x, y) || GAP_SIDE_KINDS.some((kind) => chamber.elementAt(kind, x, y) !== NO_ELEMENT)
+}
+
+/**
+ * Which way a door, the exit or a fizzler is turned: its sprite is drawn
+ * with the walls on its left and right, and given a quarter turn when more
+ * of what lines the gap lies above and below it than left and right.
+ * @param chamber - The chamber
+ * @param x - The element's column
+ * @param y - The element's row
+ * @returns Up when drawn as it is, right for a quarter turn
+ */
+function gapTurn(chamber: CompiledChamber, x: number, y: number): Direction {
+  const across = Number(linesGap(chamber, x - 1, y)) + Number(linesGap(chamber, x + 1, y))
+  const along = Number(linesGap(chamber, x, y + 1)) + Number(linesGap(chamber, x, y - 1))
+
+  return (along > across) ? Direction.RIGHT : Direction.UP
+}
+
+/**
  * Builds a drawing for a type whose elements can be blocked: each element's
  * sprite for whether it is.
  * @param kind - The element type
@@ -43,7 +167,7 @@ function readOrientation(text: string | undefined): LaserOrientation | null {
  * @param unblockedSprite - Its sprite while not
  * @returns The drawing
  */
-function blockableDrawing(kind: Exclude<BlockableKind, 'ditch' | 'laser'>, blockedSprite: SpriteName, unblockedSprite: SpriteName): ElementDrawing {
+function blockableDrawing(kind: Exclude<BlockableKind, 'ditch' | 'laser' | GapKind>, blockedSprite: SpriteName, unblockedSprite: SpriteName): ElementDrawing {
   return (painter, state) => {
     const chamber = state.chamber
 
@@ -51,6 +175,26 @@ function blockableDrawing(kind: Exclude<BlockableKind, 'ditch' | 'laser'>, block
       const position = chamber.positionOf(kind, i)
 
       painter.drawSprite(state.isBlocked(kind, i) ? blockedSprite : unblockedSprite, position.x, position.y)
+    }
+  }
+}
+
+/**
+ * Builds a drawing for a type that fills a gap in a wall: each element's
+ * sprite for whether it is blocked, turned to the walls beside it.
+ * @param kind - The element type
+ * @param blockedSprite - Its sprite while blocked (a door or the exit closed, a fizzler on)
+ * @param unblockedSprite - Its sprite while not
+ * @returns The drawing
+ */
+function gapDrawing(kind: GapKind, blockedSprite: SpriteName, unblockedSprite: SpriteName): ElementDrawing {
+  return (painter, state) => {
+    const chamber = state.chamber
+
+    for (let i = 0; i < chamber.countOf(kind); i++) {
+      const position = chamber.positionOf(kind, i)
+
+      painter.drawSprite(state.isBlocked(kind, i) ? blockedSprite : unblockedSprite, position.x, position.y, gapTurn(chamber, position.x, position.y))
     }
   }
 }
@@ -74,37 +218,43 @@ function drawArrows(painter: TilePainter, state: RulesState): void {
 }
 
 /**
- * Draws every wall tile inside the chamber, each on its own, as the wall
- * strip's lone tile.
+ * Draws every wall tile inside the chamber, joined to the walls around it;
+ * outside the chamber counts as wall.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  */
 function drawWalls(painter: TilePainter, state: RulesState): void {
   const chamber = state.chamber
+  const joins: JoinTest = (x, y) => chamber.isWall(x, y)
 
   for (let x = 0; x < chamber.width; x++) {
     for (let y = 0; y < chamber.height; y++) {
       if (chamber.isWall(x, y)) {
-        painter.drawStripTile('wall', STRIP_TILE.lone, x, y)
+        drawJoinedTile(painter, 'wall', joins, x, y)
       }
     }
   }
 }
 
 /**
- * Draws the ditches: an open one on its own, as the ditch strip's lone tile,
- * and a bridged one.
+ * Draws the ditches: an open one joined to the open ditches around it, and
+ * a bridged one on its own, which ends the pit.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  */
 function drawDitches(painter: TilePainter, state: RulesState): void {
   const chamber = state.chamber
+  const joins: JoinTest = (x, y) => {
+    const index = chamber.elementAt('ditch', x, y)
+
+    return (index !== NO_ELEMENT) && state.isBlocked('ditch', index)
+  }
 
   for (let i = 0; i < chamber.countOf('ditch'); i++) {
     const position = chamber.positionOf('ditch', i)
 
     if (state.isBlocked('ditch', i)) {
-      painter.drawStripTile('ditch', STRIP_TILE.lone, position.x, position.y)
+      drawJoinedTile(painter, 'ditch', joins, position.x, position.y)
     } else {
       painter.drawSprite('ditch_bridged', position.x, position.y)
     }
@@ -190,10 +340,10 @@ export const ELEMENT_DRAWINGS: Readonly<Record<ElementKind, ElementDrawing>> = {
   barrier: blockableDrawing('barrier', 'barrier_raised', 'barrier_lowered'),
   ditch: drawDitches,
   laser: drawLasers,
-  door: blockableDrawing('door', 'door_closed', 'door_open'),
-  exit: blockableDrawing('exit', 'exit_closed', 'exit_open'),
+  door: gapDrawing('door', 'door_closed', 'door_open'),
+  exit: gapDrawing('exit', 'exit_closed', 'exit_open'),
   button: drawButtons,
   switch: drawSwitches,
   box: drawBoxes,
-  fizzler: blockableDrawing('fizzler', 'fizzler_on', 'fizzler_off'),
+  fizzler: gapDrawing('fizzler', 'fizzler_on', 'fizzler_off'),
 }

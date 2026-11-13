@@ -2,7 +2,7 @@
 
 The art the chamber is drawn from: one image file per sprite, which the game composes tile by tile, choosing each by its element's state and its neighbours. This is the spec to draw them to.
 
-The game draws the chamber and the home menu's map from these files. A sprite whose file is missing, can't be decoded or has the wrong size is drawn as a placeholder made by code (the original flat drawing, switched-off elements faded) instead, so the sprites can arrive one at a time. Stage 03's visual rework (`todo/03_look_and_sound.md`, Phase B) is still adding the rest of this spec: until then, every wall and open ditch is drawn as its strip's lone tile, doors, the exit and fizzlers aren't turned to their walls, and there is no shadow or glow. In `npm run dev`, a file in the folder that isn't a sprite's, or of the wrong size, is logged as an error in the browser's console.
+The game draws the chamber and the home menu's map from these files. A sprite whose file is missing, can't be decoded or has the wrong size is drawn as a placeholder made by code (the original flat drawing, switched-off elements faded) instead, so the sprites can arrive one at a time. Stage 03's visual rework (`todo/03_look_and_sound.md`, Phase B) is still adding the rest of this spec: until then, nothing glows. In `npm run dev`, a file in the folder that isn't a sprite's, or of the wrong size, is logged as an error in the browser's console.
 
 ## Files
 
@@ -22,7 +22,7 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 
 - **View:** straight down, no perspective. A wall shows its top, never a front face.
 - **Light:** from directly overhead, so every side of an object is shaded the same: no highlight on one side, no shadow on the other.
-- **Shadows:** don't draw a shadow falling outside the object. The game adds one shared drop shadow, made from each sprite's shape, under what stands raised (walls, raised barriers, closed doors and the exit, switches, boxes, the subject).
+- **Shadows:** don't draw a shadow falling outside the object. The game adds one shared drop shadow, made from each sprite's shape, under what stands raised (walls, raised barriers, closed doors, the closed exit, switches, boxes, the subject): a soft dark rim all round, with no offset, since the light is overhead. Walls cast theirs as one mass, so a run of walls has one shadow along its open sides.
 - **Readable small:** every sprite must still read at 40 px. On and off must differ at a glance, and the subject's facing must show from its shape alone.
 - **Colours:** the ones that carry a meaning match the palette (`src/game/palette.ts`), since the menus use the same colours. Keep blue and orange off every other sprite, so nothing is mistaken for a portal. Changing one of these means redrawing the sprites that use it, along with its CSS token.
 
@@ -44,7 +44,7 @@ A sprite with a direction is drawn once, one way, and the game turns it in quart
 | 2 | `arrow` | Pointing up: the one way the subject may enter its tile | To the arrow's way |
 | 3 | `portal_blue`, `portal_orange` and their glows | On the top edge of its wall tile, opening up onto the tile above | To the side of the wall it opens on |
 | 4 | `laser_on`, `laser_off`, `laser_glow` | A beam running left to right through the tile's middle, touching both side edges, so neighbouring laser tiles make one beam | A quarter turn for a vertical laser; two lasers crossing on a tile are both drawn |
-| 5 | `door_*`, `exit_*`, `fizzler_*` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when the walls beside it are above and below it |
+| 5 | `door_*`, `exit_*`, `fizzler_*` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when more of what lines the gap lies above and below it than left and right: walls, the chamber's edge, doors, the exit, fizzlers, barriers and ditches |
 
 ## Joins
 
@@ -131,4 +131,11 @@ The three glows are drawn last, over everything, and added to the colours beneat
 
 ## Trying a sprite
 
-Drop the file into the folder, and `npm run dev` picks it up. Once Phase B's gallery is built, it shows each sprite in every state and join, at several sizes, and can save any placeholder as a PNG to draw over.
+Drop the file into the folder, and `npm run dev` picks it up. The sprite gallery, at `/src/dev/sprite_gallery.html` in `npm run dev`, reloads by itself when a file lands and shows:
+
+- each sprite as the game has it, at full size on a checkerboard, with its size and whether its file is in use, missing or refused (and why); a placeholder can be saved as a PNG of its file's size to draw over;
+- a small chamber with every element, drawn by the game with everything on and with everything off, the subject carrying a box and both portals open;
+- every way walls and open ditches meet;
+- each chamber at its start.
+
+The chamber drawings come at the smallest tile the home menu's map draws, then at 40, 100 and 230 px, each canvas pixel on one screen pixel.
