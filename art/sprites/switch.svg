@@ -1,72 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <!--
-    The switch (docs/sprites.md), used with the interact key: a grey steel
-    box seen from above, its bevelled body round an inset face with a dark
-    display, a red indicator lit on its left, and three grip stripes below.
-    It has no on or off. It stands raised, so the game adds its shadow.
+    A switch (docs/sprites.md): a squat round steel post with a
+    solid yellow top, nothing else. Its one bright colour makes it the thing
+    to use in a chamber of greys.
   -->
   <defs>
-    <!-- The body's bevel: darker at its outer edge, lit towards the face -->
-    <linearGradient id="bevel" gradientUnits="userSpaceOnUse" x1="0" y1="51" x2="0" y2="65">
-      <stop offset="0" stop-color="rgb(136, 140, 147)"/>
-      <stop offset="1" stop-color="rgb(204, 208, 214)"/>
-    </linearGradient>
+    <!-- The post's rim: darker at its outer edge -->
+    <radialGradient id="rim" gradientUnits="userSpaceOnUse" cx="128" cy="128" r="76">
+      <stop offset="0.8" stop-color="rgb(104, 108, 115)"/>
+      <stop offset="1" stop-color="rgb(66, 69, 75)"/>
+    </radialGradient>
 
-    <!-- Fine grain on the steel -->
-    <filter id="grain" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
-      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" seed="9" result="noise"/>
-      <feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.08"/>
-      <feComposite in2="SourceGraphic" operator="in"/>
-    </filter>
-
-    <!-- The indicator's soft red light -->
-    <filter id="indicatorGlow" x="-1" y="-1" width="3" height="3" color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="4"/>
-    </filter>
-
-    <clipPath id="body">
-      <rect x="51" y="51" width="154" height="154" rx="13"/>
-    </clipPath>
-    <clipPath id="display">
-      <rect x="82" y="84" width="92" height="34" rx="4"/>
-    </clipPath>
-
-    <!-- One side of the body's bevel, along the top, mitred at its ends -->
-    <g id="bevelSide">
-      <polygon points="51,51 205,51 191,65 65,65" fill="url(#bevel)"/>
-      <polygon points="63,63 193,63 191,65 65,65" fill="rgb(226, 229, 234)"/>
-    </g>
-
-    <!-- One grip stripe, slanting up to the right -->
-    <polygon id="stripe" points="80,172 98,172 120,140 102,140" fill="rgb(96, 99, 106)" stroke="rgb(196, 200, 206)" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- The cap: yellow, lit in its middle, deeper at its edge -->
+    <radialGradient id="cap" gradientUnits="userSpaceOnUse" cx="128" cy="128" r="60">
+      <stop offset="0.5" stop-color="rgb(250, 208, 70)"/>
+      <stop offset="1" stop-color="rgb(222, 172, 28)"/>
+    </radialGradient>
   </defs>
 
-  <!-- The body: outline, top, then its bevel on every side -->
-  <rect x="48" y="48" width="160" height="160" rx="16" fill="rgb(60, 62, 67)"/>
-  <rect x="51" y="51" width="154" height="154" rx="13" fill="rgb(178, 182, 189)"/>
-  <g clip-path="url(#body)">
-    <use href="#bevelSide"/>
-    <use href="#bevelSide" transform="rotate(90 128 128)"/>
-    <use href="#bevelSide" transform="rotate(180 128 128)"/>
-    <use href="#bevelSide" transform="rotate(270 128 128)"/>
-  </g>
+  <!-- The post, its outline and lit lip -->
+  <circle cx="128" cy="128" r="78" fill="rgb(34, 36, 40)"/>
+  <circle cx="128" cy="128" r="75" fill="url(#rim)"/>
+  <circle cx="128" cy="128" r="70" fill="none" stroke="rgb(140, 144, 151)" stroke-width="2"/>
 
-  <!-- The inset face -->
-  <rect x="68" y="68" width="120" height="120" rx="7" fill="rgb(96, 99, 106)"/>
-  <rect x="70" y="70" width="116" height="116" rx="6" fill="rgb(150, 154, 161)"/>
-  <rect x="70" y="70" width="116" height="116" rx="6" fill="rgb(150, 154, 161)" filter="url(#grain)"/>
-
-  <!-- The display, its red indicator lit on the left -->
-  <rect x="80" y="82" width="96" height="38" rx="5" fill="rgb(206, 210, 216)"/>
-  <rect x="82" y="84" width="92" height="34" rx="4" fill="rgb(34, 36, 40)"/>
-  <g clip-path="url(#display)">
-    <rect x="86" y="88" width="24" height="26" rx="2" fill="rgb(220, 60, 50)" opacity="0.9" filter="url(#indicatorGlow)"/>
-    <rect x="88" y="90" width="20" height="22" rx="2" fill="rgb(220, 60, 50)"/>
-    <rect x="92" y="94" width="8" height="14" rx="1.5" fill="rgb(255, 150, 140)"/>
-  </g>
-
-  <!-- Three grip stripes -->
-  <use href="#stripe"/>
-  <use href="#stripe" transform="translate(28 0)"/>
-  <use href="#stripe" transform="translate(56 0)"/>
+  <!-- The cap -->
+  <circle cx="128" cy="128" r="62" fill="rgb(120, 92, 16)"/>
+  <circle cx="128" cy="128" r="59" fill="url(#cap)"/>
 </svg>

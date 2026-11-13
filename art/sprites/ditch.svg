@@ -1,20 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="256" viewBox="0 0 1280 256">
   <!--
-    The open ditch strip (docs/sprites.md, joins): a pit in the floor, five
+    The open ditch strip (docs/sprites.md, joins), a pit stepping down: five
     256 px tiles, left to right lone, horizontal run, vertical run, inner
-    corners and solid, built like wall.svg. Every tile has the same pit
-    bottom; where the pit meets floor its inner side shows as a band, and
-    where it continues into more pit there is nothing, so a run of pits reads
-    as one. The band is drawn once, along the top edge, and turned to the
-    other sides, so quarters cut from different tiles always meet exactly.
+    corners and solid, built like art/sprites/wall.svg. Three ledges step
+    down from the rim, each darker than the one above, so the eye reads the
+    pit as stairs going down. The band (54 px) is drawn once, along the top
+    edge, and turned to the
+    other sides; the bottom repeats every 128 px, so quarters cut from
+    different tiles always meet exactly.
   -->
   <defs>
-    <!-- The pit's inner side: lit at the rim, darkening down into the pit -->
-    <linearGradient id="side" gradientUnits="userSpaceOnUse" x1="0" y1="5" x2="0" y2="24">
-      <stop offset="0" stop-color="rgb(74, 77, 83)"/>
-      <stop offset="1" stop-color="rgb(42, 44, 48)"/>
+    <!-- The shadow the lowest step casts onto the bottom -->
+    <linearGradient id="shade" gradientUnits="userSpaceOnUse" x1="0" y1="47" x2="0" y2="54">
+      <stop offset="0" stop-color="rgb(0, 0, 0)" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="rgb(0, 0, 0)" stop-opacity="0"/>
     </linearGradient>
-
     <!-- Fine grain, repeating every 128 px, so it matches across every quarter -->
     <filter id="grain" filterUnits="userSpaceOnUse" x="0" y="0" width="1280" height="256" color-interpolation-filters="sRGB">
       <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" seed="13" stitchTiles="stitch" x="0" y="0" width="128" height="128" result="noise"/>
@@ -22,29 +22,37 @@
       <feTile in="speckle" x="0" y="0" width="1280" height="256"/>
     </filter>
 
-    <!-- The pit's side along the top edge, full width: metal rim, lit lip, then the slope -->
+    <!-- The pit's side along the top edge, full width -->
     <g id="band">
-      <rect x="0" y="0" width="256" height="24" fill="url(#side)"/>
-      <rect x="0" y="0" width="256" height="3" fill="rgb(50, 52, 56)"/>
-      <rect x="0" y="3" width="256" height="2" fill="rgb(120, 124, 131)"/>
+      <rect x="0" y="47" width="256" height="7" fill="url(#shade)"/>
+      <rect x="0" y="0" width="256" height="2" fill="rgb(44, 46, 50)"/>
+      <rect x="0" y="2" width="256" height="3" fill="rgb(176, 180, 187)"/>
+      <rect x="0" y="5" width="256" height="10" fill="rgb(150, 154, 161)"/>
+      <rect x="0" y="15" width="256" height="4" fill="rgb(40, 42, 46)"/>
+      <rect x="0" y="19" width="256" height="1.5" fill="rgb(132, 136, 143)"/>
+      <rect x="0" y="20.5" width="256" height="8.5" fill="rgb(100, 104, 111)"/>
+      <rect x="0" y="29" width="256" height="4" fill="rgb(28, 29, 32)"/>
+      <rect x="0" y="33" width="256" height="1.5" fill="rgb(84, 88, 94)"/>
+      <rect x="0" y="34.5" width="256" height="8.5" fill="rgb(60, 63, 68)"/>
+      <rect x="0" y="43" width="256" height="4" fill="rgb(14, 15, 17)"/>
     </g>
 
     <!-- The top side of a lone pit, mitred into the other sides at both ends -->
     <clipPath id="mitre">
-      <polygon points="0,0 256,0 232,24 24,24"/>
+      <polygon points="0,0 256,0 202,54 54,54"/>
     </clipPath>
     <g id="bandMitred">
       <use xlink:href="#band" clip-path="url(#mitre)"/>
     </g>
 
     <!-- The inside corner at the top left, where floor touches only the corner:
-         the left side of the pit above and the top side of the pit to the
-         left meet along the diagonal -->
+         the side of the pit above and the side of the pit to the left meet
+         along the diagonal -->
     <clipPath id="cornerLeftSide">
-      <polygon points="0,0 24,0 24,24"/>
+      <polygon points="0,0 54,0 54,54"/>
     </clipPath>
     <clipPath id="cornerTopSide">
-      <polygon points="0,0 24,24 0,24"/>
+      <polygon points="0,0 54,54 0,54"/>
     </clipPath>
     <g id="innerCorner">
       <g clip-path="url(#cornerLeftSide)">
@@ -54,8 +62,8 @@
     </g>
   </defs>
 
-  <!-- The pit bottom of every tile, a little lighter than it ends up, since the grain greys it -->
-  <rect x="0" y="0" width="1280" height="256" fill="rgb(32, 34, 37)"/>
+  <!-- The pit bottom of every tile -->
+  <rect x="0" y="0" width="1280" height="256" fill="rgb(30, 32, 35)"/>
   <rect x="0" y="0" width="1280" height="256" filter="url(#grain)"/>
 
   <!-- 1. Lone: a side on every edge -->
