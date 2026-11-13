@@ -74,7 +74,7 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 - [x] **Particles when something fizzles** (uses the frontend-design skill). On the fizzler event emitted by 01 (portals cleared, box destroyed). Verify: none with reduced motion.
 - [x] **Check high-DPI again.** 00's sharpness fix still holds with every new layer, and sprites stay sharp up to their 256 px. Verify: 200 % browser zoom and a high-DPI screen.
 - [ ] **The art.** The author replaces the placeholders, file by file, following `docs/sprites.md`. Verify: each new file checked in the gallery and in a chamber; no placeholder left.
-  - [ ] 1. `floor.png`
+  - [x] 1. `floor.png`
   - [ ] 2. `wall_1.png` (wall strip: lone)
   - [ ] 3. `wall_2.png` (wall strip: horizontal run)
   - [ ] 4. `wall_3.png` (wall strip: vertical run)
