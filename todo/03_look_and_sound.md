@@ -69,9 +69,9 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 - [x] **Compositor** (uses the frontend-design skill). The renderer draws every element as its sprite for its state, off states included. It turns the subject, arrows, portals and vertical lasers, draws a box on a button at half size and a carried box at half size in front of the subject, and shrinks each sprite once per tile size and keeps it. The menu map draws the same way. The old flat drawing goes (no blueprint mode). Verify: `npm run verify`; every chamber played through in the browser, glide and portal crossings included; the menu map.
 - [x] **Gallery.** A dev-only page under `src/dev/`, served by `npm run dev` and never built: every sprite in every state, every wall and ditch join, at 40, 100 and 230 px and at the menu map's size, and each chamber. It saves any placeholder as a PNG to draw over. Verify: it opens in `npm run dev`, and `dist/` has none of it.
 - [x] **Joins.** Walls and open ditches built from quarter tiles of their strips by their neighbours, outside the chamber counting as wall; doors, the exit and fizzlers turned to the walls beside them. Verify: the gallery shows every combination without a seam.
-- [ ] **Depth** (uses the frontend-design skill). One shared drop shadow, made from each raised sprite's shape. The floor, arrows, walls and the walls' shadow are drawn once per chamber and tile size and reused every frame. Verify: the render profile holds 60 fps on chamber 3 at pixel ratio 1 and 2.
-- [ ] **Ambient life** (uses the frontend-design skill; replaces the planned "Laser glow"). The laser and portal glows are drawn last, added to what lies beneath, their strength pulsing; fizzlers shimmer. The level redraws every frame while anything glows or shimmers. With `prefers-reduced-motion` the glow holds steady and idle frames draw nothing, as today. Verify: 60 fps on the largest chamber at `devicePixelRatio` 2 on the chamber screen; nothing moves with reduced motion.
-- [ ] **Particles when something fizzles** (uses the frontend-design skill). On the fizzler event emitted by 01 (portals cleared, box destroyed). Verify: none with reduced motion.
+- [x] **Depth** (uses the frontend-design skill). One shared drop shadow, made from each raised sprite's shape. The floor, arrows, walls and the walls' shadow are drawn once per chamber and tile size and reused every frame. Verify: the render profile holds 60 fps on chamber 3 at pixel ratio 1 and 2.
+- [x] **Ambient life** (uses the frontend-design skill; replaces the planned "Laser glow"). The laser and portal glows are drawn last, added to what lies beneath, their strength pulsing; fizzlers shimmer. The level redraws every frame while anything glows or shimmers. With `prefers-reduced-motion` the glow holds steady and idle frames draw nothing, as today. Verify: 60 fps on the largest chamber at `devicePixelRatio` 2 on the chamber screen; nothing moves with reduced motion.
+- [x] **Particles when something fizzles** (uses the frontend-design skill). On the fizzler event emitted by 01 (portals cleared, box destroyed). Verify: none with reduced motion.
 - [ ] **Check high-DPI again.** 00's sharpness fix still holds with every new layer, and sprites stay sharp up to their 256 px. Verify: 200 % browser zoom and a high-DPI screen.
 - [ ] **The art.** The author replaces the placeholders, file by file, following `docs/sprites.md`. Verify: each new file checked in the gallery and in a chamber; no placeholder left.
 - [ ] **Docs for the new look.** `AGENTS.md` (the frozen-drawing rule replaced, the layout, the loading screen handing sprites over, the sprites' colours matched by hand to the palette), `docs/elements.md` (adding an element needs its sprites in `docs/sprites.md` and a placeholder) and stage 04's notes. Verify: a read-through matches the behaviour.
@@ -141,4 +141,19 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
   |---|---|---|---|---|---|
   | 1 | 1 | 1127 × 833 | 0.6 / 0.9 / 1.0 ms (median 0.6–0.7, max 1.0–1.2) | 16.7 / 16.7 ms (p95 16.7–16.8) | 0 |
 
-  Drawing every frame on the real screen still takes about 4 % of a frame, and no frame missed a refresh. Pixel ratio 2 on the real screen is not measured yet: it needs DevTools device emulation or Chrome's `--force-device-scale-factor=2`.
+  Drawing every frame on the real screen still takes about 4 % of a frame, and no frame missed a refresh.
+
+  Depth and ambient life check (2026-11-13, the "Depth" and "Ambient life" steps): same machine and display, with every sprite still a placeholder plus three temporary glow files (the laser's and both portals', 384 px, removed afterwards), since a glow with no file isn't drawn. First the render profile: chamber 3's settled start, its backdrop copied, its ten laser tiles glowing and its two fizzlers shimmering, every frame. Median of 3 runs of 600 frames each, the range in brackets where runs differed:
+
+  | # | Pixel ratio | Canvas | Draw time median / p95 / max | Frame interval median / p95 | Frames skipping a refresh |
+  |---|---|---|---|---|---|
+  | 1 | 1 | 1357 × 1003 | 0.8 / 1.2 / 1.7 ms (max 1.6–4.8) | 16.7 / 16.7 ms (p95 16.7–16.8) | 0 |
+  | 2 | 2 | 2737 × 2023 | 0.8 / 1.3 / 2.1 ms (p95 1.2–1.3, max 1.6–3.0) | 16.7 / 16.7 ms (p95 16.7–16.8) | 0 |
+
+  Then chamber 3 on the chamber screen at pixel ratio 2, both portals open, so the level drew every frame for the glows and the shimmer alone. The page's `devicePixelRatio` was made to read 2 before the chamber opened, so the canvas was drawn at twice its size and shown at half, as on a dense screen (maximized window, 1920 × 910 page area). Time per frame is everything the main thread runs in a frame, as in the recheck above. Median of 3 runs of 659 frames each:
+
+  | # | Pixel ratio | Canvas | Time per frame median / p95 / max | Frame interval median / p95 | Frames skipping a refresh |
+  |---|---|---|---|---|---|
+  | 1 | 2 | 2277 × 1683 | 1.0 / 1.6 / 2.2 ms (p95 1.5–1.6, max 2.0–2.6) | 16.7 / 16.7 ms (p95 16.7–16.8) | 0 |
+
+  Every effect so far takes about 6 % of a frame at pixel ratio 2, and no frame missed a refresh, so the renderer stays on the 2D canvas (Go/no-go points). With the page's reduced-motion query made to match, chamber 3 with its lasers and fizzlers on and a portal open drew nothing over 3 idle seconds, and a move drew one frame, with no glide. A first try, with the browser window behind another, ran idle frames at 30 Hz and drawn ones at 20 Hz; the render profile took that run as valid, since it only rejects idle frames slower than 50 ms.

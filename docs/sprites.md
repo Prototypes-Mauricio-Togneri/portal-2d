@@ -118,10 +118,15 @@ The game draws from the bottom up, each later row over the earlier ones:
 | 8 | Subject | `subject` |
 | 9 | Fields | `fizzler_*` |
 | 10 | Glow | `laser_glow`, `portal_*_glow` |
+| 11 | Fizzle | `portal_*`, `box`, in pieces (see [fizzle](#fizzle)) |
 
 ## Glow
 
 The three glows are drawn last, over everything, and added to the colours beneath, so they brighten and never darken. Their strength pulses slowly, all together, between 60 % and full. Draw only the light, at full strength: colour fading to transparent, with no beam or portal in it. A missing glow file just means no glow. Fizzlers that are on shimmer by code, from `fizzler_on` itself: a glint of the same sprite, added over it, travels along the field. With reduced motion, and in the home menu's map and the gallery, the glow holds steady at 80 % and nothing shimmers.
+
+## Fizzle
+
+When the subject walks into a fizzler that is on, each portal it loses and a box it carries break up: the game cuts the sprite, as last drawn, into small square pieces, which drift out from its middle, shrink and fade in about 0.6 s, over everything. There is nothing extra to draw, but the pieces show the sprite's own pixels, so a portal or box drawn as a thin outline breaks into very few. With reduced motion nothing breaks up.
 
 ## Not in the set yet
 

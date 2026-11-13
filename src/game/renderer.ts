@@ -1,4 +1,5 @@
 import {drawFizzlerShimmer, drawLaserGlows, ELEMENT_DRAWINGS, glowStrength} from '@/game/element_drawings'
+import type {FizzleParticles} from '@/game/fizzle_particles'
 import type {CompiledChamber} from '@/game/rules/compiled_chamber'
 import {DRAW_LAYERS, type DrawLayer} from '@/game/rules/draw_layer'
 import {ELEMENT_REGISTRY} from '@/game/rules/element_registry'
@@ -21,7 +22,7 @@ type Backdrop = {
 }
 
 /** Each portal's sprite */
-const PORTAL_SPRITES: Readonly<Record<PortalColor, SpriteName>> = {
+export const PORTAL_SPRITES: Readonly<Record<PortalColor, SpriteName>> = {
   [PortalColor.BLUE]: 'portal_blue',
   [PortalColor.ORANGE]: 'portal_orange',
 }
@@ -33,7 +34,7 @@ const PORTAL_GLOWS: Readonly<Record<PortalColor, SpriteName>> = {
 }
 
 /** How far ahead of the subject's middle a carried box is drawn, the way the subject faces, in tiles */
-const CARRIED_BOX_AHEAD = 0.25
+export const CARRIED_BOX_AHEAD = 0.25
 
 /** The bottom layers, which never change while a chamber is played: drawn once as its backdrop, never each frame */
 const BACKDROP_LAYERS: ReadonlySet<DrawLayer> = new Set<DrawLayer>([
@@ -118,9 +119,10 @@ export function hasAmbientLife(state: RulesState): boolean {
  * sized to fit the chamber in the screen area, and row 0 is at the bottom.
  * Part way through a step, the subject and a box it carries are drawn at the
  * subject's pose; the rest is drawn as the state after the step. Last, over
- * everything, fizzlers that are on shimmer, and the lasers' and portals'
- * glows are added to what lies beneath, pulsing; at no time given, nothing
- * shimmers and the glows hold steady.
+ * everything, fizzlers that are on shimmer, the lasers' and portals' glows
+ * are added to what lies beneath, pulsing, and what a fizzle took breaks up;
+ * at no time given, nothing shimmers, the glows hold steady and nothing
+ * breaks up.
  */
 export class Renderer {
   private readonly painter: TilePainter // Paints the tiles
@@ -257,12 +259,13 @@ export class Renderer {
 
   /**
    * Draws a whole frame, back to front: the backdrop, every layer above it,
-   * then the shimmer and the glows.
+   * then the shimmer, the glows and the pieces of what a fizzle took.
    * @param state - The state to draw
    * @param transition - The step being drawn, ending on the state drawn, or null (the default) to draw the state as it is
    * @param time - Now, in milliseconds on the frame clock, for what moves with time alone, or null (the default) to hold it still
+   * @param fizzle - What a fizzle took, breaking up, or null (the default) when nothing can
    */
-  render(state: RulesState, transition: StepTransition | null = null, time: number | null = null): void {
+  render(state: RulesState, transition: StepTransition | null = null, time: number | null = null, fizzle: FizzleParticles | null = null): void {
     // A canvas not yet sized for a chamber has nothing to draw
     if (this.painter.blockSize <= 0) {
       return
@@ -281,5 +284,9 @@ export class Renderer {
     }
 
     this.drawGlows(state, glowStrength(time))
+
+    if ((time !== null) && (fizzle !== null)) {
+      fizzle.draw(this.painter, time)
+    }
   }
 }

@@ -1,4 +1,5 @@
 import type {ChamberData} from '@/game/chamber_data'
+import {FizzleParticles} from '@/game/fizzle_particles'
 import {GameEvent} from '@/game/game_event'
 import {GameKey, type HistoryKey} from '@/game/game_key'
 import type {FrameInput} from '@/game/frame_input'
@@ -22,10 +23,11 @@ import {StepAnimation} from '@/game/step_animation'
  * rules' step, plays a sound for each thing that happened and redraws when
  * the state changed. A step that changes the state is then drawn over a few
  * frames, redrawn every frame until it ends, paused or not; the next press
- * ends it at once. While anything glows or shimmers, every frame is drawn
- * too. Nothing is drawn over time when the player asks for reduced motion:
- * the glows hold steady. Undo and redo bring back earlier states from the run's
- * history, silently and at once. Every press it acts on is logged, so the run
+ * ends it at once. When a step fizzles, what it took breaks up over a few
+ * frames, which no press waits for. While anything glows, shimmers or breaks
+ * up, every frame is drawn too. Nothing is drawn over time when the player
+ * asks for reduced motion: the glows hold steady. Undo and redo bring back
+ * earlier states from the run's history, silently and at once. Every press it acts on is logged, so the run
  * since the last load can be replayed without a browser.
  */
 export class Level {
@@ -73,6 +75,7 @@ export class Level {
   private undoCount = 0 // Steps taken back with undo since the last load
   private readonly renderer: Renderer // Draws the state
   private readonly animation = new StepAnimation() // The step being drawn over a few frames, if any
+  private readonly fizzle = new FizzleParticles() // What the latest fizzle took, breaking up over a few frames, if anything
   private frameTime = 0 // The latest frame's time, in milliseconds on the frame clock; redraws outside a frame use it, so a step being drawn never goes back
   private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time something could be drawn over time
   private ambientDrawn = false // Whether the latest frame was drawn for what moves with time alone, so the frame after it ends draws it still
@@ -127,6 +130,7 @@ export class Level {
     this.portalCount = 0
     this.undoCount = 0
     this.animation.finish()
+    this.fizzle.clear()
 
     this.playEvents(start.events)
 
@@ -272,13 +276,14 @@ export class Level {
 
   /**
    * Draws the current state, part way through the step being drawn, if any,
-   * with what moves with time alone at this time, or held still when the
-   * player asks for reduced motion.
+   * with what moves with time alone at this time, what a fizzle took
+   * breaking up included, or held still when the player asks for reduced
+   * motion.
    * @param time - Now, in milliseconds on the frame clock
    */
   private render(time: number): void {
     if (this.state !== null) {
-      this.renderer.render(this.state, this.animation.transitionAt(time), this.reducedMotion.matches ? null : time)
+      this.renderer.render(this.state, this.animation.transitionAt(time), this.reducedMotion.matches ? null : time, this.fizzle)
     }
   }
 
@@ -341,8 +346,8 @@ export class Level {
   /**
    * Runs one step of the rules for a press, records it in the history and
    * the log, counts the move, starts drawing the step when it changed the
-   * state and plays the sounds of what happened. Nothing runs once the
-   * chamber is completed.
+   * state, and what it took breaking up when it fizzled, and plays the
+   * sounds of what happened. Nothing runs once the chamber is completed.
    * @param chamber - The chamber being played
    * @param state - The state before the step
    * @param press - The press, one key and whether the turn key was held
@@ -373,6 +378,10 @@ export class Level {
       this.animation.start(state, next, result.events, time)
     }
 
+    if (result.events.includes(GameEvent.FIZZLED) && !this.reducedMotion.matches) {
+      this.fizzle.start(state, next, time)
+    }
+
     this.playEvents(result.events)
 
     if (next.completed) {
@@ -383,8 +392,9 @@ export class Level {
   }
 
   /**
-   * Undoes or redoes a step, silently and at once, and logs the press.
-   * Nothing can be undone once the chamber is completed.
+   * Undoes or redoes a step, silently and at once, ending anything a fizzle
+   * took breaking up, and logs the press. Nothing can be undone once the
+   * chamber is completed.
    * @param state - The state now
    * @param key - Undo or redo
    * @returns Whether a step was undone or redone
@@ -403,6 +413,7 @@ export class Level {
     }
 
     this.state = restored
+    this.fizzle.clear()
 
     if (key === GameKey.UNDO) {
       this.undoCount++
@@ -459,9 +470,9 @@ export class Level {
       stateUpdated = this.update(delta, this.input, time)
     }
 
-    // So does anything that glows or shimmers, paused or not, and the first
-    // frame after it stops, which draws it still
-    const ambient = (this.state !== null) && !this.reducedMotion.matches && hasAmbientLife(this.state)
+    // So does anything that glows, shimmers or breaks up, paused or not, and
+    // the first frame after it stops, which draws it still
+    const ambient = (this.state !== null) && !this.reducedMotion.matches && (hasAmbientLife(this.state) || this.fizzle.isRunningAt(time))
 
     if (stateUpdated || wasAnimating || ambient || this.ambientDrawn) {
       this.render(time)

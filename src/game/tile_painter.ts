@@ -40,6 +40,27 @@ const TURNS: Readonly<Record<Direction, QuarterTurn>> = {
 }
 
 /**
+ * Where one piece of a sprite breaking up is drawn, in the sprite's own
+ * frame, as drawn facing up: how far it has moved from its place, how large
+ * and how opaque it is.
+ */
+export type PiecePlacement = {
+  readonly dx: number // How far it has moved right, in tiles
+  readonly dy: number // How far it has moved down, in tiles
+  readonly scale: number // Its size, as a share of its own
+  readonly alpha: number // Its opacity, from 0 (gone) to 1
+}
+
+/**
+ * Places one piece of a sprite breaking up.
+ * @param offsetX - How far right of the sprite's middle the piece's own middle lies, in tiles, as drawn facing up
+ * @param offsetY - How far below it, in tiles
+ * @param index - The piece's number, counted row by row from the top left
+ * @returns Where it is drawn, or null to leave it out
+ */
+export type PiecePlacer = (offsetX: number, offsetY: number, index: number) => PiecePlacement | null
+
+/**
  * Paints the chamber's sprites onto a canvas for the renderer. Tiles are
  * square, sized to fit the chamber in the screen area, and row 0 is at the
  * bottom. Each sprite is drawn shrunk to the tile size (sprite_scaling), its
@@ -278,6 +299,69 @@ export class TilePainter {
     const centerY = this.canvas.height - ((y + 0.5 + (delta.dy * ahead)) * this.tileSize)
 
     this.drawSized(name, Math.round(centerX - (size / 2)), Math.round(centerY - (size / 2)), size, way)
+  }
+
+  /**
+   * Draws a sprite broken into square pieces, its overhang too, each placed
+   * on its own: a sprite coming apart. Each piece left where it was redraws
+   * the sprite exactly as drawSprite() or drawHalfSprite() draw it, without
+   * its shadow.
+   * @param name - The sprite
+   * @param x - Column of the sprite's middle, in tiles: a tile's middle is its column plus a half
+   * @param y - Row of the sprite's middle, in tiles: a tile's middle is its row plus a half
+   * @param size - The sprite's side, as a share of a tile: 1 for a whole tile, 0.5 for half
+   * @param way - The way it is turned to face, from facing up as drawn
+   * @param piecesAcross - Pieces across its tile; its overhang adds more
+   * @param place - Where each piece is drawn
+   */
+  drawSpritePieces(name: SpriteName, x: number, y: number, size: number, way: Direction, piecesAcross: number, place: PiecePlacer): void {
+    const side = Math.round(this.tileSize * size)
+    const sprite = scaledSprite(name, side)
+
+    if (sprite === null) {
+      return
+    }
+
+    const image = sprite.image
+    const columns = Math.max(1, Math.round(piecesAcross * image.width / side))
+    const rows = Math.max(1, Math.round(piecesAcross * image.height / side))
+    const turn = TURNS[way]
+    // The sprite's square, placed as drawSprite() and drawHalfSprite() place it
+    const left = Math.round((x * this.tileSize) - (side / 2))
+    const top = Math.round(this.canvas.height - (y * this.tileSize) - (side / 2))
+
+    this.context.save()
+
+    try {
+      this.context.translate(left + (side / 2), top + (side / 2))
+      this.context.transform(turn.cos, turn.sin, -turn.sin, turn.cos, 0, 0)
+
+      for (let row = 0; row < rows; row++) {
+        // Whole pixels of the image, so the pieces left in place meet without a seam
+        const sourceTop = Math.round(row * image.height / rows)
+        const sourceHeight = Math.round((row + 1) * image.height / rows) - sourceTop
+
+        for (let column = 0; column < columns; column++) {
+          const sourceLeft = Math.round(column * image.width / columns)
+          const sourceWidth = Math.round((column + 1) * image.width / columns) - sourceLeft
+          const middleX = sourceLeft + (sourceWidth / 2) - (image.width / 2)
+          const middleY = sourceTop + (sourceHeight / 2) - (image.height / 2)
+          const placement = place(middleX / this.tileSize, middleY / this.tileSize, (row * columns) + column)
+
+          if ((placement === null) || (placement.alpha <= 0) || (placement.scale <= 0)) {
+            continue
+          }
+
+          const width = sourceWidth * placement.scale
+          const height = sourceHeight * placement.scale
+
+          this.context.globalAlpha = Math.min(placement.alpha, 1)
+          this.context.drawImage(image, sourceLeft, sourceTop, sourceWidth, sourceHeight, middleX + (placement.dx * this.tileSize) - (width / 2), middleY + (placement.dy * this.tileSize) - (height / 2), width, height)
+        }
+      }
+    } finally {
+      this.context.restore()
+    }
   }
 
   /**
