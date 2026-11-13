@@ -1,14 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <!--
-    A floor arrow (docs/sprites.md), a sharp double chevron: two chevrons
-    painted flat on the floor with square ends and pointed corners, the
-    leading one darker, pointing up, the one way the subject may enter its
-    tile. The game turns it to the arrow's way.
+    A floor arrow (docs/sprites.md), a sharp chevron painted flat on the
+    floor with square ends and a pointed corner, centred on the tile,
+    pointing up, the one way the subject may enter its tile. The game turns
+    it to the arrow's way.
   -->
-  <g fill="none" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" stroke-width="32">
-    <!-- The trailing chevron, lighter -->
-    <polyline points="62,206 128,146 194,206" stroke="rgb(150, 153, 160)"/>
-    <!-- The leading chevron, darker -->
-    <polyline points="62,130 128,70 194,130" stroke="rgb(92, 95, 102)"/>
-  </g>
+  <polyline points="62,163 128,103 194,163" fill="none" stroke="rgb(150, 153, 160)" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" stroke-width="32"/>
 </svg>

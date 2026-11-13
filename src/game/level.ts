@@ -1,5 +1,6 @@
 import type {ChamberData} from '@/game/chamber_data'
 import {Direction} from '@/game/direction'
+import {DoorSlides} from '@/game/door_slides'
 import {FizzleParticles} from '@/game/fizzle_particles'
 import {GameEvent} from '@/game/game_event'
 import {GameKey, type HistoryKey} from '@/game/game_key'
@@ -25,9 +26,11 @@ import {StepAnimation} from '@/game/step_animation'
  * the state changed. A step that changes the state is then drawn over a few
  * frames, redrawn every frame until it ends, paused or not; the next press
  * ends it at once. When a step fizzles, what it took breaks up over a few
- * frames, which no press waits for. While anything glows, shimmers or breaks
- * up, every frame is drawn too. Nothing is drawn over time when the player
- * asks for reduced motion: the glows hold steady. Undo and redo bring back
+ * frames, and so does a fizzler a step switches off, and a door or the exit
+ * a step opens or closes slides open or shut; no press waits for them nor
+ * cuts them short. While anything glows, breaks up or slides, every frame is
+ * drawn too. Nothing is drawn over time when the player asks for reduced
+ * motion: the glows hold steady. Undo and redo bring back
  * earlier states from the run's history, silently and at once. Every press it acts on is logged, so the run
  * since the last load can be replayed without a browser. When a mouse button
  * is bound, a frame may instead turn the subject to face the pointer, as a
@@ -102,7 +105,8 @@ export class Level {
   private readonly canvas: HTMLCanvasElement // The canvas drawn on, where the pointer is measured from
   private readonly renderer: Renderer // Draws the state
   private readonly animation = new StepAnimation() // The step being drawn over a few frames, if any
-  private readonly fizzle = new FizzleParticles() // What the latest fizzle took, breaking up over a few frames, if anything
+  private readonly fizzle = new FizzleParticles() // What fizzles took and the fizzlers switched off, breaking up over a few frames, if anything
+  private readonly doors = new DoorSlides() // The doors and the exit sliding open or shut over a few frames, if any
   private frameTime = 0 // The latest frame's time, in milliseconds on the frame clock; redraws outside a frame use it, so a step being drawn never goes back
   private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time something could be drawn over time
   private ambientDrawn = false // Whether the latest frame was drawn for what moves with time alone, so the frame after it ends draws it still
@@ -161,6 +165,7 @@ export class Level {
     this.input.takePointerMoved()
     this.animation.finish()
     this.fizzle.clear()
+    this.doors.clear()
 
     this.playEvents(start.events)
 
@@ -306,14 +311,14 @@ export class Level {
 
   /**
    * Draws the current state, part way through the step being drawn, if any,
-   * with what moves with time alone at this time, what a fizzle took
-   * breaking up included, or held still when the player asks for reduced
+   * with what moves with time alone at this time, what breaks up and the
+   * doors sliding included, or held still when the player asks for reduced
    * motion.
    * @param time - Now, in milliseconds on the frame clock
    */
   private render(time: number): void {
     if (this.state !== null) {
-      this.renderer.render(this.state, this.animation.transitionAt(time), this.reducedMotion.matches ? null : time, this.fizzle)
+      this.renderer.render(this.state, this.animation.transitionAt(time), this.reducedMotion.matches ? null : time, this.fizzle, this.doors)
     }
   }
 
@@ -497,9 +502,10 @@ export class Level {
 
   /**
    * Takes a step of the rules: records it in the history and the log,
-   * counts the move, starts drawing the step when it changed the state, and
-   * what it took breaking up when it fizzled, and plays the sounds of what
-   * happened.
+   * counts the move, starts drawing the step when it changed the state, with
+   * what it took breaking up when it fizzled, each fizzler it switched off
+   * breaking up and each door and the exit it opened or closed sliding, and
+   * plays the sounds of what happened.
    * @param state - The state before the step
    * @param action - The action stepped
    * @param result - What the rules' step gave for it
@@ -521,10 +527,8 @@ export class Level {
 
     if ((next !== state) && !this.reducedMotion.matches) {
       this.animation.start(state, next, result.events, time)
-    }
-
-    if (result.events.includes(GameEvent.FIZZLED) && !this.reducedMotion.matches) {
-      this.fizzle.start(state, next, time)
+      this.fizzle.start(state, next, time, result.events.includes(GameEvent.FIZZLED))
+      this.doors.start(state, next, time)
     }
 
     this.playEvents(result.events)
@@ -537,8 +541,8 @@ export class Level {
   }
 
   /**
-   * Undoes or redoes a step, silently and at once, ending anything a fizzle
-   * took breaking up, and logs the press. Nothing can be undone once the
+   * Undoes or redoes a step, silently and at once, ending anything breaking
+   * up and any door sliding, and logs the press. Nothing can be undone once the
    * chamber is completed.
    * @param state - The state now
    * @param key - Undo or redo
@@ -561,6 +565,7 @@ export class Level {
 
     this.state = restored
     this.fizzle.clear()
+    this.doors.clear()
 
     if (key === GameKey.UNDO) {
       this.undoCount++
@@ -617,9 +622,9 @@ export class Level {
       stateUpdated = this.update(delta, this.input, time)
     }
 
-    // So does anything that glows, shimmers or breaks up, paused or not, and
+    // So does anything that glows, breaks up or slides, paused or not, and
     // the first frame after it stops, which draws it still
-    const ambient = (this.state !== null) && !this.reducedMotion.matches && (hasAmbientLife(this.state) || this.fizzle.isRunningAt(time))
+    const ambient = (this.state !== null) && !this.reducedMotion.matches && (hasAmbientLife(this.state) || this.fizzle.isRunningAt(time) || this.doors.isRunningAt(time))
 
     if (stateUpdated || wasAnimating || ambient || this.ambientDrawn) {
       this.render(time)

@@ -302,6 +302,78 @@ export class TilePainter {
   }
 
   /**
+   * Draws a sprite cut down its middle, as drawn facing up, each half slid
+   * out towards its own side and cut off at the tile's edge, as if sliding
+   * into what lies beside the tile: a door's two leaves opening. A raised
+   * sprite's shadow slides with its halves, cut off at those same two edges
+   * only. Any overhang is left out.
+   * @param name - The sprite
+   * @param x - Column
+   * @param y - Row
+   * @param way - The way it is turned to face, from facing up as drawn
+   * @param apart - How far each half has slid, as a share of half a tile: 0 draws the whole sprite, 1 nothing of it
+   */
+  drawSpriteParted(name: SpriteName, x: number, y: number, way: Direction, apart: number): void {
+    const size = this.tileSize
+    const sprite = scaledSprite(name, size)
+
+    if (sprite === null) {
+      return
+    }
+
+    const half = size / 2
+    const shift = Math.round(apart * half)
+    const shadow = (RAISED_SPRITES.has(name) && (this.pass !== 'sprites')) ? scaledShadow(name, size) : null
+    const turn = TURNS[way]
+
+    this.context.save()
+
+    try {
+      this.context.translate(Math.round(x * size) + half, Math.round(this.tileTop(y)) + half)
+      this.context.transform(turn.cos, turn.sin, -turn.sin, turn.cos, 0, 0)
+
+      if (shadow !== null) {
+        this.drawParts(shadow, half, shift, half + shadow.margin)
+      }
+
+      if (this.pass !== 'shadows') {
+        this.drawParts(sprite, half, shift, half)
+      }
+    } finally {
+      this.context.restore()
+    }
+  }
+
+  /**
+   * Draws a shrunk sprite's two halves, in its own frame, centred on the
+   * tile's middle: the left half moved left and the right half moved right,
+   * each cut off at the tile's edge on its own side.
+   * @param sprite - The sprite, or its shadow, shrunk to the tile's size
+   * @param half - Half the tile's side, in pixels
+   * @param shift - How far each half is moved, in pixels
+   * @param reach - How far from the middle a half shows across its way of sliding, in pixels
+   */
+  private drawParts(sprite: ScaledSprite, half: number, shift: number, reach: number): void {
+    const width = half - shift
+
+    if (width <= 0) {
+      return
+    }
+
+    for (const side of [
+      -1,
+      1,
+    ]) {
+      this.context.save()
+      this.context.beginPath()
+      this.context.rect((side < 0) ? -half : shift, -reach, width, 2 * reach)
+      this.context.clip()
+      this.context.drawImage(sprite.image, -half - sprite.margin + (side * shift), -half - sprite.margin)
+      this.context.restore()
+    }
+  }
+
+  /**
    * Draws a sprite broken into square pieces, its overhang too, each placed
    * on its own: a sprite coming apart. Each piece left where it was redraws
    * the sprite exactly as drawSprite() or drawHalfSprite() draw it, without

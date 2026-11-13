@@ -82,9 +82,9 @@ Every sprite is 256 px, or 384 px when it overhangs, except the two strips (1280
 | 4 | `ditch_bridged` | A ditch bridged over: walkable |
 | 5 | `barrier_raised` | A raised barrier: stops walking and shots. Drawn over floor or over a wall tile, so it must read on both |
 | 6 | `barrier_lowered` | A lowered barrier, flush: walkable, lets shots through |
-| 7 | `door_closed` | A closed door: stops walking and shots |
+| 7 | `door_closed` | A closed door: stops walking and shots. Its two leaves meet on the tile's middle line (see [sliding doors](#sliding-doors)) |
 | 8 | `door_open` | An open door, its leaves drawn back |
-| 9 | `exit_closed` | The exit, closed |
+| 9 | `exit_closed` | The exit, closed. Its two leaves meet on the tile's middle line, as a door's do |
 | 10 | `exit_open` | The exit, open: walking onto it completes the chamber |
 | 11 | `button_up` | A floor button, released |
 | 12 | `button_pressed` | A floor button, held down by the subject or a box. A box on a button is drawn at half size, centred, so the button's rim must show around it |
@@ -118,15 +118,19 @@ The game draws from the bottom up, each later row over the earlier ones:
 | 8 | Subject | `subject` |
 | 9 | Fields | `fizzler_*` |
 | 10 | Glow | `laser_glow`, `portal_*_glow` |
-| 11 | Fizzle | `portal_*`, `box`, in pieces (see [fizzle](#fizzle)) |
+| 11 | Fizzle | `portal_*`, `box`, `fizzler_on`, in pieces (see [fizzle](#fizzle)) |
 
 ## Glow
 
-The three glows are drawn last, over everything, and added to the colours beneath, so they brighten and never darken. Their strength pulses slowly, all together, between 60 % and full. Draw only the light, at full strength: colour fading to transparent, with no beam or portal in it. A missing glow file just means no glow. Fizzlers that are on shimmer by code, from `fizzler_on` itself: a glint of the same sprite, added over it, travels along the field. With reduced motion, and in the home menu's map and the gallery, the glow holds steady at 80 % and nothing shimmers.
+The three glows are drawn last, over everything, and added to the colours beneath, so they brighten and never darken. Their strength pulses slowly, all together, between 60 % and full. Draw only the light, at full strength: colour fading to transparent, with no beam or portal in it. A missing glow file just means no glow. With reduced motion, and in the home menu's map and the gallery, the glow holds steady at 80 %.
 
 ## Fizzle
 
-When the subject walks into a fizzler that is on, each portal it loses and a box it carries break up: the game cuts the sprite, as last drawn, into small square pieces, which drift out from its middle, shrink and fade in about 0.6 s, over everything. There is nothing extra to draw, but the pieces show the sprite's own pixels, so a portal or box drawn as a thin outline breaks into very few. With reduced motion nothing breaks up.
+When the subject walks into a fizzler that is on, each portal it loses and a box it carries break up: the game cuts the sprite, as last drawn, into small square pieces, which drift out from its middle, shrink and fade in about 0.6 s, over everything. When a fizzler switches off, its field crumbles the same way, but in place: `fizzler_on` is cut into the same pieces, which shrink and fade where they are, one after another, over `fizzler_off`. There is nothing extra to draw, but the pieces show the sprite's own pixels, so a portal or box drawn as a thin outline breaks into very few. With reduced motion nothing breaks up.
+
+## Sliding doors
+
+When a door or the exit opens or closes, it slides over about 0.3 s: the game draws `door_open` (or `exit_open`) and over it `door_closed` (or `exit_closed`) cut down its middle, each half slid out to its side and cut off at the tile's edge, as if going into the wall. So the closed sprite's two leaves must meet on the tile's middle line, and the open sprite must show what is left once they are gone. There is nothing extra to draw. With reduced motion, and in the home menu's map and the gallery, nothing slides.
 
 ## Not in the set yet
 

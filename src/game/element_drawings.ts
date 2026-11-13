@@ -1,4 +1,5 @@
 import {Direction} from '@/game/direction'
+import type {DoorOpenings} from '@/game/door_slides'
 import {type CompiledChamber, NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
 import type {BlockableKind, ElementKind} from '@/game/rules/element_registry'
 import type {RulesState} from '@/game/rules/rules_state'
@@ -10,13 +11,16 @@ import type {TilePainter} from '@/game/tile_painter'
 // element is drawn as its sprite for its state (docs/sprites.md), switched
 // off as well as on. Walls and open ditches join their neighbours, quarter
 // by quarter, and doors, the exit and fizzlers are turned to the walls
-// beside them. Beside them, what moves with time alone: the lasers' glow,
-// pulsing with the portals', and the shimmer of fizzlers that are on
+// beside them; a door or the exit sliding open or shut is drawn part way.
+// Beside them, what moves with time alone: the lasers' glow, pulsing with
+// the portals'
 
 /**
- * Draws every element of one type in a state.
+ * Draws every element of one type in a state, with the doors and the exit
+ * that are sliding drawn part way open, or every one as the state says when
+ * no openings are given.
  */
-export type ElementDrawing = (painter: TilePainter, state: RulesState) => void
+export type ElementDrawing = (painter: TilePainter, state: RulesState, openings?: DoorOpenings | null) => void
 
 /**
  * Which way a laser runs: H for horizontal, V for vertical.
@@ -68,18 +72,6 @@ const GLOW_PERIOD_MILLISECONDS = 3600
 
 /** The glows' faintest strength in a pulse, the brightest being 1 */
 const GLOW_FAINTEST = 0.6
-
-/** How long a glint takes to pass over one fizzler tile and come back to it, in milliseconds */
-const SHIMMER_PERIOD_MILLISECONDS = 1800
-
-/** The most of a fizzler's own sprite a glint adds over it */
-const SHIMMER_BRIGHTEST = 0.55
-
-/** How far behind its neighbour each tile of a field glints, as a share of the period, so the glints travel along the field */
-const SHIMMER_TILE_LAG = 0.18
-
-/** How sharp a glint is: the power its wave is raised to, so the field stays calm between glints */
-const SHIMMER_SHARPNESS = 3
 
 /** Element types that, besides walls and the chamber's edge, line a gap that a door, the exit or a fizzler fills */
 const GAP_SIDE_KINDS: readonly PlacedKind[] = [
@@ -171,7 +163,7 @@ function linesGap(chamber: CompiledChamber, x: number, y: number): boolean {
  * @param y - The element's row
  * @returns Up when drawn as it is, right for a quarter turn
  */
-function gapTurn(chamber: CompiledChamber, x: number, y: number): Direction {
+export function gapTurn(chamber: CompiledChamber, x: number, y: number): Direction {
   const across = Number(linesGap(chamber, x - 1, y)) + Number(linesGap(chamber, x + 1, y))
   const along = Number(linesGap(chamber, x, y + 1)) + Number(linesGap(chamber, x, y - 1))
 
@@ -200,20 +192,29 @@ function blockableDrawing(kind: Exclude<BlockableKind, 'ditch' | 'laser' | GapKi
 
 /**
  * Builds a drawing for a type that fills a gap in a wall: each element's
- * sprite for whether it is blocked, turned to the walls beside it.
+ * sprite for whether it is blocked, turned to the walls beside it. A door or
+ * the exit sliding is drawn part way: its open sprite, under its closed one
+ * cut down the middle with each half slid into the wall beside it.
  * @param kind - The element type
  * @param blockedSprite - Its sprite while blocked (a door or the exit closed, a fizzler on)
  * @param unblockedSprite - Its sprite while not
  * @returns The drawing
  */
 function gapDrawing(kind: GapKind, blockedSprite: SpriteName, unblockedSprite: SpriteName): ElementDrawing {
-  return (painter, state) => {
+  return (painter, state, openings = null) => {
     const chamber = state.chamber
 
     for (let i = 0; i < chamber.countOf(kind); i++) {
       const position = chamber.positionOf(kind, i)
+      const turn = gapTurn(chamber, position.x, position.y)
+      const opening = ((openings === null) || (kind === 'fizzler')) ? null : openings(kind, i)
 
-      painter.drawSprite(state.isBlocked(kind, i) ? blockedSprite : unblockedSprite, position.x, position.y, gapTurn(chamber, position.x, position.y))
+      if (opening === null) {
+        painter.drawSprite(state.isBlocked(kind, i) ? blockedSprite : unblockedSprite, position.x, position.y, turn)
+      } else {
+        painter.drawSprite(unblockedSprite, position.x, position.y, turn)
+        painter.drawSpriteParted(blockedSprite, position.x, position.y, turn, opening)
+      }
     }
   }
 }
@@ -325,29 +326,6 @@ export function drawLaserGlows(painter: TilePainter, state: RulesState, strength
       painter.drawSpriteAdded('laser_glow', entry.x, entry.y, LASER_TURNS[orientation], strength)
     }
   })
-}
-
-/**
- * Draws the shimmer of every fizzler that is on: a glint of its own sprite,
- * added to what lies beneath, travelling along the field.
- * @param painter - Paints on the canvas
- * @param state - The state drawn
- * @param time - Now, in milliseconds on the frame clock
- */
-export function drawFizzlerShimmer(painter: TilePainter, state: RulesState, time: number): void {
-  const chamber = state.chamber
-
-  for (let i = 0; i < chamber.countOf('fizzler'); i++) {
-    if (!state.isBlocked('fizzler', i)) {
-      continue
-    }
-
-    const position = chamber.positionOf('fizzler', i)
-    const turn = (time / SHIMMER_PERIOD_MILLISECONDS) - ((position.x + position.y) * SHIMMER_TILE_LAG)
-    const wave = 0.5 + (0.5 * Math.sin(2 * Math.PI * turn))
-
-    painter.drawSpriteAdded('fizzler_on', position.x, position.y, gapTurn(chamber, position.x, position.y), SHIMMER_BRIGHTEST * (wave ** SHIMMER_SHARPNESS))
-  }
 }
 
 /**

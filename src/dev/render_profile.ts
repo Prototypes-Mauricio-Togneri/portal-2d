@@ -10,7 +10,7 @@ import {loadSprites} from '@/game/sprite_sources'
 // never built): the baseline for stage 03's 60 fps checks. Draws chamber 3,
 // the largest, at its settled start with the game's renderer, sized as the
 // chamber screen sizes it in a 1920 × 1080 window, and redraws it on every
-// animation frame, with what moves with time alone (glows, shimmer) at that
+// animation frame, with what moves with time alone (the glows) at that
 // frame's time, as the level draws it, first at pixel ratio 1, then 2. The ratio is emulated by
 // the canvas's size, so ratio 2 can be measured on any screen. Reports each
 // ratio's draw time (the renderer's own work, timed around one render) and
