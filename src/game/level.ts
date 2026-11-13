@@ -87,10 +87,9 @@ export class Level {
    * @param bindings - The key bound to each game key, which is only read
    * @param screenWidth - Width available to the chamber, in canvas pixels
    * @param screenHeight - Height available to the chamber, in canvas pixels
-   * @param pixelRatio - Canvas pixels per page pixel, such as the screen's device pixel ratio; 1 by default
    */
-  constructor(canvas: HTMLCanvasElement, bindings: KeyBindings, screenWidth: number, screenHeight: number, pixelRatio = 1) {
-    this.renderer = new Renderer(canvas, screenWidth, screenHeight, pixelRatio)
+  constructor(canvas: HTMLCanvasElement, bindings: KeyBindings, screenWidth: number, screenHeight: number) {
+    this.renderer = new Renderer(canvas, screenWidth, screenHeight)
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     this.input = new Input(bindings)
     document.addEventListener('visibilitychange', this.onVisibilityChange)
@@ -240,14 +239,13 @@ export class Level {
   }
 
   /**
-   * Fits the current chamber to a new screen area or pixel ratio and redraws
-   * it as the latest frame drew it, part way through a step being drawn too.
+   * Fits the current chamber to a new screen area and redraws it as the
+   * latest frame drew it, part way through a step being drawn too.
    * @param screenWidth - Width available to the chamber, in canvas pixels
    * @param screenHeight - Height available to the chamber, in canvas pixels
-   * @param pixelRatio - Canvas pixels per page pixel; 1 by default
    */
-  resize(screenWidth: number, screenHeight: number, pixelRatio = 1): void {
-    this.renderer.resize(screenWidth, screenHeight, pixelRatio)
+  resize(screenWidth: number, screenHeight: number): void {
+    this.renderer.resize(screenWidth, screenHeight)
 
     if (this.chamber !== null) {
       this.renderer.setSize(this.chamber.width, this.chamber.height)

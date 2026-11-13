@@ -199,6 +199,7 @@ export default withVueTs(
             '@/game/sprite_set',
             '@/game/sprite_sources',
             '@/game/sprite_placeholders',
+            '@/game/sprite_scaling',
           ],
           patterns: [
             '@/chambers/*',
@@ -244,6 +245,7 @@ export default withVueTs(
             '@/game/sprite_set',
             '@/game/sprite_sources',
             '@/game/sprite_placeholders',
+            '@/game/sprite_scaling',
           ],
           patterns: [
             '@/chambers/*',

@@ -2,7 +2,7 @@
 
 The art the chamber is drawn from: one image file per sprite, which the game composes tile by tile, choosing each by its element's state and its neighbours. This is the spec to draw them to.
 
-The game loads these files, but doesn't draw the chamber from them yet: the compositor that will is being built (`todo/03_look_and_sound.md`, Phase B). A sprite whose file is missing, can't be decoded or has the wrong size gets a placeholder made by code (the original flat drawing, switched-off elements faded) instead, so the sprites can arrive one at a time. In `npm run dev`, a file in the folder that isn't a sprite's, or of the wrong size, is logged as an error in the browser's console.
+The game draws the chamber and the home menu's map from these files. A sprite whose file is missing, can't be decoded or has the wrong size is drawn as a placeholder made by code (the original flat drawing, switched-off elements faded) instead, so the sprites can arrive one at a time. Stage 03's visual rework (`todo/03_look_and_sound.md`, Phase B) is still adding the rest of this spec: until then, every wall and open ditch is drawn as its strip's lone tile, doors, the exit and fizzlers aren't turned to their walls, and there is no shadow or glow. In `npm run dev`, a file in the folder that isn't a sprite's, or of the wrong size, is logged as an error in the browser's console.
 
 ## Files
 

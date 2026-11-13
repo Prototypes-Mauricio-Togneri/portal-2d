@@ -1,8 +1,10 @@
 /**
- * Every colour the game draws on its canvas, named by what it colours. The
- * original game's colours, unchanged; the drawing stays frozen until stage 03
- * reworks it. Some are mirrored by hand in the CSS tokens on `:root` in
- * `src/assets/styles.css`, as each entry's comment says: change both together.
+ * Every colour the game draws on its canvas by code, named by what it
+ * colours: the background behind the floor, and the sprites' placeholders
+ * (sprite_placeholders.ts), the original game's colours, unchanged. Some are
+ * mirrored by hand in the CSS tokens on `:root` in `src/assets/styles.css`,
+ * as each entry's comment says, and the colours that carry a meaning in the
+ * sprites (docs/sprites.md): change them together.
  */
 export const PALETTE = {
   chamber: 'rgba(32, 32, 32, 1)', // Background behind the floor; mirrored by --color-chamber
@@ -10,7 +12,7 @@ export const PALETTE = {
   floorBorder: 'rgba(130, 130, 130, 1)', // A floor tile's edge
   subjectFill: 'rgba(0, 160, 100, 1)', // The subject's body; --color-subject is a lighter shade on purpose
   subjectBorder: 'rgba(130, 130, 130, 1)', // The subject's edge
-  subjectArrow: 'rgba(255, 255, 255, 1)', // The subject's facing triangle while it carries no box; mirrored by --color-white
+  subjectArrow: 'rgba(255, 255, 255, 1)', // The subject's facing triangle; mirrored by --color-white
   bluePortalFill: 'rgba(40, 140, 220, 1)', // The blue portal's body; mirrored by --color-blue
   bluePortalBorder: 'rgba(34, 122, 191, 1)', // The blue portal's edge
   orangePortalFill: 'rgba(255, 160, 30, 1)', // The orange portal's body; mirrored by --color-orange
@@ -23,7 +25,7 @@ export const PALETTE = {
   buttonBorder: 'rgba(186, 51, 43, 1)', // A floor button's edge; mirrored by --color-red-deep
   switchFill: 'rgba(242, 122, 34, 1)', // A switch
   switchBorder: 'rgba(181, 42, 42, 1)', // A switch's edge
-  boxFill: 'rgba(190, 120, 90, 1)', // A box, and the subject's facing triangle while it carries one
+  boxFill: 'rgba(190, 120, 90, 1)', // A box
   boxBorder: 'rgba(143, 91, 69, 1)', // A box's edge
   fizzlerFill: 'rgba(104, 125, 179, 1)', // A fizzler that is on, drawn at half opacity
   fizzlerBorder: 'rgba(73, 73, 227, 1)', // A fizzler's edge

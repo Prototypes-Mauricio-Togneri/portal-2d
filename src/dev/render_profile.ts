@@ -239,7 +239,7 @@ function loadChamberThree(): ProfiledChamber {
  * @returns The ratio's results
  */
 async function measureRatio(renderer: Renderer, canvas: HTMLCanvasElement, chamber: CompiledChamber, state: RulesState, pixelRatio: number): Promise<RatioResult> {
-  renderer.resize(STAGE_WIDTH * pixelRatio, STAGE_HEIGHT * pixelRatio, pixelRatio)
+  renderer.resize(STAGE_WIDTH * pixelRatio, STAGE_HEIGHT * pixelRatio)
   renderer.setSize(chamber.width, chamber.height)
   canvas.style.width = `${canvas.width / pixelRatio}px`
   canvas.style.height = `${canvas.height / pixelRatio}px`
@@ -309,7 +309,7 @@ async function profile(): Promise<void> {
   const profiled = loadChamberThree()
   const chamber = profiled.chamber
   const canvas = findCanvas()
-  const renderer = new Renderer(canvas, STAGE_WIDTH, STAGE_HEIGHT, 1)
+  const renderer = new Renderer(canvas, STAGE_WIDTH, STAGE_HEIGHT)
 
   // Hiding the tab before measuring starts spoils nothing
   tabHidden = false

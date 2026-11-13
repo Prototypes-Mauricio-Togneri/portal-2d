@@ -109,7 +109,7 @@ function fitToStage(): void {
   }
   const pixelRatio = window.devicePixelRatio
   const size = availableSize(stageElement)
-  level.resize(size.width * pixelRatio, size.height * pixelRatio, pixelRatio)
+  level.resize(size.width * pixelRatio, size.height * pixelRatio)
   setCanvasPageSize(canvasElement, pixelRatio)
 }
 
@@ -410,7 +410,7 @@ onMounted(() => {
   const pixelRatio = window.devicePixelRatio
   const size = availableSize(stageElement)
   // Stored before the first load, which runs a frame straight away and can already complete the chamber
-  level = new Level(canvasElement, keyBindings.value, size.width * pixelRatio, size.height * pixelRatio, pixelRatio)
+  level = new Level(canvasElement, keyBindings.value, size.width * pixelRatio, size.height * pixelRatio)
   level.onCompleted = handleCompleted
   // Counted and sent before the load, whose first frame could already report the chamber completed
   beginAttempt()

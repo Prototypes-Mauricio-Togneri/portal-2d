@@ -1,51 +1,32 @@
-import {Direction} from '@/game/direction'
-import {BOX_STYLE, ELEMENT_DRAWINGS} from '@/game/element_drawings'
-import {PALETTE} from '@/game/palette'
+import {ELEMENT_DRAWINGS} from '@/game/element_drawings'
 import {DRAW_LAYERS, type DrawLayer} from '@/game/rules/draw_layer'
 import {ELEMENT_REGISTRY} from '@/game/rules/element_registry'
 import {PortalColor} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
+import {NO_BOX} from '@/game/rules/state_layout'
+import type {SpriteName} from '@/game/sprite_set'
 import type {StepTransition} from '@/game/step_animation'
 import {subjectPose} from '@/game/subject_pose'
 import {TilePainter} from '@/game/tile_painter'
 
-/**
- * The colours and edge width of a portal, drawn as half its wall tile.
- */
-type PortalStyle = {
-  readonly fillColor: string // Body colour
-  readonly borderColor: string // Edge colour
-  readonly borderWidth: number // Edge width in pixels
+/** Each portal's sprite */
+const PORTAL_SPRITES: Readonly<Record<PortalColor, SpriteName>> = {
+  [PortalColor.BLUE]: 'portal_blue',
+  [PortalColor.ORANGE]: 'portal_orange',
 }
 
-/** A floor tile's edge width, in pixels */
-const FLOOR_BORDER_WIDTH = 0.1
-
-/** The subject's edge width, in pixels */
-const SUBJECT_BORDER_WIDTH = 0.1
-
-/** Each portal's look */
-const PORTAL_STYLES: Readonly<Record<PortalColor, PortalStyle>> = {
-  [PortalColor.BLUE]: {
-    fillColor: PALETTE.bluePortalFill,
-    borderColor: PALETTE.bluePortalBorder,
-    borderWidth: 1,
-  },
-  [PortalColor.ORANGE]: {
-    fillColor: PALETTE.orangePortalFill,
-    borderColor: PALETTE.orangePortalBorder,
-    borderWidth: 1,
-  },
-}
+/** How far ahead of the subject's middle a carried box is drawn, the way the subject faces, in tiles */
+const CARRIED_BOX_AHEAD = 0.25
 
 /**
- * Draws a state of the rules onto a canvas: the floor, then each draw layer
- * back to front. The core step's layers (floor, portals, subject) are drawn
- * here; every other layer draws its element types in registry order, each by
- * its drawing in ELEMENT_DRAWINGS. Tiles are square, sized to fit the chamber
- * in the screen area, and row 0 is at the bottom. Part way through a step,
- * the subject and a box it carries are drawn at the subject's pose; the rest
- * is drawn as the state after the step.
+ * Draws a state of the rules onto a canvas from the chamber sprites
+ * (docs/sprites.md): the floor, then each draw layer back to front. The core
+ * step's layers (floor, portals, subject) are drawn here; every other layer
+ * draws its element types in registry order, each by its drawing in
+ * ELEMENT_DRAWINGS. Tiles are square, sized to fit the chamber in the screen
+ * area, and row 0 is at the bottom. Part way through a step, the subject and
+ * a box it carries are drawn at the subject's pose; the rest is drawn as the
+ * state after the step.
  */
 export class Renderer {
   private readonly painter: TilePainter // Paints the tiles
@@ -55,22 +36,20 @@ export class Renderer {
    * @param canvas - The canvas to draw on
    * @param screenWidth - Width available to the chamber, in pixels
    * @param screenHeight - Height available to the chamber, in pixels
-   * @param pixelRatio - Canvas pixels per page pixel, such as the screen's device pixel ratio; 1 by default
    * @throws Error when the canvas cannot provide a 2D context
    */
-  constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number, pixelRatio = 1) {
-    this.painter = new TilePainter(canvas, screenWidth, screenHeight, pixelRatio)
+  constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number) {
+    this.painter = new TilePainter(canvas, screenWidth, screenHeight)
   }
 
   /**
-   * Changes the area available to the chamber and the pixel ratio. Takes
-   * effect on the next setSize().
+   * Changes the area available to the chamber. Takes effect on the next
+   * setSize().
    * @param screenWidth - Width available to the chamber, in pixels
    * @param screenHeight - Height available to the chamber, in pixels
-   * @param pixelRatio - Canvas pixels per page pixel; 1 by default
    */
-  resize(screenWidth: number, screenHeight: number, pixelRatio = 1): void {
-    this.painter.resize(screenWidth, screenHeight, pixelRatio)
+  resize(screenWidth: number, screenHeight: number): void {
+    this.painter.resize(screenWidth, screenHeight)
   }
 
   /**
@@ -87,65 +66,42 @@ export class Renderer {
    * @param state - The state drawn
    */
   private drawFloor(state: RulesState): void {
-    const size = this.painter.blockSize
-
     for (let x = 0; x < state.chamber.width; x++) {
       for (let y = 0; y < state.chamber.height; y++) {
-        this.painter.drawBlock(x, y, size, size, PALETTE.floorFill, PALETTE.floorBorder, FLOOR_BORDER_WIDTH)
+        this.painter.drawSprite('floor', x, y)
       }
     }
   }
 
   /**
-   * Draws an open portal as the half of its wall tile on the side it opens to.
+   * Draws an open portal over its wall tile, turned to the side it opens to.
    * @param state - The state drawn
    * @param color - The portal
    */
   private drawPortal(state: RulesState, color: PortalColor): void {
     const side = state.portalSide(color)
 
-    if (side === null) {
-      return
-    }
-
-    const x = state.portalX(color)
-    const y = state.portalY(color)
-    const size = this.painter.blockSize
-    const style = PORTAL_STYLES[color]
-
-    switch (side) {
-      case Direction.UP:
-        this.painter.drawBlockUp(x, y, size, size, style.fillColor, style.borderColor, style.borderWidth)
-        break
-
-      case Direction.DOWN:
-        this.painter.drawBlockDown(x, y, size, size, style.fillColor, style.borderColor, style.borderWidth)
-        break
-
-      case Direction.LEFT:
-        this.painter.drawBlockLeft(x, y, size, size, style.fillColor, style.borderColor, style.borderWidth)
-        break
-
-      case Direction.RIGHT:
-        this.painter.drawBlockRight(x, y, size, size, style.fillColor, style.borderColor, style.borderWidth)
-        break
+    if (side !== null) {
+      this.painter.drawSprite(PORTAL_SPRITES[color], state.portalX(color), state.portalY(color), side)
     }
   }
 
   /**
-   * Draws the subject with a triangle showing where it faces, in the box
-   * colour while it carries one, at its pose: where it stands, or part way
+   * Draws the subject turned to the way it faces, and a box it carries at
+   * half size in front of it, at its pose: where it stands, or part way
    * through the step being drawn.
    * @param state - The state drawn
    * @param transition - The step being drawn, ending on the state drawn, or null to draw the state as it is
    */
   private drawSubject(state: RulesState, transition: StepTransition | null): void {
     const pose = subjectPose(state, transition, this.painter.blockSize)
-    const size = this.painter.blockSize
 
     this.painter.drawClippedToTile(pose.clip, () => {
-      this.painter.drawBlock(pose.x, pose.y, size, size, PALETTE.subjectFill, PALETTE.subjectBorder, SUBJECT_BORDER_WIDTH)
-      this.painter.drawTriangleTowards(pose.facing, pose.x, pose.y, state.isCarrying ? BOX_STYLE.fillColor : PALETTE.subjectArrow)
+      this.painter.drawSprite('subject', pose.x, pose.y, pose.facing)
+
+      if (state.carriedBox !== NO_BOX) {
+        this.painter.drawHalfSprite('box', pose.x, pose.y, pose.facing, CARRIED_BOX_AHEAD)
+      }
     })
   }
 
@@ -174,7 +130,7 @@ export class Renderer {
 
     for (const definition of ELEMENT_REGISTRY) {
       if (definition.layer === layer) {
-        ELEMENT_DRAWINGS[definition.kind](this.painter, state, transition)
+        ELEMENT_DRAWINGS[definition.kind](this.painter, state)
       }
     }
   }
@@ -185,8 +141,6 @@ export class Renderer {
    * @param transition - The step being drawn, ending on the state drawn, or null (the default) to draw the state as it is
    */
   render(state: RulesState, transition: StepTransition | null = null): void {
-    // Drawn at whatever opacity the previous frame left set; the floor then
-    // covers all of it
     this.painter.clear()
 
     for (const layer of DRAW_LAYERS) {

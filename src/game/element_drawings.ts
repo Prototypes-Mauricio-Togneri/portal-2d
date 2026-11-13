@@ -1,126 +1,62 @@
-import {PALETTE} from '@/game/palette'
+import {Direction} from '@/game/direction'
 import {NO_ELEMENT} from '@/game/rules/compiled_chamber'
 import type {BlockableKind, ElementKind} from '@/game/rules/element_registry'
 import type {RulesState} from '@/game/rules/rules_state'
-import type {StepTransition} from '@/game/step_animation'
-import {boxCarriedThrough, subjectPose} from '@/game/subject_pose'
-import type {LineOrientation, TilePainter} from '@/game/tile_painter'
+import {STRIP_TILE, type SpriteName} from '@/game/sprite_set'
+import type {TilePainter} from '@/game/tile_painter'
 
 // How each element type is drawn by the renderer, looked up by kind: the
-// rules can't touch the canvas, so drawing stays on the browser side. The
-// original game's drawing code, colours (named in the palette) and sizes;
-// a settled state's look stays frozen until stage 03 reworks it, which so
-// far only adds the frames part way through a step
+// rules can't touch the canvas, so drawing stays on the browser side. Each
+// element is drawn as its sprite for its state (docs/sprites.md), switched
+// off as well as on
 
 /**
- * Draws every element of one type in a state, given the step being drawn,
- * if any, whose `to` is that state.
+ * Draws every element of one type in a state.
  */
-export type ElementDrawing = (painter: TilePainter, state: RulesState, transition: StepTransition | null) => void
+export type ElementDrawing = (painter: TilePainter, state: RulesState) => void
 
 /**
- * The colours and edge width of a tile drawn as a filled block.
+ * Which way a laser runs: H for horizontal, V for vertical.
  */
-type BlockStyle = {
-  readonly fillColor: string // Body colour
-  readonly borderColor: string // Edge colour
-  readonly borderWidth: number // Edge width in pixels
+type LaserOrientation = 'H' | 'V'
+
+/** How a laser's sprite, drawn running left to right, is turned for each orientation */
+const LASER_TURNS: Readonly<Record<LaserOrientation, Direction>> = {
+  H: Direction.UP,
+  V: Direction.RIGHT,
 }
-
-/** A wall tile */
-const WALL_STYLE: BlockStyle = {
-  fillColor: PALETTE.wallFill,
-  borderColor: PALETTE.wallBorder,
-  borderWidth: 0.1,
-}
-
-/** A door, and the exit, while closed */
-const DOOR_STYLE: BlockStyle = {
-  fillColor: PALETTE.doorFill,
-  borderColor: PALETTE.doorBorder,
-  borderWidth: 0.1,
-}
-
-/** A floor button */
-const BUTTON_STYLE: BlockStyle = {
-  fillColor: PALETTE.buttonFill,
-  borderColor: PALETTE.buttonBorder,
-  borderWidth: 0.1,
-}
-
-/** A switch */
-const SWITCH_STYLE: BlockStyle = {
-  fillColor: PALETTE.switchFill,
-  borderColor: PALETTE.switchBorder,
-  borderWidth: 0.1,
-}
-
-/** A box; its fill also colours the subject's facing triangle while it carries one */
-export const BOX_STYLE: BlockStyle = {
-  fillColor: PALETTE.boxFill,
-  borderColor: PALETTE.boxBorder,
-  borderWidth: 0.1,
-}
-
-/** A fizzler while it is on, drawn at half opacity */
-const FIZZLER_STYLE: BlockStyle = {
-  fillColor: PALETTE.fizzlerFill,
-  borderColor: PALETTE.fizzlerBorder,
-  borderWidth: 0.1,
-}
-
-/** Opacity of a fizzler */
-const FIZZLER_OPACITY = 0.5
-
-/** The beam is this many times thinner than a tile */
-const LASER_WIDTH_RATIO = 6
 
 /**
  * Reads a laser's orientation from its entry.
  * @param text - The entry's direction
  * @returns H or V, or null for anything else
  */
-function readOrientation(text: string | undefined): LineOrientation | null {
+function readOrientation(text: string | undefined): LaserOrientation | null {
   return ((text === 'H') || (text === 'V')) ? text : null
 }
 
 /**
- * Fills a whole tile in a block style.
- * @param painter - Paints on the canvas
- * @param x - Column
- * @param y - Row
- * @param style - The block's colours and edge
- * @param opacity - Alpha; absent means opaque
- */
-function drawStyledBlock(painter: TilePainter, x: number, y: number, style: BlockStyle, opacity?: number): void {
-  painter.drawBlock(x, y, painter.blockSize, painter.blockSize, style.fillColor, style.borderColor, style.borderWidth, opacity)
-}
-
-/**
- * Builds a drawing that fills the tile of every element of a type, or only
- * of those that are blocked.
+ * Builds a drawing for a type whose elements can be blocked: each element's
+ * sprite for whether it is.
  * @param kind - The element type
- * @param style - The block's colours and edge
- * @param onlyBlocked - The same type when only its blocked elements are drawn, or null to draw them all
- * @param opacity - Alpha; absent means opaque
+ * @param blockedSprite - Its sprite while blocked (a barrier raised, a door or the exit closed, a fizzler on)
+ * @param unblockedSprite - Its sprite while not
  * @returns The drawing
  */
-function blockDrawing(kind: Exclude<ElementKind, 'wall' | 'box'>, style: BlockStyle, onlyBlocked: BlockableKind | null, opacity?: number): ElementDrawing {
+function blockableDrawing(kind: Exclude<BlockableKind, 'ditch' | 'laser'>, blockedSprite: SpriteName, unblockedSprite: SpriteName): ElementDrawing {
   return (painter, state) => {
     const chamber = state.chamber
 
     for (let i = 0; i < chamber.countOf(kind); i++) {
-      if ((onlyBlocked === null) || state.isBlocked(onlyBlocked, i)) {
-        const position = chamber.positionOf(kind, i)
+      const position = chamber.positionOf(kind, i)
 
-        drawStyledBlock(painter, position.x, position.y, style, opacity)
-      }
+      painter.drawSprite(state.isBlocked(kind, i) ? blockedSprite : unblockedSprite, position.x, position.y)
     }
   }
 }
 
 /**
- * Draws the arrows as triangles on the floor.
+ * Draws the arrows, each turned to its way.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  */
@@ -132,13 +68,14 @@ function drawArrows(painter: TilePainter, state: RulesState): void {
     const direction = chamber.directionOf('arrow', i)
 
     if (direction !== null) {
-      painter.drawTriangleTowards(direction, position.x, position.y, PALETTE.arrow)
+      painter.drawSprite('arrow', position.x, position.y, direction)
     }
   }
 }
 
 /**
- * Draws every wall tile inside the chamber.
+ * Draws every wall tile inside the chamber, each on its own, as the wall
+ * strip's lone tile.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  */
@@ -148,38 +85,15 @@ function drawWalls(painter: TilePainter, state: RulesState): void {
   for (let x = 0; x < chamber.width; x++) {
     for (let y = 0; y < chamber.height; y++) {
       if (chamber.isWall(x, y)) {
-        drawStyledBlock(painter, x, y, WALL_STYLE)
+        painter.drawStripTile('wall', STRIP_TILE.lone, x, y)
       }
     }
   }
 }
 
 /**
- * Draws the raised barriers as a radial gradient, lighter at the centre.
- * @param painter - Paints on the canvas
- * @param state - The state drawn
- */
-function drawBarriers(painter: TilePainter, state: RulesState): void {
-  const chamber = state.chamber
-  const size = painter.blockSize
-
-  for (let i = 0; i < chamber.countOf('barrier'); i++) {
-    if (!state.isBlocked('barrier', i)) {
-      continue
-    }
-
-    const position = chamber.positionOf('barrier', i)
-    const finalPosition = painter.getFinalPosition(position.x, position.y)
-    const x = finalPosition.x + (size / 2)
-    const y = finalPosition.y - size + (size / 2)
-    const gradient = painter.createRadialGradient(x, y, size, PALETTE.barrierCenter, PALETTE.barrierEdge)
-
-    painter.renderBlock(finalPosition.x, finalPosition.y, size, size, gradient, null, 0)
-  }
-}
-
-/**
- * Draws the open ditches.
+ * Draws the ditches: an open one on its own, as the ditch strip's lone tile,
+ * and a bridged one.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  */
@@ -187,72 +101,84 @@ function drawDitches(painter: TilePainter, state: RulesState): void {
   const chamber = state.chamber
 
   for (let i = 0; i < chamber.countOf('ditch'); i++) {
-    if (state.isBlocked('ditch', i)) {
-      const position = chamber.positionOf('ditch', i)
+    const position = chamber.positionOf('ditch', i)
 
-      painter.drawBlock(position.x, position.y, painter.blockSize, painter.blockSize, PALETTE.ditch, null, 0)
+    if (state.isBlocked('ditch', i)) {
+      painter.drawStripTile('ditch', STRIP_TILE.lone, position.x, position.y)
+    } else {
+      painter.drawSprite('ditch_bridged', position.x, position.y)
     }
   }
 }
 
 /**
- * Draws the lasers that are on, as a line through their tile.
+ * Draws the lasers, on or off, each turned to the way it runs.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  */
 function drawLasers(painter: TilePainter, state: RulesState): void {
-  const chamber = state.chamber
-  const entries = chamber.entriesOf('laser')
+  const entries = state.chamber.entriesOf('laser')
 
   entries.forEach((entry, i) => {
     const orientation = readOrientation(entry.direction)
 
-    if ((orientation !== null) && state.isBlocked('laser', i)) {
-      painter.drawLine(orientation, entry.x, entry.y, painter.blockSize, painter.blockSize, PALETTE.laser, PALETTE.laser, 0, 1, LASER_WIDTH_RATIO)
+    if (orientation !== null) {
+      painter.drawSprite(state.isBlocked('laser', i) ? 'laser_on' : 'laser_off', entry.x, entry.y, LASER_TURNS[orientation])
     }
   })
 }
 
 /**
- * Draws one box, shrunk to a quarter when on a button so the button shows.
+ * Draws the buttons, pressed or released.
  * @param painter - Paints on the canvas
- * @param x - Column, part way between two while it is carried through a step
- * @param y - Row, part way between two while it is carried through a step
- * @param onButton - Whether its tile holds a button
+ * @param state - The state drawn
  */
-function drawBox(painter: TilePainter, x: number, y: number, onButton: boolean): void {
-  if (onButton) {
-    painter.drawMiniBlock(x, y, painter.blockSize, painter.blockSize, BOX_STYLE.fillColor, BOX_STYLE.borderColor, BOX_STYLE.borderWidth)
-  } else {
-    drawStyledBlock(painter, x, y, BOX_STYLE)
+function drawButtons(painter: TilePainter, state: RulesState): void {
+  const chamber = state.chamber
+
+  for (let i = 0; i < chamber.countOf('button'); i++) {
+    const position = chamber.positionOf('button', i)
+
+    painter.drawSprite(state.isButtonPressed(i) ? 'button_pressed' : 'button_up', position.x, position.y)
   }
 }
 
 /**
- * Draws the boxes, shrunk to a quarter when on a button so the button shows.
- * A box carried through the step being drawn moves with the subject, which
- * covers it.
+ * Draws the switches.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
- * @param transition - The step being drawn, ending on the state drawn, or null to draw the state as it is
  */
-function drawBoxes(painter: TilePainter, state: RulesState, transition: StepTransition | null): void {
+function drawSwitches(painter: TilePainter, state: RulesState): void {
   const chamber = state.chamber
-  const carried = boxCarriedThrough(state, transition)
+
+  for (let i = 0; i < chamber.countOf('switch'); i++) {
+    const position = chamber.positionOf('switch', i)
+
+    painter.drawSprite('switch', position.x, position.y)
+  }
+}
+
+/**
+ * Draws the boxes that lie in the chamber, at half size on a button so the
+ * button shows. A carried box is drawn with the subject.
+ * @param painter - Paints on the canvas
+ * @param state - The state drawn
+ */
+function drawBoxes(painter: TilePainter, state: RulesState): void {
+  const chamber = state.chamber
 
   for (let i = 0; i < chamber.stateLayout.boxCount; i++) {
+    if (i === state.carriedBox) {
+      continue
+    }
+
     const x = state.boxX(i)
     const y = state.boxY(i)
-    const onButton = chamber.elementAt('button', x, y) !== NO_ELEMENT
 
-    if (i === carried) {
-      const pose = subjectPose(state, transition, painter.blockSize)
-
-      painter.drawClippedToTile(pose.clip, () => {
-        drawBox(painter, pose.x, pose.y, onButton)
-      })
+    if (chamber.elementAt('button', x, y) === NO_ELEMENT) {
+      painter.drawSprite('box', x, y)
     } else {
-      drawBox(painter, x, y, onButton)
+      painter.drawHalfSprite('box', x, y, Direction.UP, 0)
     }
   }
 }
@@ -261,13 +187,13 @@ function drawBoxes(painter: TilePainter, state: RulesState, transition: StepTran
 export const ELEMENT_DRAWINGS: Readonly<Record<ElementKind, ElementDrawing>> = {
   arrow: drawArrows,
   wall: drawWalls,
-  barrier: drawBarriers,
+  barrier: blockableDrawing('barrier', 'barrier_raised', 'barrier_lowered'),
   ditch: drawDitches,
   laser: drawLasers,
-  door: blockDrawing('door', DOOR_STYLE, 'door'),
-  exit: blockDrawing('exit', DOOR_STYLE, 'exit'),
-  button: blockDrawing('button', BUTTON_STYLE, null),
-  switch: blockDrawing('switch', SWITCH_STYLE, null),
+  door: blockableDrawing('door', 'door_closed', 'door_open'),
+  exit: blockableDrawing('exit', 'exit_closed', 'exit_open'),
+  button: drawButtons,
+  switch: drawSwitches,
   box: drawBoxes,
-  fizzler: blockDrawing('fizzler', FIZZLER_STYLE, 'fizzler', FIZZLER_OPACITY),
+  fizzler: blockableDrawing('fizzler', 'fizzler_on', 'fizzler_off'),
 }

@@ -3,7 +3,6 @@ import type {Direction} from '@/game/direction'
 import {GameEvent} from '@/game/game_event'
 import {PORTAL_COLORS, PortalColor} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
-import {NO_BOX} from '@/game/rules/state_layout'
 import {DELTAS, OPPOSITES} from '@/game/rules/step'
 import type {StepTransition} from '@/game/step_animation'
 
@@ -15,7 +14,7 @@ import type {StepTransition} from '@/game/step_animation'
 export type SubjectPose = {
   readonly x: number // Column, part way between two while it glides
   readonly y: number // Row, part way between two while it glides
-  readonly facing: Direction // The way its triangle points
+  readonly facing: Direction // The way it faces
   readonly clip: PositionData | null // The tile it shows only inside, or null to show it whole
 }
 
@@ -65,21 +64,6 @@ export function subjectPose(state: RulesState, transition: StepTransition | null
     facing: state.facing,
     clip: null,
   }
-}
-
-/**
- * The box the subject carries both before and after the step being drawn,
- * which is drawn with the subject, at its pose.
- * @param state - The state drawn
- * @param transition - The step being drawn, ending on the state drawn, or null
- * @returns The box's index, or NO_BOX when no box is carried through a step being drawn
- */
-export function boxCarriedThrough(state: RulesState, transition: StepTransition | null): number {
-  if ((transition === null) || (transition.to !== state) || (state.carriedBox === NO_BOX)) {
-    return NO_BOX
-  }
-
-  return (transition.from.carriedBox === state.carriedBox) ? state.carriedBox : NO_BOX
 }
 
 /**

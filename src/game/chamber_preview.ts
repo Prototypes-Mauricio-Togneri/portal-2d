@@ -11,10 +11,9 @@ import {startChamber} from '@/game/rules/step'
  * @param chamberData - The chamber JSON, which is only read
  * @param maxWidth - Width available, in canvas pixels
  * @param maxHeight - Height available, in canvas pixels
- * @param pixelRatio - Canvas pixels per page pixel, such as the screen's device pixel ratio; 1 by default
  * @throws Error when the rules can't load the chamber
  */
-export function drawChamberPreview(canvas: HTMLCanvasElement, chamberData: ChamberData, maxWidth: number, maxHeight: number, pixelRatio = 1): void {
+export function drawChamberPreview(canvas: HTMLCanvasElement, chamberData: ChamberData, maxWidth: number, maxHeight: number): void {
   const loaded = loadChamber(chamberData)
 
   if (loaded.chamber === null) {
@@ -22,7 +21,7 @@ export function drawChamberPreview(canvas: HTMLCanvasElement, chamberData: Chamb
   }
 
   const chamber = new CompiledChamber(loaded.chamber)
-  const renderer = new Renderer(canvas, maxWidth, maxHeight, pixelRatio)
+  const renderer = new Renderer(canvas, maxWidth, maxHeight)
   renderer.setSize(chamber.width, chamber.height)
   renderer.render(startChamber(chamber).state)
 }

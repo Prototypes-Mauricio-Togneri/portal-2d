@@ -28,7 +28,7 @@ function drawMap(): void {
     return
   }
   const pixelRatio = window.devicePixelRatio
-  drawChamberPreview(canvas, props.chamber.data, frame.clientWidth * pixelRatio, frame.clientHeight * pixelRatio, pixelRatio)
+  drawChamberPreview(canvas, props.chamber.data, frame.clientWidth * pixelRatio, frame.clientHeight * pixelRatio)
   canvas.style.width = `${canvas.width / pixelRatio}px`
   canvas.style.height = `${canvas.height / pixelRatio}px`
 }
