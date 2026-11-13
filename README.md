@@ -1,12 +1,8 @@
 # Portal 2D
 
-## Portal 2D
+## YouTube
 
 https://www.youtube.com/watch?v=99egKsmVyhI
-
-## Flash version
-
-https://armorgames.com/play/107/portal-the-flash-version
 https://www.youtube.com/watch?v=nS8VDs9rxiw
 
 ## Others

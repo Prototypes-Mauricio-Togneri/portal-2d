@@ -24,7 +24,7 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 - **Light:** from directly overhead, so every side of an object is shaded the same: no highlight on one side, no shadow on the other.
 - **Shadows:** don't draw a shadow falling outside the object. The game adds one shared drop shadow, made from each sprite's shape, under what stands raised (walls, raised barriers, closed doors, the closed exit, switches, boxes, the subject): a soft dark rim all round, with no offset, since the light is overhead. Walls cast theirs as one mass, so a run of walls has one shadow along its open sides.
 - **Readable small:** every sprite must still read at 40 px. On and off must differ at a glance, and the subject's facing must show from its shape alone.
-- **Colours:** the ones that carry a meaning match the palette (`src/game/palette.ts`), since the menus use the same colours. Keep blue and orange off every other sprite, so nothing is mistaken for a portal. Changing one of these means redrawing the sprites that use it, along with its CSS token.
+- **Colours:** the ones that carry a meaning match the palette (`src/game/palette.ts`), since the menus use the same colours. Keep blue and orange off every other sprite, so nothing is mistaken for a portal; the one exception is the fizzler's pale steel blue, taken from the author's mockup, greyer and darker than the blue portal. Changing one of these means redrawing the sprites that use it, along with its CSS token.
 
 | # | Colour | RGB | Used for |
 |---|--------|-----|----------|

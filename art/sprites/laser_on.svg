@@ -1,27 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <!--
-    A laser beam that is on (docs/sprites.md): drawn left to right through the
-    tile's middle, its square ends on both edges, so neighbouring laser tiles
-    make one beam. A soft pink haze, the beam, then its white-hot core. The
-    game turns it a quarter turn for a vertical laser.
+    A laser beam that is on (docs/sprites.md), as in the mockup: drawn left to
+    right through the tile's middle, its square ends on both edges, so
+    neighbouring laser tiles make one beam. A wide pink haze tinting the floor,
+    then a saturated magenta beam about 30 px across, lighter towards a
+    white-hot core. The game turns it a quarter turn for a vertical laser.
   -->
   <defs>
     <!-- The haze around the beam, fading out above and below it -->
-    <linearGradient id="haze" gradientUnits="userSpaceOnUse" x1="0" y1="112" x2="0" y2="144">
+    <linearGradient id="haze" gradientUnits="userSpaceOnUse" x1="0" y1="80" x2="0" y2="176">
       <stop offset="0" stop-color="rgb(252, 25, 150)" stop-opacity="0"/>
-      <stop offset="0.3" stop-color="rgb(252, 25, 150)" stop-opacity="0.35"/>
-      <stop offset="0.5" stop-color="rgb(252, 25, 150)" stop-opacity="0.5"/>
-      <stop offset="0.7" stop-color="rgb(252, 25, 150)" stop-opacity="0.35"/>
+      <stop offset="0.15" stop-color="rgb(252, 25, 150)" stop-opacity="0.08"/>
+      <stop offset="0.3" stop-color="rgb(252, 25, 150)" stop-opacity="0.24"/>
+      <stop offset="0.5" stop-color="rgb(252, 25, 150)" stop-opacity="0.32"/>
+      <stop offset="0.7" stop-color="rgb(252, 25, 150)" stop-opacity="0.24"/>
+      <stop offset="0.85" stop-color="rgb(252, 25, 150)" stop-opacity="0.08"/>
       <stop offset="1" stop-color="rgb(252, 25, 150)" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- The beam: saturated magenta at its edges, lighter inwards, white at its core -->
+    <linearGradient id="beam" gradientUnits="userSpaceOnUse" x1="0" y1="113" x2="0" y2="143">
+      <stop offset="0" stop-color="rgb(238, 14, 154)"/>
+      <stop offset="0.25" stop-color="rgb(246, 58, 178)"/>
+      <stop offset="0.38" stop-color="rgb(255, 205, 238)"/>
+      <stop offset="0.44" stop-color="rgb(255, 250, 254)"/>
+      <stop offset="0.56" stop-color="rgb(255, 250, 254)"/>
+      <stop offset="0.62" stop-color="rgb(255, 205, 238)"/>
+      <stop offset="0.75" stop-color="rgb(246, 58, 178)"/>
+      <stop offset="1" stop-color="rgb(238, 14, 154)"/>
     </linearGradient>
   </defs>
 
   <!-- Haze -->
-  <rect x="0" y="112" width="256" height="32" fill="url(#haze)"/>
+  <rect x="0" y="80" width="256" height="96" fill="url(#haze)"/>
 
-  <!-- Beam -->
-  <rect x="0" y="122" width="256" height="12" fill="rgb(252, 25, 150)"/>
-
-  <!-- Core -->
-  <rect x="0" y="126" width="256" height="4" fill="rgb(255, 225, 245)"/>
+  <!-- Beam, with its soft edges -->
+  <rect x="0" y="111" width="256" height="34" fill="rgb(238, 14, 154)" opacity="0.45"/>
+  <rect x="0" y="113" width="256" height="30" fill="url(#beam)"/>
 </svg>
