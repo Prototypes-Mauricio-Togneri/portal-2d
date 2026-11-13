@@ -43,8 +43,8 @@ A sprite with a direction is drawn once, one way, and the game turns it in quart
 | 1 | `subject` | Facing up, towards the top of the screen | To the way the subject faces |
 | 2 | `arrow` | Pointing up: the one way the subject may enter its tile | To the arrow's way |
 | 3 | `portal_blue`, `portal_orange` and their glows | On the top edge of its wall tile, opening up onto the tile above | To the side of the wall it opens on |
-| 4 | `laser_on`, `laser_off`, `laser_glow` | A beam running left to right through the tile's middle, touching both side edges, so neighbouring laser tiles make one beam | A quarter turn for a vertical laser; two lasers crossing on a tile are both drawn |
-| 5 | `door_*`, `exit_*`, `fizzler_*` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when more of what lines the gap lies above and below it than left and right: walls, the chamber's edge, doors, the exit, fizzlers, barriers and ditches |
+| 4 | `laser_on`, `laser_glow` | A beam running left to right through the tile's middle, touching both side edges, so neighbouring laser tiles make one beam | A quarter turn for a vertical laser; two lasers crossing on a tile are both drawn |
+| 5 | `door_*`, `exit_*`, `fizzler_on` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when more of what lines the gap lies above and below it than left and right: walls, the chamber's edge, doors, the exit, fizzlers, barriers and ditches |
 
 ## Joins
 
@@ -90,17 +90,15 @@ Every sprite is 256 px, or 384 px when it overhangs, except the two strips (1280
 | 12 | `button_pressed` | A floor button, held down by the subject or a box. A box on a button is drawn at half size, centred, so the button's rim must show around it |
 | 13 | `switch` | A switch, used with the interact key. It has no on or off |
 | 14 | `box` | A box. Carried, it is drawn at half size in front of the subject and turned with it, so there is no carrying pose to draw |
-| 15 | `fizzler_on` | A fizzler that is on: the subject walks through it and loses its portals and any box it carries; it stops shots. Drawn over everything, so keep it see-through |
-| 16 | `fizzler_off` | A fizzler that is off: its emitters dark, no field |
-| 17 | `laser_on` | A laser beam that is on: stops walking, lets shots through |
-| 18 | `laser_off` | The same laser off: walkable. A faint trace shows where it would come back |
-| 19 | `laser_glow` | The beam's glow (see [glow](#glow)) |
-| 20 | `arrow` | A floor arrow |
-| 21 | `portal_blue` | The blue portal |
-| 22 | `portal_orange` | The orange portal |
-| 23 | `portal_blue_glow` | The blue portal's glow |
-| 24 | `portal_orange_glow` | The orange portal's glow |
-| 25 | `subject` | The test subject seen from above, facing up. A face, visor or lit mark on its front makes the facing unmistakable |
+| 15 | `fizzler_on` | A fizzler that is on: the subject walks through it and loses its portals and any box it carries; it stops shots. Drawn over everything, so keep it see-through. A fizzler that is off isn't drawn (see [fizzle](#fizzle)) |
+| 16 | `laser_on` | A laser beam that is on: stops walking, lets shots through. A laser that is off isn't drawn |
+| 17 | `laser_glow` | The beam's glow (see [glow](#glow)) |
+| 18 | `arrow` | A floor arrow |
+| 19 | `portal_blue` | The blue portal |
+| 20 | `portal_orange` | The orange portal |
+| 21 | `portal_blue_glow` | The blue portal's glow |
+| 22 | `portal_orange_glow` | The orange portal's glow |
+| 23 | `subject` | The test subject seen from above, facing up. A face, visor or lit mark on its front makes the facing unmistakable |
 
 ## Order
 
@@ -111,14 +109,14 @@ The game draws from the bottom up, each later row over the earlier ones:
 | 1 | Floor | `floor` |
 | 2 | Floor marks | `arrow` |
 | 3 | Structure | `wall` |
-| 4 | Blockers | `barrier_*`, `ditch`, `ditch_bridged`, `laser_on`, `laser_off`, `door_*`, `exit_*` |
+| 4 | Blockers | `barrier_*`, `ditch`, `ditch_bridged`, `laser_on`, `door_*`, `exit_*` |
 | 5 | Portals | `portal_*` |
 | 6 | Fixtures | `button_*`, `switch` |
 | 7 | Items | `box` |
 | 8 | Subject | `subject` |
-| 9 | Fields | `fizzler_*` |
+| 9 | Fields | `fizzler_on`, whole or in pieces (see [fizzle](#fizzle)) |
 | 10 | Glow | `laser_glow`, `portal_*_glow` |
-| 11 | Fizzle | `portal_*`, `box`, `fizzler_on`, in pieces (see [fizzle](#fizzle)) |
+| 11 | Fizzle | `portal_*`, `box`, in pieces (see [fizzle](#fizzle)) |
 
 ## Glow
 
@@ -126,7 +124,7 @@ The three glows are drawn last, over everything, and added to the colours beneat
 
 ## Fizzle
 
-When the subject walks into a fizzler that is on, each portal it loses and a box it carries break up: the game cuts the sprite, as last drawn, into small square pieces, which drift out from its middle, shrink and fade in about 0.6 s, over everything. When a fizzler switches off, its field crumbles the same way, but in place: `fizzler_on` is cut into the same pieces, which shrink and fade where they are, one after another, over `fizzler_off`. There is nothing extra to draw, but the pieces show the sprite's own pixels, so a portal or box drawn as a thin outline breaks into very few. With reduced motion nothing breaks up.
+When the subject walks into a fizzler that is on, each portal it loses and a box it carries break up: the game cuts the sprite, as last drawn, into small square pieces, which drift out from its middle, shrink and fade in about 0.6 s, over everything. When a fizzler switches off, its field crumbles the same way in about 0.6 s, but in place, in its own layer: `fizzler_on` is cut into the same pieces, which shrink and fade where they are, one after another, leaving nothing; when it switches back on, they grow back in reverse, and one switched back part way turns back from where it is. There is nothing extra to draw, but the pieces show the sprite's own pixels, so a portal or box drawn as a thin outline breaks into very few. With reduced motion, and in the home menu's map and the gallery, nothing breaks up or forms.
 
 ## Sliding doors
 

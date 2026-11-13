@@ -377,7 +377,7 @@ export class TilePainter {
    * Draws a sprite broken into square pieces, its overhang too, each placed
    * on its own: a sprite coming apart. Each piece left where it was redraws
    * the sprite exactly as drawSprite() or drawHalfSprite() draw it, without
-   * its shadow.
+   * its shadow, so nothing is drawn while only shadows are painted.
    * @param name - The sprite
    * @param x - Column of the sprite's middle, in tiles: a tile's middle is its column plus a half
    * @param y - Row of the sprite's middle, in tiles: a tile's middle is its row plus a half
@@ -387,6 +387,10 @@ export class TilePainter {
    * @param place - Where each piece is drawn
    */
   drawSpritePieces(name: SpriteName, x: number, y: number, size: number, way: Direction, piecesAcross: number, place: PiecePlacer): void {
+    if (this.pass === 'shadows') {
+      return
+    }
+
     const side = Math.round(this.tileSize * size)
     const sprite = scaledSprite(name, side)
 

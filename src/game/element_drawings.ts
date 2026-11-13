@@ -1,26 +1,28 @@
 import {Direction} from '@/game/direction'
-import type {DoorOpenings} from '@/game/door_slides'
+import type {BlockedShares} from '@/game/element_transitions'
+import {pieceNumber} from '@/game/piece_number'
 import {type CompiledChamber, NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
 import type {BlockableKind, ElementKind} from '@/game/rules/element_registry'
 import type {RulesState} from '@/game/rules/rules_state'
 import {STRIP_TILE, type SpriteName, TILE_QUARTERS, type TileQuarter} from '@/game/sprite_set'
-import type {TilePainter} from '@/game/tile_painter'
+import type {PiecePlacer, TilePainter} from '@/game/tile_painter'
 
 // How each element type is drawn by the renderer, looked up by kind: the
 // rules can't touch the canvas, so drawing stays on the browser side. Each
 // element is drawn as its sprite for its state (docs/sprites.md), switched
-// off as well as on. Walls and open ditches join their neighbours, quarter
-// by quarter, and doors, the exit and fizzlers are turned to the walls
-// beside them; a door or the exit sliding open or shut is drawn part way.
-// Beside them, what moves with time alone: the lasers' glow, pulsing with
-// the portals'
+// off as well as on, except a fizzler or a laser that is off, which isn't
+// drawn at all. Walls and open ditches join their neighbours, quarter by
+// quarter, and doors, the exit and fizzlers are turned to the walls beside
+// them; a door or the exit sliding open or shut, or a fizzler crumbling away
+// or forming, is drawn part way. Beside them, what moves with time alone:
+// the lasers' glow, pulsing with the portals'
 
 /**
- * Draws every element of one type in a state, with the doors and the exit
- * that are sliding drawn part way open, or every one as the state says when
- * no openings are given.
+ * Draws every element of one type in a state, with the doors, the exit and
+ * the fizzlers that are changing drawn part way, or every one as the state
+ * says when no shares are given.
  */
-export type ElementDrawing = (painter: TilePainter, state: RulesState, openings?: DoorOpenings | null) => void
+export type ElementDrawing = (painter: TilePainter, state: RulesState, shares?: BlockedShares | null) => void
 
 /**
  * Which way a laser runs: H for horizontal, V for vertical.
@@ -36,6 +38,11 @@ type JoinTest = (x: number, y: number) => boolean
  * The element types that fill a gap in a wall, turned to the walls beside them.
  */
 type GapKind = 'door' | 'exit' | 'fizzler'
+
+/**
+ * The element types that slide open and shut.
+ */
+type SlidingKind = 'door' | 'exit'
 
 /**
  * Where the neighbours of a quarter lie: the column step to the tile beside
@@ -72,6 +79,12 @@ const GLOW_PERIOD_MILLISECONDS = 3600
 
 /** The glows' faintest strength in a pulse, the brightest being 1 */
 const GLOW_FAINTEST = 0.6
+
+/** Pieces across a fizzler's tile as its field crumbles away or forms */
+const FIELD_PIECES_ACROSS = 7
+
+/** The latest a piece of a crumbling field starts to shrink, as a share of the whole change, so the field crumbles away bit by bit */
+const LATEST_CRUMBLE_START = 0.55
 
 /** Element types that, besides walls and the chamber's edge, line a gap that a door, the exit or a fizzler fills */
 const GAP_SIDE_KINDS: readonly PlacedKind[] = [
@@ -163,11 +176,37 @@ function linesGap(chamber: CompiledChamber, x: number, y: number): boolean {
  * @param y - The element's row
  * @returns Up when drawn as it is, right for a quarter turn
  */
-export function gapTurn(chamber: CompiledChamber, x: number, y: number): Direction {
+function gapTurn(chamber: CompiledChamber, x: number, y: number): Direction {
   const across = Number(linesGap(chamber, x - 1, y)) + Number(linesGap(chamber, x + 1, y))
   const along = Number(linesGap(chamber, x, y + 1)) + Number(linesGap(chamber, x, y - 1))
 
   return (along > across) ? Direction.RIGHT : Direction.UP
+}
+
+/**
+ * Places the pieces of a fizzler's field part way through crumbling away or
+ * forming: each piece shrinks away to nothing where it is, fading, in its own
+ * time, and comes back the same way in reverse.
+ * @param share - How much of the field is left, from 0 (gone) to 1 (whole)
+ * @param seed - The fizzler's number, so its pieces keep their own times whichever way it changes
+ * @returns Where each piece is drawn, or null for one gone
+ */
+function crumblePlacer(share: number, seed: number): PiecePlacer {
+  return (_, __, index) => {
+    const start = LATEST_CRUMBLE_START * pieceNumber(seed, index, 0)
+    const own = Math.min(Math.max(((1 - share) - start) / (1 - start), 0), 1)
+
+    if (own >= 1) {
+      return null
+    }
+
+    return {
+      dx: 0,
+      dy: 0,
+      scale: 1 - own,
+      alpha: 1 - (own * own),
+    }
+  }
 }
 
 /**
@@ -191,30 +230,54 @@ function blockableDrawing(kind: Exclude<BlockableKind, 'ditch' | 'laser' | GapKi
 }
 
 /**
- * Builds a drawing for a type that fills a gap in a wall: each element's
- * sprite for whether it is blocked, turned to the walls beside it. A door or
- * the exit sliding is drawn part way: its open sprite, under its closed one
+ * Builds a drawing for a type that slides open and shut in a gap in a wall:
+ * each element's sprite for whether it is closed, turned to the walls beside
+ * it. One sliding is drawn part way: its open sprite, under its closed one
  * cut down the middle with each half slid into the wall beside it.
  * @param kind - The element type
- * @param blockedSprite - Its sprite while blocked (a door or the exit closed, a fizzler on)
- * @param unblockedSprite - Its sprite while not
+ * @param closedSprite - Its sprite while closed
+ * @param openSprite - Its sprite while open
  * @returns The drawing
  */
-function gapDrawing(kind: GapKind, blockedSprite: SpriteName, unblockedSprite: SpriteName): ElementDrawing {
-  return (painter, state, openings = null) => {
+function slidingDrawing(kind: SlidingKind, closedSprite: SpriteName, openSprite: SpriteName): ElementDrawing {
+  return (painter, state, shares = null) => {
     const chamber = state.chamber
 
     for (let i = 0; i < chamber.countOf(kind); i++) {
       const position = chamber.positionOf(kind, i)
       const turn = gapTurn(chamber, position.x, position.y)
-      const opening = ((openings === null) || (kind === 'fizzler')) ? null : openings(kind, i)
+      const share = (shares === null) ? null : shares(kind, i)
 
-      if (opening === null) {
-        painter.drawSprite(state.isBlocked(kind, i) ? blockedSprite : unblockedSprite, position.x, position.y, turn)
+      if (share === null) {
+        painter.drawSprite(state.isBlocked(kind, i) ? closedSprite : openSprite, position.x, position.y, turn)
       } else {
-        painter.drawSprite(unblockedSprite, position.x, position.y, turn)
-        painter.drawSpriteParted(blockedSprite, position.x, position.y, turn, opening)
+        painter.drawSprite(openSprite, position.x, position.y, turn)
+        painter.drawSpriteParted(closedSprite, position.x, position.y, turn, 1 - share)
       }
+    }
+  }
+}
+
+/**
+ * Draws the fizzlers that are on, each turned to the walls beside it; one
+ * that is off isn't drawn. One crumbling away or forming is drawn part way,
+ * in pieces of its sprite.
+ * @param painter - Paints on the canvas
+ * @param state - The state drawn
+ * @param shares - How far on the fizzlers that are changing are drawn, or null (the default) to draw every one as the state says
+ */
+function drawFizzlers(painter: TilePainter, state: RulesState, shares: BlockedShares | null = null): void {
+  const chamber = state.chamber
+
+  for (let i = 0; i < chamber.countOf('fizzler'); i++) {
+    const position = chamber.positionOf('fizzler', i)
+    const turn = gapTurn(chamber, position.x, position.y)
+    const share = (shares === null) ? null : shares('fizzler', i)
+
+    if (share !== null) {
+      painter.drawSpritePieces('fizzler_on', position.x + 0.5, position.y + 0.5, 1, turn, FIELD_PIECES_ACROSS, crumblePlacer(share, i))
+    } else if (state.isBlocked('fizzler', i)) {
+      painter.drawSprite('fizzler_on', position.x, position.y, turn)
     }
   }
 }
@@ -283,7 +346,8 @@ function drawDitches(painter: TilePainter, state: RulesState): void {
 }
 
 /**
- * Draws the lasers, on or off, each turned to the way it runs.
+ * Draws the lasers that are on, each turned to the way it runs; one that is
+ * off isn't drawn.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  */
@@ -293,8 +357,8 @@ function drawLasers(painter: TilePainter, state: RulesState): void {
   entries.forEach((entry, i) => {
     const orientation = readOrientation(entry.direction)
 
-    if (orientation !== null) {
-      painter.drawSprite(state.isBlocked('laser', i) ? 'laser_on' : 'laser_off', entry.x, entry.y, LASER_TURNS[orientation])
+    if ((orientation !== null) && state.isBlocked('laser', i)) {
+      painter.drawSprite('laser_on', entry.x, entry.y, LASER_TURNS[orientation])
     }
   })
 }
@@ -390,10 +454,10 @@ export const ELEMENT_DRAWINGS: Readonly<Record<ElementKind, ElementDrawing>> = {
   barrier: blockableDrawing('barrier', 'barrier_raised', 'barrier_lowered'),
   ditch: drawDitches,
   laser: drawLasers,
-  door: gapDrawing('door', 'door_closed', 'door_open'),
-  exit: gapDrawing('exit', 'exit_closed', 'exit_open'),
+  door: slidingDrawing('door', 'door_closed', 'door_open'),
+  exit: slidingDrawing('exit', 'exit_closed', 'exit_open'),
   button: drawButtons,
   switch: drawSwitches,
   box: drawBoxes,
-  fizzler: gapDrawing('fizzler', 'fizzler_on', 'fizzler_off'),
+  fizzler: drawFizzlers,
 }

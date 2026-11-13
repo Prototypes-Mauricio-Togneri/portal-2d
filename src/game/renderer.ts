@@ -1,5 +1,5 @@
-import type {DoorOpenings, DoorSlides} from '@/game/door_slides'
 import {drawLaserGlows, ELEMENT_DRAWINGS, glowStrength} from '@/game/element_drawings'
+import type {BlockedShares, ElementTransitions} from '@/game/element_transitions'
 import type {FizzleParticles} from '@/game/fizzle_particles'
 import type {CompiledChamber} from '@/game/rules/compiled_chamber'
 import {DRAW_LAYERS, type DrawLayer} from '@/game/rules/draw_layer'
@@ -49,12 +49,12 @@ const BACKDROP_LAYERS: ReadonlySet<DrawLayer> = new Set<DrawLayer>([
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  * @param layer - The layer
- * @param openings - How far open the doors and the exit that are sliding are drawn, or null (the default) to draw every one as the state says
+ * @param shares - How far blocked the doors, the exit and the fizzlers that are changing are drawn, or null (the default) to draw every one as the state says
  */
-function drawElementsOn(painter: TilePainter, state: RulesState, layer: DrawLayer, openings: DoorOpenings | null = null): void {
+function drawElementsOn(painter: TilePainter, state: RulesState, layer: DrawLayer, shares: BlockedShares | null = null): void {
   for (const definition of ELEMENT_REGISTRY) {
     if (definition.layer === layer) {
-      ELEMENT_DRAWINGS[definition.kind](painter, state, openings)
+      ELEMENT_DRAWINGS[definition.kind](painter, state, shares)
     }
   }
 }
@@ -115,10 +115,11 @@ export function hasAmbientLife(state: RulesState): boolean {
  * sized to fit the chamber in the screen area, and row 0 is at the bottom.
  * Part way through a step, the subject and a box it carries are drawn at the
  * subject's pose; the rest is drawn as the state after the step, but for the
- * doors and the exit still sliding open or shut, drawn part way. Last, over
- * everything, the lasers' and portals' glows are added to what lies beneath,
- * pulsing, and what a fizzle took and the fizzlers switched off break up; at
- * no time given, nothing slides, the glows hold steady and nothing breaks up.
+ * doors and the exit still sliding open or shut and the fizzlers still
+ * crumbling away or forming, drawn part way. Last, over everything, the
+ * lasers' and portals' glows are added to what lies beneath, pulsing, and
+ * what a fizzle took breaks up; at no time given, nothing changes over time,
+ * the glows hold steady and nothing breaks up.
  */
 export class Renderer {
   private readonly painter: TilePainter // Paints the tiles
@@ -217,9 +218,9 @@ export class Renderer {
    * @param state - The state drawn
    * @param layer - The layer
    * @param transition - The step being drawn, ending on the state drawn, or null to draw the state as it is
-   * @param openings - How far open the doors and the exit that are sliding are drawn, or null to draw every one as the state says
+   * @param shares - How far blocked the doors, the exit and the fizzlers that are changing are drawn, or null to draw every one as the state says
    */
-  private drawLayer(state: RulesState, layer: DrawLayer, transition: StepTransition | null, openings: DoorOpenings | null): void {
+  private drawLayer(state: RulesState, layer: DrawLayer, transition: StepTransition | null, shares: BlockedShares | null): void {
     this.painter.drawShadowsFirst(() => {
       switch (layer) {
         case 'portals':
@@ -232,7 +233,7 @@ export class Renderer {
           break
       }
 
-      drawElementsOn(this.painter, state, layer, openings)
+      drawElementsOn(this.painter, state, layer, shares)
     })
   }
 
@@ -256,27 +257,26 @@ export class Renderer {
 
   /**
    * Draws a whole frame, back to front: the backdrop, every layer above it,
-   * then the glows and the pieces of what a fizzle took and of the fizzlers
-   * switched off.
+   * then the glows and the pieces of what a fizzle took.
    * @param state - The state to draw
    * @param transition - The step being drawn, ending on the state drawn, or null (the default) to draw the state as it is
    * @param time - Now, in milliseconds on the frame clock, for what moves with time alone, or null (the default) to hold it still
-   * @param fizzle - What a fizzle took and the fizzlers switched off, breaking up, or null (the default) when nothing can
-   * @param doors - The doors and the exit sliding open or shut, or null (the default) when none can
+   * @param fizzle - What a fizzle took, breaking up, or null (the default) when nothing can
+   * @param changes - The doors, the exit and the fizzlers changing over time, or null (the default) when none can
    */
-  render(state: RulesState, transition: StepTransition | null = null, time: number | null = null, fizzle: FizzleParticles | null = null, doors: DoorSlides | null = null): void {
+  render(state: RulesState, transition: StepTransition | null = null, time: number | null = null, fizzle: FizzleParticles | null = null, changes: ElementTransitions | null = null): void {
     // A canvas not yet sized for a chamber has nothing to draw
     if (this.painter.blockSize <= 0) {
       return
     }
 
-    const openings: DoorOpenings | null = ((time !== null) && (doors !== null)) ? (kind, index) => doors.openingAt(kind, index, time) : null
+    const shares: BlockedShares | null = ((time !== null) && (changes !== null)) ? (kind, index) => changes.blockedAt(kind, index, time) : null
 
     this.painter.drawLayer(this.backdropOf(state), false)
 
     for (const layer of DRAW_LAYERS) {
       if (!BACKDROP_LAYERS.has(layer)) {
-        this.drawLayer(state, layer, transition, openings)
+        this.drawLayer(state, layer, transition, shares)
       }
     }
 
