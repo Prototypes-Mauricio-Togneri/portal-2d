@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <!--
-    A fizzler that is on (docs/sprites.md): the steel-blue
-    see-through field and its bright edge lines, filled with many fine
-    sparkle dots and a few brighter ones, each in a soft glow. No lines
-    cross the field. Drawn for a gap in a wall running left to right.
+    A fizzler that is on (docs/sprites.md): the cobalt see-through field,
+    filled with many fine sparkle dots and a few brighter ones, each in a
+    soft glow. No edge lines, and no lines cross the field. Drawn for a gap
+    in a wall running left to right.
   -->
   <defs>
-    <!-- The soft light around the edge lines and the particles -->
+    <!-- The soft light around the particles -->
     <filter id="glow" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
       <feGaussianBlur stdDeviation="4"/>
     </filter>
@@ -21,7 +21,7 @@
 
   <g clip-path="url(#tile)">
     <!-- The field -->
-    <rect x="0" y="0" width="256" height="256" fill="rgb(48, 76, 140)" opacity="0.62"/>
+    <rect x="0" y="0" width="256" height="256" fill="rgb(30, 80, 210)" opacity="0.62"/>
 
     <!-- Fine sparkle dots: many small ones, a few brighter, each over a soft glow of itself -->
     <use href="#dots" filter="url(#glow)" opacity="0.8"/>
@@ -100,18 +100,6 @@
       <circle cx="78.1" cy="100.9" r="4.2" fill="rgb(255, 255, 255)" opacity="1"/>
       <circle cx="226.7" cy="120.6" r="4.3" fill="rgb(255, 255, 255)" opacity="1"/>
       <circle cx="113.9" cy="154.2" r="4.1" fill="rgb(255, 255, 255)" opacity="1"/>
-    </g>
-
-    <!-- The edge lines along the floor on either side, and slightly fainter ones along the walls -->
-    <g fill="rgb(200, 222, 255)">
-      <rect x="0" y="2" width="256" height="8" opacity="0.6" filter="url(#glow)"/>
-      <rect x="0" y="246" width="256" height="8" opacity="0.6" filter="url(#glow)"/>
-      <rect x="0" y="4" width="256" height="4"/>
-      <rect x="0" y="248" width="256" height="4"/>
-      <rect x="0" y="0" width="6" height="256" opacity="0.4" filter="url(#glow)"/>
-      <rect x="250" y="0" width="6" height="256" opacity="0.4" filter="url(#glow)"/>
-      <rect x="0" y="0" width="4" height="256" opacity="0.8"/>
-      <rect x="252" y="0" width="4" height="256" opacity="0.8"/>
     </g>
   </g>
 </svg>
