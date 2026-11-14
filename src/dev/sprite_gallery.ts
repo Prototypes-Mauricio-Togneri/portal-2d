@@ -10,7 +10,6 @@ import {PORTAL_COLORS} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
 import {NO_BOX} from '@/game/rules/state_layout'
 import {startChamber, step} from '@/game/rules/step'
-import {drawPlaceholder} from '@/game/sprite_placeholders'
 import type {STRIP_TILE} from '@/game/sprite_set'
 import {SPRITE_OVERHANG, SPRITE_SHAPES, SPRITE_TILE_SIZE, STRIP_TILES, type SpriteName} from '@/game/sprite_set'
 import {loadSprites, spriteFileReport, spriteOf} from '@/game/sprite_sources'
@@ -58,14 +57,19 @@ type StatusLine = {
   readonly lampClass: string // The lamp's look: lit for a file in use, red for a file not used, none for no file
 }
 
+/**
+ * The size of a frame, in pixels.
+ */
+type FrameSize = {
+  readonly width: number // In pixels
+  readonly height: number // In pixels
+}
+
 /** Width of the home menu's map in a 1920 × 1080 window, in page pixels */
 const MENU_MAP_WIDTH = 647
 
 /** Height of the home menu's map in a 1920 × 1080 window, in page pixels */
 const MENU_MAP_HEIGHT = 485
-
-/** How long a saved placeholder's address is kept after its download starts, in milliseconds */
-const DOWNLOAD_URL_LIFETIME_MILLISECONDS = 10000
 
 /** Side of a tile the chambers are drawn at, in canvas pixels */
 const CHAMBER_TILE_SIZE = 40
@@ -199,30 +203,33 @@ function makeError(message: string): HTMLElement {
 }
 
 /**
- * Downloads a sprite's placeholder as a PNG of its file's size, named as its
- * file, to draw over.
+ * The size of a sprite's file without overhang: the frame shown when it has
+ * no usable file.
  * @param name - The sprite
+ * @returns Its width and height, in pixels
  */
-function savePlaceholder(name: SpriteName): void {
-  const canvas = drawPlaceholder(name)
+function emptyFrameSize(name: SpriteName): FrameSize {
+  const overhanging = SPRITE_TILE_SIZE + (2 * SPRITE_OVERHANG)
 
-  canvas?.toBlob((blob) => {
-    if (blob === null) {
-      return
-    }
+  switch (SPRITE_SHAPES[name]) {
+    case 'strip':
+      return {
+        width: SPRITE_TILE_SIZE * STRIP_TILES,
+        height: SPRITE_TILE_SIZE,
+      }
 
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
+    case 'glow':
+      return {
+        width: overhanging,
+        height: overhanging,
+      }
 
-    link.href = url
-    link.download = `${name}.png`
-    link.click()
-
-    // Kept a moment, since a browser may still be reading it for the download
-    window.setTimeout(() => {
-      URL.revokeObjectURL(url)
-    }, DOWNLOAD_URL_LIFETIME_MILLISECONDS)
-  }, 'image/png')
+    case 'tile':
+      return {
+        width: SPRITE_TILE_SIZE,
+        height: SPRITE_TILE_SIZE,
+      }
+  }
 }
 
 /**
@@ -247,7 +254,6 @@ function describeSize(name: SpriteName, width: number, height: number): string {
  */
 function describeStatus(name: SpriteName): StatusLine {
   const report = spriteFileReport(name)
-  const glow = SPRITE_SHAPES[name] === 'glow'
 
   switch (report.status) {
     case 'inUse':
@@ -258,19 +264,19 @@ function describeStatus(name: SpriteName): StatusLine {
 
     case 'refused':
       return {
-        text: `${glow ? 'Nothing glows' : 'Placeholder'}: its file is refused, as ${report.reason ?? 'it doesn\'t fit'}`,
+        text: `Not drawn: its file is refused, as ${report.reason ?? 'it doesn\'t fit'}`,
         lampClass: 'gallery-lamp-refused',
       }
 
     case 'notLoaded':
       return {
-        text: `${glow ? 'Nothing glows' : 'Placeholder'}: its file didn't download`,
+        text: 'Not drawn: its file didn\'t download',
         lampClass: 'gallery-lamp-refused',
       }
 
     case 'missing':
       return {
-        text: glow ? 'No file yet, so nothing glows' : 'Placeholder: no file yet',
+        text: 'Not drawn: no file yet',
         lampClass: '',
       }
   }
@@ -295,7 +301,8 @@ function makeStripLabels(width: string): HTMLElement {
 
 /**
  * Makes one sprite's card: its image as the game has it, on a checkerboard,
- * its name, size and status, and for a placeholder a button saving it.
+ * or an empty frame of its file's size when it has none, then its name, size
+ * and status.
  * @param name - The sprite
  * @returns The card
  */
@@ -307,11 +314,11 @@ function makeSpriteCard(name: SpriteName): HTMLElement {
   const canvas = document.createElement('canvas')
   const status = describeStatus(name)
 
-  // A glow without a file has no image: an empty frame of its file's size
-  const overhanging = SPRITE_TILE_SIZE + (2 * SPRITE_OVERHANG)
+  // A sprite without a usable file has no image: an empty frame of its file's size
+  const emptySize = emptyFrameSize(name)
 
-  canvas.width = sprite?.image.width ?? overhanging
-  canvas.height = sprite?.image.height ?? overhanging
+  canvas.width = sprite?.image.width ?? emptySize.width
+  canvas.height = sprite?.image.height ?? emptySize.height
 
   if (sprite !== null) {
     canvas.getContext('2d')?.drawImage(sprite.image, 0, 0)
@@ -331,22 +338,12 @@ function makeSpriteCard(name: SpriteName): HTMLElement {
   card.append(scroller)
 
   const heading = makeElement('h3', 'gallery-sprite-name', name)
-  const size = makeElement('p', 'gallery-sprite-size', describeSize(name, canvas.width, canvas.height))
+  const size = makeElement('p', 'gallery-sprite-size', (sprite === null) ? 'No image' : describeSize(name, canvas.width, canvas.height))
   const statusLine = makeElement('p', 'gallery-sprite-status')
 
   statusLine.append(makeElement('span', `gallery-lamp ${status.lampClass}`), status.text)
   statusLine.firstElementChild?.setAttribute('aria-hidden', 'true')
   card.append(heading, size, statusLine)
-
-  if ((spriteFileReport(name).status !== 'inUse') && (SPRITE_SHAPES[name] !== 'glow')) {
-    const button = makeElement('button', 'button button-quiet gallery-save', 'Save placeholder as PNG')
-
-    button.type = 'button'
-    button.addEventListener('click', () => {
-      savePlaceholder(name)
-    })
-    card.append(button)
-  }
 
   return card
 }

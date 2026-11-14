@@ -1,22 +1,22 @@
-import {drawPlaceholder} from '@/game/sprite_placeholders'
-import {isSpriteName, SPRITE_EXTENSIONS, SPRITE_OVERHANG, SPRITE_SHAPES, SPRITE_TILE_SIZE, STRIP_TILES, type SpriteName} from '@/game/sprite_set'
+import {allowedSizes, isSpriteName, overhangFor, SPRITE_EXTENSIONS, type SpriteName} from '@/game/sprite_set'
 
 /**
  * The chamber sprites' files, and what the game draws for each sprite: its
- * file, decoded, or else its placeholder. Every file in
+ * file, decoded, or else nothing. Every file in
  * `src/assets/images/chamber/` is found at build time and named by its
  * sprite (`docs/sprites.md`). The loading screen hands each one over as it
  * downloads (useSpriteFile); a page it doesn't run before, such as a dev
  * page, loads them itself (loadSprites). A file that is missing, can't be
- * decoded or has the wrong size leaves its sprite to its placeholder for the
- * rest of the visit, and is reported in development.
+ * decoded or has the wrong size leaves its sprite undrawn for the rest of the
+ * visit, and is reported in development; `npm run assets:check` keeps a
+ * missing file, or one of the wrong size, from being deployed.
  */
 
 /**
  * A sprite as the game draws it.
  */
 export type Sprite = {
-  readonly image: ImageBitmap | HTMLCanvasElement // Its file, decoded, or its placeholder
+  readonly image: ImageBitmap // Its file, decoded
   readonly overhang: number // Margin around its tile on every side, in the image's pixels: 0, or SPRITE_OVERHANG
 }
 
@@ -24,8 +24,7 @@ export type Sprite = {
  * What became of a sprite's file: there is none in the folder ('missing'),
  * it hasn't been handed over yet, or its download failed ('notLoaded'), the
  * game draws it ('inUse'), or it was refused because it can't be decoded or
- * has the wrong size ('refused'). Every sprite but one in use is drawn as its
- * placeholder.
+ * has the wrong size ('refused'). Only a sprite in use is drawn.
  */
 export type SpriteFileStatus = 'missing' | 'notLoaded' | 'inUse' | 'refused'
 
@@ -119,63 +118,13 @@ function groupNamesByUrl(urls: Map<SpriteName, string>): Map<string, SpriteName[
 const urlsByName = findSpriteFiles() // The address of each sprite's file, by the sprite's name
 const namesByUrl = groupNamesByUrl(urlsByName) // The names of the sprites each file's address serves
 const decodedSprites = new Map<SpriteName, Sprite>() // Each sprite whose file has been handed over, decoded and fits, by name
-const placeholders = new Map<SpriteName, Sprite | null>() // Each placeholder drawn so far, by its sprite's name; null for a glow
 const refusals = new Map<SpriteName, string>() // Why each sprite whose file was refused has no file in use, by name
-
-/**
- * Reads how far a sprite's file overhangs its tile from the file's size,
- * checking it against the size its shape asks for.
- * @param name - The sprite
- * @param width - Width of its file, in pixels
- * @param height - Height of its file, in pixels
- * @returns The margin around its tile on every side, in pixels, or null when its shape doesn't allow that size
- */
-function overhangFor(name: SpriteName, width: number, height: number): number | null {
-  const overhanging = SPRITE_TILE_SIZE + (2 * SPRITE_OVERHANG)
-
-  switch (SPRITE_SHAPES[name]) {
-    case 'strip':
-      return ((width === SPRITE_TILE_SIZE * STRIP_TILES) && (height === SPRITE_TILE_SIZE)) ? 0 : null
-
-    case 'glow':
-      return ((width === overhanging) && (height === overhanging)) ? SPRITE_OVERHANG : null
-
-    case 'tile':
-      if ((width === SPRITE_TILE_SIZE) && (height === SPRITE_TILE_SIZE)) {
-        return 0
-      }
-
-      return ((width === overhanging) && (height === overhanging)) ? SPRITE_OVERHANG : null
-  }
-}
-
-/**
- * The sizes a sprite's file may have, for reporting one that doesn't fit.
- * @param name - The sprite
- * @returns The sizes, in words
- */
-function allowedSizes(name: SpriteName): string {
-  const tile = `${SPRITE_TILE_SIZE} × ${SPRITE_TILE_SIZE} px`
-  const overhanging = SPRITE_TILE_SIZE + (2 * SPRITE_OVERHANG)
-  const overhangingTile = `${overhanging} × ${overhanging} px`
-
-  switch (SPRITE_SHAPES[name]) {
-    case 'strip':
-      return `${SPRITE_TILE_SIZE * STRIP_TILES} × ${SPRITE_TILE_SIZE} px`
-
-    case 'glow':
-      return overhangingTile
-
-    case 'tile':
-      return `${tile} or ${overhangingTile}`
-  }
-}
 
 /**
  * Takes a downloaded file, decoded, for each sprite it serves whose shape
  * allows its size. Does nothing for a file that is not a sprite's, nor for
  * one whose sprites all have theirs already. Never rejects: a file that can't
- * be decoded or has the wrong size leaves its sprites to their placeholders.
+ * be decoded or has the wrong size leaves its sprites undrawn.
  * @param url - Address of the file, as found at build time
  * @param file - The downloaded file
  */
@@ -224,7 +173,7 @@ export async function useSpriteFile(url: string, file: Blob): Promise<void> {
 /**
  * Downloads and decodes every sprite's file, for a page the loading screen
  * doesn't run before, such as a dev page. Never rejects: a file that fails
- * leaves its sprite to its placeholder.
+ * leaves its sprite undrawn.
  */
 export async function loadSprites(): Promise<void> {
   await Promise.all([...urlsByName.values()].map(async (url) => {
@@ -235,34 +184,18 @@ export async function loadSprites(): Promise<void> {
         await useSpriteFile(url, await response.blob())
       }
     } catch (_error) {
-      // Offline or blocked: the sprite keeps its placeholder
+      // Offline or blocked: the sprite stays undrawn
     }
   }))
 }
 
 /**
- * What the game draws for a sprite: its file, decoded, or else its
- * placeholder, drawn the first time it is asked for.
+ * What the game draws for a sprite: its file, decoded.
  * @param name - The sprite
- * @returns The sprite, or null for a glow without a usable file
+ * @returns The sprite, or null when it has no usable file
  */
 export function spriteOf(name: SpriteName): Sprite | null {
-  const decoded = decodedSprites.get(name)
-
-  if (decoded !== undefined) {
-    return decoded
-  }
-
-  if (!placeholders.has(name)) {
-    const image = drawPlaceholder(name)
-
-    placeholders.set(name, (image === null) ? null : {
-      image: image,
-      overhang: 0,
-    })
-  }
-
-  return placeholders.get(name) ?? null
+  return decodedSprites.get(name) ?? null
 }
 
 /**

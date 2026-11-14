@@ -2,7 +2,7 @@
 
 The art the chamber is drawn from: one image file per sprite, which the game composes tile by tile, choosing each by its element's state and its neighbours. This is the spec to draw them to.
 
-The game draws the chamber and the home menu's map from these files. A sprite whose file is missing, can't be decoded or has the wrong size is drawn as a placeholder made by code (the original flat drawing, switched-off elements faded) instead, so the sprites can arrive one at a time. In `npm run dev`, a file in the folder that isn't a sprite's, or of the wrong size, is logged as an error in the browser's console.
+The game draws the chamber and the home menu's map from these files. A sprite whose file is missing, can't be decoded or has the wrong size isn't drawn at all, so `npm run assets:check` (part of `npm run verify`, which every deploy runs) fails when a sprite has no file, more than one, or one of a size its shape doesn't allow. In `npm run dev`, a file in the folder that isn't a sprite's, or of the wrong size, is logged as an error in the browser's console.
 
 ## Files
 
@@ -16,7 +16,7 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 - **Tile:** 256 × 256 px. The game shrinks each sprite once to the tile size on screen: about 40 px for chamber 1 on a 1080p screen, about 170 px for the tutorial on a high-DPI screen, and smaller still in the home menu's map.
 - **Overhang:** a sprite that spills past its tile (a glow, a portal reaching into the room, a wide subject) is 384 × 384 px: its tile is the centred 256 px square, with 64 px of margin on every side. Any sprite may overhang; the game tells by the file's size.
 - **Strips:** `wall` and `ditch` are 1280 × 256 px, five tiles side by side (see [joins](#joins)).
-- **Any other size** is refused, and the placeholder drawn instead.
+- **Any other size** is refused, and the sprite isn't drawn.
 
 ## Look
 
@@ -24,7 +24,7 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 - **Light:** from directly overhead, so every side of an object is shaded the same: no highlight on one side, no shadow on the other.
 - **Shadows:** don't draw a shadow falling outside the object. The game adds one shared drop shadow, made from each sprite's shape, under what stands raised (walls, raised barriers, closed doors, the closed exit, switches, boxes, the subject): a soft dark rim all round, with no offset, since the light is overhead. Walls cast theirs as one mass, so a run of walls has one shadow along its open sides.
 - **Readable small:** every sprite must still read at 40 px. On and off must differ at a glance, and the subject's facing must show from its shape alone.
-- **Colours:** the ones that carry a meaning match the palette (`src/game/palette.ts`), since the menus use the same colours. Keep blue and orange off every other sprite, so nothing is mistaken for a portal; the one exception is the fizzler's see-through cobalt (30, 80, 210 at 62 %), deeper than the blue portal and with no edge lines. Changing one of these means redrawing the sprites that use it, along with its CSS token.
+- **Colours:** the ones that carry a meaning are listed here and copied by hand into the CSS tokens (`src/assets/styles.css`), since the menus use the same colours. Keep blue and orange off every other sprite, so nothing is mistaken for a portal; the one exception is the fizzler's see-through cobalt (30, 80, 210 at 62 %), deeper than the blue portal and with no edge lines. Changing one of these means redrawing the sprites that use it, along with its CSS token.
 
 | # | Colour | RGB | Used for |
 |---|--------|-----|----------|
@@ -32,7 +32,7 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 | 2 | Orange | 255, 160, 30 | The orange portal |
 | 3 | Red | 220, 60, 50 | The floor button (caution) |
 | 4 | Green | 0, 160, 100 | The subject |
-| 5 | Crimson | 235, 30, 55 | Lasers |
+| 5 | Crimson | 235, 30, 55 | Lasers, and the lit slot of their end plates |
 
 ## Turning
 
@@ -44,7 +44,8 @@ A sprite with a direction is drawn once, one way, and the game turns it in quart
 | 2 | `arrow` | Pointing up: the one way the subject may enter its tile | To the arrow's way |
 | 3 | `portal_blue`, `portal_orange` and their glows | On the top edge of its wall tile, opening up onto the tile above: a flat oval lying on the wall's slope, from just inside the tile's edge to the slope's lit lip, short enough to stay clear of the diagonals where two slopes meet at a wall's end; the glow centred on it | To the side of the wall it opens on |
 | 4 | `laser_on`, `laser_glow` | A beam running left to right through the tile's middle, touching both side edges, so neighbouring laser tiles make one beam | A quarter turn for a vertical laser; two lasers crossing on a tile are both drawn |
-| 5 | `door_closed`, `exit_closed`, `fizzler_on` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when more of what lines the gap lies above and below it than left and right: walls, the chamber's edge, doors, the exit, fizzlers, barriers and ditches |
+| 5 | `laser_end_on`, `laser_end_off` | At the left end of a beam running left to right: the plate on the tile's left edge, centred on the beam | To each end of each run of lasers, on the run's end tile: as drawn at a left end, a half turn at a right end, a quarter turn at a top or bottom end |
+| 6 | `door_closed`, `exit_closed`, `fizzler_on` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when more of what lines the gap lies above and below it than left and right: walls, the chamber's edge, doors, the exit, fizzlers, barriers and ditches |
 
 ## Joins
 
@@ -89,14 +90,16 @@ Every sprite is 256 px, or 384 px when it overhangs, except the two strips (1280
 | 11 | `switch` | A switch, used with the interact key. It has no on or off |
 | 12 | `box` | A box. Carried, it is drawn at half size in front of the subject and turned with it, so there is no carrying pose to draw |
 | 13 | `fizzler_on` | A fizzler that is on: the subject walks through it and loses its portals and any box it carries; it stops shots. Drawn over everything, so keep it see-through. A fizzler that is off isn't drawn (see [fizzle](#fizzle)) |
-| 14 | `laser_on` | A laser beam that is on: stops walking, lets shots through. A laser that is off isn't drawn; switched, it fades out or in over about 0.25 s, its glow with it |
+| 14 | `laser_on` | A laser beam that is on: stops walking, lets shots through. A beam that is off isn't drawn (its end plates are); switched, it fades out or in over about 0.25 s, its glow with it |
 | 15 | `laser_glow` | The beam's glow (see [glow](#glow)) |
-| 16 | `arrow` | A floor arrow |
-| 17 | `portal_blue` | The blue portal |
-| 18 | `portal_orange` | The orange portal |
-| 19 | `portal_blue_glow` | The blue portal's glow |
-| 20 | `portal_orange_glow` | The orange portal's glow |
-| 21 | `subject` | The test subject seen from above, facing up. A face, visor or lit mark on its front makes the facing unmistakable |
+| 16 | `laser_end_on` | A laser's end plate while the laser is on: a small plate where the beam starts or stops, its slot lit. Drawn at both ends of each run of lasers, over the beams, fading with its beam |
+| 17 | `laser_end_off` | The same plate with its slot dark: drawn at both ends of each run, on or off, under `laser_end_on`, so the two must match but for the slot |
+| 18 | `arrow` | A floor arrow |
+| 19 | `portal_blue` | The blue portal |
+| 20 | `portal_orange` | The orange portal |
+| 21 | `portal_blue_glow` | The blue portal's glow |
+| 22 | `portal_orange_glow` | The orange portal's glow |
+| 23 | `subject` | The test subject seen from above, facing up. A face, visor or lit mark on its front makes the facing unmistakable |
 
 ## Order
 
@@ -107,7 +110,7 @@ The game draws from the bottom up, each later row over the earlier ones:
 | 1 | Floor | `floor` |
 | 2 | Floor marks | `arrow` |
 | 3 | Structure | `wall` |
-| 4 | Blockers | `barrier_*`, `ditch`, `ditch_bridged`, `laser_on`, `door_closed`, `exit_closed` |
+| 4 | Blockers | `barrier_*`, `ditch`, `ditch_bridged`, `laser_on`, then `laser_end_*` over the beams, `door_closed`, `exit_closed` |
 | 5 | Portals | `portal_*` |
 | 6 | Fixtures | `button_*`, `switch` |
 | 7 | Items | `box` |
@@ -138,7 +141,7 @@ When a door or the exit opens or closes, it slides over about 0.3 s: the game dr
 
 Drop the file into the folder, and `npm run dev` picks it up. The sprite gallery, at `/src/dev/sprite_gallery.html` in `npm run dev`, reloads by itself when a file lands and shows:
 
-- each sprite as the game has it, at full size on a checkerboard, with its size and whether its file is in use, missing or refused (and why); a placeholder can be saved as a PNG of its file's size to draw over;
+- each sprite as the game has it, at full size on a checkerboard, with its size and whether its file is in use, missing or refused (and why); one without a usable file shows as an empty frame, since the game draws nothing for it;
 - a small chamber with every element, drawn by the game with everything on and with everything off, the subject carrying a box and both portals open;
 - every way walls and open ditches meet;
 - each chamber at its start.

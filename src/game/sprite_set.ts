@@ -1,7 +1,7 @@
 /**
  * What a sprite's file holds: one tile, which may overhang it; a strip of
- * tiles that walls or ditches join from; or a glow, which always overhangs
- * and is drawn only when its file exists.
+ * tiles that walls or ditches join from; or a glow, which always overhangs.
+ * Every sprite is drawn only when its file can be used.
  */
 export type SpriteShape = 'tile' | 'strip' | 'glow'
 
@@ -92,6 +92,8 @@ export const SPRITE_SHAPES = {
   fizzler_on: 'tile',
   laser_on: 'tile',
   laser_glow: 'glow',
+  laser_end_on: 'tile',
+  laser_end_off: 'tile',
   arrow: 'tile',
   portal_blue: 'tile',
   portal_orange: 'tile',
@@ -132,4 +134,53 @@ export const RAISED_SPRITES: ReadonlySet<SpriteName> = new Set<SpriteName>([
  */
 export function isSpriteName(text: string): text is SpriteName {
   return Object.keys(SPRITE_SHAPES).includes(text)
+}
+
+/**
+ * Reads how far a sprite's file overhangs its tile from the file's size,
+ * checking it against the size its shape asks for.
+ * @param name - The sprite
+ * @param width - Width of its file, in pixels
+ * @param height - Height of its file, in pixels
+ * @returns The margin around its tile on every side, in pixels, or null when its shape doesn't allow that size
+ */
+export function overhangFor(name: SpriteName, width: number, height: number): number | null {
+  const overhanging = SPRITE_TILE_SIZE + (2 * SPRITE_OVERHANG)
+
+  switch (SPRITE_SHAPES[name]) {
+    case 'strip':
+      return ((width === SPRITE_TILE_SIZE * STRIP_TILES) && (height === SPRITE_TILE_SIZE)) ? 0 : null
+
+    case 'glow':
+      return ((width === overhanging) && (height === overhanging)) ? SPRITE_OVERHANG : null
+
+    case 'tile':
+      if ((width === SPRITE_TILE_SIZE) && (height === SPRITE_TILE_SIZE)) {
+        return 0
+      }
+
+      return ((width === overhanging) && (height === overhanging)) ? SPRITE_OVERHANG : null
+  }
+}
+
+/**
+ * The sizes a sprite's file may have, for reporting one that doesn't fit.
+ * @param name - The sprite
+ * @returns The sizes, in words
+ */
+export function allowedSizes(name: SpriteName): string {
+  const tile = `${SPRITE_TILE_SIZE} × ${SPRITE_TILE_SIZE} px`
+  const overhanging = SPRITE_TILE_SIZE + (2 * SPRITE_OVERHANG)
+  const overhangingTile = `${overhanging} × ${overhanging} px`
+
+  switch (SPRITE_SHAPES[name]) {
+    case 'strip':
+      return `${SPRITE_TILE_SIZE * STRIP_TILES} × ${SPRITE_TILE_SIZE} px`
+
+    case 'glow':
+      return overhangingTile
+
+    case 'tile':
+      return `${tile} or ${overhangingTile}`
+  }
 }

@@ -200,7 +200,6 @@ export default withVueTs(
             '@/game/piece_number',
             '@/game/sprite_set',
             '@/game/sprite_sources',
-            '@/game/sprite_placeholders',
             '@/game/sprite_scaling',
           ],
           patterns: [
@@ -249,7 +248,6 @@ export default withVueTs(
             '@/game/piece_number',
             '@/game/sprite_set',
             '@/game/sprite_sources',
-            '@/game/sprite_placeholders',
             '@/game/sprite_scaling',
           ],
           patterns: [

@@ -7,7 +7,8 @@
  * handed to the game decoded before the preload resolves. The host keeps the
  * files cached for a year (firebase.json), so later visits read them from disk.
  * A file that fails is skipped and loads on demand later, as it would without
- * the preload; a chamber sprite that fails is drawn as its placeholder instead.
+ * the preload; a chamber sprite that fails isn't drawn for the rest of the
+ * visit.
  */
 import {useAudioFile} from '@/game/audio_sources'
 import {useSpriteFile} from '@/game/sprite_sources'
@@ -142,8 +143,8 @@ async function preloadAudio(download: FileDownload, report: () => void): Promise
 
 /**
  * Downloads one image, so the browser cache holds it for CSS, and hands it to
- * the game decoded when it is a chamber sprite. A sprite that fails is drawn
- * as its placeholder.
+ * the game decoded when it is a chamber sprite. A sprite that fails isn't
+ * drawn.
  * @param download - The file to download, updated as it arrives
  * @param report - Called whenever the download moves forward
  */

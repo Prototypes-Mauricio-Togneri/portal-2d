@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    A laser's end plate while its laser is off (docs/sprites.md): a small
+    dark steel plate on the tile's left edge, centred on the beam, with a
+    dark slot the beam leaves from. Drawn at the left end of a
+    beam running left to right; the game turns it to each end of each run of
+    lasers. It must match laser_end_on but for the slot, since the game
+    draws one over the other while the laser fades in or out.
+  -->
+  <defs>
+    <clipPath id="tile">
+      <rect x="0" y="0" width="256" height="256"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#tile)">
+    <!-- The plate, its far side past the tile's edge, so only its inner corners are rounded -->
+    <rect x="-4" y="96" width="28" height="64" rx="3" fill="rgb(50, 55, 61)" stroke="rgb(176, 183, 189)" stroke-width="2.5"/>
+
+    <!-- The slot -->
+    <rect x="17" y="114" width="6" height="28" rx="1" fill="rgb(104, 36, 46)"/>
+  </g>
+</svg>

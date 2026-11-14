@@ -69,7 +69,7 @@ function makeCanvas(width: number, height: number): DrawingCanvas {
  * Shrinks a strip quarter by quarter: each quarter of each of its tiles is
  * first copied alone, pixel for pixel, then shrunk to its place, so its
  * edges are shrunk from its own pixels only.
- * @param image - The strip's image: its file, or its placeholder
+ * @param image - The strip's image: its file, decoded
  * @param context - The shrunk strip's canvas, a strip of tiles of the tile size
  * @param tileSize - Side of a tile, in canvas pixels
  */
@@ -93,7 +93,7 @@ function scaleStrip(image: CanvasImageSource, context: CanvasRenderingContext2D,
  * Shrinks a sprite to a tile size.
  * @param name - The sprite
  * @param tileSize - Side of a tile, in canvas pixels
- * @returns The sprite at that size, or null for a glow without a usable file
+ * @returns The sprite at that size, or null for a sprite without a usable file
  * @throws Error when a canvas cannot provide a 2D context
  */
 function scale(name: SpriteName, tileSize: number): ScaledSprite | null {
@@ -194,7 +194,7 @@ function keptAt(store: Map<number, Map<SpriteName, ScaledSprite | null>>, tileSi
  * that size.
  * @param name - The sprite
  * @param tileSize - Side of a tile, in canvas pixels
- * @returns The sprite at that size, or null for a glow without a usable file, or a tile with no pixels
+ * @returns The sprite at that size, or null for a sprite without a usable file, or a tile with no pixels
  */
 export function scaledSprite(name: SpriteName, tileSize: number): ScaledSprite | null {
   // A canvas not yet sized for a chamber has nothing to draw

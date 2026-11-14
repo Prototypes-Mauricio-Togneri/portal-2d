@@ -10,8 +10,9 @@ import type {PiecePlacer, TilePainter} from '@/game/tile_painter'
 // How each element type is drawn by the renderer, looked up by kind: the
 // rules can't touch the canvas, so drawing stays on the browser side. Each
 // element is drawn as its sprite for its state (docs/sprites.md), switched
-// off as well as on, except an open door or exit and a fizzler or a laser
-// that is off, which aren't drawn at all. Walls and open ditches join their
+// off as well as on, except an open door or exit and a fizzler or a laser's
+// beam that is off, which aren't drawn at all; a laser's end plates show
+// where its beam ends, lit or not. Walls and open ditches join their
 // neighbours, quarter by quarter, and doors, the exit and fizzlers are turned
 // to the walls beside them; a door or the exit sliding open or shut, a
 // fizzler crumbling away or forming, or a laser fading out or in, is drawn
@@ -29,6 +30,17 @@ export type ElementDrawing = (painter: TilePainter, state: RulesState, shares?: 
  * Which way a laser runs: H for horizontal, V for vertical.
  */
 type LaserOrientation = 'H' | 'V'
+
+/**
+ * One end of a laser running a way: where the tile beyond it lies, and how
+ * the end plate, drawn at the left end of a beam running left to right, is
+ * turned there.
+ */
+type LaserEnd = {
+  readonly dx: number // Column step to the tile beyond the end
+  readonly dy: number // Row step to the tile beyond the end (rows grow upwards)
+  readonly turn: Direction // How the end plate is turned
+}
 
 /**
  * Whether a tile counts as part of a joined mass: a wall, or an open ditch.
@@ -105,6 +117,34 @@ const LASER_TURNS: Readonly<Record<LaserOrientation, Direction>> = {
   V: Direction.RIGHT,
 }
 
+/** The two ends of a laser running each way: left and right, or top and bottom */
+const LASER_ENDS: Readonly<Record<LaserOrientation, readonly LaserEnd[]>> = {
+  H: [
+    {
+      dx: -1,
+      dy: 0,
+      turn: Direction.UP,
+    },
+    {
+      dx: 1,
+      dy: 0,
+      turn: Direction.DOWN,
+    },
+  ],
+  V: [
+    {
+      dx: 0,
+      dy: 1,
+      turn: Direction.RIGHT,
+    },
+    {
+      dx: 0,
+      dy: -1,
+      turn: Direction.LEFT,
+    },
+  ],
+}
+
 /**
  * Reads a laser's orientation from its entry.
  * @param text - The entry's direction
@@ -112,6 +152,24 @@ const LASER_TURNS: Readonly<Record<LaserOrientation, Direction>> = {
  */
 function readOrientation(text: string | undefined): LaserOrientation | null {
   return ((text === 'H') || (text === 'V')) ? text : null
+}
+
+/**
+ * Whether a tile holds a laser running a way, either of two that cross there.
+ * @param chamber - The chamber
+ * @param x - Column
+ * @param y - Row
+ * @param orientation - The way it runs
+ * @returns True when one does, false for none or outside the chamber
+ */
+function hasLaserAt(chamber: CompiledChamber, x: number, y: number, orientation: LaserOrientation): boolean {
+  for (let index = chamber.elementAt('laser', x, y); index !== NO_ELEMENT; index = chamber.nextOnTile('laser', index)) {
+    if (readOrientation(chamber.entriesOf('laser')[index]?.direction) === orientation) {
+      return true
+    }
+  }
+
+  return false
 }
 
 /**
@@ -350,8 +408,10 @@ function drawDitches(painter: TilePainter, state: RulesState): void {
 }
 
 /**
- * Draws the lasers that are on, each turned to the way it runs; one that is
- * off isn't drawn. One fading out or in is drawn see-through.
+ * Draws the beams of the lasers that are on, each turned to the way it runs;
+ * one that is off isn't drawn, and one fading out or in is drawn
+ * see-through. Then, over every beam, the end plates at both ends of each
+ * run of lasers, on or off.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  * @param shares - How far on the lasers that are changing are drawn, or null (the default) to draw every one as the state says
@@ -373,6 +433,40 @@ function drawLasers(painter: TilePainter, state: RulesState, shares: BlockedShar
       painter.drawSprite('laser_on', entry.x, entry.y, LASER_TURNS[orientation])
     }
   })
+
+  // The end plates go over every beam, so a crossing beam never covers one
+  entries.forEach((entry, i) => {
+    const orientation = readOrientation(entry.direction)
+
+    if (orientation !== null) {
+      const share = (shares === null) ? null : shares('laser', i)
+
+      drawLaserEnds(painter, state.chamber, entry.x, entry.y, orientation, (share !== null) ? share : (state.isBlocked('laser', i) ? 1 : 0))
+    }
+  })
+}
+
+/**
+ * Draws a laser's end plate at each of its ends that ends its run, where the
+ * tile beyond holds no laser running the same way: unlit, with the lit one
+ * over it as far as the laser is on.
+ * @param painter - Paints on the canvas
+ * @param chamber - The chamber
+ * @param x - The laser's column
+ * @param y - The laser's row
+ * @param orientation - The way it runs
+ * @param shine - How far on it is drawn, from 0 (off) to 1 (on)
+ */
+function drawLaserEnds(painter: TilePainter, chamber: CompiledChamber, x: number, y: number, orientation: LaserOrientation, shine: number): void {
+  for (const end of LASER_ENDS[orientation]) {
+    if (!hasLaserAt(chamber, x + end.dx, y + end.dy, orientation)) {
+      painter.drawSprite('laser_end_off', x, y, end.turn)
+
+      if (shine > 0) {
+        painter.drawSpriteFaded('laser_end_on', x, y, end.turn, shine)
+      }
+    }
+  }
 }
 
 /**

@@ -234,13 +234,6 @@
         border-color: var(--color-red-deep);
         background: var(--color-red);
       }
-
-      .gallery-save {
-        min-height: 2.25rem;
-        margin-top: 0.75rem;
-        padding: 0 0.875rem;
-        font-size: 0.875rem;
-      }
     </style>
   </head>
   <body>
@@ -259,7 +252,7 @@
 
       <section id="sprites" class="gallery-section" aria-labelledby="sprites-title">
         <h2 id="sprites-title" class="ruled-label gallery-section-title">Sprites</h2>
-        <p class="gallery-text gallery-section-text">Each sprite at full size, as the game has it: its file, or the placeholder drawn in its place. A placeholder can be saved as a PNG of its file's size to draw over.</p>
+        <p class="gallery-text gallery-section-text">Each sprite at full size, as the game has it: its file, or an empty frame of its file's size when it has none to use, and then the game draws nothing for it.</p>
         <div id="sprites-list" class="gallery-sprites"></div>
       </section>
 

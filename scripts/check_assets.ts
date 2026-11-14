@@ -1,7 +1,7 @@
 import {existsSync, readdirSync, readFileSync} from 'node:fs'
 import {dirname, extname, join, relative, resolve, sep} from 'node:path'
 import {fileURLToPath} from 'node:url'
-import {isSpriteName, SPRITE_EXTENSIONS} from '@/game/sprite_set'
+import {allowedSizes, isSpriteName, overhangFor, SPRITE_EXTENSIONS, SPRITE_SHAPES, type SpriteName} from '@/game/sprite_set'
 
 // Checks that every file under src/assets is used, since the loading screen
 // downloads every audio and image file there (src/services/asset_preloader.ts)
@@ -11,9 +11,11 @@ import {isSpriteName, SPRITE_EXTENSIONS} from '@/game/sprite_set'
 // sprites (src/assets/images/chamber/) are found by a folder glob and matched
 // by name (src/game/sprite_sources.ts), so no source names them: instead each
 // entry there must be a file named like a sprite, with an extension a
-// sprite's file may have, and no sprite may have two files. Prints one line
-// per problem file, or one line when there is none, and exits non-zero on
-// any problem.
+// sprite's file may have, every sprite must have exactly one file, and its
+// size, read from the file's header, must be one its shape allows, since the
+// game draws nothing for a sprite without a usable file. Prints one line per
+// problem file, or one line when there is none, and exits non-zero on any
+// problem.
 //
 // References are found in the text rather than by parsing each language:
 // each source's comments are stripped by a small scanner that steps over
@@ -51,11 +53,19 @@ type Problem = {
 }
 
 /**
+ * An image's size, read from its file's header.
+ */
+type ImageSize = {
+  readonly width: number // In pixels
+  readonly height: number // In pixels
+}
+
+/**
  * What the check went through.
  */
 type CheckTotals = {
   readonly referenced: number // Files outside the sprites' folder that production source references
-  readonly sprites: number // Sprites with one file in the sprites' folder
+  readonly sprites: number // Sprites with one file of a size their shape allows in the sprites' folder
   readonly sources: number // Production source files read
 }
 
@@ -70,6 +80,24 @@ const ASSETS_DIRECTORY = join(SOURCE_DIRECTORY, 'assets')
 
 /** Where the chamber sprites are, matched by name rather than referenced */
 const SPRITES_DIRECTORY = join(ASSETS_DIRECTORY, 'images', 'chamber')
+
+/** The bytes a PNG file starts with */
+const PNG_SIGNATURE = Buffer.from([
+  0x89,
+  0x50,
+  0x4e,
+  0x47,
+  0x0d,
+  0x0a,
+  0x1a,
+  0x0a,
+])
+
+/** Bytes up to the end of a PNG's size, in its first chunk */
+const PNG_HEADER_LENGTH = 24
+
+/** Bytes up to the end of a WebP's size, in any of its three forms */
+const WEBP_HEADER_LENGTH = 30
 
 /** Where the development pages are, which are never built */
 const DEV_DIRECTORY = join(SOURCE_DIRECTORY, 'dev')
@@ -289,21 +317,86 @@ function collectReferences(sources: readonly SourceFile[]): Set<string> {
 }
 
 /**
- * Checks the sprites' folder: each entry must be a file named like a sprite,
- * with an extension a sprite's file may have, and no sprite may have two
- * files.
- * @param problems - Where each problem found is added
- * @returns How many sprites have a file there, without a problem
+ * Reads an image's size from its file's header: a PNG's, or a WebP's in any
+ * of its three forms (lossy, lossless or extended).
+ * @param bytes - The file
+ * @returns Its width and height, or null when it is neither a PNG nor a WebP whose header can be read
  */
-function checkSprites(problems: Problem[]): number {
-  if (!existsSync(SPRITES_DIRECTORY)) {
-    return 0
+function readImageSize(bytes: Buffer): ImageSize | null {
+  if ((bytes.length >= PNG_HEADER_LENGTH) && bytes.subarray(0, PNG_SIGNATURE.length).equals(PNG_SIGNATURE) && (bytes.toString('ascii', 12, 16) === 'IHDR')) {
+    return {
+      width: bytes.readUInt32BE(16),
+      height: bytes.readUInt32BE(20),
+    }
   }
 
-  const fileNamesBySprite = new Map<string, string[]>()
-  const entries = readdirSync(SPRITES_DIRECTORY, {
+  if ((bytes.length < WEBP_HEADER_LENGTH) || (bytes.toString('ascii', 0, 4) !== 'RIFF') || (bytes.toString('ascii', 8, 12) !== 'WEBP')) {
+    return null
+  }
+
+  switch (bytes.toString('ascii', 12, 16)) {
+    // Lossy: after a frame tag and a start code, each size in 14 bits
+    case 'VP8 ':
+      return {
+        width: bytes.readUInt16LE(26) & 0x3fff,
+        height: bytes.readUInt16LE(28) & 0x3fff,
+      }
+
+    // Lossless: after a signature byte, each size less one in 14 bits
+    case 'VP8L': {
+      const bits = bytes.readUInt32LE(21)
+
+      return {
+        width: (bits & 0x3fff) + 1,
+        height: ((bits >>> 14) & 0x3fff) + 1,
+      }
+    }
+
+    // Extended: after the flags, each size less one in 24 bits
+    case 'VP8X':
+      return {
+        width: bytes.readUIntLE(24, 3) + 1,
+        height: bytes.readUIntLE(27, 3) + 1,
+      }
+
+    default:
+      return null
+  }
+}
+
+/**
+ * Checks a sprite's one file: it must be an image of a size the sprite's
+ * shape allows.
+ * @param sprite - The sprite
+ * @param path - Its file's absolute path
+ * @returns What is wrong with it, or null when nothing is
+ */
+function checkSpriteFile(sprite: SpriteName, path: string): string | null {
+  const size = readImageSize(readFileSync(path))
+
+  if (size === null) {
+    return 'not a PNG or WebP image whose size can be read; the game would draw nothing for this sprite'
+  }
+
+  if (overhangFor(sprite, size.width, size.height) === null) {
+    return `it is ${size.width} × ${size.height} px; sprite ${sprite} must be ${allowedSizes(sprite)}, or the game draws nothing for it`
+  }
+
+  return null
+}
+
+/**
+ * Checks the sprites' folder: each entry must be a file named like a sprite,
+ * with an extension a sprite's file may have, every sprite must have exactly
+ * one file, and its size must be one its shape allows.
+ * @param problems - Where each problem found is added
+ * @returns How many sprites have one file there, of a size their shape allows
+ */
+function checkSprites(problems: Problem[]): number {
+  const fileNamesBySprite = new Map<SpriteName, string[]>()
+  const entries = existsSync(SPRITES_DIRECTORY) ? readdirSync(SPRITES_DIRECTORY, {
     withFileTypes: true,
-  }).sort((first, second) => first.name.localeCompare(second.name))
+  }).sort((first, second) => first.name.localeCompare(second.name)) : []
 
   for (const entry of entries) {
     const path = join(SPRITES_DIRECTORY, entry.name)
@@ -329,7 +422,7 @@ function checkSprites(problems: Problem[]): number {
       reasons.push(`a sprite's file must end in ${SPRITE_EXTENSIONS.map((allowed) => `.${allowed}`).join(' or ')}`)
     }
 
-    if (reasons.length > 0) {
+    if (!isSpriteName(baseName) || (reasons.length > 0)) {
       problems.push({
         path: path,
         reason: reasons.join('; '),
@@ -344,20 +437,34 @@ function checkSprites(problems: Problem[]): number {
 
   let sprites = 0
 
-  for (const [
-    sprite,
-    fileNames,
-  ] of fileNamesBySprite) {
-    if (fileNames.length === 1) {
-      sprites++
-      continue
-    }
+  for (const sprite of Object.keys(SPRITE_SHAPES).filter(isSpriteName)) {
+    const fileNames = fileNamesBySprite.get(sprite) ?? []
+    const [fileName] = fileNames
 
-    for (const fileName of fileNames) {
+    if (fileName === undefined) {
       problems.push({
-        path: join(SPRITES_DIRECTORY, fileName),
-        reason: `sprite ${sprite} has more than one file (${fileNames.join(', ')}); the game draws one, and the loading screen downloads the others for nothing`,
+        path: join(SPRITES_DIRECTORY, sprite),
+        reason: `sprite ${sprite} has no file; the game draws nothing for it (see docs/sprites.md)`,
       })
+    } else if (fileNames.length > 1) {
+      for (const duplicate of fileNames) {
+        problems.push({
+          path: join(SPRITES_DIRECTORY, duplicate),
+          reason: `sprite ${sprite} has more than one file (${fileNames.join(', ')}); the game draws one, and the loading screen downloads the others for nothing`,
+        })
+      }
+    } else {
+      const path = join(SPRITES_DIRECTORY, fileName)
+      const reason = checkSpriteFile(sprite, path)
+
+      if (reason === null) {
+        sprites++
+      } else {
+        problems.push({
+          path: path,
+          reason: reason,
+        })
+      }
     }
   }
 
