@@ -72,6 +72,7 @@ function placePiece(burst: Burst, progress: number, offsetX: number, offsetY: nu
     dy: travelled * Math.sin(angle),
     scale: 1 - ((1 - SMALLEST_SCALE) * own),
     alpha: 1 - (own * own),
+    roundness: 0,
   }
 }
 

@@ -41,14 +41,15 @@ const TURNS: Readonly<Record<Direction, QuarterTurn>> = {
 
 /**
  * Where one piece of a sprite breaking up is drawn, in the sprite's own
- * frame, as drawn facing up: how far it has moved from its place, how large
- * and how opaque it is.
+ * frame, as drawn facing up: how far it has moved from its place, how large,
+ * how opaque and how round it is.
  */
 export type PiecePlacement = {
   readonly dx: number // How far it has moved right, in tiles
   readonly dy: number // How far it has moved down, in tiles
   readonly scale: number // Its size, as a share of its own
   readonly alpha: number // Its opacity, from 0 (gone) to 1
+  readonly roundness: number // How far its corners are rounded off, from 0 (square) to 1 (round ends of half its shorter side: a circle for a square piece)
 }
 
 /**
@@ -395,9 +396,10 @@ export class TilePainter {
 
   /**
    * Draws a sprite broken into square pieces, its overhang too, each placed
-   * on its own: a sprite coming apart. Each piece left where it was redraws
-   * the sprite exactly as drawSprite() or drawHalfSprite() draw it, without
-   * its shadow, so nothing is drawn while only shadows are painted.
+   * on its own, and rounded off as far as its placement says: a sprite
+   * coming apart. Each square piece left where it was redraws the sprite
+   * exactly as drawSprite() or drawHalfSprite() draw it, without its
+   * shadow, so nothing is drawn while only shadows are painted.
    * @param name - The sprite
    * @param x - Column of the sprite's middle, in tiles: a tile's middle is its column plus a half
    * @param y - Row of the sprite's middle, in tiles: a tile's middle is its row plus a half
@@ -450,9 +452,24 @@ export class TilePainter {
 
           const width = sourceWidth * placement.scale
           const height = sourceHeight * placement.scale
+          const pieceLeft = middleX + (placement.dx * this.tileSize) - (width / 2)
+          const pieceTop = middleY + (placement.dy * this.tileSize) - (height / 2)
 
           this.context.globalAlpha = Math.min(placement.alpha, 1)
-          this.context.drawImage(image, sourceLeft, sourceTop, sourceWidth, sourceHeight, middleX + (placement.dx * this.tileSize) - (width / 2), middleY + (placement.dy * this.tileSize) - (height / 2), width, height)
+
+          if (placement.roundness > 0) {
+            // A rounded piece shows only the part of its square inside its rounded corners
+            const radius = Math.min(placement.roundness, 1) * Math.min(width, height) / 2
+
+            this.context.save()
+            this.context.beginPath()
+            this.context.roundRect(pieceLeft, pieceTop, width, height, radius)
+            this.context.clip()
+            this.context.drawImage(image, sourceLeft, sourceTop, sourceWidth, sourceHeight, pieceLeft, pieceTop, width, height)
+            this.context.restore()
+          } else {
+            this.context.drawImage(image, sourceLeft, sourceTop, sourceWidth, sourceHeight, pieceLeft, pieceTop, width, height)
+          }
         }
       }
     } finally {

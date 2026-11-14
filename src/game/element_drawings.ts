@@ -87,6 +87,9 @@ const FIELD_PIECES_ACROSS = 7
 /** The latest a piece of a crumbling field starts to shrink, as a share of the whole change, so the field crumbles away bit by bit */
 const LATEST_CRUMBLE_START = 0.55
 
+/** How far a piece of a crumbling field has shrunk, as a share of its own change, when it has become a full circle: it starts square, so the whole field joins without a seam */
+const CRUMBLE_ROUNDED_BY = 0.15
+
 /** Element types that, besides walls and the chamber's edge, line a gap that a door, the exit or a fizzler fills */
 const GAP_SIDE_KINDS: readonly PlacedKind[] = [
   'door',
@@ -186,8 +189,9 @@ function gapTurn(chamber: CompiledChamber, x: number, y: number): Direction {
 
 /**
  * Places the pieces of a fizzler's field part way through crumbling away or
- * forming: each piece shrinks away to nothing where it is, fading, in its own
- * time, and comes back the same way in reverse.
+ * forming: each piece rounds off into a circle as it starts, then shrinks
+ * away to nothing where it is, fading, in its own time, and comes back the
+ * same way in reverse.
  * @param share - How much of the field is left, from 0 (gone) to 1 (whole)
  * @param seed - The fizzler's number, so its pieces keep their own times whichever way it changes
  * @returns Where each piece is drawn, or null for one gone
@@ -206,6 +210,7 @@ function crumblePlacer(share: number, seed: number): PiecePlacer {
       dy: 0,
       scale: 1 - own,
       alpha: 1 - (own * own),
+      roundness: Math.min(own / CRUMBLE_ROUNDED_BY, 1),
     }
   }
 }
@@ -260,7 +265,7 @@ function slidingDrawing(kind: SlidingKind, closedSprite: SpriteName): ElementDra
 /**
  * Draws the fizzlers that are on, each turned to the walls beside it; one
  * that is off isn't drawn. One crumbling away or forming is drawn part way,
- * in pieces of its sprite.
+ * in round pieces of its sprite.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  * @param shares - How far on the fizzlers that are changing are drawn, or null (the default) to draw every one as the state says
