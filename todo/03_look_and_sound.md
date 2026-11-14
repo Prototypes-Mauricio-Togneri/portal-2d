@@ -74,7 +74,7 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 - [x] **Particles when something fizzles** (uses the frontend-design skill). On the fizzler event emitted by 01 (portals cleared, box destroyed). Verify: none with reduced motion.
 - [x] **Check high-DPI again.** 00's sharpness fix still holds with every new layer, and sprites stay sharp up to their 256 px. Verify: 200 % browser zoom and a high-DPI screen.
 - [x] **The art.** Every placeholder replaced, following `docs/sprites.md`: each sprite drawn in code as an SVG in `art/sprites/`, exported to WebP in `src/assets/images/chamber/`, so the author draws none. Verify: each new file checked in the gallery and in a chamber; no placeholder left.
-- [ ] **Docs for the new look.** `AGENTS.md` (the frozen-drawing rule replaced, the layout, the loading screen handing sprites over, the sprites' colours matched by hand to the palette), `docs/elements.md` (adding an element needs its sprites in `docs/sprites.md` and a placeholder) and stage 04's notes. Verify: a read-through matches the behaviour.
+- [x] **Docs for the new look.** `AGENTS.md` (the frozen-drawing rule replaced, the layout, the loading screen handing sprites over, the sprites' colours matched by hand to the palette), `docs/elements.md` (adding an element needs its sprites in `docs/sprites.md` and a placeholder) and stage 04's notes. Verify: a read-through matches the behaviour.
 
 ### Phase C — Music that reacts to play
 
@@ -122,7 +122,7 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 
 ## Notes for later stages
 
-- Stage 04 draws its new mechanics in this stage's look: sprites made to `docs/sprites.md`, every state of each, distinct from every existing element, with a placeholder drawn by code until the art exists; and it gives them sounds that fit this stage's sound.
+- Stage 04 draws its new mechanics in this stage's look: sprites made to `docs/sprites.md` as this stage's were (each drawn in code as an SVG in `art/sprites/` and exported to its file), every state of each, distinct from every existing element, with a placeholder drawn by code until the file exists; and it gives them sounds that fit this stage's sound.
 - Links stay by position in stage 04 too (README decision 13 settled open decision 6): inserting or reordering chambers shifts them, with no redirect table.
 - Every chamber must fit the screen whole, since there is no camera: stage 04's chambers and stage 05's grid cap stay within that.
 - Stage 05's editor reuses the chamber format, the renderer and the solution recorder.
