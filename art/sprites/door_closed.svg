@@ -57,8 +57,6 @@
   <circle cx="128" cy="128" r="28" fill="none" stroke="rgb(234, 150, 166)" stroke-width="12"/>
   <circle cx="128" cy="128" r="33" fill="none" stroke="rgb(255, 216, 224)" stroke-width="1.5"/>
 
-  <!-- The seam where the two leaves meet, splitting the ring -->
-  <rect x="124" y="25" width="1" height="206" fill="rgb(148, 56, 74)"/>
-  <rect x="126" y="25" width="4" height="206" fill="rgb(38, 8, 16)"/>
-  <rect x="131" y="25" width="1" height="206" fill="rgb(148, 56, 74)"/>
+  <!-- The seam where the two leaves meet, a soft line from edge to edge, splitting the frame and the ring -->
+  <rect x="126.5" y="0" width="3" height="256" fill="rgb(38, 8, 16)" opacity="0.25"/>
 </svg>

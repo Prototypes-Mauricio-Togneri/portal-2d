@@ -44,7 +44,7 @@ A sprite with a direction is drawn once, one way, and the game turns it in quart
 | 2 | `arrow` | Pointing up: the one way the subject may enter its tile | To the arrow's way |
 | 3 | `portal_blue`, `portal_orange` and their glows | On the top edge of its wall tile, opening up onto the tile above | To the side of the wall it opens on |
 | 4 | `laser_on`, `laser_glow` | A beam running left to right through the tile's middle, touching both side edges, so neighbouring laser tiles make one beam | A quarter turn for a vertical laser; two lasers crossing on a tile are both drawn |
-| 5 | `door_*`, `exit_*`, `fizzler_on` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when more of what lines the gap lies above and below it than left and right: walls, the chamber's edge, doors, the exit, fizzlers, barriers and ditches |
+| 5 | `door_closed`, `exit_closed`, `fizzler_on` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when more of what lines the gap lies above and below it than left and right: walls, the chamber's edge, doors, the exit, fizzlers, barriers and ditches |
 
 ## Joins
 
@@ -82,23 +82,21 @@ Every sprite is 256 px, or 384 px when it overhangs, except the two strips (1280
 | 4 | `ditch_bridged` | A ditch bridged over: walkable |
 | 5 | `barrier_raised` | A raised barrier: stops walking and shots. Drawn over floor or over a wall tile, so it must read on both |
 | 6 | `barrier_lowered` | A lowered barrier, flush: walkable, lets shots through |
-| 7 | `door_closed` | A closed door: stops walking and shots. Its two leaves meet on the tile's middle line (see [sliding doors](#sliding-doors)) |
-| 8 | `door_open` | An open door, its leaves drawn back |
-| 9 | `exit_closed` | The exit, closed. Its two leaves meet on the tile's middle line, as a door's do |
-| 10 | `exit_open` | The exit, open: walking onto it completes the chamber |
-| 11 | `button_up` | A floor button, released |
-| 12 | `button_pressed` | A floor button, held down by the subject or a box. A box on a button is drawn at half size, centred, so the button's rim must show around it |
-| 13 | `switch` | A switch, used with the interact key. It has no on or off |
-| 14 | `box` | A box. Carried, it is drawn at half size in front of the subject and turned with it, so there is no carrying pose to draw |
-| 15 | `fizzler_on` | A fizzler that is on: the subject walks through it and loses its portals and any box it carries; it stops shots. Drawn over everything, so keep it see-through. A fizzler that is off isn't drawn (see [fizzle](#fizzle)) |
-| 16 | `laser_on` | A laser beam that is on: stops walking, lets shots through. A laser that is off isn't drawn; switched, it fades out or in over about 0.25 s, its glow with it |
-| 17 | `laser_glow` | The beam's glow (see [glow](#glow)) |
-| 18 | `arrow` | A floor arrow |
-| 19 | `portal_blue` | The blue portal |
-| 20 | `portal_orange` | The orange portal |
-| 21 | `portal_blue_glow` | The blue portal's glow |
-| 22 | `portal_orange_glow` | The orange portal's glow |
-| 23 | `subject` | The test subject seen from above, facing up. A face, visor or lit mark on its front makes the facing unmistakable |
+| 7 | `door_closed` | A closed door: stops walking and shots. Its two leaves meet on the tile's middle line (see [sliding doors](#sliding-doors)). An open door isn't drawn, so its tile shows the floor |
+| 8 | `exit_closed` | The exit, closed. Its two leaves meet on the tile's middle line, as a door's do. The open exit isn't drawn, so its tile shows the floor; walking onto it completes the chamber |
+| 9 | `button_up` | A floor button, released |
+| 10 | `button_pressed` | A floor button, held down by the subject or a box. A box on a button is drawn at half size, centred, so the button's rim must show around it |
+| 11 | `switch` | A switch, used with the interact key. It has no on or off |
+| 12 | `box` | A box. Carried, it is drawn at half size in front of the subject and turned with it, so there is no carrying pose to draw |
+| 13 | `fizzler_on` | A fizzler that is on: the subject walks through it and loses its portals and any box it carries; it stops shots. Drawn over everything, so keep it see-through. A fizzler that is off isn't drawn (see [fizzle](#fizzle)) |
+| 14 | `laser_on` | A laser beam that is on: stops walking, lets shots through. A laser that is off isn't drawn; switched, it fades out or in over about 0.25 s, its glow with it |
+| 15 | `laser_glow` | The beam's glow (see [glow](#glow)) |
+| 16 | `arrow` | A floor arrow |
+| 17 | `portal_blue` | The blue portal |
+| 18 | `portal_orange` | The orange portal |
+| 19 | `portal_blue_glow` | The blue portal's glow |
+| 20 | `portal_orange_glow` | The orange portal's glow |
+| 21 | `subject` | The test subject seen from above, facing up. A face, visor or lit mark on its front makes the facing unmistakable |
 
 ## Order
 
@@ -109,7 +107,7 @@ The game draws from the bottom up, each later row over the earlier ones:
 | 1 | Floor | `floor` |
 | 2 | Floor marks | `arrow` |
 | 3 | Structure | `wall` |
-| 4 | Blockers | `barrier_*`, `ditch`, `ditch_bridged`, `laser_on`, `door_*`, `exit_*` |
+| 4 | Blockers | `barrier_*`, `ditch`, `ditch_bridged`, `laser_on`, `door_closed`, `exit_closed` |
 | 5 | Portals | `portal_*` |
 | 6 | Fixtures | `button_*`, `switch` |
 | 7 | Items | `box` |
@@ -128,7 +126,7 @@ When the subject walks into a fizzler that is on, each portal it loses and a box
 
 ## Sliding doors
 
-When a door or the exit opens or closes, it slides over about 0.3 s: the game draws `door_open` (or `exit_open`) and over it `door_closed` (or `exit_closed`) cut down its middle, each half slid out to its side and cut off at the tile's edge, as if going into the wall. So the closed sprite's two leaves must meet on the tile's middle line, and the open sprite must show what is left once they are gone. There is nothing extra to draw. With reduced motion, and in the home menu's map and the gallery, nothing slides.
+When a door or the exit opens or closes, it slides over about 0.3 s: the game draws `door_closed` (or `exit_closed`) cut down its middle over the floor, each half slid out to its side and cut off at the tile's edge, as if going into the wall, until nothing is left. So the closed sprite's two leaves must meet on the tile's middle line. There is nothing extra to draw. With reduced motion, and in the home menu's map and the gallery, nothing slides.
 
 ## Not in the set yet
 

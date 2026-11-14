@@ -10,12 +10,13 @@ import type {PiecePlacer, TilePainter} from '@/game/tile_painter'
 // How each element type is drawn by the renderer, looked up by kind: the
 // rules can't touch the canvas, so drawing stays on the browser side. Each
 // element is drawn as its sprite for its state (docs/sprites.md), switched
-// off as well as on, except a fizzler or a laser that is off, which isn't
-// drawn at all. Walls and open ditches join their neighbours, quarter by
-// quarter, and doors, the exit and fizzlers are turned to the walls beside
-// them; a door or the exit sliding open or shut, a fizzler crumbling away or
-// forming, or a laser fading out or in, is drawn part way. Beside them, what
-// moves with time alone: the lasers' glow, pulsing with the portals'
+// off as well as on, except an open door or exit and a fizzler or a laser
+// that is off, which aren't drawn at all. Walls and open ditches join their
+// neighbours, quarter by quarter, and doors, the exit and fizzlers are turned
+// to the walls beside them; a door or the exit sliding open or shut, a
+// fizzler crumbling away or forming, or a laser fading out or in, is drawn
+// part way. Beside them, what moves with time alone: the lasers' glow,
+// pulsing with the portals'
 
 /**
  * Draws every element of one type in a state, with the doors, the exit, the
@@ -231,15 +232,14 @@ function blockableDrawing(kind: Exclude<BlockableKind, 'ditch' | 'laser' | GapKi
 
 /**
  * Builds a drawing for a type that slides open and shut in a gap in a wall:
- * each element's sprite for whether it is closed, turned to the walls beside
- * it. One sliding is drawn part way: its open sprite, under its closed one
- * cut down the middle with each half slid into the wall beside it.
+ * each closed element's sprite, turned to the walls beside it; one that is
+ * open isn't drawn. One sliding is drawn part way: its sprite cut down the
+ * middle, each half slid into the wall beside it.
  * @param kind - The element type
  * @param closedSprite - Its sprite while closed
- * @param openSprite - Its sprite while open
  * @returns The drawing
  */
-function slidingDrawing(kind: SlidingKind, closedSprite: SpriteName, openSprite: SpriteName): ElementDrawing {
+function slidingDrawing(kind: SlidingKind, closedSprite: SpriteName): ElementDrawing {
   return (painter, state, shares = null) => {
     const chamber = state.chamber
 
@@ -248,11 +248,10 @@ function slidingDrawing(kind: SlidingKind, closedSprite: SpriteName, openSprite:
       const turn = gapTurn(chamber, position.x, position.y)
       const share = (shares === null) ? null : shares(kind, i)
 
-      if (share === null) {
-        painter.drawSprite(state.isBlocked(kind, i) ? closedSprite : openSprite, position.x, position.y, turn)
-      } else {
-        painter.drawSprite(openSprite, position.x, position.y, turn)
+      if (share !== null) {
         painter.drawSpriteParted(closedSprite, position.x, position.y, turn, 1 - share)
+      } else if (state.isBlocked(kind, i)) {
+        painter.drawSprite(closedSprite, position.x, position.y, turn)
       }
     }
   }
@@ -465,8 +464,8 @@ export const ELEMENT_DRAWINGS: Readonly<Record<ElementKind, ElementDrawing>> = {
   barrier: blockableDrawing('barrier', 'barrier_raised', 'barrier_lowered'),
   ditch: drawDitches,
   laser: drawLasers,
-  door: slidingDrawing('door', 'door_closed', 'door_open'),
-  exit: slidingDrawing('exit', 'exit_closed', 'exit_open'),
+  door: slidingDrawing('door', 'door_closed'),
+  exit: slidingDrawing('exit', 'exit_closed'),
   button: drawButtons,
   switch: drawSwitches,
   box: drawBoxes,

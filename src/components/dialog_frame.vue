@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
  * Shared shell for the chamber dialogs: backdrop, panel, title and actions.
- * Keyboard-driven: the first action takes focus, the arrow keys move between
- * actions and Tab stays inside the dialog. Escape is left to the screen, which
+ * Keyboard-driven: the first action takes focus, the arrow keys along the
+ * actions (Up and Down when stacked, Left and Right in a row) move between
+ * them and Tab stays inside the dialog. Escape is left to the screen, which
  * knows what it means in each state. Every action clicks when pressed.
  */
 import {onMounted, useId, useTemplateRef} from 'vue'
@@ -14,7 +15,7 @@ export interface DialogFrameProps {
   tone?: 'neutral' | 'interaction' | 'caution' | 'success'
 }
 
-withDefaults(defineProps<DialogFrameProps>(), {
+const props = withDefaults(defineProps<DialogFrameProps>(), {
   layout: 'stack',
   tone: 'neutral',
 })
@@ -45,11 +46,14 @@ function moveFocus(offset: number): void {
 }
 
 /**
- * Arrow keys move between actions; Tab wraps inside the dialog. A held
- * (repeating) Enter or Space presses nothing.
+ * The arrow keys along the actions move between them (Up and Down when
+ * stacked, Left and Right in a row); the other two do nothing. Tab wraps
+ * inside the dialog. A held (repeating) Enter or Space presses nothing.
  * @param event - Keyboard event
  */
 function handleKeydown(event: KeyboardEvent): void {
+  const stacked = props.layout === 'stack'
+
   switch (event.key) {
     case 'Enter':
     case ' ':
@@ -62,12 +66,16 @@ function handleKeydown(event: KeyboardEvent): void {
     case 'ArrowDown':
     case 'ArrowRight':
       event.preventDefault()
-      moveFocus(1)
+      if (stacked === (event.key === 'ArrowDown')) {
+        moveFocus(1)
+      }
       break
     case 'ArrowUp':
     case 'ArrowLeft':
       event.preventDefault()
-      moveFocus(-1)
+      if (stacked === (event.key === 'ArrowUp')) {
+        moveFocus(-1)
+      }
       break
     case 'Tab':
       event.preventDefault()
