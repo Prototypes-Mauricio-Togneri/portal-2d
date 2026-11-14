@@ -16,5 +16,5 @@
     </radialGradient>
   </defs>
 
-  <ellipse cx="192" cy="112" rx="188" ry="108" fill="url(#falloff)"/>
+  <ellipse cx="192" cy="87.5" rx="188" ry="83.5" fill="url(#falloff)"/>
 </svg>

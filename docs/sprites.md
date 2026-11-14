@@ -42,7 +42,7 @@ A sprite with a direction is drawn once, one way, and the game turns it in quart
 |---|---------|-------|--------|
 | 1 | `subject` | Facing up, towards the top of the screen | To the way the subject faces |
 | 2 | `arrow` | Pointing up: the one way the subject may enter its tile | To the arrow's way |
-| 3 | `portal_blue`, `portal_orange` and their glows | On the top edge of its wall tile, opening up onto the tile above | To the side of the wall it opens on |
+| 3 | `portal_blue`, `portal_orange` and their glows | On the top edge of its wall tile, opening up onto the tile above: a flat oval lying on the wall's slope, from just inside the tile's edge to the slope's lit lip, short enough to stay clear of the diagonals where two slopes meet at a wall's end; the glow centred on it | To the side of the wall it opens on |
 | 4 | `laser_on`, `laser_glow` | A beam running left to right through the tile's middle, touching both side edges, so neighbouring laser tiles make one beam | A quarter turn for a vertical laser; two lasers crossing on a tile are both drawn |
 | 5 | `door_closed`, `exit_closed`, `fizzler_on` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when more of what lines the gap lies above and below it than left and right: walls, the chamber's edge, doors, the exit, fizzlers, barriers and ditches |
 
@@ -62,7 +62,7 @@ For example, a wall tile's top-left quarter comes from strip tile 2 when the til
 
 Quarters from different strip tiles end up side by side, so:
 
-- every open side gets the same bevel, the same width all along;
+- every open side gets the same bevel, 48 px wide all along, so a portal fits on it;
 - the top surface's texture tiles seamlessly, any edge meeting any other;
 - details (rivets, seams, lights) stay off the 128 px midlines and the tile edges, where they would be cut.
 
