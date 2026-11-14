@@ -24,13 +24,13 @@ type Burst = {
 const FIZZLE_MILLISECONDS = 600
 
 /** Pieces across a sprite's tile */
-const PIECES_ACROSS = 7
+const PIECES_ACROSS = 9
 
-/** How far a piece drifts by the end, on average, as a share of its sprite's side */
-const DRIFT_SHARE = 0.5
+/** How far a piece drifts by the end, on average, as a share of its sprite's side: a short way, so the pieces stay by what broke up */
+const DRIFT_SHARE = 0.15
 
 /** How much a piece's drift varies either way, as a share of the average */
-const DRIFT_VARIATION = 0.5
+const DRIFT_VARIATION = 0.3
 
 /** How far a piece's path turns from straight out of the middle, either way, in radians */
 const PATH_SPREAD = 0.6
@@ -41,10 +41,13 @@ const LATEST_START = 0.35
 /** How small a piece has shrunk by its end, as a share of its size */
 const SMALLEST_SCALE = 0.3
 
+/** How far through its own time a piece has rounded off into a dot, as a share of that time */
+const ROUNDED_BY = 0.25
+
 /**
  * Places one piece of a burst part way through: it waits in place until its
- * own start, then drifts out from the sprite's middle, slowing as it goes,
- * shrinking and fading.
+ * own start, then drifts a short way out from the sprite's middle, slowing as
+ * it goes, rounding off into a dot, shrinking and fading.
  * @param burst - The burst
  * @param progress - How far the whole burst has gone, from 0 to 1
  * @param offsetX - How far right of the sprite's middle the piece lies, in tiles
@@ -72,15 +75,16 @@ function placePiece(burst: Burst, progress: number, offsetX: number, offsetY: nu
     dy: travelled * Math.sin(angle),
     scale: 1 - ((1 - SMALLEST_SCALE) * own),
     alpha: 1 - (own * own),
-    roundness: 0,
+    roundness: Math.min(own / ROUNDED_BY, 1),
   }
 }
 
 /**
  * What the latest fizzle took, drawn breaking up over a short time: each
- * portal it closed and a box it destroyed come apart in square pieces of
- * their own sprites, which drift out, shrink and fade. Purely visual: the
- * rules have already settled the step, and nothing waits for the pieces.
+ * portal it closed and a box it destroyed come apart in pieces of their own
+ * sprites, which round off into dots as they drift a short way out, shrink
+ * and fade. Purely visual: the rules have already settled the step, and
+ * nothing waits for the pieces.
  */
 export class FizzleParticles {
   private bursts: readonly Burst[] = [] // What is breaking up, empty when nothing is
