@@ -6,33 +6,51 @@
     top of its side. The plate is the same under every quarter turn.
   -->
   <defs>
-    <!-- The shadow the lowest step casts onto the bottom -->
-    <linearGradient id="shade" gradientUnits="userSpaceOnUse" x1="0" y1="47" x2="0" y2="54">
-      <stop offset="0" stop-color="rgb(0, 0, 0)" stop-opacity="0.55"/>
+    <!-- The side's fall into the dark: lit near the rim, near black at its foot -->
+    <linearGradient id="fall" gradientUnits="userSpaceOnUse" x1="0" y1="5" x2="0" y2="66">
+      <stop offset="0" stop-color="rgb(134, 138, 145)"/>
+      <stop offset="0.35" stop-color="rgb(80, 83, 89)"/>
+      <stop offset="0.7" stop-color="rgb(34, 36, 39)"/>
+      <stop offset="1" stop-color="rgb(9, 10, 11)"/>
+    </linearGradient>
+
+    <!-- The shadow at the side's foot, on the bottom -->
+    <linearGradient id="shade" gradientUnits="userSpaceOnUse" x1="0" y1="66" x2="0" y2="82">
+      <stop offset="0" stop-color="rgb(0, 0, 0)" stop-opacity="0.7"/>
       <stop offset="1" stop-color="rgb(0, 0, 0)" stop-opacity="0"/>
     </linearGradient>
+
     <!-- Fine grain, repeating every 128 px, so it matches across every quarter -->
     <filter id="grain" filterUnits="userSpaceOnUse" x="0" y="0" width="1280" height="256" color-interpolation-filters="sRGB">
       <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" seed="13" stitchTiles="stitch" x="0" y="0" width="128" height="128" result="noise"/>
-      <feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.06" x="0" y="0" width="128" height="128" result="speckle"/>
+      <feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.035" x="0" y="0" width="128" height="128" result="speckle"/>
       <feTile in="speckle" x="0" y="0" width="1280" height="256"/>
     </filter>
 
     <g id="band">
-      <rect x="0" y="47" width="256" height="7" fill="url(#shade)"/>
       <rect x="0" y="0" width="256" height="2" fill="rgb(44, 46, 50)"/>
-      <rect x="0" y="2" width="256" height="3" fill="rgb(176, 180, 187)"/>
-      <rect x="0" y="5" width="256" height="10" fill="rgb(150, 154, 161)"/>
-      <rect x="0" y="15" width="256" height="4" fill="rgb(40, 42, 46)"/>
-      <rect x="0" y="19" width="256" height="1.5" fill="rgb(132, 136, 143)"/>
-      <rect x="0" y="20.5" width="256" height="8.5" fill="rgb(100, 104, 111)"/>
-      <rect x="0" y="29" width="256" height="4" fill="rgb(28, 29, 32)"/>
-      <rect x="0" y="33" width="256" height="1.5" fill="rgb(84, 88, 94)"/>
-      <rect x="0" y="34.5" width="256" height="8.5" fill="rgb(60, 63, 68)"/>
-      <rect x="0" y="43" width="256" height="4" fill="rgb(14, 15, 17)"/>
+      <rect x="0" y="2" width="256" height="3" fill="rgb(186, 190, 197)"/>
+      <rect x="0" y="5" width="256" height="61" fill="url(#fall)"/>
+      <rect x="0" y="24" width="256" height="1.8" fill="rgb(0, 0, 0)" opacity="0.55"/>
+      <rect x="0" y="25.8" width="256" height="1.08" fill="rgb(255, 255, 255)" opacity="0.13"/>
+      <rect x="0" y="37.3" width="256" height="1.44" fill="rgb(0, 0, 0)" opacity="0.55"/>
+      <rect x="0" y="38.74" width="256" height="0.86" fill="rgb(255, 255, 255)" opacity="0.091"/>
+      <rect x="0" y="46.61" width="256" height="1.15" fill="rgb(0, 0, 0)" opacity="0.55"/>
+      <rect x="0" y="47.76" width="256" height="0.69" fill="rgb(255, 255, 255)" opacity="0.064"/>
+      <rect x="0" y="53.13" width="256" height="0.92" fill="rgb(0, 0, 0)" opacity="0.55"/>
+      <rect x="0" y="54.05" width="256" height="0.55" fill="rgb(255, 255, 255)" opacity="0.045"/>
+      <rect x="0" y="57.69" width="256" height="0.74" fill="rgb(0, 0, 0)" opacity="0.55"/>
+      <rect x="0" y="58.43" width="256" height="0.44" fill="rgb(255, 255, 255)" opacity="0.031"/>
+      <rect x="0" y="60.88" width="256" height="0.6" fill="rgb(0, 0, 0)" opacity="0.55"/>
+      <rect x="0" y="61.48" width="256" height="0.36" fill="rgb(255, 255, 255)" opacity="0.022"/>
+      <rect x="0" y="63.12" width="256" height="0.6" fill="rgb(0, 0, 0)" opacity="0.55"/>
+      <rect x="0" y="63.72" width="256" height="0.36" fill="rgb(255, 255, 255)" opacity="0.015"/>
+      <rect x="0" y="64.68" width="256" height="0.6" fill="rgb(0, 0, 0)" opacity="0.55"/>
+      <rect x="0" y="65.28" width="256" height="0.36" fill="rgb(255, 255, 255)" opacity="0.011"/>
+      <rect x="0" y="66" width="256" height="16" fill="url(#shade)"/>
     </g>
     <clipPath id="mitre">
-      <polygon points="0,0 256,0 202,54 54,54"/>
+      <polygon points="0,0 256,0 174,82 82,82"/>
     </clipPath>
 
     <!-- The frame's top face: lit evenly from above, a touch darker at its outer edge -->
@@ -50,7 +68,7 @@
   </defs>
 
   <!-- The pit, as a lone pit, showing in the gap around the plate -->
-  <rect x="0" y="0" width="256" height="256" fill="rgb(30, 32, 35)"/>
+  <rect x="0" y="0" width="256" height="256" fill="rgb(9, 10, 11)"/>
   <rect x="0" y="0" width="256" height="256" filter="url(#grain)"/>
   <use xlink:href="#band" clip-path="url(#mitre)"/>
   <use xlink:href="#band" clip-path="url(#mitre)" transform="rotate(90 128 128)"/>
