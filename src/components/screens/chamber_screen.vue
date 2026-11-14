@@ -3,7 +3,8 @@
  * Chamber screen: plays one chamber on the game canvas, with the timer and the
  * controls legend beside it and the pause, confirmation and completion dialogs
  * on top. The game objects live outside Vue's reactivity; this screen only
- * creates, pauses, reloads and disposes them, and reads the game's clock.
+ * creates, pauses, reloads and disposes them, and reads the game's clock. In
+ * development it also plays the playground, which saves and sends nothing.
  */
 import {computed, onBeforeUnmount, onMounted, ref, useTemplateRef} from 'vue'
 import {onBeforeRouteLeave, onBeforeRouteUpdate, useRouter} from 'vue-router'
@@ -18,10 +19,10 @@ import type {ReplayData} from '@/game/replay_data'
 import {Sound} from '@/game/sound'
 import {trackChamberAbandon, trackChamberComplete, trackChamberQuit, trackChamberRestart, trackChamberStart} from '@/services/analytics'
 import type {RunProgress} from '@/services/analytics'
-import {findChamber} from '@/services/chamber_catalogue'
+import {findChamber, PLAYGROUND} from '@/services/chamber_catalogue'
 import {keyBindings} from '@/services/key_bindings'
 import {formatTime} from '@/services/format_time'
-import {rememberChamber} from '@/services/last_chamber'
+import {rememberChamber, rememberPlayground} from '@/services/last_chamber'
 import {bestTime, isCompleted, markChamberCompleted, recordTime, startAttempt} from '@/services/progress'
 import {playMusic} from '@/services/settings'
 
@@ -42,7 +43,7 @@ type StageSize = {
 }
 
 export interface ChamberScreenProps {
-  chamberNumber: number
+  chamberNumber: number | null // Which chamber in the list, counted from 0, or null for the playground (development only), which keeps no progress and sends no analytics
 }
 
 const props = defineProps<ChamberScreenProps>()
@@ -53,10 +54,13 @@ const SOLUTION_ADDRESS_LIFETIME = 10_000 // Milliseconds a downloaded solution's
 const router = useRouter()
 const stage = useTemplateRef<HTMLElement>('stage')
 const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
-const chamber = computed(() => findChamber(props.chamberNumber))
-const nextChamber = computed(() => findChamber(props.chamberNumber + 1)) // The chamber after this one; undefined after the last
-const signNumber = computed(() => String(props.chamberNumber).padStart(2, '0')) // Two digits, as on a test chamber sign
-const chamberName = computed(() => chamber.value?.name ?? `Chamber ${props.chamberNumber}`) // What the player sees it called, such as "Chamber 2" or "Tutorial"
+const playground = computed(() => props.chamberNumber === null) // Whether this is the playground
+const chamber = computed(() => props.chamberNumber === null ? undefined : findChamber(props.chamberNumber)) // The chamber in the list; undefined for the playground
+const layout = computed(() => props.chamberNumber === null ? PLAYGROUND : chamber.value?.data) // What the game plays
+const nextChamber = computed(() => props.chamberNumber === null ? undefined : findChamber(props.chamberNumber + 1)) // The chamber after this one; undefined after the last and for the playground
+const signLabel = computed(() => playground.value ? 'Playground' : 'Chamber') // The sign's caption
+const signNumber = computed(() => props.chamberNumber === null ? '--' : String(props.chamberNumber).padStart(2, '0')) // Two digits, as on a test chamber sign; blank for the playground
+const chamberName = computed(() => props.chamberNumber === null ? 'Playground' : chamber.value?.name ?? `Chamber ${props.chamberNumber}`) // What the player sees it called, such as "Chamber 2" or "Tutorial"
 const dialog = ref<ChamberDialog>('none')
 const timeReadout = useTemplateRef<HTMLElement>('timeReadout')
 const timerStarted = ref(false) // Whether the clock has started; changes only on the first key and on reset
@@ -201,8 +205,8 @@ function beginAttempt(): void {
  * Rebuilds the chamber from its starting layout, starts the music over and resumes play.
  */
 function restartChamber(): void {
-  if (level !== null && chamber.value !== undefined) {
-    level.load(chamber.value.data)
+  if (level !== null && layout.value !== undefined) {
+    level.load(layout.value)
   }
   playMusic('game', true)
   resume()
@@ -404,10 +408,15 @@ onBeforeRouteUpdate(guardExit)
 
 onMounted(() => {
   // The home screen picks this chamber out again on the way back
-  rememberChamber(props.chamberNumber)
+  if (props.chamberNumber === null) {
+    rememberPlayground()
+  } else {
+    rememberChamber(props.chamberNumber)
+  }
   const stageElement = stage.value
   const canvasElement = canvas.value
-  if (stageElement === null || canvasElement === null || chamber.value === undefined) {
+  const data = layout.value
+  if (stageElement === null || canvasElement === null || data === undefined) {
     return
   }
   // Drawn in device pixels, so the chamber stays sharp on dense screens
@@ -418,8 +427,10 @@ onMounted(() => {
   level.onCompleted = handleCompleted
   // Counted and sent before the load, whose first frame could already report the chamber completed
   beginAttempt()
-  trackChamberStart(chamber.value, attempt)
-  level.load(chamber.value.data)
+  if (chamber.value !== undefined) {
+    trackChamberStart(chamber.value, attempt)
+  }
+  level.load(data)
   setCanvasPageSize(canvasElement, pixelRatio)
   refreshTimer()
 
@@ -454,7 +465,7 @@ onBeforeUnmount(() => {
       <PortalLogo size="small" />
       <div class="chamber-sign">
         <h1 class="sign-title">
-          <span class="sign-label ruled-label">Chamber</span>
+          <span class="sign-label ruled-label">{{ signLabel }}</span>
           <span class="sign-number">{{ signNumber }}</span>
         </h1>
         <div
@@ -521,6 +532,7 @@ onBeforeUnmount(() => {
       :new-best="completedRun?.newBest ?? false"
       :has-next-chamber="nextChamber !== undefined"
       :solution-failed="solutionFailed"
+      :playground="playground"
       @next="openNextChamber"
       @menu="leaveChamber"
       @replay="playAgain"

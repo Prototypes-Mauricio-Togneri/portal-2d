@@ -3,6 +3,7 @@ import chamber0 from '@/chambers/chamber_0.json'
 import chamber1 from '@/chambers/chamber_1.json'
 import chamber2 from '@/chambers/chamber_2.json'
 import chamber3 from '@/chambers/chamber_3.json'
+import playground from '@/dev/playground.json'
 import type {ChamberData} from '@/game/chamber_data'
 
 // The chamber files the engine scripts run, shared so that every script
@@ -16,6 +17,12 @@ export const CHAMBER_FILES: Readonly<Record<string, ChamberData>> = {
   'chamber_2.json': chamber2,
   'chamber_3.json': chamber3,
 }
+
+/** The playground (src/dev/playground.json), the development-only chamber for trying every element: checked, settled and walked like a chamber file, but it has no recorded solution and the solver leaves it out */
+export const PLAYGROUND_FILE = 'playground.json'
+
+/** The playground's layout */
+export const PLAYGROUND_DATA: ChamberData = playground
 
 /** Where the chamber files and their recorded solutions are */
 export const CHAMBERS_DIRECTORY = new URL('../src/chambers/', import.meta.url)

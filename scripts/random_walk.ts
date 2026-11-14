@@ -1,17 +1,18 @@
 import {parseArgs} from 'node:util'
+import type {ChamberData} from '@/game/chamber_data'
 import {Action, ACTIONS} from '@/game/rules/action'
 import {CompiledChamber} from '@/game/rules/compiled_chamber'
 import {type ChamberLoadResult, loadChamber, readChamber} from '@/game/rules/load_chamber'
 import {startChamber, step} from '@/game/rules/step'
-import {CHAMBER_FILES, listChamberFiles} from '@scripts/chamber_files'
+import {CHAMBER_FILES, listChamberFiles, PLAYGROUND_DATA, PLAYGROUND_FILE} from '@scripts/chamber_files'
 import {listFixtureChambers} from '@scripts/fixtures/fixtures'
 import {readNumberOption} from '@scripts/number_option'
 import {createRandom} from '@scripts/seeded_random'
 
-// Plays seeded random actions on every chamber with the rules under Node,
-// then on every fixture chamber (scripts/fixtures/), which are made to reach
-// the rules' edge cases, read without the layout checks so the one open at
-// the edge still plays. Every step must settle within the rules' pass cap
+// Plays seeded random actions on every chamber and the playground with the
+// rules under Node, then on every fixture chamber (scripts/fixtures/), which
+// are made to reach the rules' edge cases, read without the layout checks so
+// the one open at the edge still plays. Every step must settle within the rules' pass cap
 // and nothing may throw. Reports steps per second, the speed baseline for
 // the solver (stage 02), and the size of a chamber's state. Prints one line
 // per chamber, and exits non-zero on any failure.
@@ -100,8 +101,29 @@ function describeWalk(result: WalkResult, steps: number): string {
 }
 
 /**
- * Walks every chamber file in src/chambers and every fixture chamber, and
- * reports each one.
+ * Walks one chamber file, with the layout checks, and reports it.
+ * @param file - Its file name
+ * @param data - The chamber JSON
+ * @param steps - How many random actions to take
+ * @param seed - Seed of the random actions
+ * @returns Whether the walk finished
+ */
+function walkChamberFile(file: string, data: ChamberData, steps: number, seed: number): boolean {
+  try {
+    const result = walkChamber(compileChamber(loadChamber(data)), steps, seed)
+    console.log(`${file} OK: ${describeWalk(result, steps)}`)
+
+    return true
+  } catch (error) {
+    console.error(`${file} FAILED: ${error instanceof Error ? error.message : String(error)}`)
+
+    return false
+  }
+}
+
+/**
+ * Walks every chamber file in src/chambers, the playground and every fixture
+ * chamber, and reports each one.
  * @returns Whether every walk finished
  */
 function runAll(): boolean {
@@ -130,14 +152,10 @@ function runAll(): boolean {
       continue
     }
 
-    try {
-      const result = walkChamber(compileChamber(loadChamber(data)), steps, seed)
-      console.log(`${file} OK: ${describeWalk(result, steps)}`)
-    } catch (error) {
-      console.error(`${file} FAILED: ${error instanceof Error ? error.message : String(error)}`)
-      passed = false
-    }
+    passed = walkChamberFile(file, data, steps, seed) && passed
   }
+
+  passed = walkChamberFile(PLAYGROUND_FILE, PLAYGROUND_DATA, steps, seed) && passed
 
   for (const fixtureChamber of listFixtureChambers()) {
     const label = `fixture chamber of ${fixtureChamber.name}`

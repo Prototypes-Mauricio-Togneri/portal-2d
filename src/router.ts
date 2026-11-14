@@ -27,6 +27,17 @@ const router = createRouter({
         name: 'home',
       } : true),
     },
+    // Development only: the playground, outside the chamber list; production builds fall back to the menu
+    ...(import.meta.env.DEV ? [
+      {
+        path: '/playground',
+        name: 'playground',
+        component: ChamberScreen,
+        props: {
+          chamberNumber: null,
+        },
+      },
+    ] : []),
     {
       path: '/:pathMatch(.*)*',
       redirect: {

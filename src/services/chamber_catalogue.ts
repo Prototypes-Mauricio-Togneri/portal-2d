@@ -5,6 +5,7 @@ import chamberZeroData from '@/chambers/chamber_0.json'
 import chamberOneData from '@/chambers/chamber_1.json'
 import chamberTwoData from '@/chambers/chamber_2.json'
 import chamberThreeData from '@/chambers/chamber_3.json'
+import playgroundData from '@/dev/playground.json'
 import type {ChamberData} from '@/game/chamber_data'
 
 export type ChamberEntry = {
@@ -48,6 +49,11 @@ export const CHAMBERS: ChamberEntry[] = CHAMBER_LISTINGS.map((listing, index) =>
   name: listing.name ?? `Chamber ${index}`,
   data: listing.data,
 }))
+
+// Development only: the playground, a chamber outside the list for trying every element, each
+// direction from the start switched by its own button. Production builds have none, and the
+// comparison lets them leave the file out
+export const PLAYGROUND: ChamberData | undefined = import.meta.env.DEV === true ? playgroundData : undefined
 
 /**
  * Logs an error for every chamber whose id is not a whole number of 0 or

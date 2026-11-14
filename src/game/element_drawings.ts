@@ -365,7 +365,8 @@ function drawArrows(painter: TilePainter, state: RulesState): void {
 /**
  * Draws every wall tile inside the chamber, joined to the walls around it;
  * outside the chamber counts as open, so the walls along its edge are
- * bevelled on their outer side too.
+ * bevelled on their outer side too. A wall that refuses portals is drawn from
+ * its own strip, but joins every wall alike, so both kinds make one mass.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  */
@@ -376,7 +377,7 @@ function drawWalls(painter: TilePainter, state: RulesState): void {
   for (let x = 0; x < chamber.width; x++) {
     for (let y = 0; y < chamber.height; y++) {
       if (chamber.isWall(x, y)) {
-        drawJoinedTile(painter, 'wall', joins, x, y)
+        drawJoinedTile(painter, chamber.takesPortals(x, y) ? 'wall' : 'wall_no_portals', joins, x, y)
       }
     }
   }

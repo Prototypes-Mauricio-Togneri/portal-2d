@@ -17,7 +17,9 @@
  * highlight clicks. Picking a layout puts it in use; picking Custom also
  * opens its dialog, where each key is set. Settings ends with Reset progress,
  * which asks first in a dialog. While either dialog is open the menu ignores
- * the keyboard and Escape closes it, with a click.
+ * the keyboard and Escape closes it, with a click. In development the first
+ * column starts with Playground, which opens no section: Enter, Space or a
+ * click starts the playground, a chamber for trying every element.
  */
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, useId, useTemplateRef} from 'vue'
 import type {Ref} from 'vue'
@@ -35,12 +37,12 @@ import {Sound} from '@/game/sound'
 import {trackChangelogOpen, trackFeedbackOpen, trackLinkOpen, trackProgressReset} from '@/services/analytics'
 import {CHAMBERS} from '@/services/chamber_catalogue'
 import {chooseControlLayout, ControlLayout, controlLayout} from '@/services/key_bindings'
-import {lastChamber} from '@/services/last_chamber'
+import {lastChamber, playgroundOpenedLast} from '@/services/last_chamber'
 import {bestTime, hasStartedAnyChamber, isCompleted, resetProgress} from '@/services/progress'
 import {musicEnabled, playMusic, soundEnabled} from '@/services/settings'
 
-/** A section listed in the first column. */
-type MenuSection = 'play' | 'settings' | 'about'
+/** A row listed in the first column: a section, or in development the playground, which opens none. */
+type MenuSection = 'play' | 'settings' | 'about' | 'playground'
 
 /** The column that has the keyboard: the sections, the open section's items, or the third column (About's pages or changelog, or the controls). */
 type MenuColumn = 'sections' | 'items' | 'details'
@@ -87,6 +89,13 @@ type AboutEntry =
   }
 
 const SECTIONS: SectionEntry[] = [
+  // Development only: starts the playground; production builds leave the row out
+  ...(import.meta.env.DEV ? [
+    {
+      section: 'playground' as const,
+      label: 'Playground',
+    },
+  ] : []),
   {
     section: 'play',
     label: 'Play',
@@ -202,11 +211,13 @@ const itemColumnId = `${menuId}-items`
 const detailColumnId = `${menuId}-details`
 
 // Back from a chamber, Play is open with that chamber highlighted and the keyboard in the second
-// column; on the first arrival only the sections show, with Play highlighted and nothing open
+// column; on the first arrival only the sections show, with Play highlighted and nothing open.
+// Back from the playground, only the sections show, with Playground highlighted
 const rememberedChamber = CHAMBERS.findIndex((chamber) => chamber.number === lastChamber())
-const returning = rememberedChamber !== -1
+const backFromPlayground = playgroundOpenedLast()
+const returning = rememberedChamber !== -1 && !backFromPlayground
 
-const highlightedSection = ref<MenuSection>('play')
+const highlightedSection = ref<MenuSection>(backFromPlayground ? 'playground' : 'play')
 const openSection = ref<MenuSection | null>(returning ? 'play' : null)
 const activeColumn = ref<MenuColumn>(returning ? 'items' : 'sections')
 const highlightedChamber = ref(Math.max(rememberedChamber, 0))
@@ -439,10 +450,11 @@ function moveHighlight(offset: number): void {
 
 /**
  * Opens the highlighted section and steps into its items, with a click. Does
- * nothing with the keyboard already in the items or the third column.
+ * nothing with the keyboard already in the items or the third column, or on
+ * Playground, which has no section.
  */
 function openHighlightedSection(): void {
-  if (activeColumn.value !== 'sections') {
+  if (activeColumn.value !== 'sections' || highlightedSection.value === 'playground') {
     return
   }
   openSection.value = highlightedSection.value
@@ -459,9 +471,17 @@ function openHighlightedSection(): void {
 /**
  * Enter, Space or a click on the highlighted section: opens it, except Play
  * on a device where no chamber has been opened yet, which starts the tutorial
- * instead. Right always just opens the section.
+ * instead, and Playground, which starts the playground. Right always just
+ * opens the section.
  */
 function pressHighlightedSection(): void {
+  if (activeColumn.value === 'sections' && highlightedSection.value === 'playground') {
+    Sound.START.play()
+    void router.push({
+      name: 'playground',
+    })
+    return
+  }
   const tutorial = CHAMBERS.find((chamber) => chamber.id === TUTORIAL_ID)
   if (activeColumn.value !== 'sections' || highlightedSection.value !== 'play' || hasStartedAnyChamber() || tutorial === undefined) {
     openHighlightedSection()
@@ -893,7 +913,7 @@ onBeforeUnmount(() => {
               'menu-row-active': entry.section === highlightedSection && activeColumn === 'sections',
             }"
             type="button"
-            :aria-expanded="entry.section === openSection"
+            :aria-expanded="entry.section === 'playground' ? undefined : entry.section === openSection"
             :aria-controls="entry.section === openSection ? itemColumnId : undefined"
             :tabindex="entry.section === highlightedSection ? 0 : -1"
             @pointerdown="handleSectionPointerDown(entry.section)"

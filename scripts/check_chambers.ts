@@ -5,17 +5,17 @@ import {CompiledChamber, type LinkTarget, NO_ELEMENT, type PlacedKind} from '@/g
 import type {ElementDefinition} from '@/game/rules/element_definition'
 import {CORE_STEP_EVENTS, ELEMENT_REGISTRY} from '@/game/rules/element_registry'
 import {loadChamber, readChamber} from '@/game/rules/load_chamber'
-import {CHAMBER_FILES, listChamberFiles} from '@scripts/chamber_files'
+import {CHAMBER_FILES, listChamberFiles, PLAYGROUND_DATA, PLAYGROUND_FILE} from '@scripts/chamber_files'
 import {listFixtureChambers} from '@scripts/fixtures/fixtures'
 import {CHAMBER_CASES, type ChamberCase, FORMAT_V2_EXAMPLE} from '@scripts/fixtures/format_examples'
 
 // Loads every chamber file the way the game does (every field read, the
-// layout checked). Every chamber in src/chambers must load without an error,
-// and each case in scripts/fixtures/format_examples.ts must report exactly
+// layout checked). Every chamber in src/chambers and the playground must load
+// without an error, and each case in scripts/fixtures/format_examples.ts must report exactly
 // the problems pinned for it. The format 2 example, compiled, must reach
 // exactly the pinned links (its link group expanded) and refuse portals on
-// exactly the pinned walls. Every chamber file, fixture chamber and the
-// format 2 example, compiled, must answer wall, no portals and no element on
+// exactly the pinned walls. Every chamber file, the playground, every fixture
+// chamber and the format 2 example, compiled, must answer wall, no portals and no element on
 // the ring of tiles just outside its edge. Then checks the element registry
 // against the format: every element's field is one the parser accepts and
 // is registered once, and every game event has one owner. Prints one line
@@ -96,6 +96,16 @@ function checkChamberFile(file: string): boolean {
     return false
   }
 
+  return checkChamberData(file, data)
+}
+
+/**
+ * Loads a chamber the game plays, a chamber file or the playground.
+ * @param file - Its file name
+ * @param data - The chamber JSON
+ * @returns Whether it loaded without an error
+ */
+function checkChamberData(file: string, data: unknown): boolean {
   const result = loadAndDescribe(data)
   const summary = (result.problems.length > 0) ? `: ${countProblems(result.problems.length)}` : ''
 
@@ -366,8 +376,9 @@ function checkRegistryFlags(): boolean {
 }
 
 /**
- * Checks every chamber file in src/chambers, every case, the compiled format
- * 2 example, the ring outside every chamber's edge and the element registry.
+ * Checks every chamber file in src/chambers, the playground, every case, the
+ * compiled format 2 example, the ring outside every chamber's edge and the
+ * element registry.
  * @returns Whether all of them passed
  */
 function runAll(): boolean {
@@ -376,6 +387,8 @@ function runAll(): boolean {
   for (const file of listChamberFiles()) {
     passed = checkChamberFile(file) && passed
   }
+
+  passed = checkChamberData(PLAYGROUND_FILE, PLAYGROUND_DATA) && passed
 
   for (const chamberCase of CHAMBER_CASES) {
     passed = checkCase(chamberCase) && passed
@@ -391,6 +404,8 @@ function runAll(): boolean {
       passed = checkOutsideEdge(file, data) && passed
     }
   }
+
+  passed = checkOutsideEdge(PLAYGROUND_FILE, PLAYGROUND_DATA) && passed
 
   for (const fixtureChamber of listFixtureChambers()) {
     passed = checkOutsideEdge(`fixture chamber of ${fixtureChamber.name}`, fixtureChamber.chamber) && passed

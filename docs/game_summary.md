@@ -54,7 +54,7 @@ Every chamber is closed in by walls (or barriers, doors and the exit) along its 
 | #   | Tile             | Looks like                                                                                          |
 | --- | ---------------- | --------------------------------------------------------------------------------------------------- |
 | 1   | Floor            | Very light grey                                                                                     |
-| 2   | Wall             | Mid grey with a dark edge; a wall that refuses portals looks the same                               |
+| 2   | Wall             | Mid grey with a dark edge; a wall that refuses portals is darker, riveted steel                     |
 | 3   | Barrier          | Raised: a grey tile, light in the centre and dark at the edge. Lowered: not shown                   |
 | 4   | Ditch            | Open: a near-black hole. Bridged: plain floor                                                       |
 | 5   | Door             | Closed: purple with a magenta edge. Open: plain floor                                               |

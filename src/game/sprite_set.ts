@@ -79,6 +79,7 @@ export function quarterRect(tileSize: number, quarter: TileQuarter): QuarterRect
 export const SPRITE_SHAPES = {
   floor: 'tile',
   wall: 'strip',
+  wall_no_portals: 'strip',
   ditch: 'strip',
   ditch_bridged: 'tile',
   barrier_raised: 'tile',

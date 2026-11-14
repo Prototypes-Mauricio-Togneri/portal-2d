@@ -4,7 +4,8 @@
  * and how it compares with the chamber's best. Its main action opens the next
  * chamber, followed by Play again and Back to menu; after the last chamber it
  * goes back to the menu, followed by Play again. In development it also
- * offers to download the run as the chamber's recorded solution.
+ * offers to download the run as the chamber's recorded solution, except on
+ * the playground, which has no best time and no recorded solution.
  */
 import DialogFrame from '@/components/dialog_frame.vue'
 import {formatTime} from '@/services/format_time'
@@ -16,6 +17,7 @@ export interface CompletionDialogProps {
   newBest: boolean // Whether this run set the best time
   hasNextChamber: boolean // Whether a chamber follows this one
   solutionFailed: boolean // Whether the last download was refused, because the run doesn't replay the same way
+  playground: boolean // Development only: whether the chamber is the playground, which keeps no best time and has no recorded solution
 }
 
 defineProps<CompletionDialogProps>()
@@ -39,6 +41,7 @@ const canDownloadSolution = import.meta.env.DEV === true
       <span class="completion-time-value">{{ formatTime(time) }}</span>
     </p>
     <p
+      v-if="!playground"
       class="completion-best"
       :class="{
         'completion-best-new': newBest,
@@ -61,7 +64,7 @@ const canDownloadSolution = import.meta.env.DEV === true
         <button class="button button-quiet" type="button" @click="emit('replay')">Play again</button>
       </template>
       <button
-        v-if="canDownloadSolution"
+        v-if="canDownloadSolution && !playground"
         class="button button-quiet completion-solution"
         type="button"
         @click="emit('download-solution')"

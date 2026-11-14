@@ -91,8 +91,9 @@ function laser(x: number, y: number, direction: 'H' | 'V', on: boolean): LaserDa
 
 /**
  * The specimen chamber: 10 × 8 tiles, an inner wall splitting it, with every
- * element. The exit and one door sit in the outer wall, the other door and
- * the fizzler in the inner wall, and a barrier on the inner wall; arrows
+ * element. The exit and one door sit in the outer wall, whose right side
+ * refuses portals, the other door and the fizzler in the inner wall, and a
+ * barrier on the inner wall; arrows
  * point all four ways, two lasers cross, one box lies on a button and
  * another on the floor, and the subject stands on a third. Column 4 and
  * row 3 stay clear, so the subject's shots reach the walls.
@@ -148,6 +149,7 @@ function specimenData(on: boolean): ChamberData {
         xTo: 9,
         yFrom: 1,
         yTo: 6,
+        takesPortals: false,
       },
       at(6, 1),
       {

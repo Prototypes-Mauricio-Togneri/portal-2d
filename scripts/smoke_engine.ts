@@ -2,11 +2,12 @@ import type {ChamberData} from '@/game/chamber_data'
 import {CompiledChamber} from '@/game/rules/compiled_chamber'
 import {loadChamber} from '@/game/rules/load_chamber'
 import {startChamber} from '@/game/rules/step'
-import {CHAMBER_FILES, listChamberFiles} from '@scripts/chamber_files'
+import {CHAMBER_FILES, listChamberFiles, PLAYGROUND_DATA, PLAYGROUND_FILE} from '@scripts/chamber_files'
 
-// Loads every chamber with the rules under Node and settles its start,
-// proving the rules need no browser. Prints one line per chamber, with the
-// size and hash of its settled start, and exits non-zero on any failure
+// Loads every chamber, and the playground, with the rules under Node and
+// settles its start, proving the rules need no browser. Prints one line per
+// chamber, with the size and hash of its settled start, and exits non-zero
+// on any failure
 
 /**
  * Loads a chamber and settles its start.
@@ -27,7 +28,25 @@ function startChamberFile(data: ChamberData): string {
 }
 
 /**
- * Runs every chamber file in src/chambers and reports each one.
+ * Settles one chamber's start and reports it.
+ * @param file - Its file name
+ * @param data - The chamber JSON
+ * @returns Whether it settled
+ */
+function runChamber(file: string, data: ChamberData): boolean {
+  try {
+    console.log(`${file} OK, ${startChamberFile(data)}`)
+
+    return true
+  } catch (error) {
+    console.error(`${file} FAILED: ${String(error)}`)
+
+    return false
+  }
+}
+
+/**
+ * Runs every chamber file in src/chambers, then the playground, and reports each one.
  * @returns Whether every chamber ran
  */
 function runAll(): boolean {
@@ -42,15 +61,10 @@ function runAll(): boolean {
       continue
     }
 
-    try {
-      console.log(`${file} OK, ${startChamberFile(data)}`)
-    } catch (error) {
-      console.error(`${file} FAILED: ${String(error)}`)
-      passed = false
-    }
+    passed = runChamber(file, data) && passed
   }
 
-  return passed
+  return runChamber(PLAYGROUND_FILE, PLAYGROUND_DATA) && passed
 }
 
 if (!runAll()) {
