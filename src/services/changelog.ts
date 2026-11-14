@@ -11,6 +11,21 @@ export type ChangelogRelease = {
 
 export const CHANGELOG: ChangelogRelease[] = [
   {
+    version: '0.1.0',
+    date: '2026-11-14',
+    changes: [
+      'A tutorial, chamber 0, shows the controls and elements one at a time; Play starts it on your first visit',
+      'A new look for the chambers, with depth and shadows',
+      'Lasers and open portals glow',
+      'The test subject glides from tile to tile and slides through portals',
+      'Doors slide open and shut, fizzlers crumble away and form again, and lasers fade',
+      'Portals and boxes lost to a fizzler break into pieces',
+      'A new Portal 2D logo, and a menu that opens each section beside it',
+      'Pick Arrow keys, WASD and mouse, or your own keys under Settings',
+      'With a mouse button bound, the test subject faces the pointer',
+    ],
+  },
+  {
     version: '0.0.5',
     date: '2026-11-07',
     changes: [

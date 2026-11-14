@@ -1,5 +1,5 @@
 import {drawPlaceholder} from '@/game/sprite_placeholders'
-import {isSpriteName, SPRITE_OVERHANG, SPRITE_SHAPES, SPRITE_TILE_SIZE, STRIP_TILES, type SpriteName} from '@/game/sprite_set'
+import {isSpriteName, SPRITE_EXTENSIONS, SPRITE_OVERHANG, SPRITE_SHAPES, SPRITE_TILE_SIZE, STRIP_TILES, type SpriteName} from '@/game/sprite_set'
 
 /**
  * The chamber sprites' files, and what the game draws for each sprite: its
@@ -36,12 +36,6 @@ export type SpriteFileReport = {
   readonly status: SpriteFileStatus // What became of the file
   readonly reason: string | null // Why it was refused, or null when it wasn't
 }
-
-/** Extensions a sprite's file may have */
-const SPRITE_EXTENSIONS: readonly string[] = [
-  'webp',
-  'png',
-]
 
 // Every file in the sprites' folder, by its path, found at build time, so a new sprite needs no list to update
 const SPRITE_FILES = import.meta.glob<string>('@/assets/images/chamber/*', {

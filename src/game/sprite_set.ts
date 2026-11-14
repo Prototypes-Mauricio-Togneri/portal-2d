@@ -107,6 +107,12 @@ export const SPRITE_SHAPES = {
  */
 export type SpriteName = keyof typeof SPRITE_SHAPES
 
+/** Extensions a sprite's file may have */
+export const SPRITE_EXTENSIONS: readonly string[] = [
+  'webp',
+  'png',
+]
+
 /**
  * The sprites that stand raised, each drawn over the shared drop shadow made
  * from its shape (`docs/sprites.md`, look). Walls stand raised too, but cast

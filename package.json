@@ -1,6 +1,6 @@
 {
   "name": "portal-2d",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,11 +10,14 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "check": "npm run lint:fix && npm run build",
-    "verify": "npm run lint && npm run build && npm run smoke:engine && npm run replay:check && npm run solver:check && npm run random:walk && npm run chamber:check",
+    "verify": "npm run lint && npm run build && npm run bundle:check && npm run assets:check && npm run smoke:engine && npm run replay:check && npm run solver:check && npm run random:walk && npm run chamber:check",
     "smoke:engine": "tsx --tsconfig tsconfig.scripts.json scripts/smoke_engine.ts",
     "replay:check": "tsx --tsconfig tsconfig.scripts.json scripts/check_replays.ts",
     "random:walk": "tsx --tsconfig tsconfig.scripts.json scripts/random_walk.ts",
     "chamber:check": "tsx --tsconfig tsconfig.scripts.json scripts/check_chambers.ts",
+    "assets:check": "tsx --tsconfig tsconfig.scripts.json scripts/check_assets.ts",
+    "bundle:check": "tsx --tsconfig tsconfig.scripts.json scripts/check_bundle.ts",
+    "bundle:baseline": "npm run build && tsx --tsconfig tsconfig.scripts.json scripts/check_bundle.ts --update",
     "solve": "tsx --tsconfig tsconfig.scripts.json scripts/solve.ts",
     "solver:check": "tsx --tsconfig tsconfig.scripts.json scripts/check_solver.ts",
     "state-set:bench": "tsx --tsconfig tsconfig.scripts.json scripts/bench_state_set.ts",

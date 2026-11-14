@@ -35,6 +35,7 @@
     "src/game/game_event.ts",
     "src/game/game_key.ts",
     "src/game/replay_data.ts",
+    "src/game/sprite_set.ts",
     "src/game/text_hash.ts",
     "src/chambers/*.json",
     "scripts/fixtures/*.json",

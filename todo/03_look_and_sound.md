@@ -39,6 +39,7 @@ These are assumptions about what earlier stages delivered. Re-check each when re
 - 2026-11-13 — The code comes first, on placeholders drawn by code (no image library is installed, and they also stand in for stage 04's mechanics until their art exists), with a dev-only gallery; the author swaps in finished files one at a time. A sprite that fails to download shows its placeholder for the rest of the visit.
 - 2026-11-13 — Not in this pass: decorations not tied to the rules (lights on the outer wall, hazard stripes, floor scuffs), a look of its own for walls that refuse portals (until a chamber uses one), and animated sprites.
 - 2026-11-14 — No reactive music: the music phase (layered playback on the Web Audio API, layers entering as a chamber progresses, a solve cue, stems for the chamber track and a download budget) is dropped, with open decision 2 (music loading). The music stays as it is: a menu track and a chamber track, each one file played by an audio element. The local checks and release phase becomes Phase C.
+- 2026-11-14 — What changed since the sprite decision of 2026-11-13, as built: the sprites are drawn in code as SVGs in `art/sprites/` and exported to WebP (Phase B's "The art"), so the author draws none; the set has 23 files, since a fizzler or a laser that is off isn't drawn and has no sprite of its own; there is no fizzler shimmer; and state changes no longer snap: doors and the exit slide open or shut, fizzlers crumble away or form, and lasers fade, none of it with reduced motion. `docs/sprites.md` describes the set as built.
 - Unchanged from `AGENTS.md`: desktop only; colour meanings (blue interaction and success, orange the second portal, red caution, green a completed chamber); `localStorage` keys keep the `portal-2d.` prefix, as a convention, and analytics event and parameter names never change (renaming one splits its history).
 
 ## Open decisions
@@ -74,9 +75,9 @@ None. Decision 1 (where the game's colours live) was settled on 2026-11-09, and 
 
 ### Phase C — Local checks and release
 
-- [ ] **Bundle-size watch.** Added to 00's local check command: compares `dist/assets` sizes with a stored baseline and fails above a set growth. Verify: a deliberately large import makes it fail.
-- [ ] **Unused-asset check.** Fails when a file under `src/assets/` is no longer referenced, since the preloader downloads every file. Verify: an unreferenced test file makes it fail.
-- [ ] **Docs.** `AGENTS.md` (UI direction, keyboard model, persistence, loading screen, colour rule, analytics parameters) and the changelog match what shipped.
+- [x] **Bundle-size watch.** Added to 00's local check command: compares `dist/assets` sizes with a stored baseline and fails above a set growth. Verify: a deliberately large import makes it fail.
+- [x] **Unused-asset check.** Fails when a file under `src/assets/` is no longer referenced, since the preloader downloads every file. Verify: an unreferenced test file makes it fail.
+- [x] **Docs.** `AGENTS.md` (UI direction, keyboard model, persistence, loading screen, colour rule, analytics parameters) and the changelog match what shipped.
 
 ## Local checks added
 
