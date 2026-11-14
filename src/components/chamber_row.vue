@@ -71,7 +71,7 @@ defineProps<ChamberRowProps>()
   position: absolute;
   inset: 0;
   background: rgba(var(--color-ink-rgb), 0.35);
-  mask: url('@/assets/images/level_indicator.png') center / contain no-repeat;
+  mask: url('@/assets/images/level_indicator.webp') center / contain no-repeat;
 }
 
 /* Lighter grey on the dark bar of the row with the keyboard; a completed figure stays green */
