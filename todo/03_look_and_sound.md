@@ -5,7 +5,7 @@ Last revised: 2026-11-14
 
 ## Goal
 
-The game looks and sounds finished before it grows: a reworked look drawn from sprites (smooth and sharp), music that reacts to play, and one new chamber, a tutorial shown as chamber 0. It stays "Portal 2D", a fan game played only by the author and a few friends and never published (README decision 12). No other chambers are added here: stage 04 adds the new mechanics and completes the campaign (20 chambers in total, numbered 0–19, with no wings) once this stage is right.
+The game looks and sounds finished before it grows: a reworked look drawn from sprites (smooth and sharp) and one new chamber, a tutorial shown as chamber 0. It stays "Portal 2D", a fan game played only by the author and a few friends and never published (README decision 12). No other chambers are added here: stage 04 adds the new mechanics and completes the campaign (20 chambers in total, numbered 0–19, with no wings) once this stage is right.
 
 ## Depends on
 
@@ -38,16 +38,12 @@ These are assumptions about what earlier stages delivered. Re-check each when re
 - 2026-11-13 — The chamber is drawn from sprites the author makes, which the game composes. They are raster PNG or WebP at 256 px per tile, shrunk once per tile size, seen straight from above under overhead light; the game adds one shared drop shadow and turns anything with a direction. Walls and open ditches join their neighbours from strips of five tiles, cut into quarters. Every switchable element has an on and an off sprite. Sprites are still images: the code adds glow pulses, fizzler shimmer and the fizzle particles, and state changes snap. The colours that carry a meaning are drawn into the sprites, matched by hand to the palette, as the logo's already are; the palette keeps the colours the code still draws. The full spec is `docs/sprites.md`.
 - 2026-11-13 — The code comes first, on placeholders drawn by code (no image library is installed, and they also stand in for stage 04's mechanics until their art exists), with a dev-only gallery; the author swaps in finished files one at a time. A sprite that fails to download shows its placeholder for the rest of the visit.
 - 2026-11-13 — Not in this pass: decorations not tied to the rules (lights on the outer wall, hazard stripes, floor scuffs), a look of its own for walls that refuse portals (until a chamber uses one), and animated sprites.
+- 2026-11-14 — No reactive music: the music phase (layered playback on the Web Audio API, layers entering as a chamber progresses, a solve cue, stems for the chamber track and a download budget) is dropped, with open decision 2 (music loading). The music stays as it is: a menu track and a chamber track, each one file played by an audio element. The local checks and release phase becomes Phase C.
 - Unchanged from `AGENTS.md`: desktop only; colour meanings (blue interaction and success, orange the second portal, red caution, green a completed chamber); `localStorage` keys keep the `portal-2d.` prefix, as a convention, and analytics event and parameter names never change (renaming one splits its history).
 
 ## Open decisions
 
-Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisions made.
-
-2. **Music loading.** The loading screen downloads every file under `src/assets/audio/` (`asset_preloader.ts`, `import.meta.glob`). Today that is about 3.6 MB (`menu.mp3` 2.2 MB, `game.mp3` 1.2 MB, sound effects about 0.2 MB). The layers (several stems per track) are what grow it.
-   - (a) Keep preloading everything. Cost: a longer first load.
-   - (b) Preload the menu music and the effects; fetch the chamber track's layers as in-memory copies when the first chamber opens (same reason as today: Firebase varies responses by encoding). Cost: changes the loading-screen rule in `AGENTS.md`; a short wait the first time a chamber opens.
-   - Recommendation: (b) once total audio passes about 8 MB.
+None. Decision 1 (where the game's colours live) was settled on 2026-11-09, and decision 2 (music loading) was dropped with reactive music on 2026-11-14; see Decisions made.
 
 ## Steps
 
@@ -76,15 +72,7 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 - [x] **The art.** Every placeholder replaced, following `docs/sprites.md`: each sprite drawn in code as an SVG in `art/sprites/`, exported to WebP in `src/assets/images/chamber/`, so the author draws none. Verify: each new file checked in the gallery and in a chamber; no placeholder left.
 - [x] **Docs for the new look.** `AGENTS.md` (the frozen-drawing rule replaced, the layout, the loading screen handing sprites over, the sprites' colours matched by hand to the palette), `docs/elements.md` (adding an element needs its sprites in `docs/sprites.md` and a placeholder) and stage 04's notes. Verify: a read-through matches the behaviour.
 
-### Phase C — Music that reacts to play
-
-- [ ] **Layered playback.** Stems of one track must start together and stay in sync, which `HTMLAudioElement` (used by `src/game/music.ts` through `createAudioPlayer`) can't guarantee. Move music to the Web Audio API, decoding the in-memory copies the preloader already hands over. Music stays out of the rules: the screen maps the game's events to layers. Verify: two stems stay in sync over a 10-minute loop.
-- [ ] **Progress layers.** A layer enters as the chamber progresses (for example percussion when the first door opens), driven by game events or by an optional per-chamber cue list in the chamber's metadata. Verify: replaying a solution brings the layers in at the same moments every time.
-- [ ] **Solve cue.** A short sting on completion that ducks the chamber music; obeys the music setting. Verify: no cue when music is off; no overlap when Next chamber is pressed quickly.
-- [ ] **The chamber track.** The chamber track gets the stems its layers need: composed, commissioned or separated from today's track. Verify: every chamber plays the track with its layers; the menu music still resumes where it left off.
-- [ ] **Download budget** (open decision 2). Measure total audio after each new track or set of stems; past about 8 MB, switch to loading the chamber track's layers on demand and update `asset_preloader.ts` and the loading-screen rule in `AGENTS.md`. Verify: first-visit download size recorded per release.
-
-### Phase D — Local checks and release
+### Phase C — Local checks and release
 
 - [ ] **Bundle-size watch.** Added to 00's local check command: compares `dist/assets` sizes with a stored baseline and fails above a set growth. Verify: a deliberately large import makes it fail.
 - [ ] **Unused-asset check.** Fails when a file under `src/assets/` is no longer referenced, since the preloader downloads every file. Verify: an unreferenced test file makes it fail.
@@ -100,15 +88,13 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 
 - [ ] The tutorial ships first in the list with a recorded solution; chambers 1–3 keep their progress and best times.
 - [ ] The visual rework ships with every sprite drawn (no placeholder left); reduced motion is respected; the replay check still passes.
-- [ ] Reactive music ships within the download budget.
 - [ ] All local checks pass.
-- [ ] The author has played every chamber (0–3) in the new look and sound and signed off on them before stage 04 starts.
+- [ ] The author has played every chamber (0–3) in the new look and signed off on them before stage 04 starts.
 
 ## Go/no-go points
 
 - **Renderer:** if the 2D canvas can't hold 60 fps at `devicePixelRatio` 2 on the largest chamber with all effects, reopen the renderer decision (README open decision 4): drop or simplify effects, or move to WebGL, directly or through a library such as PixiJS (cost: a large dependency or a lot of code, and a second way to draw the chamber previews).
 - **Sprites:** if a strip can't be made to join cleanly, or a sprite can't be brought into the set's style, that element goes back to being drawn by code (each element's drawing can switch on its own), and the rest stay sprites.
-- **Audio budget:** past about 8 MB of audio, switch to loading the chamber track's layers on demand (open decision 2).
 - **Sign-off:** if the author isn't happy with the look or sound after playing chambers 0–3, this stage goes on and stage 04 waits, since stage 04's mechanics are drawn and given sounds in this stage's look and sound.
 
 ## Risks
@@ -118,7 +104,6 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 - **Colours drifting apart.** Canvas colours, sprite colours and CSS tokens are kept in step by hand. Check all three together whenever a palette colour changes.
 - **Sprites that don't match.** AI-made images drift in light, scale and style, and template strips rarely tile cleanly. The gallery shows every sprite side by side and every join, so a mismatch shows the day its file lands.
 - **Sprites shrunk too far.** Detail can turn to mush at the menu map's size. The gallery shows every sprite at that size.
-- **Stems.** Layers need separate stems of the chamber track; if today's track can't be split cleanly, new music has to be composed or commissioned, which adds unplanned audio work.
 
 ## Notes for later stages
 

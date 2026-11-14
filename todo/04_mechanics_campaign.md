@@ -48,7 +48,6 @@ Stages 00 and 01 are done: their parts below are what they delivered, though Pha
 - The palette module (`src/game/palette.ts`) with named `rgba()` colours, imported directly by the drawing code; the hex-literal exception in `AGENTS.md` lifted.
 - The chamber drawn from sprites (`docs/sprites.md`), done 2026-11-14: one WebP file per sprite in `src/assets/images/chamber/`, each drawn in code as an SVG in `art/sprites/` and exported; a placeholder drawn by code for a sprite without a file; the sprite gallery (`/src/dev/sprite_gallery.html` in `npm run dev`) showing each sprite and the game's drawing of every element. Doors and the exit slide, fizzlers crumble and lasers fade when switched, and a fizzle breaks up what it takes.
 - The animation layer (purely visual interpolation between consecutive states), so the movement new elements cause can animate, with `prefers-reduced-motion` showing plain steps.
-- Music on the Web Audio API, with layers driven by game events.
 - The tutorial first in the list (permanent id 0), as chamber 0 (stage 03 settled that numbers count from 0). Links still follow position.
 - The bundle-size watch and the unused-asset check.
 
