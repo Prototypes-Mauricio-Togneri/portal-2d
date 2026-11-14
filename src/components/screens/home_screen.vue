@@ -17,7 +17,7 @@
  * highlight clicks. Picking a layout puts it in use; picking Custom also
  * opens its dialog, where each key is set. Settings ends with Reset progress,
  * which asks first in a dialog. While either dialog is open the menu ignores
- * the keyboard and Escape closes it.
+ * the keyboard and Escape closes it, with a click.
  */
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, useId, useTemplateRef} from 'vue'
 import type {Ref} from 'vue'
@@ -809,6 +809,7 @@ function handleKeydown(event: KeyboardEvent): void {
       } else {
         closeControlsDialog()
       }
+      Sound.MENU_BUTTON.play()
     }
     return
   }

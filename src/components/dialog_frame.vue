@@ -4,7 +4,8 @@
  * Keyboard-driven: the first action takes focus, the arrow keys along the
  * actions (Up and Down when stacked, Left and Right in a row) move between
  * them and Tab stays inside the dialog. Escape is left to the screen, which
- * knows what it means in each state. Every action clicks when pressed.
+ * knows what it means in each state. Every action clicks when pressed, and
+ * when the keyboard moves focus onto it.
  */
 import {onMounted, useId, useTemplateRef} from 'vue'
 import {Sound} from '@/game/sound'
@@ -32,7 +33,8 @@ function actionButtons(): HTMLButtonElement[] {
 }
 
 /**
- * Moves focus to the action at the given offset from the focused one, wrapping around.
+ * Moves focus to the action at the given offset from the focused one,
+ * wrapping around, with a click when it lands on another action.
  * @param offset - +1 for next, -1 for previous
  */
 function moveFocus(offset: number): void {
@@ -42,7 +44,12 @@ function moveFocus(offset: number): void {
   }
   const currentIndex = buttons.findIndex((button) => button === document.activeElement)
   const nextIndex = (currentIndex + offset + buttons.length) % buttons.length
-  buttons[nextIndex]?.focus()
+  const nextButton = buttons[nextIndex]
+  if (nextButton === undefined || nextButton === document.activeElement) {
+    return
+  }
+  nextButton.focus()
+  Sound.MENU_BUTTON.play()
 }
 
 /**

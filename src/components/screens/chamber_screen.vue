@@ -349,7 +349,8 @@ function handlePageHide(): void {
 }
 
 /**
- * Escape opens the pause dialog, closes it again, and steps back out of a confirmation.
+ * Escape opens the pause dialog, closes it again, and steps back out of a
+ * confirmation, each with a click.
  * @param event - Keyboard event
  */
 function handleKeydown(event: KeyboardEvent): void {
@@ -363,12 +364,15 @@ function handleKeydown(event: KeyboardEvent): void {
       break
     case 'pause':
       resume()
+      Sound.MENU_BUTTON.play()
       break
     case 'confirm-reset':
       dialog.value = 'pause'
+      Sound.MENU_BUTTON.play()
       break
     case 'confirm-exit':
       cancelExit()
+      Sound.MENU_BUTTON.play()
       break
     case 'completed':
       break
