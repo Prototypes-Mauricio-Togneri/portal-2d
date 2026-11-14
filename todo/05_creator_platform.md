@@ -20,7 +20,7 @@ This stage assumes the following exist when it starts. Re-check each when revisi
   - "Moves" is settled: each step that puts the subject on another tile, undone steps included, redo counting nothing (README decision 8). Whether ranked runs allow undo waits for stage 04.
   - JSON imports widen string literals to `string`, which is why format 2 keeps one optional list per element type rather than one list told apart by a `type` string, which would need a cast.
 - **Stage 02 (solver)**, stopped (README decision 10): no par and no shortcut report. The author's replay alone proves a chamber solvable.
-- **Stage 03 (look and sound)**
+- **Stage 03 (look and sound)**, done 2026-11-14
   - The reworked renderer, with the high-DPI fix from stage 00. The editor draws with it.
 - **Stage 04 (mechanics and campaign)**
   - A home menu that scales and has room for an Editor entry.
