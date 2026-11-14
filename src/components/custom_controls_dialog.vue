@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * The Custom controls, opened by picking Custom under Settings' Controls: a
- * row per game key (turning in place, undo and redo hidden for now, as in the
- * chamber's legend), then Done. Picking a row (Enter, Space or a click) waits
+ * row per game key (undo and redo hidden for now, as in the chamber's
+ * legend), then Done. Picking a row (Enter, Space or a click) waits
  * for its new key, which takes the whole keyboard until a key is bound or
  * Escape cancels; a left or right click on that row binds that mouse button
  * instead, and a click anywhere else cancels. A key or button bound to another
@@ -52,11 +52,6 @@ const ALL_CONTROLS: ControlEntry[] = [
     portal: null,
   },
   {
-    gameKey: GameKey.TURN,
-    label: 'Turn in place',
-    portal: null,
-  },
-  {
     gameKey: GameKey.BLUE,
     label: 'Blue portal',
     portal: 'blue',
@@ -86,7 +81,6 @@ const ALL_CONTROLS: ControlEntry[] = [
 // Game keys whose rows are hidden for now, as in the chamber's legend, kept so they can be shown
 // again; their keys still work
 const HIDDEN_CONTROLS: ReadonlySet<GameKey> = new Set([
-  GameKey.TURN,
   GameKey.UNDO,
   GameKey.REDO,
 ])

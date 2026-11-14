@@ -11,7 +11,7 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 ## Turn by turn
 
 - Nothing moves on its own. The game advances one action at a time, and only when the player acts.
-- The actions: move (up, down, left or right), turn in place without moving, shoot a blue portal, shoot an orange portal, and interact (use a switch, pick up or put down a box).
+- The actions: move (up, down, left or right), turn without moving (only to face the mouse pointer, when a mouse button is bound), shoot a blue portal, shoot an orange portal, and interact (use a switch, pick up or put down a box).
 - Each action and everything it causes (a button pressed, a door opening, a fizzler firing) happens at once, before the next action.
 - Steps can be undone and redone.
 

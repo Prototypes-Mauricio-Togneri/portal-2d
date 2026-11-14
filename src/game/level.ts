@@ -37,7 +37,7 @@ import {StepAnimation} from '@/game/step_animation'
  * turn action logged like a pressed one.
  */
 export class Level {
-  /** Keys that start the clock: moving, turning, both portals and interacting */
+  /** Keys that start the clock: moving, both portals and interacting */
   private static readonly CLOCK_START_KEYS: readonly GameKey[] = [
     GameKey.LEFT,
     GameKey.UP,
@@ -46,7 +46,6 @@ export class Level {
     GameKey.BLUE,
     GameKey.ORANGE,
     GameKey.INTERACT,
-    GameKey.TURN,
   ]
 
   /** Keys whose action goes the way the subject faces, so the subject turns to the pointer before a press of one is taken: both portals */
@@ -484,7 +483,7 @@ export class Level {
    * it is on its tile.
    * @param chamber - The chamber being played
    * @param state - The state before the step
-   * @param press - The press, one key and whether the turn key was held
+   * @param press - The press, one key
    * @param time - The frame's time, in milliseconds on the frame clock
    * @returns Whether the state changed
    */

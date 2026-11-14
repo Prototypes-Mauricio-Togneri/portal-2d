@@ -1,12 +1,11 @@
 <script setup lang="ts">
 /**
- * The controls legend shown beside the chamber: moving, turning in place,
- * both portals and interacting, then undo and redo, each on the key the
- * player has bound to it, and Escape for the pause dialog, each with what it
- * does. The keys show what the player's keyboard prints on them, and arrow
- * keys a small triangle pointing their way, and a mouse button a small mouse
- * with that button filled in. Turning in place, undo and redo are hidden for
- * now; their keys still work.
+ * The controls legend shown beside the chamber: moving, both portals and
+ * interacting, then undo and redo, each on the key the player has bound to
+ * it, and Escape for the pause dialog, each with what it does. The keys show
+ * what the player's keyboard prints on them, and arrow keys a small triangle
+ * pointing their way, and a mouse button a small mouse with that button
+ * filled in. Undo and redo are hidden for now; their keys still work.
  */
 import {computed, onMounted} from 'vue'
 import KeyCap from '@/components/key_cap.vue'
@@ -41,7 +40,6 @@ const keys = computed(() => ({
   [GameKey.DOWN]: legendKey(GameKey.DOWN),
   [GameKey.LEFT]: legendKey(GameKey.LEFT),
   [GameKey.RIGHT]: legendKey(GameKey.RIGHT),
-  [GameKey.TURN]: legendKey(GameKey.TURN),
   [GameKey.BLUE]: legendKey(GameKey.BLUE),
   [GameKey.ORANGE]: legendKey(GameKey.ORANGE),
   [GameKey.INTERACT]: legendKey(GameKey.INTERACT),
@@ -51,7 +49,6 @@ const keys = computed(() => ({
 
 // Game keys whose rows are hidden for now, kept so they can be shown again; the keys still work
 const HIDDEN_KEYS: ReadonlySet<GameKey> = new Set([
-  GameKey.TURN,
   GameKey.UNDO,
   GameKey.REDO,
 ])
@@ -74,21 +71,6 @@ onMounted(refreshKeyLabels)
         <dd class="legend-action">
           <span class="action-name">Move</span>
           <span class="action-detail">Navigate the chamber</span>
-        </dd>
-      </div>
-      <div v-if="!HIDDEN_KEYS.has(GameKey.TURN)" class="legend-row">
-        <dt>
-          <KeyCap
-            :class="{
-              'keycap-wide': keys.turn.wide,
-            }"
-            :bound-key="keys.turn.key"
-            :aria-label="keys.turn.name"
-          />
-        </dt>
-        <dd class="legend-action">
-          <span class="action-name">Turn in place</span>
-          <span class="action-detail">Hold it, then a move key, to face that way</span>
         </dd>
       </div>
       <div class="legend-row">

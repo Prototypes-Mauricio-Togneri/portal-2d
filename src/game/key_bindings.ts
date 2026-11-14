@@ -16,7 +16,7 @@ export type MouseButton = 'left' | 'right'
  */
 export type KeyBindings = Readonly<Record<GameKey, BoundKey>>
 
-/** The Arrow keys layout, the default: arrows, A, D, Space, either Ctrl, Z and X */
+/** The Arrow keys layout, the default: arrows, A, D, Space, Z and X */
 export const ARROW_KEY_BINDINGS: KeyBindings = {
   [GameKey.UP]: 'ArrowUp',
   [GameKey.DOWN]: 'ArrowDown',
@@ -25,7 +25,6 @@ export const ARROW_KEY_BINDINGS: KeyBindings = {
   [GameKey.BLUE]: 'KeyA',
   [GameKey.ORANGE]: 'KeyD',
   [GameKey.INTERACT]: 'Space',
-  [GameKey.TURN]: 'Control',
   [GameKey.UNDO]: 'KeyZ',
   [GameKey.REDO]: 'KeyX',
 }
@@ -39,7 +38,6 @@ export const WASD_MOUSE_BINDINGS: KeyBindings = {
   [GameKey.BLUE]: 'MouseLeft',
   [GameKey.ORANGE]: 'MouseRight',
   [GameKey.INTERACT]: 'Space',
-  [GameKey.TURN]: 'Control',
   [GameKey.UNDO]: 'KeyZ',
   [GameKey.REDO]: 'KeyX',
 }

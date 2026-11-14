@@ -3,12 +3,10 @@ import {GameKey, type HistoryKey} from '@/game/game_key'
 import {type BoundKey, getBoundKey, getKeyMouseButton, getMouseBoundKey, type KeyBindings} from '@/game/key_bindings'
 
 /**
- * A press waiting for the level, with whether the turn key was held as it
- * went down.
+ * A press waiting for the level.
  */
 type KeyPress = {
   readonly key: FrameKey | HistoryKey // The game key pressed
-  readonly turnHeld: boolean // Whether the turn key was held down at that moment
 }
 
 /**
@@ -26,9 +24,9 @@ export type PointerPosition = {
  * (KeyboardEvent.code) through the player's bindings, so they stay in place on
  * every layout; a bound mouse button, left or right, counts as a key wherever
  * it is clicked. Every other key and button is ignored. Presses wait in
- * arrival order until the level takes them, one at a time; the turn key is
- * only ever read as held. When a mouse button is bound, it also follows the
- * pointer, for the level to aim the subject with.
+ * arrival order until the level takes them, one at a time. When a mouse
+ * button is bound, it also follows the pointer, for the level to aim the
+ * subject with.
  */
 export class Input {
   /**
@@ -137,9 +135,8 @@ export class Input {
 
   /**
    * Takes the oldest waiting press.
-   * @returns What the rules read for it (its key, and whether the turn key
-   * was held as it went down), the undo or redo pressed, or null when no
-   * press is waiting
+   * @returns What the rules read for it (its key), the undo or redo pressed,
+   * or null when no press is waiting
    */
   takePress(): FrameInput | HistoryKey | null {
     const press = this.presses.shift()
@@ -154,7 +151,6 @@ export class Input {
 
     return {
       keys: [press.key],
-      turnHeld: press.turnHeld,
     }
   }
 
@@ -215,10 +211,9 @@ export class Input {
 
     this.pressed.add(gameKey)
 
-    if ((gameKey !== GameKey.TURN) && !(event.repeat && this.presses.some((press) => press.key === gameKey))) {
+    if (!(event.repeat && this.presses.some((press) => press.key === gameKey))) {
       this.presses.push({
         key: gameKey,
-        turnHeld: this.holding.has(GameKey.TURN),
       })
     }
 
@@ -276,13 +271,9 @@ export class Input {
     }
 
     this.pressed.add(gameKey)
-
-    if (gameKey !== GameKey.TURN) {
-      this.presses.push({
-        key: gameKey,
-        turnHeld: this.holding.has(GameKey.TURN),
-      })
-    }
+    this.presses.push({
+      key: gameKey,
+    })
   }
 
   /**
