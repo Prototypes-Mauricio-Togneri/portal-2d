@@ -1,7 +1,7 @@
 # Stage 03 — Look and sound
 
 Status: Draft
-Last revised: 2026-11-13
+Last revised: 2026-11-14
 
 ## Goal
 
@@ -73,37 +73,7 @@ Decision 1 (where the game's colours live) was settled on 2026-11-09; see Decisi
 - [x] **Ambient life** (uses the frontend-design skill; replaces the planned "Laser glow"). The laser and portal glows are drawn last, added to what lies beneath, their strength pulsing; fizzlers shimmer. The level redraws every frame while anything glows or shimmers. With `prefers-reduced-motion` the glow holds steady and idle frames draw nothing, as today. Verify: 60 fps on the largest chamber at `devicePixelRatio` 2 on the chamber screen; nothing moves with reduced motion.
 - [x] **Particles when something fizzles** (uses the frontend-design skill). On the fizzler event emitted by 01 (portals cleared, box destroyed). Verify: none with reduced motion.
 - [x] **Check high-DPI again.** 00's sharpness fix still holds with every new layer, and sprites stay sharp up to their 256 px. Verify: 200 % browser zoom and a high-DPI screen.
-- [ ] **The art.** The author replaces the placeholders, file by file, following `docs/sprites.md`. Verify: each new file checked in the gallery and in a chamber; no placeholder left.
-  - [ ] 1. `floor.png`
-  - [ ] 2. `wall_1.png` (wall strip: lone)
-  - [ ] 3. `wall_2.png` (wall strip: horizontal run)
-  - [ ] 4. `wall_3.png` (wall strip: vertical run)
-  - [ ] 5. `wall_4.png` (wall strip: inner corners)
-  - [ ] 6. `wall_5.png` (wall strip: solid)
-  - [ ] 7. `ditch_1.png` (ditch strip: lone)
-  - [ ] 8. `ditch_2.png` (ditch strip: horizontal run)
-  - [ ] 9. `ditch_3.png` (ditch strip: vertical run)
-  - [ ] 10. `ditch_4.png` (ditch strip: inner corners)
-  - [ ] 11. `ditch_5.png` (ditch strip: solid)
-  - [ ] 12. `ditch_bridged.png`
-  - [ ] 13. `barrier_raised.png`
-  - [ ] 14. `barrier_lowered.png`
-  - [ ] 15. `door_closed.png`
-  - [ ] 16. `door_open.png`
-  - [ ] 17. `exit_closed.png`
-  - [ ] 18. `exit_open.png`
-  - [ ] 19. `button_up.png`
-  - [ ] 20. `button_pressed.png`
-  - [ ] 21. `switch.png`
-  - [ ] 22. `box.png`
-  - [ ] 23. `fizzler_on.png`
-  - [ ] 24. `fizzler_off.png`
-  - [ ] 25. `laser_on.png`
-  - [ ] 26. `laser_off.png`
-  - [ ] 27. `arrow.png`
-  - [ ] 28. `portal_blue.png`
-  - [ ] 29. `portal_orange.png`
-  - [ ] 30. `subject.png`
+- [x] **The art.** Every placeholder replaced, following `docs/sprites.md`: each sprite drawn in code as an SVG in `art/sprites/`, exported to WebP in `src/assets/images/chamber/`, so the author draws none. Verify: each new file checked in the gallery and in a chamber; no placeholder left.
 - [ ] **Docs for the new look.** `AGENTS.md` (the frozen-drawing rule replaced, the layout, the loading screen handing sprites over, the sprites' colours matched by hand to the palette), `docs/elements.md` (adding an element needs its sprites in `docs/sprites.md` and a placeholder) and stage 04's notes. Verify: a read-through matches the behaviour.
 
 ### Phase C — Music that reacts to play
