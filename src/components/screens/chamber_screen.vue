@@ -659,6 +659,6 @@ onBeforeUnmount(() => {
 .chamber-canvas {
   box-sizing: content-box;
   display: block;
-  border: 1px solid rgba(0, 0, 0, 1);
+  border: 1px solid var(--color-chamber);
 }
 </style>

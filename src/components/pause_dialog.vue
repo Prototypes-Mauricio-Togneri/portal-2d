@@ -27,7 +27,7 @@ const emit = defineEmits<{
 <style scoped>
 .action-hint {
   margin-left: auto;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(var(--color-white-rgb), 0.8);
   font-size: 0.875rem;
   font-weight: 500;
 }
