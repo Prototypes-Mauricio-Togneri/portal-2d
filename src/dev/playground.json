@@ -216,12 +216,14 @@
         {
             "x": 7,
             "y": 2,
-            "id": 34
+            "id": 34,
+            "direction": "H"
         },
         {
             "x": 8,
             "y": 2,
-            "id": 35
+            "id": 35,
+            "direction": "H"
         }
     ],
     "ditches": [

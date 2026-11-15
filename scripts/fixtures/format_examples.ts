@@ -2,6 +2,7 @@ import type {ChamberData} from '@/game/chamber_data'
 import brokenChamberFields from '@scripts/fixtures/broken_chamber_fields.json'
 import brokenChamberLayout from '@scripts/fixtures/broken_chamber_layout.json'
 import formatV2Example from '@scripts/fixtures/format_v2_example.json'
+import lightBarrierDirection from '@scripts/fixtures/light_barrier_direction.json'
 import lightBarrierInWall from '@scripts/fixtures/light_barrier_in_wall.json'
 import lightBarrierSharedTile from '@scripts/fixtures/light_barrier_shared_tile.json'
 
@@ -89,5 +90,14 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
     // A light barrier is a fixed element of its own, and a switch's link reaches it, so the overlap is the only problem
     data: lightBarrierSharedTile,
     problems: ['error doors[0] at (3, 1): more than one element on a tile: lightBarrier (lightBarriers[0]), door (doors[0]); only two crossing lasers can share one'],
+  },
+  {
+    name: 'light_barrier_direction',
+    // A light barrier runs one way, like a laser: the way is required, and an arrow's way isn't one
+    data: lightBarrierDirection,
+    problems: [
+      'error lightBarriers[0].direction: is missing',
+      'error lightBarriers[1].direction: is not one of H, V',
+    ],
   },
 ]

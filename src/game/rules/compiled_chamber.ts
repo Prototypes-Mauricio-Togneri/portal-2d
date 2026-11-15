@@ -62,7 +62,7 @@ const NO_LINKS: readonly LinkTarget[] = []
  * Reads an entry's direction when it is one of the four ways an arrow or the
  * subject can point.
  * @param text - The entry's direction, when it has one
- * @returns The direction, or null for none, or for a laser's H or V
+ * @returns The direction, or null for none, or for a laser's or a light barrier's H or V
  */
 function readDirection(text: string | undefined): Direction | null {
   if ((text === Direction.UP) || (text === Direction.DOWN) || (text === Direction.LEFT) || (text === Direction.RIGHT)) {

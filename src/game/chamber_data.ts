@@ -34,8 +34,8 @@ export type WallData = (PositionData | WallRangeData) & {
 }
 
 /**
- * An element a button or switch can open and close: barrier, light barrier,
- * ditch, door, fizzler or exit.
+ * An element a button or switch can open and close: barrier, ditch, door,
+ * fizzler or exit.
  */
 export type BlockableData = PositionData & {
   readonly id?: number // Target for button and switch links; absent means it cannot be linked
@@ -50,9 +50,10 @@ export type BoxData = PositionData & {
 }
 
 /**
- * A laser beam, drawn as a horizontal or vertical line.
+ * A laser or a light barrier: a beam of light running horizontally or
+ * vertically, which a button or switch can turn on and off.
  */
-export type LaserData = BlockableData & {
+export type BeamData = BlockableData & {
   readonly direction: string // 'H' or 'V'
 }
 

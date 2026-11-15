@@ -1,4 +1,4 @@
-import type {BlockableData} from '@/game/chamber_data'
+import type {BeamData} from '@/game/chamber_data'
 import {defineElement} from '@/game/rules/element_definition'
 import type {StateDraft} from '@/game/rules/state_draft'
 
@@ -21,8 +21,8 @@ function switchLightBarrierOn(draft: StateDraft, index: number): void {
   draft.setBlocked('lightBarrier', index, true)
 }
 
-/** A field of light on a floor tile, which keeps the subject and shots out while it is on, like a barrier on the floor */
-export const LIGHT_BARRIER_ELEMENT = defineElement<BlockableData>()({
+/** A field of light on a floor tile, which keeps the subject and shots out while it is on, like a barrier on the floor; its direction only changes the drawing */
+export const LIGHT_BARRIER_ELEMENT = defineElement<BeamData>()({
   kind: 'lightBarrier',
   fileKey: 'lightBarriers',
   count: 'many',

@@ -35,13 +35,14 @@ A chamber file is a JSON object in format 2 (`ChamberData` in `src/game/chamber_
 | 3 | `subject` | Where the subject starts: `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required. |
 | 4 | `exit` | The exit, a single entry: `x`, `y`, and optionally `id` and `blocked`. |
 | 5 | `walls` | One tile (`x`, `y`) or a rectangle of tiles (`xFrom`, `xTo`, `yFrom`, `yTo`, both ends included, each from no greater than its to), each with an optional `takesPortals`: true when absent, false for a wall that refuses portals. |
-| 6 | `barriers`, `lightBarriers`, `ditches`, `doors`, `fizzlers` | `x`, `y`, and optionally `id` and `blocked`. |
+| 6 | `barriers`, `ditches`, `doors`, `fizzlers` | `x`, `y`, and optionally `id` and `blocked`. |
 | 7 | `lasers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn, and two lasers can share a tile only when they cross), and optionally `id` and `blocked`. |
-| 8 | `boxes` | `x`, `y`, and optionally `id`. |
-| 9 | `buttons`, `switches` | `x`, `y` and `links`, all required: the ids of the elements and link groups it acts on (see [links](#links)). |
-| 10 | `arrows` | `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required: the one way the subject can enter the tile. |
-| 11 | `groups` | Link groups, each with an `id` and `links`, both required: the ids of the elements it stands for, never another group. |
-| 12 | `par` | How well the chamber can be solved, for medals: optionally `moves` and `portals`, each 0 or more. Reserved: nothing writes it yet (see `docs/solver.md`). |
+| 8 | `lightBarriers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn), and optionally `id` and `blocked`. |
+| 9 | `boxes` | `x`, `y`, and optionally `id`. |
+| 10 | `buttons`, `switches` | `x`, `y` and `links`, all required: the ids of the elements and link groups it acts on (see [links](#links)). |
+| 11 | `arrows` | `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required: the one way the subject can enter the tile. |
+| 12 | `groups` | Link groups, each with an `id` and `links`, both required: the ids of the elements it stands for, never another group. |
+| 13 | `par` | How well the chamber can be solved, for medals: optionally `moves` and `portals`, each 0 or more. Reserved: nothing writes it yet (see `docs/solver.md`). |
 
 - **`id`:** 1 or more, unique among every element and group, and needed only by what a button, switch or group links to; an element without one can't be linked.
 - **`blocked`:** true when absent (see [blocking](#blocking)).

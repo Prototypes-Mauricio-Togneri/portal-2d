@@ -34,7 +34,8 @@
     "lightBarriers": [
         {
             "x": 2,
-            "y": 0
+            "y": 0,
+            "direction": "H"
         }
     ]
 }

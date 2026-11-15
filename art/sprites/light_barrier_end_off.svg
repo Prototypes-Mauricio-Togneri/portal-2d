@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    A light barrier's connector, its slot dark (docs/sprites.md): drawn at
+    both ends of each run of light barriers, on or off, under
+    light_barrier_end_on, so the two must match but for the slot. Drawn at
+    the left end of a band running left to right; the game turns it to each
+    end.
+  -->
+  <defs>
+    <clipPath id="tile">
+      <rect x="0" y="0" width="256" height="256"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#tile)">
+    <!-- The plate, its far side past the tile's edge, so only its inner corners are rounded -->
+    <rect x="-4" y="68" width="32" height="120" rx="3" fill="rgb(50, 55, 61)" stroke="rgb(176, 183, 189)" stroke-width="2.5"/>
+
+    <!-- The slot, dark -->
+    <rect x="20" y="83" width="7" height="90" rx="1" fill="rgb(28, 72, 66)"/>
+  </g>
+</svg>

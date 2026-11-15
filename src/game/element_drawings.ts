@@ -10,9 +10,9 @@ import type {PiecePlacer, TilePainter} from '@/game/tile_painter'
 // How each element type is drawn by the renderer, looked up by kind: the
 // rules can't touch the canvas, so drawing stays on the browser side. Each
 // element is drawn as its sprite for its state (docs/sprites.md), switched
-// off as well as on, except an open door or exit and a fizzler or a laser's
-// beam that is off, which aren't drawn at all; a laser's end plates show
-// where its beam ends, lit or not. Walls and open ditches join their
+// off as well as on, except an open door or exit, a fizzler that is off, and
+// a laser's or a light barrier's beam that is off, which aren't drawn at
+// all; their end plates show where a beam ends, lit or not. Walls and open ditches join their
 // neighbours, quarter by quarter, and doors, the exit and fizzlers are turned
 // to the walls beside them; a door or the exit sliding open or shut, a
 // fizzler crumbling away or forming, or a laser fading out or in, is drawn
@@ -27,19 +27,35 @@ import type {PiecePlacer, TilePainter} from '@/game/tile_painter'
 export type ElementDrawing = (painter: TilePainter, state: RulesState, shares?: BlockedShares | null) => void
 
 /**
- * Which way a laser runs: H for horizontal, V for vertical.
+ * Which way a laser or a light barrier runs: H for horizontal, V for vertical.
  */
-type LaserOrientation = 'H' | 'V'
+type BeamOrientation = 'H' | 'V'
 
 /**
- * One end of a laser running a way: where the tile beyond it lies, and how
+ * One end of a beam running a way: where the tile beyond it lies, and how
  * the end plate, drawn at the left end of a beam running left to right, is
  * turned there.
  */
-type LaserEnd = {
+type BeamEnd = {
   readonly dx: number // Column step to the tile beyond the end
   readonly dy: number // Row step to the tile beyond the end (rows grow upwards)
   readonly turn: Direction // How the end plate is turned
+}
+
+/**
+ * The element types drawn as a beam running one way, which neighbours of the
+ * same type running the same way continue, with an end plate at each end of
+ * each run.
+ */
+type BeamKind = 'laser' | 'lightBarrier'
+
+/**
+ * The sprites of a type drawn as a beam.
+ */
+type BeamSprites = {
+  readonly beam: SpriteName // The beam while on, drawn running left to right
+  readonly endOn: SpriteName // The end plate while on, drawn at the left end of a beam running left to right
+  readonly endOff: SpriteName // The same plate with its slot dark, drawn under endOn
 }
 
 /**
@@ -112,14 +128,28 @@ const GAP_SIDE_KINDS: readonly PlacedKind[] = [
   'ditch',
 ]
 
-/** How a laser's sprite, drawn running left to right, is turned for each orientation */
-const LASER_TURNS: Readonly<Record<LaserOrientation, Direction>> = {
+/** A laser's sprites */
+const LASER_SPRITES: BeamSprites = {
+  beam: 'laser_on',
+  endOn: 'laser_end_on',
+  endOff: 'laser_end_off',
+}
+
+/** A light barrier's sprites */
+const LIGHT_BARRIER_SPRITES: BeamSprites = {
+  beam: 'light_barrier_on',
+  endOn: 'light_barrier_end_on',
+  endOff: 'light_barrier_end_off',
+}
+
+/** How a beam's sprite, drawn running left to right, is turned for each orientation */
+const BEAM_TURNS: Readonly<Record<BeamOrientation, Direction>> = {
   H: Direction.UP,
   V: Direction.RIGHT,
 }
 
-/** The two ends of a laser running each way: left and right, or top and bottom */
-const LASER_ENDS: Readonly<Record<LaserOrientation, readonly LaserEnd[]>> = {
+/** The two ends of a beam running each way: left and right, or top and bottom */
+const BEAM_ENDS: Readonly<Record<BeamOrientation, readonly BeamEnd[]>> = {
   H: [
     {
       dx: -1,
@@ -147,25 +177,27 @@ const LASER_ENDS: Readonly<Record<LaserOrientation, readonly LaserEnd[]>> = {
 }
 
 /**
- * Reads a laser's orientation from its entry.
+ * Reads a laser's or a light barrier's orientation from its entry.
  * @param text - The entry's direction
  * @returns H or V, or null for anything else
  */
-function readOrientation(text: string | undefined): LaserOrientation | null {
+function readOrientation(text: string | undefined): BeamOrientation | null {
   return ((text === 'H') || (text === 'V')) ? text : null
 }
 
 /**
- * Whether a tile holds a laser running a way, either of two that cross there.
+ * Whether a tile holds a beam of a type running a way, either of two lasers
+ * that cross there.
  * @param chamber - The chamber
+ * @param kind - The beam's type
  * @param x - Column
  * @param y - Row
  * @param orientation - The way it runs
  * @returns True when one does, false for none or outside the chamber
  */
-function hasLaserAt(chamber: CompiledChamber, x: number, y: number, orientation: LaserOrientation): boolean {
-  for (let index = chamber.elementAt('laser', x, y); index !== NO_ELEMENT; index = chamber.nextOnTile('laser', index)) {
-    if (readOrientation(chamber.entriesOf('laser')[index]?.direction) === orientation) {
+function hasBeamAt(chamber: CompiledChamber, kind: BeamKind, x: number, y: number, orientation: BeamOrientation): boolean {
+  for (let index = chamber.elementAt(kind, x, y); index !== NO_ELEMENT; index = chamber.nextOnTile(kind, index)) {
+    if (readOrientation(chamber.entriesOf(kind)[index]?.direction) === orientation) {
       return true
     }
   }
@@ -278,11 +310,11 @@ function crumblePlacer(share: number, seed: number): PiecePlacer {
  * Builds a drawing for a type whose elements can be blocked: each element's
  * sprite for whether it is.
  * @param kind - The element type
- * @param blockedSprite - Its sprite while blocked (a barrier raised, a light barrier on, a door or the exit closed, a fizzler on)
+ * @param blockedSprite - Its sprite while blocked (a barrier raised)
  * @param unblockedSprite - Its sprite while not
  * @returns The drawing
  */
-function blockableDrawing(kind: Exclude<BlockableKind, 'ditch' | 'laser' | GapKind>, blockedSprite: SpriteName, unblockedSprite: SpriteName): ElementDrawing {
+function blockableDrawing(kind: Exclude<BlockableKind, 'ditch' | BeamKind | GapKind>, blockedSprite: SpriteName, unblockedSprite: SpriteName): ElementDrawing {
   return (painter, state) => {
     const chamber = state.chamber
 
@@ -410,62 +442,78 @@ function drawDitches(painter: TilePainter, state: RulesState): void {
 }
 
 /**
- * Draws the beams of the lasers that are on, each turned to the way it runs;
- * one that is off isn't drawn, and one fading out or in is drawn
- * see-through. Then, over every beam, the end plates at both ends of each
- * run of lasers, on or off.
- * @param painter - Paints on the canvas
- * @param state - The state drawn
- * @param shares - How far on the lasers that are changing are drawn, or null (the default) to draw every one as the state says
+ * How far on a beam that is changing is drawn: a laser fades out or in, a
+ * light barrier switches at once.
+ * @param shares - How far on the elements that are changing are drawn, or null to draw every one as the state says
+ * @param kind - The beam's type
+ * @param index - The beam's index in its type's list
+ * @returns How far on it is drawn, or null when it is drawn as the state says
  */
-function drawLasers(painter: TilePainter, state: RulesState, shares: BlockedShares | null = null): void {
-  const entries = state.chamber.entriesOf('laser')
-
-  entries.forEach((entry, i) => {
-    const orientation = readOrientation(entry.direction)
-    const share = (shares === null) ? null : shares('laser', i)
-
-    if (orientation === null) {
-      return
-    }
-
-    if (share !== null) {
-      painter.drawSpriteFaded('laser_on', entry.x, entry.y, LASER_TURNS[orientation], share)
-    } else if (state.isBlocked('laser', i)) {
-      painter.drawSprite('laser_on', entry.x, entry.y, LASER_TURNS[orientation])
-    }
-  })
-
-  // The end plates go over every beam, so a crossing beam never covers one
-  entries.forEach((entry, i) => {
-    const orientation = readOrientation(entry.direction)
-
-    if (orientation !== null) {
-      const share = (shares === null) ? null : shares('laser', i)
-
-      drawLaserEnds(painter, state.chamber, entry.x, entry.y, orientation, (share !== null) ? share : (state.isBlocked('laser', i) ? 1 : 0))
-    }
-  })
+function beamShare(shares: BlockedShares | null, kind: BeamKind, index: number): number | null {
+  return ((shares === null) || (kind !== 'laser')) ? null : shares(kind, index)
 }
 
 /**
- * Draws a laser's end plate at each of its ends that ends its run, where the
- * tile beyond holds no laser running the same way: unlit, with the lit one
- * over it as far as the laser is on.
+ * Builds a drawing for a type drawn as a beam, a laser or a light barrier:
+ * the beams of those that are on, each turned to the way it runs; one that
+ * is off isn't drawn, and a laser fading out or in is drawn see-through.
+ * Then, over every beam, the end plates at both ends of each run, on or off.
+ * @param kind - The type
+ * @param sprites - Its sprites
+ * @returns The drawing
+ */
+function beamDrawing(kind: BeamKind, sprites: BeamSprites): ElementDrawing {
+  return (painter, state, shares = null) => {
+    const entries = state.chamber.entriesOf(kind)
+
+    entries.forEach((entry, i) => {
+      const orientation = readOrientation(entry.direction)
+      const share = beamShare(shares, kind, i)
+
+      if (orientation === null) {
+        return
+      }
+
+      if (share !== null) {
+        painter.drawSpriteFaded(sprites.beam, entry.x, entry.y, BEAM_TURNS[orientation], share)
+      } else if (state.isBlocked(kind, i)) {
+        painter.drawSprite(sprites.beam, entry.x, entry.y, BEAM_TURNS[orientation])
+      }
+    })
+
+    // The end plates go over every beam, so a crossing beam never covers one
+    entries.forEach((entry, i) => {
+      const orientation = readOrientation(entry.direction)
+
+      if (orientation !== null) {
+        const share = beamShare(shares, kind, i)
+
+        drawBeamEnds(painter, state.chamber, kind, sprites, entry.x, entry.y, orientation, (share !== null) ? share : (state.isBlocked(kind, i) ? 1 : 0))
+      }
+    })
+  }
+}
+
+/**
+ * Draws a beam's end plate at each of its ends that ends its run, where the
+ * tile beyond holds no beam of its type running the same way: unlit, with
+ * the lit one over it as far as the beam is on.
  * @param painter - Paints on the canvas
  * @param chamber - The chamber
- * @param x - The laser's column
- * @param y - The laser's row
+ * @param kind - The beam's type
+ * @param sprites - Its type's sprites
+ * @param x - The beam's column
+ * @param y - The beam's row
  * @param orientation - The way it runs
  * @param shine - How far on it is drawn, from 0 (off) to 1 (on)
  */
-function drawLaserEnds(painter: TilePainter, chamber: CompiledChamber, x: number, y: number, orientation: LaserOrientation, shine: number): void {
-  for (const end of LASER_ENDS[orientation]) {
-    if (!hasLaserAt(chamber, x + end.dx, y + end.dy, orientation)) {
-      painter.drawSprite('laser_end_off', x, y, end.turn)
+function drawBeamEnds(painter: TilePainter, chamber: CompiledChamber, kind: BeamKind, sprites: BeamSprites, x: number, y: number, orientation: BeamOrientation, shine: number): void {
+  for (const end of BEAM_ENDS[orientation]) {
+    if (!hasBeamAt(chamber, kind, x + end.dx, y + end.dy, orientation)) {
+      painter.drawSprite(sprites.endOff, x, y, end.turn)
 
       if (shine > 0) {
-        painter.drawSpriteFaded('laser_end_on', x, y, end.turn, shine)
+        painter.drawSpriteFaded(sprites.endOn, x, y, end.turn, shine)
       }
     }
   }
@@ -498,7 +546,7 @@ export function drawLaserGlows(painter: TilePainter, state: RulesState, strength
     const shine = (share !== null) ? share : (state.isBlocked('laser', i) ? 1 : 0)
 
     if ((orientation !== null) && (shine > 0)) {
-      painter.drawSpriteAdded('laser_glow', entry.x, entry.y, LASER_TURNS[orientation], strength * shine)
+      painter.drawSpriteAdded('laser_glow', entry.x, entry.y, BEAM_TURNS[orientation], strength * shine)
     }
   })
 }
@@ -563,9 +611,9 @@ export const ELEMENT_DRAWINGS: Readonly<Record<ElementKind, ElementDrawing>> = {
   arrow: drawArrows,
   wall: drawWalls,
   barrier: blockableDrawing('barrier', 'barrier_raised', 'barrier_lowered'),
-  lightBarrier: blockableDrawing('lightBarrier', 'light_barrier_on', 'light_barrier_off'),
+  lightBarrier: beamDrawing('lightBarrier', LIGHT_BARRIER_SPRITES),
   ditch: drawDitches,
-  laser: drawLasers,
+  laser: beamDrawing('laser', LASER_SPRITES),
   door: slidingDrawing('door', 'door_closed'),
   exit: slidingDrawing('exit', 'exit_closed'),
   button: drawButtons,

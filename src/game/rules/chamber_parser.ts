@@ -1,4 +1,4 @@
-import type {ArrowData, BlockableData, BoxData, ChamberData, LaserData, LinkGroupData, ParData, SubjectData, TriggerData, WallData} from '@/game/chamber_data'
+import type {ArrowData, BeamData, BlockableData, BoxData, ChamberData, LinkGroupData, ParData, SubjectData, TriggerData, WallData} from '@/game/chamber_data'
 import {type ChamberProblem, chamberError} from '@/game/rules/chamber_problem'
 import {isJsonObject, type JsonObject} from '@/game/rules/json_object'
 
@@ -42,8 +42,8 @@ const DIRECTIONS = [
   'RIGHT',
 ]
 
-/** The orientations of a laser beam */
-const LASER_DIRECTIONS = [
+/** The ways a laser or a light barrier can run */
+const BEAM_DIRECTIONS = [
   'H',
   'V',
 ]
@@ -60,14 +60,14 @@ const POSITION_FIELDS = [
   'y',
 ]
 
-/** The fields of the subject and an arrow, all required; a laser has them too */
+/** The fields of the subject and an arrow, all required; a laser and a light barrier have them too */
 const DIRECTED_FIELDS = [
   'x',
   'y',
   'direction',
 ]
 
-/** The fields a barrier, light barrier, ditch, door, fizzler or the exit may have */
+/** The fields a barrier, ditch, door, fizzler or the exit may have */
 const BLOCKABLE_FIELDS = [
   'x',
   'y',
@@ -89,8 +89,8 @@ const TRIGGER_FIELDS = [
   'links',
 ]
 
-/** The fields a laser may have */
-const LASER_FIELDS = [
+/** The fields a laser or a light barrier may have */
+const BEAM_FIELDS = [
   'x',
   'y',
   'direction',
@@ -364,7 +364,7 @@ class ChamberParser {
   }
 
   /**
-   * Reads a barrier, light barrier, ditch, door, fizzler or the exit.
+   * Reads a barrier, ditch, door, fizzler or the exit.
    * @param value - The value
    * @param field - Its path
    * @returns The element, or null when it is wrong
@@ -462,13 +462,13 @@ class ChamberParser {
   }
 
   /**
-   * Reads a laser.
+   * Reads a laser or a light barrier.
    * @param value - The value
    * @param field - Its path
-   * @returns The laser, or null when it is wrong
+   * @returns The laser or light barrier, or null when it is wrong
    */
-  readLaser(value: unknown, field: string): LaserData | null {
-    const entry = this.readObject(value, field, LASER_FIELDS, DIRECTED_FIELDS)
+  readBeam(value: unknown, field: string): BeamData | null {
+    const entry = this.readObject(value, field, BEAM_FIELDS, DIRECTED_FIELDS)
 
     if (entry === null) {
       return null
@@ -476,7 +476,7 @@ class ChamberParser {
 
     const x = this.readInteger(entry.x, fieldPath(field, 'x'), null)
     const y = this.readInteger(entry.y, fieldPath(field, 'y'), null)
-    const direction = this.readChoice(entry.direction, fieldPath(field, 'direction'), LASER_DIRECTIONS)
+    const direction = this.readChoice(entry.direction, fieldPath(field, 'direction'), BEAM_DIRECTIONS)
     const id = this.readOptionalId(entry.id, fieldPath(field, 'id'))
     const blocked = this.readOptionalBoolean(entry.blocked, fieldPath(field, 'blocked'))
 
@@ -609,7 +609,7 @@ class ChamberParser {
     const exit = this.readBlockable(file.exit, 'exit')
     const walls = this.readList(file.walls, 'walls', (entry, field) => this.readWall(entry, field))
     const barriers = this.readList(file.barriers, 'barriers', (entry, field) => this.readBlockable(entry, field))
-    const lightBarriers = this.readList(file.lightBarriers, 'lightBarriers', (entry, field) => this.readBlockable(entry, field))
+    const lightBarriers = this.readList(file.lightBarriers, 'lightBarriers', (entry, field) => this.readBeam(entry, field))
     const ditches = this.readList(file.ditches, 'ditches', (entry, field) => this.readBlockable(entry, field))
     const boxes = this.readList(file.boxes, 'boxes', (entry, field) => this.readBox(entry, field))
     const buttons = this.readList(file.buttons, 'buttons', (entry, field) => this.readTrigger(entry, field))
@@ -617,7 +617,7 @@ class ChamberParser {
     const fizzlers = this.readList(file.fizzlers, 'fizzlers', (entry, field) => this.readBlockable(entry, field))
     const doors = this.readList(file.doors, 'doors', (entry, field) => this.readBlockable(entry, field))
     const switches = this.readList(file.switches, 'switches', (entry, field) => this.readTrigger(entry, field))
-    const lasers = this.readList(file.lasers, 'lasers', (entry, field) => this.readLaser(entry, field))
+    const lasers = this.readList(file.lasers, 'lasers', (entry, field) => this.readBeam(entry, field))
     const groups = this.readList(file.groups, 'groups', (entry, field) => this.readGroup(entry, field))
     const par = this.readPar(file.par, 'par')
 

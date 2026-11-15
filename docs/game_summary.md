@@ -37,7 +37,7 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 | 1   | Floor         | Empty tile, with nothing in the file                                                                           | Yes                                  | Yes                                        | No                                |
 | 2   | Wall          | Holds portals; a wall can also be set to refuse them                                                           | No (only by crossing a portal on it) | Stops the shot, which opens a portal there | No                                |
 | 3   | Barrier       | Raised or lowered; can also sit on a wall tile, where it keeps portals off the wall                            | Only when lowered                    | Only when lowered                          | Yes                               |
-| 4   | Light barrier | A field of light, on or off; stands only on a floor tile, so it never keeps portals off a wall                 | Only when off                        | Only when off                              | Yes                               |
+| 4   | Light barrier | A field of light, on or off, horizontal or vertical; stands only on a floor tile, so it never keeps portals off a wall | Only when off                        | Only when off                              | Yes                               |
 | 5   | Ditch         | A hole, open or bridged                                                                                        | Only when bridged                    | Yes                                        | Yes                               |
 | 6   | Door          | Closed or open                                                                                                 | Only when open                       | Only when open                             | Yes                               |
 | 7   | Exit          | Reaching it completes the chamber; closed or open                                                              | Only when open                       | Only when open                             | Yes                               |
@@ -57,7 +57,7 @@ Every chamber is closed in by walls (or barriers, doors and the exit) along its 
 | 1   | Floor            | Very light grey                                                                                     |
 | 2   | Wall             | Mid grey with a dark edge; a wall that refuses portals is darker, riveted steel                     |
 | 3   | Barrier          | Raised: a grey tile, light in the centre and dark at the edge. Lowered: not shown                   |
-| 4   | Light barrier    | On: a see-through pale teal field inside a thin dark frame. Off: only the frame                     |
+| 4   | Light barrier    | On: a wide see-through pale teal band across the tile, horizontal or vertical, neighbours joined, a dark connector at each end. Off: only the connectors |
 | 5   | Ditch            | Open: a near-black hole. Bridged: plain floor                                                       |
 | 6   | Door             | Closed: purple with a magenta edge. Open: plain floor                                               |
 | 7   | Exit             | Closed: looks like a closed door. Open: plain floor (in today's chambers, a gap in the outer wall)  |

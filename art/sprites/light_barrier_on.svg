@@ -1,47 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="256" height="256" viewBox="0 0 256 256">
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <!--
-    A light barrier that is on (docs/sprites.md): a field of pale teal hard
-    light filling the tile between its emitters, see-through so the floor
-    shows faintly, crossed by fine bright scan lines and brightest along the
-    emitters it leaves from. The emitters are light_barrier_off's exactly,
-    their slots lit teal.
+    A light barrier that is on (docs/sprites.md): a band of pale teal hard
+    light 96 px wide, running left to right through the tile's middle and
+    touching both side edges, so neighbouring light barriers make one band.
+    See-through, so the floor shows faintly, with a faint honeycomb and
+    bright edges, so it reads as a surface of light rather than a ray. The
+    game turns it a quarter for a vertical light barrier; the honeycomb
+    repeats every 32 px along the band, so it joins across tiles.
   -->
   <defs>
-    <!-- The field's scan lines, one every 12 px -->
-    <pattern id="scanLines" patternUnits="userSpaceOnUse" x="0" y="2" width="256" height="12">
-      <rect x="0" y="0" width="256" height="3" fill="rgb(232, 255, 246)"/>
+    <!-- The honeycomb, one cell 32 px wide, its rows starting on the band's top edge -->
+    <pattern id="honeycomb" patternUnits="userSpaceOnUse" x="0" y="80" width="32" height="55.4256">
+      <path d="M0,9.2376 L16,0 L32,9.2376 M0,9.2376 V27.7128 M32,9.2376 V27.7128 M0,27.7128 L16,36.9504 L32,27.7128 M16,36.9504 V55.4256" fill="none" stroke="rgb(186, 246, 228)" stroke-width="2"/>
     </pattern>
 
-    <!-- The light thrown in from the emitters, soft-edged -->
-    <filter id="rimGlow" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="6"/>
-    </filter>
-
-    <clipPath id="field">
-      <rect x="24" y="24" width="208" height="208"/>
-    </clipPath>
-
-    <!-- The two slots along the top side; the other sides are this turned -->
-    <g id="slots" fill="rgb(96, 222, 186)">
-      <rect x="40" y="14.5" width="76" height="6" rx="2"/>
-      <rect x="140" y="14.5" width="76" height="6" rx="2"/>
-    </g>
+    <!-- The light along both edges, fading inwards -->
+    <linearGradient id="edges" gradientUnits="userSpaceOnUse" x1="0" y1="80" x2="0" y2="176">
+      <stop offset="0" stop-color="rgb(186, 246, 228)" stop-opacity="0.95"/>
+      <stop offset="0.2" stop-color="rgb(186, 246, 228)" stop-opacity="0"/>
+      <stop offset="0.8" stop-color="rgb(186, 246, 228)" stop-opacity="0"/>
+      <stop offset="1" stop-color="rgb(186, 246, 228)" stop-opacity="0.95"/>
+    </linearGradient>
   </defs>
 
-  <!-- The field -->
-  <g clip-path="url(#field)">
-    <rect x="24" y="24" width="208" height="208" fill="rgb(96, 222, 186)" opacity="0.72"/>
-    <rect x="24" y="24" width="208" height="208" fill="url(#scanLines)" opacity="0.55"/>
-    <rect x="28" y="28" width="200" height="200" fill="none" stroke="rgb(200, 255, 236)" stroke-width="14" filter="url(#rimGlow)"/>
-    <rect x="26.5" y="26.5" width="203" height="203" fill="none" stroke="rgb(214, 255, 240)" stroke-width="3"/>
-  </g>
+  <!-- A deep teal rim just outside the band, so it reads on the light floor -->
+  <rect x="0" y="78" width="256" height="100" fill="rgb(20, 150, 120)" opacity="0.5"/>
 
-  <!-- The emitter frame -->
-  <path d="M16,10 H240 A6,6 0 0 1 246,16 V240 A6,6 0 0 1 240,246 H16 A6,6 0 0 1 10,240 V16 A6,6 0 0 1 16,10 Z M28,25 A3,3 0 0 0 25,28 V228 A3,3 0 0 0 28,231 H228 A3,3 0 0 0 231,228 V28 A3,3 0 0 0 228,25 Z" fill="rgb(50, 55, 61)" fill-rule="evenodd" stroke="rgb(176, 183, 189)" stroke-width="2.5"/>
+  <!-- The band -->
+  <rect x="0" y="80" width="256" height="96" fill="rgb(96, 222, 186)" opacity="0.64"/>
+  <rect x="0" y="80" width="256" height="96" fill="url(#honeycomb)" opacity="0.6"/>
+  <rect x="0" y="80" width="256" height="96" fill="url(#edges)"/>
 
-  <!-- The slots, lit -->
-  <use xlink:href="#slots"/>
-  <use xlink:href="#slots" transform="rotate(90 128 128)"/>
-  <use xlink:href="#slots" transform="rotate(180 128 128)"/>
-  <use xlink:href="#slots" transform="rotate(270 128 128)"/>
+  <!-- Its two bright edges -->
+  <rect x="0" y="80" width="256" height="3" fill="rgb(242, 255, 251)"/>
+  <rect x="0" y="173" width="256" height="3" fill="rgb(242, 255, 251)"/>
 </svg>
