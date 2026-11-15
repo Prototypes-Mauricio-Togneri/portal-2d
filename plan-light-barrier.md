@@ -107,8 +107,8 @@ The light barrier can be tried by hand next to the barrier, and the gallery show
 
 The whole project check passes and the change is reviewed.
 
-- [ ] **Review.** Run the `delta-review` skill on the files changed, and fix what it confirms.
-- [ ] **Verify.** `npm run lint:fix`, then `npm run verify` passes, after any review fix, as the last check of the finished change.
+- [x] **Review.** Run the `delta-review` skill on the files changed, and fix what it confirms.
+- [x] **Verify.** `npm run lint:fix`, then `npm run verify` passes, after any review fix, as the last check of the finished change.
 
 ## Tests
 
@@ -133,14 +133,14 @@ The whole project check passes and the change is reviewed.
 
 ## Done when
 
-- [ ] A chamber file can list `lightBarriers`, and a light barrier on a wall tile or overlapping another fixed element is refused with a clear message.
-- [ ] A light barrier that is on blocks walking and shots, one switched off by a button lets both through, and it blocks again when the button is released, as the fixture pins.
-- [ ] Both sprites draw: a pale teal field with lit emitter strips when on, only the strips with dark slots when off, with no drop shadow.
-- [ ] The playground's down wing shows two light barriers side by side beside the barrier, all switched by the down button.
-- [ ] The sprite gallery shows both sprites and a light barrier in its sample chamber.
-- [ ] `docs/elements.md`, `docs/sprites.md`, `docs/game_summary.md` and `AGENTS.md` describe the light barrier.
-- [ ] `npm run verify` passes, and the review found nothing left to fix.
-- [ ] No existing chamber or recorded solution changed.
+- [x] A chamber file can list `lightBarriers`, and a light barrier on a wall tile or overlapping another fixed element is refused with a clear message.
+- [x] A light barrier that is on blocks walking and shots, one switched off by a button lets both through, and it blocks again when the button is released, as the fixture pins.
+- [x] Both sprites draw: a pale teal field with lit emitter strips when on, only the strips with dark slots when off, with no drop shadow.
+- [x] The playground's down wing shows two light barriers side by side beside the barrier, all switched by the down button.
+- [x] The sprite gallery shows both sprites and a light barrier in its sample chamber.
+- [x] `docs/elements.md`, `docs/sprites.md`, `docs/game_summary.md` and `AGENTS.md` describe the light barrier.
+- [x] `npm run verify` passes, and the review found nothing left to fix.
+- [x] No existing chamber or recorded solution changed.
 
 ## Go/no-go points
 
