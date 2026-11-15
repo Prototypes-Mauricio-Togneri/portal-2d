@@ -2,7 +2,6 @@
 
 ## TODO
 
-- avoid leaving one box on top of another
 - show hints for tutorial
   - how to shot portals
   - show a hint when standing on a button
