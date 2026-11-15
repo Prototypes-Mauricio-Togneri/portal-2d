@@ -16,8 +16,6 @@ Light beams: the player can pass through. they can be deflected. they can "turn 
 
 Light beam receptor: if a light beam touches them, they activate.
 
-Excursion Funnel (Tractor Beam): Massive tubes of swirling blue light that push or pull anything caught inside them. They can be reversed and routed through portals. (CONVEYOR BELT)
-
 ## Level design
 
 https://steamcommunity.com/sharedfiles/filedetails/?id=157895158
