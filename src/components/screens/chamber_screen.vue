@@ -6,14 +6,16 @@
  * creates, pauses, reloads and disposes them, and reads the game's clock. In
  * development it also plays the playground, which saves and sends nothing.
  */
-import {computed, onBeforeUnmount, onMounted, ref, useTemplateRef} from 'vue'
+import {computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, useTemplateRef} from 'vue'
 import {onBeforeRouteLeave, onBeforeRouteUpdate, useRouter} from 'vue-router'
 import type {RouteLocationNormalized} from 'vue-router'
 import ChamberLegend from '@/components/chamber_legend.vue'
 import CompletionDialog from '@/components/completion_dialog.vue'
 import ConfirmDialog from '@/components/confirm_dialog.vue'
 import PauseDialog from '@/components/pause_dialog.vue'
+import type {PerformanceViewHandle} from '@/components/performance_view.vue'
 import PortalLogo from '@/components/portal_logo.vue'
+import {FrameStats} from '@/game/frame_stats'
 import {Level} from '@/game/level'
 import type {ReplayData} from '@/game/replay_data'
 import {Sound} from '@/game/sound'
@@ -66,6 +68,10 @@ const timeReadout = useTemplateRef<HTMLElement>('timeReadout')
 const timerStarted = ref(false) // Whether the clock has started; changes only on the first key and on reset
 const completedRun = ref<CompletedRun | null>(null) // The run the completion dialog reports
 const solutionFailed = ref(false) // Whether the last solution download was refused, because the run doesn't replay the same way
+const frameStats = import.meta.env.DEV ? new FrameStats() : null // Development only: measures the level's frame loop for the performance view at the foot of the rail
+// Development only: loaded on demand, so production builds leave it out
+const PerformanceView = import.meta.env.DEV ? defineAsyncComponent(() => import('@/components/performance_view.vue')) : null
+const performanceView = useTemplateRef<PerformanceViewHandle>('performanceView')
 
 let level: Level | null = null // Running game; created on mount, disposed on unmount
 let resizeObserver: ResizeObserver | null = null // Refits the chamber when the window changes size
@@ -425,6 +431,12 @@ onMounted(() => {
   // Stored before the first load, which runs a frame straight away and can already complete the chamber
   level = new Level(canvasElement, keyBindings.value, size.width * pixelRatio, size.height * pixelRatio)
   level.onCompleted = handleCompleted
+  if (frameStats !== null) {
+    frameStats.onSample = (sample) => {
+      performanceView.value?.show(sample)
+    }
+    level.frameStats = frameStats
+  }
   // Counted and sent before the load, whose first frame could already report the chamber completed
   beginAttempt()
   if (chamber.value !== undefined) {
@@ -496,6 +508,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
       <ChamberLegend />
+      <PerformanceView v-if="PerformanceView !== null" ref="performanceView" />
     </aside>
 
     <div ref="stage" class="chamber-stage room">

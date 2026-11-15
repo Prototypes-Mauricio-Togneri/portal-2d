@@ -5,6 +5,7 @@ import {FizzleParticles} from '@/game/fizzle_particles'
 import {GameEvent} from '@/game/game_event'
 import {GameKey, type HistoryKey} from '@/game/game_key'
 import type {FrameInput} from '@/game/frame_input'
+import type {FrameStats} from '@/game/frame_stats'
 import {Input, type PointerPosition} from '@/game/input'
 import type {KeyBindings} from '@/game/key_bindings'
 import {MissRipple} from '@/game/miss_ripple'
@@ -90,6 +91,7 @@ export class Level {
   }
 
   onCompleted: (() => void) | null = null // Called once per load when the subject reaches the exit
+  frameStats: FrameStats | null = null // Development only: told of each frame, each drawing and each rules step, which are timed only while it is set
 
   private chamber: CompiledChamber | null = null // The chamber being played, null before the first load
   private chamberHash = '' // Hash of the chamber being played, as replays name it
@@ -322,8 +324,29 @@ export class Level {
    */
   private render(time: number): void {
     if (this.state !== null) {
+      const frameStats = this.frameStats
+      const drawStart = (frameStats === null) ? 0 : performance.now()
+
       this.renderer.render(this.state, this.animation.transitionAt(time), this.reducedMotion.matches ? null : time, this.fizzle, this.changes, this.ripple)
+      frameStats?.recordDraw(performance.now() - drawStart)
     }
+  }
+
+  /**
+   * Runs the rules' step, timed while frame stats are set.
+   * @param chamber - The chamber being played
+   * @param state - The state before the step
+   * @param action - The action stepped
+   * @returns What the rules' step gave for it
+   */
+  private runStep(chamber: CompiledChamber, state: RulesState, action: Action): StepResult {
+    const frameStats = this.frameStats
+    const stepStart = (frameStats === null) ? 0 : performance.now()
+    const result = step(chamber, state, action)
+
+    frameStats?.recordStep(performance.now() - stepStart)
+
+    return result
   }
 
   /**
@@ -441,7 +464,7 @@ export class Level {
     }
 
     const action = Level.TURNS[direction]
-    const result = step(chamber, state, action)
+    const result = this.runStep(chamber, state, action)
 
     if (result.state === state) {
       return false
@@ -505,7 +528,7 @@ export class Level {
 
     this.aimPending = true
 
-    return this.applyStep(state, action, step(chamber, state, action), time)
+    return this.applyStep(state, action, this.runStep(chamber, state, action), time)
   }
 
   /**
@@ -628,6 +651,7 @@ export class Level {
    */
   private readonly onFrame = (time: number): void => {
     this.frameTime = time
+    this.frameStats?.recordFrame(time)
 
     const currentTime = Date.now()
     const delta = (currentTime - this.startTime) / 1000
