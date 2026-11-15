@@ -3,14 +3,14 @@ import type {RulesState} from '@/game/rules/rules_state'
 /**
  * The element types drawn changing over a short time when a step switches
  * them: doors and the exit slide open or shut, fizzlers crumble away or form
- * again, and lasers fade out or in.
+ * again, and lasers and light barriers fade out or in.
  */
-export type TransitionKind = 'door' | 'exit' | 'fizzler' | 'laser'
+export type TransitionKind = 'door' | 'exit' | 'fizzler' | 'laser' | 'lightBarrier'
 
 /**
  * How far blocked an element is drawn, from 0 (a door or the exit open, a
- * fizzler or a laser off) to 1 (shut, on), or null to draw it as the state
- * says.
+ * fizzler, a laser or a light barrier off) to 1 (shut, on), or null to draw
+ * it as the state says.
  */
 export type BlockedShares = (kind: TransitionKind, index: number) => number | null
 
@@ -40,6 +40,7 @@ const TRANSITION_KINDS: readonly TransitionKind[] = [
   'exit',
   'fizzler',
   'laser',
+  'lightBarrier',
 ]
 
 /** How each element type changes: a door or the exit slides, eased like a step's glide; a field crumbles at an even pace, its pieces each in their own time; a beam fades at an even pace */
@@ -60,12 +61,16 @@ const TRANSITION_STYLES: Readonly<Record<TransitionKind, TransitionStyle>> = {
     milliseconds: 250,
     eased: false,
   },
+  lightBarrier: {
+    milliseconds: 250,
+    eased: false,
+  },
 }
 
 /**
  * The doors and the exit sliding open or shut, the fizzlers crumbling away
- * or forming again and the lasers fading out or in, over a short time after
- * a step switched them.
+ * or forming again and the lasers and light barriers fading out or in, over
+ * a short time after a step switched them.
  * Purely visual: the rules have already switched them, and nothing waits
  * for a change, so a press never cuts one short. An element switched back
  * part way changes back from where it is drawn.
@@ -74,8 +79,8 @@ export class ElementTransitions {
   private transitions: readonly Transition[] = [] // The changes running, empty when none is
 
   /**
-   * Starts changing each door, exit, fizzler and laser that a step switched, from
-   * where it is drawn now.
+   * Starts changing each door, exit, fizzler, laser and light barrier that a
+   * step switched, from where it is drawn now.
    * @param before - The state before the step
    * @param after - The state after the step
    * @param time - Now, in milliseconds on the frame clock
@@ -126,7 +131,7 @@ export class ElementTransitions {
    * Whether anything is still changing at a time. A change whose time has
    * reached its end is over.
    * @param time - The frame's time, in milliseconds on the frame clock
-   * @returns True while a door, the exit, a fizzler or a laser is changing
+   * @returns True while a door, the exit, a fizzler, a laser or a light barrier is changing
    */
   isRunningAt(time: number): boolean {
     if (this.transitions.some((transition) => time - transition.startTime >= transition.duration)) {
@@ -141,7 +146,7 @@ export class ElementTransitions {
    * @param kind - Its type
    * @param index - Its number among its type's elements
    * @param time - The frame's time, in milliseconds on the frame clock
-   * @returns From 0 (a door or the exit open, a fizzler or a laser off) to 1 (shut, on), or null when it isn't changing
+   * @returns From 0 (a door or the exit open, a fizzler, a laser or a light barrier off) to 1 (shut, on), or null when it isn't changing
    */
   blockedAt(kind: TransitionKind, index: number, time: number): number | null {
     const transition = this.transitions.find((running) => (running.kind === kind) && (running.index === index))

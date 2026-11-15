@@ -12,17 +12,17 @@ import type {PiecePlacer, TilePainter} from '@/game/tile_painter'
 // element is drawn as its sprite for its state (docs/sprites.md), switched
 // off as well as on, except an open door or exit, a fizzler that is off, and
 // a laser's or a light barrier's beam that is off, which aren't drawn at
-// all; their end plates show where a beam ends, lit or not. Walls and open ditches join their
-// neighbours, quarter by quarter, and doors, the exit and fizzlers are turned
-// to the walls beside them; a door or the exit sliding open or shut, a
-// fizzler crumbling away or forming, or a laser fading out or in, is drawn
-// part way. Beside them, what moves with time alone: the lasers' glow,
-// pulsing with the portals'
+// all; their end plates show where a beam ends, lit or not. Walls and open
+// ditches join their neighbours, quarter by quarter, and doors, the exit and
+// fizzlers are turned to the walls beside them; a door or the exit sliding
+// open or shut, a fizzler crumbling away or forming, or a laser or a light
+// barrier fading out or in, is drawn part way. Beside them, what moves with
+// time alone: the lasers' glow, pulsing with the portals'
 
 /**
  * Draws every element of one type in a state, with the doors, the exit, the
- * fizzlers and the lasers that are changing drawn part way, or every one as
- * the state says when no shares are given.
+ * fizzlers, the lasers and the light barriers that are changing drawn part
+ * way, or every one as the state says when no shares are given.
  */
 export type ElementDrawing = (painter: TilePainter, state: RulesState, shares?: BlockedShares | null) => void
 
@@ -442,21 +442,9 @@ function drawDitches(painter: TilePainter, state: RulesState): void {
 }
 
 /**
- * How far on a beam that is changing is drawn: a laser fades out or in, a
- * light barrier switches at once.
- * @param shares - How far on the elements that are changing are drawn, or null to draw every one as the state says
- * @param kind - The beam's type
- * @param index - The beam's index in its type's list
- * @returns How far on it is drawn, or null when it is drawn as the state says
- */
-function beamShare(shares: BlockedShares | null, kind: BeamKind, index: number): number | null {
-  return ((shares === null) || (kind !== 'laser')) ? null : shares(kind, index)
-}
-
-/**
  * Builds a drawing for a type drawn as a beam, a laser or a light barrier:
  * the beams of those that are on, each turned to the way it runs; one that
- * is off isn't drawn, and a laser fading out or in is drawn see-through.
+ * is off isn't drawn, and one fading out or in is drawn see-through.
  * Then, over every beam, the end plates at both ends of each run, on or off.
  * @param kind - The type
  * @param sprites - Its sprites
@@ -468,7 +456,7 @@ function beamDrawing(kind: BeamKind, sprites: BeamSprites): ElementDrawing {
 
     entries.forEach((entry, i) => {
       const orientation = readOrientation(entry.direction)
-      const share = beamShare(shares, kind, i)
+      const share = (shares === null) ? null : shares(kind, i)
 
       if (orientation === null) {
         return
@@ -486,7 +474,7 @@ function beamDrawing(kind: BeamKind, sprites: BeamSprites): ElementDrawing {
       const orientation = readOrientation(entry.direction)
 
       if (orientation !== null) {
-        const share = beamShare(shares, kind, i)
+        const share = (shares === null) ? null : shares(kind, i)
 
         drawBeamEnds(painter, state.chamber, kind, sprites, entry.x, entry.y, orientation, (share !== null) ? share : (state.isBlocked(kind, i) ? 1 : 0))
       }
