@@ -17,7 +17,7 @@ This stage assumes the following exist when it starts. Re-check each when revisi
   - The pure step: `step(chamber, state, action)` gives the next state and its events. The replay format is compact: `ReplayData` (`src/game/replay_data.ts`), a list of presses (each an action, or undo or redo) with the expected result and the hash of the chamber it was recorded on.
   - An engine that loads under Node with no browser (the rules report events and play no sounds). A link's replay runs headless in the browser, and the local checks run the same code under Node.
   - Releasing a button linked to a box does nothing to the box. The validator warns about a button linked to a box but still loads the chamber, so the editor can show that warning, or forbid the link if it chooses.
-  - "Moves" is settled: each step that puts the subject on another tile, undone steps included, redo counting nothing (README decision 8). Whether ranked runs allow undo waits for stage 04.
+  - "Moves" is settled: each step that puts the subject on another tile, undone steps included, redo counting nothing (README decision 8). Stage 04 dropped medals (its decision 17), so there are no ranked runs.
   - JSON imports widen string literals to `string`, which is why format 2 keeps one optional list per element type rather than one list told apart by a `type` string, which would need a cast.
 - **Stage 02 (solver)**, stopped (README decision 10): no par and no shortcut report. The author's replay alone proves a chamber solvable.
 - **Stage 03 (look and sound)**, done 2026-11-14
