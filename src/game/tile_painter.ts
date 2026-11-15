@@ -242,6 +242,53 @@ export class TilePainter {
   }
 
   /**
+   * Runs a drawing of one tile moved some way and cut off at the tile's
+   * edge, as if slid under what lies beside it: the whole tile, or only its
+   * half on that side, so two halves moved apart part it down the middle,
+   * like a door's leaves. Nothing is drawn while only shadows are painted,
+   * so the drawing casts none.
+   * @param x - Column
+   * @param y - Row
+   * @param way - The way it is moved
+   * @param halfOnly - Whether only the tile's half on that side is drawn, rather than the whole tile
+   * @param shift - How far it is moved, as a share of a tile, rounded to whole canvas pixels: half a tile moves a half out of sight, a whole tile the whole tile
+   * @param draw - The tile's drawing, in place
+   */
+  drawTileSlid(x: number, y: number, way: Direction, halfOnly: boolean, shift: number, draw: () => void): void {
+    if (this.pass === 'shadows') {
+      return
+    }
+
+    const size = this.tileSize
+    const left = x * size
+    const top = this.tileTop(y)
+    const delta = DELTAS[way]
+    const pixels = Math.round(shift * size)
+    // The tile's half on the way it moves, split as its quarters are, the odd pixel going right and down
+    const half = Math.floor(size / 2)
+    const partLeft = (halfOnly && (delta.dx > 0)) ? left + half : left
+    const partTop = (halfOnly && (delta.dy < 0)) ? top + half : top
+    const partWidth = (halfOnly && (delta.dx !== 0)) ? ((delta.dx > 0) ? size - half : half) : size
+    const partHeight = (halfOnly && (delta.dy !== 0)) ? ((delta.dy < 0) ? size - half : half) : size
+
+    this.context.save()
+
+    try {
+      this.context.beginPath()
+      this.context.rect(left, top, size, size)
+      this.context.clip()
+      // Rows grow upwards, the canvas's y downwards
+      this.context.translate(delta.dx * pixels, -delta.dy * pixels)
+      this.context.beginPath()
+      this.context.rect(partLeft, partTop, partWidth, partHeight)
+      this.context.clip()
+      draw()
+    } finally {
+      this.context.restore()
+    }
+  }
+
+  /**
    * Draws a sprite over a tile, with its overhang around it, added to the
    * colours beneath, so it only brightens them: a glow, or a glint of light.
    * @param name - The sprite

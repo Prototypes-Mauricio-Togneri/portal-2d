@@ -17,15 +17,18 @@ import type {PiecePlacer, TilePainter} from '@/game/tile_painter'
 // walls and open ditches join their neighbours, quarter by quarter (a blocked
 // wall a link reaches is drawn in the backdrop as a wall, its blocked surface
 // painted over it while it is blocked), and doors, the exit and
-// fizzlers are turned to the walls beside them; a door or the exit sliding
-// open or shut, a fizzler crumbling away or forming, or a laser or a light
-// barrier fading out or in, is drawn part way. Beside them, what moves with
-// time alone: the lasers' glow, pulsing with the portals'
+// fizzlers are turned to the walls beside them; a blocked wall's steel
+// sliding apart into the wall beside it or shut, a ditch's grate sliding in
+// or out, a door or the exit sliding open or shut, a fizzler crumbling away
+// or forming, or a laser or a light barrier fading out or in, is drawn part
+// way. Beside them, what moves with time alone: the lasers' glow, pulsing
+// with the portals'
 
 /**
- * Draws every element of one type in a state, with the doors, the exit, the
- * fizzlers, the lasers and the light barriers that are changing drawn part
- * way, or every one as the state says when no shares are given.
+ * Draws every element of one type in a state, with the blocked walls, the
+ * ditches, the doors, the exit, the fizzlers, the lasers and the light
+ * barriers that are changing drawn part way, or every one as the state says
+ * when no shares are given.
  */
 export type ElementDrawing = (painter: TilePainter, state: RulesState, shares?: BlockedShares | null) => void
 
@@ -123,6 +126,18 @@ const GAP_SIDE_KINDS: readonly PlacedKind[] = [
   'fizzler',
   'lightBarrier',
   'ditch',
+]
+
+/** The ways a blocked wall's steel slides apart in a run of walls running left to right: its halves go left and right */
+const LEVEL_SHUTTER: readonly Direction[] = [
+  Direction.LEFT,
+  Direction.RIGHT,
+]
+
+/** The ways it slides apart in a run running up and down: its halves go up and down */
+const UPRIGHT_SHUTTER: readonly Direction[] = [
+  Direction.UP,
+  Direction.DOWN,
 ]
 
 /** A laser's sprites */
@@ -421,44 +436,103 @@ function drawWalls(painter: TilePainter, state: RulesState): void {
 }
 
 /**
+ * Which ways a blocked wall's steel slides apart: into the walls beside it,
+ * so along the run of walls it lies in, the way more walls lie beside it,
+ * as a door is turned; left and right when as many lie each way.
+ * @param joins - Whether a tile is part of the mass of walls
+ * @param x - The blocked wall's column
+ * @param y - The blocked wall's row
+ * @returns The ways its two halves slide
+ */
+function shutterWays(joins: JoinTest, x: number, y: number): readonly Direction[] {
+  const beside = Number(joins(x - 1, y)) + Number(joins(x + 1, y))
+  const aboveBelow = Number(joins(x, y + 1)) + Number(joins(x, y - 1))
+
+  return (aboveBelow > beside) ? UPRIGHT_SHUTTER : LEVEL_SHUTTER
+}
+
+/**
  * Draws the blocked surface over each blocked wall a link reaches while it is
  * blocked, joined like the wall drawn beneath it in the backdrop, whose
- * shape it keeps, so only the surface changes. Only a one-tile blocked wall
- * can be linked.
+ * shape it keeps, so only the surface changes. One changing is drawn part
+ * way: its surface cut down the middle, each half slid into the wall beside
+ * it. Only a one-tile blocked wall can be linked.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
+ * @param shares - How far blocked the blocked walls that are changing are drawn, or null (the default) to draw every one as the state says
  */
-function drawBlockedWalls(painter: TilePainter, state: RulesState): void {
+function drawBlockedWalls(painter: TilePainter, state: RulesState, shares: BlockedShares | null = null): void {
   const chamber = state.chamber
   const joins = wallJoins(chamber)
 
   for (let i = 0; i < chamber.countOf('blockedWall'); i++) {
-    if (isSwitchable(chamber, i) && state.isBlocked('blockedWall', i)) {
-      const position = chamber.positionOf('blockedWall', i)
+    if (!isSwitchable(chamber, i)) {
+      continue
+    }
 
-      drawJoinedTile(painter, 'blocked_wall', joins, position.x, position.y)
+    const position = chamber.positionOf('blockedWall', i)
+    const share = (shares === null) ? null : shares('blockedWall', i)
+    const drawSurface = (): void => drawJoinedTile(painter, 'blocked_wall', joins, position.x, position.y)
+
+    if (share !== null) {
+      for (const way of shutterWays(joins, position.x, position.y)) {
+        painter.drawTileSlid(position.x, position.y, way, true, (1 - share) / 2, drawSurface)
+      }
+    } else if (state.isBlocked('blockedWall', i)) {
+      drawSurface()
     }
   }
 }
 
 /**
+ * Which way a ditch's grate slides in from, and back out to: never from
+ * another ditch, so it comes from under the floor or a wall. The way follows
+ * the ditches beside it, as a door is turned: in a row of ditches running
+ * left to right, from above, or from below when a ditch lies above; else from
+ * the left, or from the right when a ditch lies left.
+ * @param chamber - The chamber
+ * @param x - The ditch's column
+ * @param y - The ditch's row
+ * @returns The way its grate lies while the ditch is open
+ */
+function grateSide(chamber: CompiledChamber, x: number, y: number): Direction {
+  const isDitch = (column: number, row: number): boolean => chamber.elementAt('ditch', column, row) !== NO_ELEMENT
+  const beside = Number(isDitch(x - 1, y)) + Number(isDitch(x + 1, y))
+  const aboveBelow = Number(isDitch(x, y + 1)) + Number(isDitch(x, y - 1))
+
+  if (beside > aboveBelow) {
+    return isDitch(x, y + 1) ? Direction.DOWN : Direction.UP
+  }
+
+  return isDitch(x - 1, y) ? Direction.RIGHT : Direction.LEFT
+}
+
+/**
  * Draws the ditches: an open one joined to the open ditches around it, and
- * a bridged one on its own, which ends the pit.
+ * a bridged one on its own, which ends the pit. One changing is drawn as
+ * part of the pit, so the shaft shows under its grate, with the grate part
+ * way slid in from its side.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
+ * @param shares - How far blocked the ditches that are changing are drawn, or null (the default) to draw every one as the state says
  */
-function drawDitches(painter: TilePainter, state: RulesState): void {
+function drawDitches(painter: TilePainter, state: RulesState, shares: BlockedShares | null = null): void {
   const chamber = state.chamber
+  const shareOf = (index: number): number | null => (shares === null) ? null : shares('ditch', index)
   const joins: JoinTest = (x, y) => {
     const index = chamber.elementAt('ditch', x, y)
 
-    return (index !== NO_ELEMENT) && state.isBlocked('ditch', index)
+    return (index !== NO_ELEMENT) && (state.isBlocked('ditch', index) || (shareOf(index) !== null))
   }
 
   for (let i = 0; i < chamber.countOf('ditch'); i++) {
     const position = chamber.positionOf('ditch', i)
+    const share = shareOf(i)
 
-    if (state.isBlocked('ditch', i)) {
+    if (share !== null) {
+      drawJoinedTile(painter, 'ditch', joins, position.x, position.y)
+      painter.drawTileSlid(position.x, position.y, grateSide(chamber, position.x, position.y), false, share, () => painter.drawSprite('ditch_bridged', position.x, position.y))
+    } else if (state.isBlocked('ditch', i)) {
       drawJoinedTile(painter, 'ditch', joins, position.x, position.y)
     } else {
       painter.drawSprite('ditch_bridged', position.x, position.y)

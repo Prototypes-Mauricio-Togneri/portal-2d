@@ -3,7 +3,6 @@
 ## TODO
 
 - avoid leaving one box on top of another
-- make walls less dark
 - avoid steping on a box -> only allow to carry it in front?
 - show hints for tutorial
   - how to shot portals

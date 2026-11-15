@@ -28,9 +28,10 @@ import {StepAnimation} from '@/game/step_animation'
  * the state changed. A step that changes the state is then drawn over a few
  * frames, redrawn every frame until it ends, paused or not; the next press
  * ends it at once. When a step fizzles, what it took breaks up over a few
- * frames, a door or the exit a step opens or closes slides open or shut, a
- * fizzler a step switches crumbles away or forms, a laser or a light
- * barrier a step switches fades out or in, and a portal shot that misses
+ * frames, a blocked wall a step switches slides its steel apart or shut, a
+ * ditch a step switches slides its grate in or out, a door or the exit a step
+ * opens or closes slides open or shut, a fizzler a step switches crumbles
+ * away or forms, a laser or a light barrier a step switches fades out or in, and a portal shot that misses
  * ripples where it stopped; no press waits for them nor cuts them short. While
  * anything glows, breaks up, changes or ripples, every frame is drawn too. Nothing is drawn over time when the player asks for reduced
  * motion: the glows hold steady. Undo and redo bring back
@@ -109,7 +110,7 @@ export class Level {
   private readonly renderer: Renderer // Draws the state
   private readonly animation = new StepAnimation() // The step being drawn over a few frames, if any
   private readonly fizzle = new FizzleParticles() // What the latest fizzle took, breaking up over a few frames, if anything
-  private readonly changes = new ElementTransitions() // The doors, the exit, the fizzlers, the lasers and the light barriers changing over a few frames after a step switched them, if any
+  private readonly changes = new ElementTransitions() // The blocked walls, the ditches, the doors, the exit, the fizzlers, the lasers and the light barriers changing over a few frames after a step switched them, if any
   private readonly ripple = new MissRipple() // Where the latest missed portal shot stopped, rippling over a few frames, if anywhere
   private frameTime = 0 // The latest frame's time, in milliseconds on the frame clock; redraws outside a frame use it, so a step being drawn never goes back
   private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time something could be drawn over time
@@ -534,7 +535,7 @@ export class Level {
   /**
    * Takes a step of the rules: records it in the history and the log,
    * counts the move, starts drawing the step when it changed the state, with
-   * each door, exit, fizzler, laser and light barrier it switched changing, what it took
+   * each blocked wall, ditch, door, exit, fizzler, laser and light barrier it switched changing, what it took
    * breaking up when it fizzled and a ripple where a portal shot it refused
    * stopped, and plays the sounds of what happened, a missed portal shot's own.
    * @param state - The state before the step

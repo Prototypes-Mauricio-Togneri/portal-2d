@@ -71,9 +71,9 @@ Quarters from different strip tiles end up side by side, so:
 
 Outside the chamber counts as open, so walls along the chamber's edge are bevelled on their outer side too, and the chamber reads as a raised block with a finished border.
 
-A blocked wall, which refuses portals, is drawn from its own strip, `blocked_wall`, while blocked, but joins every wall alike, so both kinds make one mass with one shadow, each tile cut from its own kind's strip. Its strip keeps the wall strip's shape exactly, bevels and seams in the same places, so where the two kinds meet their edges line up and only the surface changes. A blocked wall a link reaches is drawn with the walls as a wall, and while it is blocked its `blocked_wall` tile is painted over it among the blockers, so it switches surface at once, with no mark of its own; one no link reaches never changes, so it is drawn with the walls in its own strip, or as a wall when it starts unblocked.
+A blocked wall, which refuses portals, is drawn from its own strip, `blocked_wall`, while blocked, but joins every wall alike, so both kinds make one mass with one shadow, each tile cut from its own kind's strip. Its strip keeps the wall strip's shape exactly, bevels and seams in the same places, so where the two kinds meet their edges line up and only the surface changes. A blocked wall a link reaches is drawn with the walls as a wall, and while it is blocked its `blocked_wall` tile is painted over it among the blockers, so only its surface changes, with no mark of its own, the steel sliding apart into the walls beside it or shut when it is switched (see [sliding](#sliding)); one no link reaches never changes, so it is drawn with the walls in its own strip, or as a wall when it starts unblocked.
 
-In the ditch strip, read "wall" as "open ditch" and "floor" as anything else. It shows the pit's inner sides, the same depth everywhere: 82 px wide, fading from the lit rim to near black, lined with seams that crowd closer together as they go down, so the pit reads as a deep shaft. A bridged ditch is drawn on its own (`ditch_bridged`) and ends the pit.
+In the ditch strip, read "wall" as "open ditch" and "floor" as anything else. It shows the pit's inner sides, the same depth everywhere: 82 px wide, fading from the lit rim to near black, lined with seams that crowd closer together as they go down, so the pit reads as a deep shaft. A bridged ditch is drawn on its own (`ditch_bridged`) and ends the pit. While a ditch is switched it is drawn as part of the pit, its grate sliding in or out over it (see [sliding](#sliding)).
 
 ## The set
 
@@ -89,7 +89,7 @@ Every sprite is 256 px, or 384 px when it overhangs, except the three strips (12
 | 6 | `light_barrier_on` | A light barrier that is on: stops walking and shots. A see-through band of pale teal hard light, 96 px wide (teal at 64 % over a faint deep teal rim), with a faint honeycomb and bright edges, so it reads as a surface of light rather than a ray. It is light, not a solid block, so it casts no shadow. One that is off isn't drawn (its connectors are); switched, it fades out or in over about 0.25 s, as a laser does. Drawn over floor only |
 | 7 | `light_barrier_end_on` | A light barrier's connector while it is on: a dark steel plate where the band starts or stops, a little taller than the band, its slot as long as the band and lit. Drawn at both ends of each run of light barriers, over the bands, fading with its band |
 | 8 | `light_barrier_end_off` | The same connector with its slot dark: drawn at both ends of each run, on or off, under `light_barrier_end_on`, so the two must match but for the slot |
-| 9 | `door_closed` | A closed door: stops walking and shots. Its two leaves meet on the tile's middle line (see [sliding doors](#sliding-doors)). An open door isn't drawn, so its tile shows the floor |
+| 9 | `door_closed` | A closed door: stops walking and shots. Its two leaves meet on the tile's middle line (see [sliding](#sliding)). An open door isn't drawn, so its tile shows the floor |
 | 10 | `exit_closed` | The exit, closed. Its two leaves meet on the tile's middle line, as a door's do. The open exit isn't drawn, so its tile shows the floor; walking onto it completes the chamber |
 | 11 | `button_up` | A floor button, released |
 | 12 | `button_pressed` | A floor button, held down by the subject or a box. A box on a button is drawn as on the floor, over it |
@@ -140,9 +140,15 @@ When the subject walks into a fizzler that is on, each portal it loses and a box
 
 When a portal shot misses, the game draws a ripple in the shot's colour where it stopped, over everything, from no sprite: the face the shot met lights up as a line 0.84 of a tile long and 0.05 wide across the shot, fading in about 0.28 s, and two thin half rings, 90 ms apart, spread back towards the subject, from 0.2 to 0.8 of a tile along the face and up to 0.28 of a tile back, thinning and fading in about 0.42 s each, so all of it stays within the tile's width and is gone in about 0.52 s. It sits where a portal would have opened on a wall, 0.125 of a tile in; on the near edge of a door, the exit or a fizzler; on the near face of a light barrier's band when the band runs across the shot, or at its end on the tile's edge when it runs along it; and, for a shot that left the chamber through an open door or exit in its edge, just inside the doorway. A shot from inside a fizzler that is on does nothing, so draws nothing. With reduced motion, and in the home menu's map and the gallery, nothing ripples.
 
-## Sliding doors
+## Sliding
 
-When a door or the exit opens or closes, it slides over about 0.3 s: the game draws `door_closed` (or `exit_closed`) cut down its middle over the floor, each half slid out to its side and cut off at the tile's edge, as if going into the wall, until nothing is left. So the closed sprite's two leaves must meet on the tile's middle line. There is nothing extra to draw. With reduced motion, and in the home menu's map and the gallery, nothing slides.
+When a door or the exit opens or closes, it slides over about 0.3 s: the game draws `door_closed` (or `exit_closed`) cut down its middle over the floor, each half slid out to its side and cut off at the tile's edge, as if going into the wall, until nothing is left. So the closed sprite's two leaves must meet on the tile's middle line.
+
+A blocked wall a link reaches slides the same way when it is switched, over about 0.3 s: its `blocked_wall` tile, joined as it is drawn, is cut down its middle over the wall beneath it, each half slid into the wall beside it, along the run of walls it lies in (up and down when more walls lie above and below it than left and right), until only the wall is left, and back when it is blocked again.
+
+A ditch switched slides its grate over about 0.3 s: the ditch is drawn as part of the pit, and `ditch_bridged`, whole, slides in over it from one side, cut off at the tile's edge, as if coming out from under the floor, or back out the same way. It never comes from another ditch: in a row of ditches running left to right it comes from above (from below when a ditch lies above), and otherwise from the left (from the right when a ditch lies left). A ditch switched alone among open ditches stays part of their pit while it changes, so their rims beside it go as soon as it starts to open and appear only once its grate is fully in.
+
+There is nothing extra to draw. With reduced motion, and in the home menu's map and the gallery, nothing slides.
 
 ## The subject
 
