@@ -102,6 +102,8 @@ export const SPRITE_SHAPES = {
   portal_blue_glow: 'glow',
   portal_orange_glow: 'glow',
   subject: 'tile',
+  subject_left_foot: 'tile',
+  subject_right_foot: 'tile',
 } as const satisfies Readonly<Record<string, SpriteShape>>
 
 /**
@@ -126,6 +128,8 @@ export const RAISED_SPRITES: ReadonlySet<SpriteName> = new Set<SpriteName>([
   'switch',
   'box',
   'subject',
+  'subject_left_foot',
+  'subject_right_foot',
 ])
 
 /**

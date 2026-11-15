@@ -24,14 +24,14 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 - **Light:** from directly overhead, so every side of an object is shaded the same: no highlight on one side, no shadow on the other.
 - **Shadows:** don't draw a shadow falling outside the object. The game adds one shared drop shadow, made from each sprite's shape, under what stands raised (walls, blocked walls, closed doors, the closed exit, switches, boxes, the subject): a soft dark rim all round, with no offset, since the light is overhead. Walls cast theirs as one mass, so a run of walls has one shadow along its open sides.
 - **Readable small:** every sprite must still read at 40 px. On and off must differ at a glance, and the subject's facing must show from its shape alone.
-- **Colours:** the ones that carry a meaning are listed here and copied by hand into the CSS tokens (`src/assets/styles.css`), since the menus use the same colours (crimson and teal, which they don't use, have no token). Keep blue and orange off every other sprite, so nothing is mistaken for a portal; the one exception is the fizzler's see-through cobalt (30, 80, 210 at 62 %), deeper than the blue portal and with no edge lines. Changing one of these means redrawing the sprites that use it, along with its CSS token.
+- **Colours:** the ones that carry a meaning are listed here and copied by hand into the CSS tokens (`src/assets/styles.css`), since the menus use the same colours (crimson and teal, which they don't use, have no token). Keep blue and orange off every other sprite, so nothing is mistaken for a portal; the exceptions are the fizzler's see-through cobalt (30, 80, 210 at 62 %), deeper than the blue portal and with no edge lines, and the subject's orange jumpsuit and blue-lit portal gun (see [the subject](#the-subject)). Changing one of these means redrawing the sprites that use it, along with its CSS token.
 
 | # | Colour | RGB | Used for |
 |---|--------|-----|----------|
 | 1 | Blue | 40, 140, 220 | The blue portal, and a missed blue shot's ripple, drawn by the game in code (see [miss](#miss)) |
 | 2 | Orange | 255, 160, 30 | The orange portal, and a missed orange shot's ripple |
 | 3 | Red | 220, 60, 50 | The floor button (caution) |
-| 4 | Green | 0, 160, 100 | The subject |
+| 4 | Green | 0, 160, 100 | A completed chamber's test-subject figure in the home menu; the subject's own sprites are painted in their own colours (see [the subject](#the-subject)) |
 | 5 | Crimson | 235, 30, 55 | Lasers, and the lit slot of their end plates |
 | 6 | Teal | 96, 222, 186 | The light barrier's band, and the lit slots of its connectors |
 
@@ -41,7 +41,7 @@ A sprite with a direction is drawn once, one way, and the game turns it in quart
 
 | # | Sprites | Drawn | Turned |
 |---|---------|-------|--------|
-| 1 | `subject` | Facing up, towards the top of the screen | To the way the subject faces |
+| 1 | `subject`, `subject_left_foot`, `subject_right_foot` | Facing up, towards the top of the screen | To the way the subject faces |
 | 2 | `arrow` | Pointing up: the one way the subject may enter its tile | To the arrow's way |
 | 3 | `portal_blue`, `portal_orange` and their glows | On the top edge of its wall tile, opening up onto the tile above: a flat oval lying on the wall's slope, from just inside the tile's edge to the slope's lit lip, short enough to stay clear of the diagonals where two slopes meet at a wall's end; the glow centred on it | To the side of the wall it opens on |
 | 4 | `laser_on`, `laser_glow` | A beam running left to right through the tile's middle, touching both side edges, so neighbouring laser tiles make one beam | A quarter turn for a vertical laser; two lasers crossing on a tile are both drawn |
@@ -105,7 +105,9 @@ Every sprite is 256 px, or 384 px when it overhangs, except the three strips (12
 | 22 | `portal_orange` | The orange portal |
 | 23 | `portal_blue_glow` | The blue portal's glow |
 | 24 | `portal_orange_glow` | The orange portal's glow |
-| 25 | `subject` | The test subject seen from above, facing up. A face, visor or lit mark on its front makes the facing unmistakable |
+| 25 | `subject` | The test subject seen from above, facing up, standing: an orange jumpsuit, holding the portal gun pointing the way it faces, which makes the facing unmistakable. Painted (see [the subject](#the-subject)) |
+| 26 | `subject_left_foot` | The same subject walking, left foot forward. The same as `subject` above the belt |
+| 27 | `subject_right_foot` | The same subject walking, right foot forward. The same as `subject` above the belt |
 
 ## Order
 
@@ -120,7 +122,7 @@ The game draws from the bottom up, each later row over the earlier ones:
 | 5 | Portals | `portal_*` |
 | 6 | Fixtures | `button_*`, `switch` |
 | 7 | Items | `box` |
-| 8 | Subject | `subject` |
+| 8 | Subject | `subject`, or `subject_left_foot` or `subject_right_foot` while it walks |
 | 9 | Fields | `fizzler_on`, whole or in pieces (see [fizzle](#fizzle)) |
 | 10 | Glow | `laser_glow`, `portal_*_glow` |
 | 11 | Fizzle | `portal_*`, `box`, in pieces (see [fizzle](#fizzle)) |
@@ -142,10 +144,27 @@ When a portal shot misses, the game draws a ripple in the shot's colour where it
 
 When a door or the exit opens or closes, it slides over about 0.3 s: the game draws `door_closed` (or `exit_closed`) cut down its middle over the floor, each half slid out to its side and cut off at the tile's edge, as if going into the wall, until nothing is left. So the closed sprite's two leaves must meet on the tile's middle line. There is nothing extra to draw. With reduced motion, and in the home menu's map and the gallery, nothing slides.
 
+## The subject
+
+The subject is the one sprite not drawn in code. Its three frames are painted images and break this spec on purpose: their light is painted, not straight overhead; the subject wears orange and its portal gun glows blue, the portals' colours; and their sources are the painted PNGs in `art/sprites/` (`subject.png`, `subject_left_foot.png` and `subject_right_foot.png`, 1254 × 1254 px), with no SVG.
+
+While a step moves the subject one tile, or through a portal, it walks, drawn with one foot forward: the left when the column plus the row of the tile it left is even, the right when it is odd, like a checkerboard, so each move to a neighbouring tile puts the other foot forward (the move after a portal crossing may repeat the last). It stands (`subject`) at any other time, and always with reduced motion, in the home menu's map and in the gallery. A held move key steps once per key repeat, each cutting the last glide short, so the feet then swap every frame or two.
+
+The walking frames were painted a little smaller than the standing one, with small differences above the belt, which would make the body wobble as the frames swap. So each is exported scaled up by 1.1 % around the head, with the standing frame's upper body laid over it down to just above the belt (rows 0 to 840 of the source, then blending into its own over 50 rows), so only the hips and legs change. All three are then cut to the same 1312 px square centred on the head, at (607, 595) in the sources, so the subject turns about its head, cleared of faint stray pixels (alpha under 3 %) and shrunk to the 256 px tile. To export them again, from the project's root:
+
+```sh
+convert art/sprites/subject.png -channel A -level 3%,98% +channel -background none -gravity northwest -extent 1312x1312-49-61 -resize 256x256 -quality 90 -define webp:alpha-quality=100 src/assets/images/chamber/subject.webp
+for foot in left right; do
+  convert \( art/sprites/subject_${foot}_foot.png -virtual-pixel transparent -distort SRT "607,595 1.011 0" \) art/sprites/subject.png \( -size 1254x840 xc:white -size 1254x50 gradient:white-black -size 1254x364 xc:black -append \) -compose Src -composite -compose Over -channel A -level 3%,98% +channel -background none -gravity northwest -extent 1312x1312-49-61 -resize 256x256 -quality 90 -define webp:alpha-quality=100 src/assets/images/chamber/subject_${foot}_foot.webp
+done
+```
+
+A new painting must keep the canvas, the head's place and the scale, or these numbers must be measured again.
+
 ## Not in the set yet
 
 - **Decorations** not tied to the rules, such as lights along the outer wall, hazard stripes at wall ends and scuffs on the floor.
-- **Animation frames:** sprites are still images, and the game moves them.
+- **Animation frames:** but for the subject's walk (see [the subject](#the-subject)), sprites are still images, and the game moves them.
 
 ## Trying a sprite
 
