@@ -1,42 +1,55 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <!--
-    A box (docs/sprites.md), a ring-framed cube: a chunky light cube seen from
-    above, split along its diagonals into four quarter blocks by dark gaps,
-    with a dark slate ring round a big light centre disc. One quarter is
-    drawn and turned.
+    A box (docs/sprites.md), a plated cube seen from above: a dark square
+    core with four light corner blocks, their inner corners cut off, a light
+    disc in the middle, and on each side a grey tab joined to the disc by a
+    slightly lighter bar. A thin dark slate outline runs round the outside
+    only, so the light blocks read on the light floor. 180 px across, the
+    outline included. One quarter (a tab, its bar and the corner block to
+    its left) is drawn and turned.
   -->
   <defs>
-    <!-- The top quarter block: a trapezoid between the diagonals, bevel round a lighter face -->
-    <g id="quarter">
-      <polygon points="48,44 208,44 128,124" fill="rgb(188, 190, 188)" stroke="rgb(44, 48, 54)" stroke-width="3" stroke-linejoin="round"/>
-      <polygon points="62,52 194,52 128,118" fill="rgb(230, 230, 226)"/>
-      <polygon points="62,52 194,52 191,55 65,55" fill="rgb(246, 246, 242)"/>
+    <!-- The dark core, under the blocks and tabs -->
+    <rect id="core" x="44.8" y="44.8" width="166.4" height="166.4"/>
+
+    <!-- The top tab, flush with the box's edge -->
+    <rect id="tab" x="111.7" y="41" width="32.6" height="24.8" rx="1.4"/>
+
+    <!-- The top-left corner block, its inner corner cut off -->
+    <path id="block" d="M 42.4,41 H 96 A 1.4,1.4 0 0 1 97.4,42.4 V 69.4 A 3.4,3.4 0 0 1 96.4,71.8 L 71.8,96.4 A 3.4,3.4 0 0 1 69.4,97.4 H 42.4 A 1.4,1.4 0 0 1 41,96 V 42.4 A 1.4,1.4 0 0 1 42.4,41 Z"/>
+
+    <!-- One quarter's share of the outer shape -->
+    <g id="quarter-outline">
+      <use href="#tab"/>
+      <use href="#block"/>
     </g>
 
-    <!-- The centre: a dark collar round a light disc with a groove and a pale lit rim -->
-    <g id="centre">
-      <circle cx="128" cy="128" r="52" fill="rgb(44, 48, 54)"/>
-      <circle cx="128" cy="128" r="49" fill="rgb(66, 71, 79)"/>
-      <circle cx="128" cy="128" r="44" fill="rgb(230, 230, 226)"/>
-      <circle cx="128" cy="128" r="27" fill="none" stroke="rgb(196, 198, 196)" stroke-width="3"/>
-      <circle cx="128" cy="128" r="42" fill="none" stroke="rgb(255, 255, 255)" stroke-width="2" opacity="0.8"/>
+    <!-- One quarter: the bar runs under the tab and the disc -->
+    <g id="quarter">
+      <rect x="120.3" y="65" width="15.4" height="33" fill="rgb(98, 97, 98)"/>
+      <use href="#tab" fill="rgb(168, 167, 167)"/>
+      <use href="#block" fill="rgb(201, 198, 199)"/>
     </g>
   </defs>
 
-  <!-- The dark slate frame, recessed, with its outline -->
-  <rect x="38" y="38" width="180" height="180" rx="16" fill="rgb(44, 48, 54)"/>
-  <rect x="42" y="42" width="172" height="172" rx="13" fill="rgb(90, 96, 104)"/>
+  <!-- The outline: the outer shape stroked under everything, so only its outer half shows -->
+  <g fill="rgb(44, 48, 54)" stroke="rgb(44, 48, 54)" stroke-width="6" stroke-linejoin="round">
+    <use href="#core"/>
+    <use href="#quarter-outline"/>
+    <use href="#quarter-outline" transform="rotate(90 128 128)"/>
+    <use href="#quarter-outline" transform="rotate(180 128 128)"/>
+    <use href="#quarter-outline" transform="rotate(270 128 128)"/>
+  </g>
 
-  <!-- Four quarter blocks, the dark frame showing between them along the diagonals -->
+  <!-- The core -->
+  <use href="#core" fill="rgb(83, 83, 84)"/>
+
+  <!-- Four quarters -->
   <use href="#quarter"/>
   <use href="#quarter" transform="rotate(90 128 128)"/>
   <use href="#quarter" transform="rotate(180 128 128)"/>
   <use href="#quarter" transform="rotate(270 128 128)"/>
 
-  <!-- The ring: a slate band round the centre -->
-  <circle cx="128" cy="128" r="66" fill="rgb(44, 48, 54)"/>
-  <circle cx="128" cy="128" r="62" fill="rgb(90, 96, 104)"/>
-
-  <!-- The centre -->
-  <use href="#centre"/>
+  <!-- The disc -->
+  <circle cx="128" cy="128" r="37.1" fill="rgb(201, 198, 199)"/>
 </svg>
