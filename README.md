@@ -2,12 +2,9 @@
 
 ## TODO
 
-- in the main menu, when the second level of "PLAY" is opened, always focus the highlighted row on the next available chamber. if none available (i.e. all completed), then focus it on the first one
-
+- create new sprite for the box
 - prevent from shooting a portal while holding a box?
 - replace the sprite for the wall that cannot be used for portals. use the wall sprite with another color
-- create new sprite for the box
-- add an exit door for tutorial, chamber 2 and chamber 3? use switches? use invisible switch only to open the exit?
 - show hints for tutorial
   - how to shot portals
   - show a hint when standing on a button

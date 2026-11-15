@@ -4,7 +4,8 @@
  * lists the sections (Play, Settings and About); moving through it changes
  * nothing else. Opening a section with Enter, Right or a click shows its
  * chambers, settings or About rows in the second column, starting level with
- * the section's row. Until any chamber has been opened on this device, Enter
+ * the section's row, Play's on the first chamber not yet completed (the first
+ * chamber when all are). Until any chamber has been opened on this device, Enter
  * or a click on Play starts the tutorial instead, and only Right opens its
  * list. The third column follows the highlight there: Play shows the
  * chamber's map, About shows a list of pages or the changelog, and Settings'
@@ -248,6 +249,8 @@ const highlightedItem = computed(() => {
   return highlightedSetting.value
 })
 const highlightedChamberEntry = computed(() => CHAMBERS[highlightedChamber.value])
+// The chamber Play highlights as it opens: the first one not yet completed, or the first when all are
+const nextChamberIndex = computed(() => Math.max(CHAMBERS.findIndex((chamber) => !isCompleted(chamber)), 0))
 const highlightedAboutEntry = computed(() => ABOUT[highlightedAbout.value])
 
 const controlsShown = computed(() => openSection.value === 'settings' && highlightedSetting.value === CONTROLS_INDEX)
@@ -460,6 +463,9 @@ function openHighlightedSection(): void {
   }
   openSection.value = highlightedSection.value
   activeColumn.value = 'items'
+  if (openSection.value === 'play') {
+    highlightedChamber.value = nextChamberIndex.value
+  }
   // The item rows are new, so none has had the pointer on it yet
   pointerItem = null
   Sound.MENU_BUTTON.play()
