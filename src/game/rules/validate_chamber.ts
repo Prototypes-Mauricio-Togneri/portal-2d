@@ -425,7 +425,7 @@ class ChamberValidator {
           this.problems.push(chamberError('', {
             x: x,
             y: y,
-          }, 'the chamber\'s edge is open here: an edge tile needs a wall, a door or the exit'))
+          }, 'the chamber\'s edge is open here: an edge tile needs a wall, a blocked wall, a door or the exit'))
         }
       }
     }

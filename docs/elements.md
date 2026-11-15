@@ -69,12 +69,12 @@ The player gives one action per step: move or turn (up, down, left or right), sh
    1. the [fizzler rule](#the-fizzler-rule);
    2. every [button](#buttons), in the chamber's list order, with its links.
 
-   It always ends, because a pass moves nothing but boxes, and only ever to their start tiles. A cap of 32 passes still guards against a mistake: reaching it is an error.
+   It always ends, because a pass moves nothing but boxes, and only ever to their start tiles. A cap of 32 passes still guards against a mistake: a 32nd pass that still changes something is an error.
 4. The [exit check](#the-exit).
 
 Once the chamber is completed, a step changes nothing.
 
-A chamber starts from its file's state, settled like the end of a step: with no action before them, the repeat loop runs until a pass changes nothing, then the exit check, and their events are reported. So a button under the subject or a box starts pressed, with its links acted on, a subject placed in a fizzler that is on fizzles, and a subject placed on the exit completes the chamber.
+A chamber starts from its file's state, settled like the end of a step: with no action before them, the repeat loop runs until a pass changes nothing, then the exit check, and their events are reported. So a button under the subject or a box starts pressed, with its links acted on.
 
 Events are reported in the order they happen. The rules keep no counters: the game counts a move for each step that puts the subject on another tile (a portal crossing included) and a portal for each portal-opened event.
 
@@ -156,7 +156,7 @@ Outside the chamber's edge counts as a wall that takes no portals, and the valid
 
 ### What the validator rejects
 
-A chamber file is read field by field, then checked as a whole (`src/game/rules/`, run on every chamber by `npm run chamber:check`). Each problem names its field and, where it has one, its tile. Errors keep a chamber from loading:
+A chamber file is read field by field, then checked as a whole (`src/game/rules/`, run on every chamber by `npm run chamber:check`). Each problem names its field and its tile, where it has them. Errors keep a chamber from loading:
 
 - **Fields:** a missing field, an unknown or misspelled one (an `id` on a blocked wall rectangle among them), a value of the wrong kind or out of range (see the [chamber format](#chamber-format)), a wall or blocked wall rectangle whose from corner is past its to corner, or a `version` other than 2.
 - **Ids and links:** an id used twice (elements and groups share the ids), a link naming an id nothing has, and a group naming another group.
@@ -185,16 +185,16 @@ Every way these rules differ from the original game's, which this game played un
 
 ## Adding an element
 
-Element types are described by data in `src/game/rules/`, but a new one still touches several files, because the chamber file reader and the validator list elements by hand:
+Element types are described by data in `src/game/rules/`, but a new one still touches several files, because the chamber file reader, the validator, the walls' portal taking and the switching animation list elements by hand:
 
-1. **Definition:** a file in `src/game/rules/elements/` that calls `defineElement` with its entry type. It gives the fixed properties (its field in a chamber file, one entry or a list, the tiles it sits on, its draw layer, whether links reach it, its blocked flag's default or none, when it blocks walking, shots and shooting from its tile, when it takes portals, whether it reacts to the subject entering or leaving, its events) and hooks for the rest (`interact`, `subjectInside`, `everyPass`, `linkUnblocked`, `linkBlocked`).
+1. **Definition:** a file in `src/game/rules/elements/` that calls `defineElement` with its entry type. It gives the fixed properties (its name, its field in a chamber file, one entry or a list, the tiles it sits on, its draw layer, whether links reach it, its blocked flag's default or none, when it blocks walking, shots and shooting from its tile, when it takes portals, whether it reacts to the subject entering or leaving, its events) and hooks for the rest (`interact`, `subjectInside`, `everyPass`, `linkUnblocked`, `linkBlocked`). Nothing reads when it takes portals (`takesPortals`): which tiles are walls and can take portals is written out in `src/game/rules/compiled_chamber.ts`, and whether a wall takes a portal now in `takesPortalsNow` (`step.ts`), so an element that sits on a wall or takes portals also touches both.
 2. **Registry:** its line in `ELEMENT_REGISTRY` (`element_registry.ts`), whose order is the drawing order within a layer. The element fields of `ChamberData`, the compiled chamber's lookups and the state's blocked flags follow from it.
 3. **Entry type:** a new one in `src/game/chamber_data.ts`, when none of the existing ones fits.
 4. **Reader:** its field in `CHAMBER_FIELDS` and its list read in `chamber_parser.ts`.
-5. **Validator:** its kind in `validate_chamber.ts`, placed on its tiles, and in the lists of what may share a tile, what may stand on the edge and what links can reach; a kind whose name is more than one word also needs its wording in the messages (`describeKind`), or they read "a lightBarrier".
+5. **Validator:** its kind in `validate_chamber.ts`, placed on its tiles, and in the lists of what may share a tile, what may stand on the edge and what links can reach; a kind whose name is more than one word also needs its wording in the inside-a-wall message (`describeKind`), or it reads "a lightBarrier".
 6. **Events:** each new one in `src/game/game_event.ts`, with its sound in `Level` (`src/game/level.ts`).
-7. **Drawing:** its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`), drawing its sprite for each state; each new sprite in the set (`src/game/sprite_set.ts` and `docs/sprites.md`), drawn in code as an SVG in `art/sprites/` and exported to its file in `src/assets/images/chamber/` (as `AGENTS.md` says) before it joins the set, since `npm run assets:check` requires every sprite's file, and in `RAISED_SPRITES` when it stands raised, so it gets the shared drop shadow; in `GAP_SIDE_KINDS` when it lines a gap that a door, the exit or a fizzler turns to fill (see `docs/sprites.md`, turning). The floor marks and structure layers are drawn once per chamber as its backdrop (`src/game/renderer.ts`), so an element on them must look the same in every state.
+7. **Drawing:** its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`), drawing its sprite for each state; each new sprite in the set (`src/game/sprite_set.ts` and `docs/sprites.md`), drawn in code as an SVG in `art/sprites/` and exported to its file in `src/assets/images/chamber/` (as `AGENTS.md` says) before it joins the set, since `npm run assets:check` requires every sprite's file, and in `RAISED_SPRITES` when it stands raised, so it gets the shared drop shadow; in `GAP_SIDE_KINDS` when it lines a gap that a door, the exit or a fizzler turns to fill (see `docs/sprites.md`, turning); and, when links switch it, its kind in `TRANSITION_KINDS` and `TRANSITION_STYLES` (`src/game/element_transitions.ts`), with its drawing part way through the change, or it switches at once. The floor marks and structure layers are drawn once per chamber as its backdrop (`src/game/renderer.ts`), so an element on them must look the same in every state.
 8. **Docs and fixtures:** its row in the table at the top, its field under [chamber format](#chamber-format), its rule under [rules](#rules) and [what the validator rejects](#what-the-validator-rejects); behaviour fixtures in `scripts/fixtures/fixtures.ts`, and a case in `scripts/fixtures/format_examples.ts` for each new validator problem.
 9. **Playground:** a place in the development-only playground (`src/dev/playground.json`, see `AGENTS.md`), switched by a button when it can be, so it can be tried by hand.
 
-The recorded solutions change only when an existing chamber or its route changes. The build catches a missing drawing or sound. `npm run chamber:check` catches a field missing from the reader's field list or used by two elements, an event with no owner or two, and an element that blocks only while blocked but has no blocked flag. Nothing catches a validator line left out.
+The recorded solutions change only when an existing chamber or its route changes. The build catches a missing drawing or sound. `npm run chamber:check` catches a field missing from the reader's field list or used by two elements, an event with no owner or two, and an element that blocks only while blocked but has no blocked flag. Nothing catches a validator line, or the list read in `chamber_parser.ts`, left out.

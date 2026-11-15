@@ -8,13 +8,13 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 
 - **Folder:** `src/assets/images/chamber/`. The loading screen downloads every file in it, so keep nothing else there.
 - **Name:** exactly as listed under [the set](#the-set), with `.webp` (smaller, preferred) or `.png`. One file per name.
-- **Transparency:** everything around the drawn object is fully transparent. The floor and the three strips fill their tiles.
-- **Weight:** about 30 KB per tile (WebP at high quality), so the whole set stays near 1 MB.
+- **Transparency:** everything around the drawn object is fully transparent. The floor, the three strips, `ditch_bridged`, `door_closed` and `exit_closed` fill their tiles.
+- **Weight:** WebP at high quality; the whole set is about 200 KB.
 
 ## Size
 
 - **Tile:** 256 × 256 px. The game shrinks each sprite once to the tile size on screen: about 40 px for chamber 1 on a 1080p screen, about 170 px for the tutorial on a high-DPI screen, and smaller still in the home menu's map.
-- **Overhang:** a sprite that spills past its tile (a glow, a portal reaching into the room, a wide subject) is 384 × 384 px: its tile is the centred 256 px square, with 64 px of margin on every side. Any sprite may overhang; the game tells by the file's size.
+- **Overhang:** a sprite that spills past its tile (a glow, a portal reaching into the room) is 384 × 384 px: its tile is the centred 256 px square, with 64 px of margin on every side. Any sprite but a strip may overhang; the game tells by the file's size.
 - **Strips:** `wall`, `blocked_wall` and `ditch` are 1280 × 256 px, five tiles side by side (see [joins](#joins)).
 - **Any other size** is refused, and the sprite isn't drawn.
 
@@ -31,7 +31,7 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 | 1 | Blue | 40, 140, 220 | The blue portal, and a missed blue shot's ripple, drawn by the game in code (see [miss](#miss)) |
 | 2 | Orange | 255, 160, 30 | The orange portal, and a missed orange shot's ripple |
 | 3 | Red | 220, 60, 50 | The floor button (caution) |
-| 4 | Green | 0, 160, 100 | A completed chamber's test-subject figure in the home menu; the subject's own sprite is painted in its own colours (see [the subject](#the-subject)) |
+| 4 | Green | 40, 200, 130 | A completed chamber's test-subject figure in the home menu; the subject's own sprite is painted in its own colours (see [the subject](#the-subject)) |
 | 5 | Crimson | 235, 30, 55 | Lasers, and the lit slot of their end plates |
 | 6 | Teal | 96, 222, 186 | The light barrier's band, and the lit slots of its connectors |
 
@@ -48,6 +48,7 @@ A sprite with a direction is drawn once, one way, and the game turns it in quart
 | 5 | `light_barrier_on` | A band running left to right through the tile's middle, touching both side edges, so neighbouring light barriers make one band | A quarter turn for a vertical light barrier |
 | 6 | `laser_end_on`, `laser_end_off`, `light_barrier_end_on`, `light_barrier_end_off` | At the left end of a beam or band running left to right: the plate on the tile's left edge, centred on it | To each end of each run of lasers, or of light barriers, on the run's end tile: as drawn at a left end, a half turn at a right end, a quarter turn at a top or bottom end |
 | 7 | `door_closed`, `exit_closed`, `fizzler_on` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when more of what lines the gap lies above and below it than left and right: walls (blocked or not), the chamber's edge, doors, the exit, fizzlers, light barriers and ditches |
+| 8 | `box`, while carried | As it lies on the floor | With the subject, to the way it faces |
 
 ## Joins
 
@@ -95,7 +96,7 @@ Every sprite is 256 px, or 384 px when it overhangs, except the three strips (12
 | 12 | `button_pressed` | A floor button, held down by the subject or a box. A box on a button is drawn as on the floor, over it |
 | 13 | `switch` | A switch, used with the interact key. It has no on or off |
 | 14 | `box` | A box. Carried, it is drawn at half size in front of the subject and turned with it, so there is no carrying pose to draw |
-| 15 | `fizzler_on` | A fizzler that is on: the subject walks through it and loses its portals and any box it carries; it stops shots. Drawn over everything, so keep it see-through. A fizzler that is off isn't drawn (see [fizzle](#fizzle)) |
+| 15 | `fizzler_on` | A fizzler that is on: the subject walks through it and loses its portals and any box it carries; it stops shots. Drawn over the subject and every other element, so keep it see-through. A fizzler that is off isn't drawn (see [fizzle](#fizzle)) |
 | 16 | `laser_on` | A laser beam that is on: stops walking, lets shots through. A beam that is off isn't drawn (its end plates are); switched, it fades out or in over about 0.25 s, its glow with it |
 | 17 | `laser_glow` | The beam's glow (see [glow](#glow)) |
 | 18 | `laser_end_on` | A laser's end plate while the laser is on: a small plate where the beam starts or stops, its slot lit. Drawn at both ends of each run of lasers, over the beams, fading with its beam |
@@ -120,7 +121,7 @@ The game draws from the bottom up, each later row over the earlier ones:
 | 5 | Portals | `portal_*` |
 | 6 | Fixtures | `button_*`, `switch` |
 | 7 | Items | `box` |
-| 8 | Subject | `subject` |
+| 8 | Subject | `subject`, and a carried `box` at half size |
 | 9 | Fields | `fizzler_on`, whole or in pieces (see [fizzle](#fizzle)) |
 | 10 | Glow | `laser_glow`, `portal_*_glow` |
 | 11 | Fizzle | `portal_*`, `box`, in pieces (see [fizzle](#fizzle)) |
@@ -128,11 +129,11 @@ The game draws from the bottom up, each later row over the earlier ones:
 
 ## Glow
 
-The three glows are drawn last, over everything, and added to the colours beneath, so they brighten and never darken. Their strength pulses slowly, all together, between 60 % and full. Draw only the light, at full strength: colour fading to transparent, with no beam or portal in it. A missing glow file just means no glow. With reduced motion, and in the home menu's map and the gallery, the glow holds steady at 80 %.
+The three glows are drawn over everything but a fizzle's pieces and a missed shot's ripple, and added to the colours beneath, so they brighten and never darken. Their strength pulses slowly, all together, between 60 % and full. Draw only the light, at full strength: colour fading to transparent, with no beam or portal in it. A missing glow file just means no glow. With reduced motion, and in the home menu's map and the gallery, the glow holds steady at 80 %.
 
 ## Fizzle
 
-When the subject walks into a fizzler that is on, each portal it loses and a box it carries break up: the game cuts the sprite, as last drawn, into small square pieces, 9 across a tile, which round off into dots as they drift a short way out from its middle (0.15 of the sprite's side on average, 0.2 at most), shrink and fade in about 0.6 s, over everything. When a fizzler switches off, its field crumbles the same way in about 0.4 s, but in place, in its own layer: `fizzler_on` is cut into square pieces, 7 across, each rounding off into a circle as it starts to go, which shrink and fade where they are, one after another, leaving nothing; when it switches back on, they grow back in reverse, and one switched back part way turns back from where it is. There is nothing extra to draw, but the pieces show the sprite's own pixels, so a portal or box drawn as a thin outline breaks into very few. With reduced motion, and in the home menu's map and the gallery, nothing breaks up or forms.
+When the subject fizzles (it walks or crosses into a fizzler that is on, or one turns on under it), each portal it loses and a box it carries break up: the game cuts the sprite, as last drawn, into small square pieces, 9 across a tile, which round off into dots as they drift a short way out from its middle (0.15 of the sprite's side on average, 0.2 at most), shrink and fade in about 0.6 s, over everything but a missed shot's ripple. When a fizzler switches off, its field crumbles the same way in about 0.4 s, but in place, in its own layer: `fizzler_on` is cut into square pieces, 7 across, each rounding off into a circle as it starts to go, which shrink and fade where they are, one after another, leaving nothing; when it switches back on, they grow back in reverse, and one switched back part way turns back from where it is. There is nothing extra to draw, but the pieces show the sprite's own pixels, so a portal or box drawn as a thin outline breaks into very few. With reduced motion, and in the home menu's map and the gallery, nothing breaks up or forms.
 
 ## Miss
 
@@ -144,7 +145,7 @@ When a door or the exit opens or closes, it slides over about 0.3 s: the game dr
 
 A blocked wall a link reaches slides the same way when it is switched, over about 0.3 s: its `blocked_wall` tile, joined as it is drawn, is cut down its middle over the wall beneath it, each half slid into the wall beside it, along the run of walls it lies in (up and down when more walls lie above and below it than left and right), until only the wall is left, and back when it is blocked again.
 
-A ditch switched slides its grate over about 0.3 s: the ditch is drawn as part of the pit, and `ditch_bridged`, whole, slides in over it from one side, cut off at the tile's edge, as if coming out from under the floor, or back out the same way. It never comes from another ditch: in a row of ditches running left to right it comes from above (from below when a ditch lies above), and otherwise from the left (from the right when a ditch lies left). A ditch switched alone among open ditches stays part of their pit while it changes, so their rims beside it go as soon as it starts to open and appear only once its grate is fully in.
+A ditch switched slides its grate over about 0.3 s: the ditch is drawn as part of the pit, and `ditch_bridged`, whole, slides in over it from one side, cut off at the tile's edge, as if coming out from under the floor, or back out the same way. It never comes from another ditch unless ditches lie on all four sides: in a row of ditches running left to right it comes from above (from below when a ditch lies above), and otherwise from the left (from the right when a ditch lies left). A ditch switched alone among open ditches stays part of their pit while it changes, so their rims beside it go as soon as it starts to open and appear only once its grate is fully in.
 
 There is nothing extra to draw. With reduced motion, and in the home menu's map and the gallery, nothing slides.
 
@@ -154,7 +155,7 @@ The subject is the one sprite not drawn in code. It is a painted image that brea
 
 It is one still image: the subject glides from tile to tile and through portals, with no walking frames.
 
-It is exported centred as painted, padded to a 1648 px square so the figure stands 238 px tall in the 256 px tile, cleared of faint stray pixels (alpha under 3 %) and shrunk to the tile. The portal gun makes the painting top-heavy, so the subject turns about a point a little above its head. To export it again, from the project's root:
+It is exported centred as painted, padded to a 1648 px square so the figure stands 238 px tall in the 256 px tile, cleared of faint stray pixels (alpha under 3 %) and shrunk to the tile. The portal gun makes the painting top-heavy, so the subject turns about a point on its head, a little above the head's middle. To export it again, from the project's root:
 
 ```sh
 convert art/sprites/subject.png -channel A -level 3%,98% +channel -background none -gravity center -extent 1648x1648 -resize 256x256 -quality 90 -define webp:alpha-quality=100 src/assets/images/chamber/subject.webp
@@ -169,9 +170,9 @@ convert art/sprites/subject.png -channel A -level 3%,98% +channel -background no
 
 Drop the file into the folder, and `npm run dev` picks it up. The sprite gallery, at `/src/dev/sprite_gallery.html` in `npm run dev`, reloads by itself when a file lands and shows:
 
-- each sprite as the game has it, at full size on a checkerboard, with its size and whether its file is in use, missing or refused (and why); one without a usable file shows as an empty frame, since the game draws nothing for it;
+- each sprite as the game has it, at full size on a checkerboard, with its size and whether its file is in use, missing, not downloaded or refused (and why); one without a usable file shows as an empty frame, since the game draws nothing for it;
 - a small chamber with every element, drawn by the game with everything on and with everything off, the subject carrying a box and both portals open;
 - every way walls and open ditches meet;
 - each chamber at its start.
 
-The chamber drawings come at the smallest tile the home menu's map draws, then at 40, 100 and 230 px, each canvas pixel on one screen pixel.
+The small chamber and the walls and ditches come at the smallest tile the home menu's map draws, then at 40, 100 and 230 px, and each chamber at 40 px, each canvas pixel on one screen pixel.

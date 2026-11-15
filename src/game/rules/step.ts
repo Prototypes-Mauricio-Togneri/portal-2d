@@ -426,13 +426,15 @@ function shoot(draft: StateDraft, color: PortalColor): void {
 }
 
 /**
- * Whether the interact key can do anything on a tile: an element there takes
- * it (a switch), or a box is carried, or a box lies there. Exported for the
- * solver, like allowsWay, so it skips interacts that can't change anything.
+ * Whether the interact key may do anything on a tile: an element there takes
+ * it (a switch), or a box is carried, or a box lies there. True doesn't
+ * promise a change: a switch refuses while a box is carried, and a carried
+ * box can't be put down where another rests. Exported for the solver, like
+ * allowsWay, so it skips interacts that can't change anything.
  * @param draft - The state, a step's draft or a settled state
  * @param x - Column of the subject's tile
  * @param y - Row of the subject's tile
- * @returns True when it can
+ * @returns False when it can't change anything
  */
 export function canInteract(draft: StateReader, x: number, y: number): boolean {
   for (const interactHook of INTERACT_HOOKS) {

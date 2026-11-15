@@ -4,9 +4,9 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 
 ## The view
 
-- Seen from straight above: the chamber is a grid of square tiles, drawn flat.
+- Seen from straight above, with no perspective: the chamber is a grid of square tiles. Walls and other raised things cast a soft shadow.
 - The camera never moves: the whole chamber is always on screen, scaled to fit and centred. There is no scrolling and nothing outside the chamber to explore.
-- Beside the chamber, a side panel shows the chamber's number and a timer.
+- Beside the chamber, a side panel shows the logo, the chamber's number, a timer and the controls, drawn as the player's own keys.
 
 ## Turn by turn
 
@@ -55,23 +55,25 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 | #   | Tile             | Looks like                                                                                          |
 | --- | ---------------- | --------------------------------------------------------------------------------------------------- |
 | 1   | Floor            | Very light grey                                                                                     |
-| 2   | Wall             | Mid grey with a dark edge                                                                           |
+| 2   | Wall             | Mid-grey raised blocks with bevelled edges; neighbouring walls join into one mass                   |
 | 3   | Blocked wall     | Blocked: darker, riveted steel. Unblocked: a plain wall, with no mark that it can switch            |
 | 4   | Light barrier    | On: a wide see-through pale teal band across the tile, horizontal or vertical, neighbours joined, a dark connector at each end. Off: only the connectors |
-| 5   | Ditch            | Open: a near-black hole. Bridged: plain floor                                                       |
-| 6   | Door             | Closed: purple with a magenta edge. Open: plain floor                                               |
-| 7   | Exit             | Closed: looks like a closed door. Open: plain floor (in today's chambers, a gap in the outer wall)  |
-| 8   | Fizzler          | On: a see-through blue-grey tile over whatever is under it. Off: not shown                          |
-| 9   | Laser            | On: a thin pink line across the tile, horizontal or vertical. Off: not shown                        |
-| 10  | Box              | A brown square; smaller on a button, so the button still shows                                      |
-| 11  | Button           | A red square; looks the same pressed or not                                                         |
-| 12  | Switch           | An orange square with a red edge; doesn't show whether it was used                                  |
-| 13  | Arrow            | A grey triangle pointing its way                                                                    |
-| 14  | Subject          | A green square with a triangle pointing the way it faces: white, or brown while it carries a box    |
-| 15  | Portal           | The half of the wall tile facing the floor, filled blue or orange                                   |
+| 5   | Ditch            | Open: a deep pit, neighbours joined into one. Bridged: a steel grate over it                        |
+| 6   | Door             | Closed: a burgundy panel with glowing pink strips and a ring. Open: plain floor                     |
+| 7   | Exit             | Closed: shaped like a door, but dark steel with white lights. Open: plain floor (in today's chambers, a gap in the outer wall) |
+| 8   | Fizzler          | On: a see-through cobalt-blue field with sparkles, over whatever is under it. Off: not shown        |
+| 9   | Laser            | On: a glowing crimson beam, horizontal or vertical, neighbours joined, an end plate at each end. Off: only the end plates |
+| 10  | Box              | A grey plated cube, a little smaller than its tile, so a button under it still shows                |
+| 11  | Button           | A round red button on a white plate; its dome lights up while pressed                               |
+| 12  | Switch           | The button's twin in yellow; doesn't show whether it was used                                       |
+| 13  | Arrow            | A grey chevron pointing its way                                                                     |
+| 14  | Subject          | A painted test subject in an orange jumpsuit, portal gun pointing the way it faces; a carried box shows half-size in front of it |
+| 15  | Portal           | A glowing blue or orange oval on the wall's edge facing the floor                                   |
 
-- A step glides the subject one tile; a crossing slides it into one portal and out of the other. Everything else changes at once.
-- Each event has a sound: a portal opening (one per colour), a missed shot, a refused crossing, a box picked up, a fizzle, a crossing, a door or the exit opening or closing, a button pressed or released, a switch used.
+- A step glides the subject one tile; a crossing slides it into one portal and out of the other. Turns happen at once.
+- When switched, doors, the exit and blocked walls slide open or shut, a ditch's grate slides in or out, a fizzler crumbles away or forms, and a laser or light barrier fades. A fizzle breaks the lost portals and a carried box into pieces, a missed shot ripples, and lasers and portals glow with a slow pulse.
+- With reduced motion, nothing animates: everything changes at once and the glows hold steady.
+- Each event has a sound: a portal opening (one per colour), a missed shot, a box picked up, a fizzle, a crossing, a door or the exit opening or closing, a button pressed or released, a switch used. Any refused action plays an error sound: a crossing, shooting or using a switch while carrying a box, or putting a box down on another. Putting a box down is silent.
 
 ## Buttons, switches and links
 
@@ -97,14 +99,14 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 ## Chambers and progress
 
 - Four chambers so far: the Tutorial (12 × 10 tiles), then chambers 1 (20 × 20), 2 (23 × 13) and 3 (23 × 17). The roadmap aims for 20.
-- The timer starts with the first action in a chamber and stops when the chamber is complete. The only score is the time: there are no medals or move targets yet.
-- Finishing a chamber shows the time and the best time (or "New best time"), with Next chamber, Play again and Back to menu.
+- The timer starts with the first press of a move, portal or interact key in a chamber and stops when the chamber is complete. The only score is the time: there are no medals or move targets yet.
+- Finishing a chamber shows the time and the best time (or "New best time"), with Next chamber, Play again and Back to menu (after the last chamber, only Back to menu and Play again).
 - The pause menu offers Continue, Restart chamber and Exit chamber; restarting or leaving asks for confirmation first.
-- Progress is kept on the device: which chambers are completed and each one's best time.
+- Progress is kept on the device: which chambers are completed, each one's best time and how many attempts it has had.
 
 ## Screens
 
 - **Loading screen:** the first screen of every visit; it loads the sounds and images, then waits for Start.
-- **Home screen:** a menu on the wall of a test-room photo: Play (the chambers, each with its best time, a figure that turns green once completed, and a map preview of the chamber), Settings (sound effects, music, reset progress) and About (links and the changelog).
+- **Home screen:** a menu on the wall of a test-room photo: Play (the chambers, each with its best time, a figure that turns green once completed, and a map preview of the chamber), Settings (sound effects, music, controls and reset progress; the controls are Arrow keys, WASD and mouse, or Custom keys set one by one) and About (links, the changelog and feedback).
 - **Chamber screen:** the chamber over a blurred test-room photo, with the side panel beside it.
 - Desktop only: phones and tablets get a notice instead of the game.

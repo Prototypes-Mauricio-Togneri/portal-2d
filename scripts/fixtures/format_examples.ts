@@ -76,7 +76,7 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
       'error groups[0]: links group groups[1]; a group can only name elements',
       'warning buttons[0] at (2, 1): links a box: pressing sends it back to its start, releasing does nothing to it',
       'error buttons[1] at (3, 2): links id 7, which nothing has',
-      'error at (5, 3): the chamber\'s edge is open here: an edge tile needs a wall, a door or the exit',
+      'error at (5, 3): the chamber\'s edge is open here: an edge tile needs a wall, a blocked wall, a door or the exit',
     ],
   },
   {

@@ -6,7 +6,7 @@ A program that searches the states a chamber can reach, to prove it can be finis
 
 | # | Command | What it does |
 |---|---------|--------------|
-| 1 | `npm run solve [chamber files]` | Prints each chamber's size (tiles, portal wall sides, flags, boxes, buttons, a rough upper bound on its states, its key's width); every chamber in `src/chambers/` when no file is given. `--baseline` adds the baseline search for both pars, `--solvable` the macro search for any route, `--par` the macro search for both pars; each prints its result, states, effort, time, peak memory and route, and a macro route is replayed through the rules. `--max-states=` (default 1,000,000) and `--max-seconds=` (default 300) cap each search |
+| 1 | `npm run solve [chamber files]` | Prints each chamber's size (tiles, portal wall sides, flags, boxes, buttons, the state's values, a rough upper bound on its states, its key's width); every chamber in `src/chambers/` when no file is given. `--baseline` adds the baseline search for both pars, `--solvable` the macro search for any route, `--par` the macro search for both pars; each prints its result, states, effort, time and route, a macro search also its peak memory, and a macro route is replayed through the rules. `--max-states=` (default 1,000,000) caps each search, and `--max-seconds=` (default 300) each macro search |
 | 2 | `npm run solver:check` | Part of `npm run verify`: everything under [How it's checked](#how-its-checked), in about 6 seconds |
 | 3 | `npm run state-set:bench` | By hand: 10 million keys in and out of the state set, with the time and memory |
 
@@ -14,7 +14,7 @@ The real chambers need `--max-states=40000000` to search for 5 minutes without r
 
 ## How it works
 
-The ground rule: every rule effect comes from the rules' own `step` (`src/game/rules/step.ts`); the solver never copies a rule. Where it needs to ask the rules something without taking a step, the rules export the check they use themselves: `allowsWay` and `canEnter` (walking), `shotStop` (where a shot stops), `portalEntrance` (the portal a move into a wall enters) and `canInteract` (whether the interact key can do anything). Every shortcut the solver takes is compared with the real step by the solver check.
+The ground rule: every rule effect comes from the rules' own `step` (`src/game/rules/step.ts`); the solver never copies a rule. Where it needs to ask the rules something without taking a step, the rules export the check they use themselves: `allowsWay` and `canEnter` (walking), `shotStop` (where a shot stops), `portalEntrance` (the portal a move into a wall enters) and `canInteract` (whether the interact key can do anything). Every shortcut the solver takes but the limited box drops is compared with the real step by the solver check.
 
 The pieces, in `src/solver/`:
 
@@ -22,17 +22,17 @@ The pieces, in `src/solver/`:
 - **State key** (`state_key_codec.ts`): a settled state packed into 64 bits from those numbers: the subject's tile and facing, the carried box, each portal (closed or a wall side), each box's tile, one bit per blocked flag. It leaves out what settling decides: each button's pressed flag, the carried box's tile (the subject's) and the completion (the subject on the exit). Chambers 1 to 3 need 49–53 bits.
 - **State set** (`state_set.ts`): keys in typed arrays of a capacity fixed up front, numbered in the order added, each with the entry it was reached from, so a route can be rebuilt. 10 million keys go in in 1.7 s and are found in 2.1 s, in 188 MiB.
 - **Baseline search** (`baseline_search.ts`): every action from every state, cheapest first (Dijkstra). Exact and slow (about 35,000 states a second on a real chamber); it is the reference the macro search is checked against on the tiny chambers.
-- **Macro search** (`macro_search.ts`): one step is a whole walk, then one action that a walk can't do: interact, a shot each way the subject may face, or a move a walk doesn't cover (onto or off an event tile, into a portal). Turning is free, so a state is stored with the subject facing its tile's canonical way (the first way it may move there). Three modes: any route (breadth first, stops at the first completed state), fewest moves and fewest portals (cheapest first on moves then portals, or the reverse). The route found is turned back into key presses (`macro_route.ts`) and replayed through the rules, and must reach every state the search stored.
+- **Macro search** (`macro_search.ts`): one step is a whole walk, then one action that a walk can't do: interact, a shot each way the subject may face, or a move a walk doesn't cover (onto or off an event tile, into a portal). Turning is free, so a state is stored with the subject facing its tile's canonical way (the first way it may move there). Three modes: any route (breadth first, stops at the first completed state), fewest moves and fewest portals (cheapest first on moves then portals, or the reverse). The route found is turned back into key presses (`macro_route.ts`) and replayed through the rules, and must reach every state the search stored along it.
 
 The shortcuts the macro search takes:
 
 | # | Shortcut | File | Exact? | Used by | What it does |
 |---|----------|------|--------|---------|--------------|
-| 1 | Walks | `walk_graph.ts` | Yes | All searches | Where the subject can walk changing only its tile, facing and carried box, built once per set of blocked flags. A walk stops at an event tile: one whose element reacts to the subject entering or leaving it (buttons, fizzlers, the exit) |
+| 1 | Walks | `walk_graph.ts` | Yes | All searches | Where the subject can walk changing only its tile, facing and carried box, built once per set of blocked flags. A walk never steps onto an event tile, one whose element reacts to the subject entering or leaving it (buttons, fizzlers, the exit), and goes nowhere from one: stepping onto or off one is an action of its own |
 | 2 | Shot lines | `shot_lines.ts` | Yes | All searches | Tiles whose shot a way stops at the same tile share one result: the first takes the shot through the rules, the others reuse it with only the subject's tile changed. Not on tiles where the subject can be kept from shooting (fizzlers) |
-| 3 | No-op skips | `action_filter.ts` | Yes | All searches | An interact or a move that can't change anything but the facing isn't taken through the rules |
+| 3 | No-op skips | `action_filter.ts` | Yes | All searches | An interact or a move that the rules' own checks show can't change anything but the facing isn't taken through the rules. An interact they don't rule out is taken even when it changes nothing (a switch refusing a carried box, or putting a box down where another rests) |
 | 4 | Regions | `walk_graph.ts`, `macro_route.ts` | Yes | Any route | The subject is stored on its region's smallest tile: the tiles it can walk between both ways (one-way arrows make "the tiles a walk reaches" wrong). A shot line gives one state per region. The route's counts are taken from the actions it expands to |
-| 5 | Limited box drops | `action_filter.ts` | No, a guess | Any route | A carried box is put down only on a button, at its start, next to the other box, next to a switch or a fizzler, or in front of either portal while both are open. Since shooting takes free hands, a route that puts the box down just to shoot from somewhere else is missed too. In an unusual layout (a one-way arrow right before a switch, say) it could miss every route; a wrong "unsolvable" would show, since every catalogue chamber has a recorded solution |
+| 5 | Limited box drops | `action_filter.ts` | No, a guess | Any route | A carried box is put down only on a button, at its start, next to the other box, on or next to a fizzler, next to a switch, or in front of either portal while both are open. Since shooting takes free hands, a route that puts the box down just to shoot from somewhere else is missed too. In an unusual layout (a one-way arrow right before a switch, say) it could miss every route; a wrong "unsolvable" would show, since every catalogue chamber has a recorded solution |
 
 ## How it's checked
 
@@ -48,15 +48,16 @@ The tiny chambers are in `scripts/solver_fixtures/` (`solver_fixtures.ts` lists 
 
 All in Node 24 on the author's machine (8 cores), one search at a time unless said otherwise.
 
-Size of the problem, as the chambers are now (`npm run solve`, 2026-11-15). The upper bound is tiles × 4 facings × (wall sides + 1)² for the portals × (tiles + 1)² for the boxes × 2^flags:
+Size of the problem, as the chambers are now (`npm run solve`, 2026-11-15). The upper bound is tiles × 4 facings × (wall sides + 1)² for the portals × (tiles + 1)^boxes for the boxes × 2^flags:
 
 | # | Chamber | Size | Tiles | Portal wall sides | Flags | Boxes | Buttons | Upper bound | Key bits |
 |---|---------|------|-------|-------------------|-------|-------|---------|-------------|----------|
-| 1 | 1 | 20×20 | 252 | 213 | 6 | 2 | 5 | ~10^14.3 | 50 |
-| 2 | 2 | 23×13 | 185 | 165 | 9 | 2 | 2 | ~10^14.6 | 53 |
-| 3 | 3 | 23×17 | 241 | 182 | 5 | 2 | 4 | ~10^13.8 | 49 |
+| 1 | 0 (tutorial) | 12×10 | 61 | 64 | 2 | 1 | 2 | ~10^8.4 | 31 |
+| 2 | 1 | 20×20 | 252 | 213 | 6 | 2 | 5 | ~10^14.3 | 50 |
+| 3 | 2 | 23×13 | 185 | 165 | 9 | 2 | 2 | ~10^14.6 | 53 |
+| 4 | 3 | 23×17 | 241 | 182 | 5 | 2 | 4 | ~10^13.8 | 49 |
 
-The searches below ran on 2026-11-08, before the chambers' barriers became blocked walls, when the barriers' floor tiles still counted as tiles (262, 189 and 268) and their key took 52–53 bits; nothing could ever stand on those tiles, so the states the searches reach are the same now, only numbered more tightly.
+The searches below ran on 2026-11-08 and are a record, not today's figures. The chambers' barriers have since become blocked walls; their floor tiles then still counted as tiles (262, 189 and 268, with a key of 52–53 bits), but nothing could stand on them, so that only renumbered the states. The rules have changed too (shooting takes free hands, and a tile holds one box, both 2026-11-15), which changes the states a chamber can reach.
 
 States expanded in 5 minutes as the shortcuts were added (the par searches don't use regions or limited drops):
 
@@ -69,7 +70,7 @@ States expanded in 5 minutes as the shortcuts were added (the par searches don't
 | 5 | 3 | any route | 1,144,896 | 1,665,408 | solved in 211 s | solved in 110 s |
 | 6 | 3 | fewest moves | 1,019,008 | 1,553,280 | 2,487,616 | — |
 
-The solver as it stands (`npm run solve -- --solvable --par --max-states=40000000 --max-seconds=300`, 2026-11-08):
+The solver as it stood (`npm run solve -- --solvable --par --max-states=40000000 --max-seconds=300`, 2026-11-08):
 
 | # | Chamber | Search | Result | States kept | Expanded | Time | Peak memory |
 |---|---------|--------|--------|-------------|----------|------|-------------|
@@ -87,7 +88,7 @@ What the numbers say:
 
 - Chamber 3's any-route search expanded all but 2 of the states it kept, so 1.13 million is close to all its any-route states. Its route (166 moves, 26 portals) isn't optimal: the recorded solution takes 121 and 28.
 - Given 10 minutes (all three chambers at once, which slows each by about 25%), chamber 1 kept 6,151,720 states with 2,366,824 still waiting (66,148 at 5 minutes), and chamber 2 kept 6,988,696 with 2,369,944 waiting (1,555,084 at 5 minutes). Both keep growing past five times chamber 3's total.
-- Every box drop in chambers 1 and 2's recorded solutions was one the drop limit allows, so it isn't what keeps them from finishing. Since shooting takes free hands (2026-11-15), chamber 2's solution also puts the box down twice just to shoot, where the limit doesn't allow it, and chamber 3's any-route search finds 187 moves and 25 portals instead (1,124,333 states kept, 125 s, with `--max-states=3000000 --max-seconds=240`).
+- Every box drop in chambers 1 and 2's recorded solutions was one the drop limit allows, so it isn't what keeps them from finishing. Since shooting takes free hands (2026-11-15), chamber 2's solution also puts the box down twice just to shoot, where the limit doesn't allow it, and chamber 3's any-route search found 187 moves and 25 portals instead (1,124,333 states kept, 125 s, with `--max-states=3000000 --max-seconds=240`; measured before a tile held one box, and not run since).
 - Where the time goes: shots are 88–92% of the rules' steps (34–67 first shots on a line per expanded state), at 270,000–450,000 steps a second. A 15-second profile of chamber 1's any-route search (before the no-op skips) put 45% of the time in the rules' step and 27% in packing states into keys and back.
 - Run-to-run noise is about ±10% on the states expanded in 5 minutes.
 
@@ -104,13 +105,13 @@ The prototype had to pass these before anything was built on it:
 | 3 | Browser worker: the next move to the next milestone, from a mid-game state | ≤ 1 s for 95% of states, ≤ 256 MB | No live next-move hints, no dead-end warning |
 | 4 | Node: any route on a 12×12 chamber with one box | ≤ 2 s | No generated chambers |
 
-Test 1 failed: chamber 3 takes 110 s, and chambers 1 and 2 haven't finished after 10 minutes, past 6 million states each, so passing would take well over 10× more speed. Test 2 failed with it (no par search finished in 5 minutes). Tests 3 and 4 weren't run. What was dropped (roadmap decision 10): the solvability and par checks, par in the chamber files, the shortcut report, hints and the dead-end warning, solver difficulty metrics (difficulty comes from measured clear rates instead) and generated chambers.
+Test 1 failed: chamber 3 took 110 s, and chambers 1 and 2 hadn't finished after 10 minutes, past 6 million states each, so passing would take well over 10× more speed. Test 2 failed with it (no par search finished in 5 minutes). Tests 3 and 4 weren't run. What was dropped (roadmap decision 10): the solvability and par checks, par in the chamber files, the shortcut report, hints and the dead-end warning, solver difficulty metrics (difficulty comes from measured clear rates instead) and generated chambers.
 
 ## If it's revisited
 
 Ideas not tried:
 
-- **Skip refused shots.** A shot that is refused, or puts a portal where it already is, changes nothing, but still takes a step; how many do wasn't measured. Most walls in the current chambers take portals, so the gain may be small.
+- **Skip refused shots.** A shot that is refused, or puts a portal where it already is, changes nothing, but still takes a step; how many do wasn't measured. Since shooting takes free hands, every shot from a state that carries a box is refused, so skipping them all there is a sure gain; elsewhere most walls in the current chambers take portals, so the gain may be small.
 - **Less packing and unpacking.** Turning keys into states and back took about a quarter of the time.
 - **Several cores.** Each search runs on one core.
 - **Search toward the exit.** The any-route search explores every state at one depth before the next; a search guided by an estimate of the distance left might reach the exit far sooner, while still proving "unsolvable" only by exhausting the states.
@@ -120,7 +121,7 @@ Ideas not tried:
 Known limits:
 
 - Boxes aren't interchangeable: a box link and a fizzler each send a box back to its own start, so treating boxes as identical is only safe in a chamber with neither (today only chamber 2).
-- The state space grows with boxes and size: two boxes give ~4–7×10^4 placements, and a third multiplies that by ~250.
+- The state space grows with boxes and size: two boxes give ~3.5–6.5×10^4 placements, and a third multiplies that by ~190–250.
 - A browser worker holds about 10^7 keys (160–250 MB); 10^8 doesn't fit.
 - A new mechanic must keep the state discrete and small enough for the 64-bit key (a timed button adds a counter per button; a beam through portals adds nothing if it is recomputed from the state rather than stored), declare its event tiles, and come with a tiny chamber with hand-counted pars. Echo (a ghost replaying the previous attempt) puts the whole previous attempt in the state, which likely breaks the solver.
 
