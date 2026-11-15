@@ -39,7 +39,7 @@ These replace the rougher claims in the original roadmap. Re-check them when rev
 **Time and frames**
 
 - The rules ignore frame time (`State.update` takes it as `_`), but some effects land **one frame after the key**:
-  - Buttons are checked before the carried box catches up, so walking off a button (or through a portal) carrying a box releases it a frame later, with its effects: doors close, barriers rise and remove portals, fizzlers turn on.
+  - Buttons are checked before the carried box catches up, so walking off a button (or through a portal) carrying a box releases it a frame later, with its effects: doors close, blocked walls block again and remove portals, fizzlers turn on.
   - Every frame without a key steps the subject onto its own tile again, so a fizzler that turns on under the subject fires on a later frame.
   - The exit check runs first in the frame, so the win is reported a frame after arriving.
 - So today's rules as a step function are: *apply the key, then run empty frames until the state stops changing*. Compare the state itself; the frame's "changed" result misses a fizzler firing this way.
@@ -52,16 +52,16 @@ These replace the rougher claims in the original roadmap. Re-check them when rev
 **Elements and format**
 
 - Each element type is written out in 5–6 places: its own class file, `chamber_data.ts`, `chamber.ts` (fields, setup, the linkable list, lookups), `state.ts` (walking checks and shot checks are separate lists), `renderer.ts`, and `docs/elements.md`.
-- The chamber JSON has `size`, 10 required lists (walls, barriers, ditches, boxes, buttons, arrows, fizzlers, doors, switches, lasers), and a single subject and exit. The format accepts walls as single tiles or inclusive rectangles; today's chambers list them tile by tile (110–138 each). Elements carry an `id` used to link buttons and switches to what they open — not the catalogue's permanent chamber id.
-- Barriers can sit on wall tiles (8 in chamber 2, 1 in chamber 3). A raised barrier stops shots before the wall, so that wall takes portals only while its barrier is down, and raising it removes the portal: a switchable portal surface that already exists.
+- The chamber JSON has `size`, 10 required lists (walls, barriers, ditches, boxes, buttons, arrows, fizzlers, doors, switches, lasers; barriers then, blocked walls now), and a single subject and exit. The format accepts walls as single tiles or inclusive rectangles; today's chambers list them tile by tile (110–138 each). Elements carry an `id` used to link buttons and switches to what they open — not the catalogue's permanent chamber id.
+- Switchable blocked walls (barriers on wall tiles then; 8 in chamber 2, 1 in chamber 3). One takes portals only while it is unblocked, and blocking it again removes the portal: a switchable portal surface that already exists.
 - Links: a button opens its links when pressed and closes them when released, even ones that started open; a switch only ever opens. Linking a box sends it back to its start (chamber 1 has a switch linked to a box).
 - Only the subject teleports; a carried box follows at the end of the frame. A laser is a single on/off tile that blocks walking only while on (its H/V setting only changes the drawing). Shots pass through lasers, ditches and boxes and never go through portals. Boxes block neither the subject nor shots, can stack on one tile, and can't be dropped on a switch.
 - Arrows are fixed: they can't be linked, you can only enter one moving in its direction, and while on one every other arrow key and Ctrl are ignored.
-- Portals land on any wall tile, on the side facing the shooter. Active fizzlers, barriers, doors and a closed exit stop shots. A wall holding a portal refuses shots on that side and both neighbouring sides. Each chamber has about 170–225 wall sides facing an open tile.
+- Portals land on any wall tile, on the side facing the shooter. Active fizzlers, barriers (blocked walls and light barriers now), doors and a closed exit stop shots. A wall holding a portal refuses shots on that side and both neighbouring sides. Each chamber has about 170–225 wall sides facing an open tile.
 
 **State**
 
-- What changes during play: subject x, y, facing and carried box; each portal's tile and facing; each box's x, y; each button's pressed flag; the open/closed flag of every linked barrier, ditch, door, fizzler, laser and the exit; an "inside a fizzler" flag; the won flag and the portal counter. The clock and step count live in `level.ts`.
+- What changes during play: subject x, y, facing and carried box; each portal's tile and facing; each box's x, y; each button's pressed flag; the open/closed flag of every linked blocked wall, ditch, door, fizzler, laser and the exit; an "inside a fizzler" flag; the won flag and the portal counter. The clock and step count live in `level.ts`.
 - Switches hold no state. The open/closed flags depend on history (switches only ever open; buttons act once on press and once on release), so they can't be derived from positions.
 - The rules change objects in place, elements hold references to the chamber, and every lookup scans a whole list.
 
@@ -73,7 +73,7 @@ These replace the rougher claims in the original roadmap. Re-check them when rev
 
 **Inherited bugs** (kept by the frozen-rules rule until stage 01)
 
-1. Coming out of a portal sets the position directly and skips the ditch, laser, barrier, door, closed-exit and arrow checks. Buttons and the exit still react (they are judged by position every frame); a fizzler fires one frame late.
+1. Coming out of a portal sets the position directly and skips the ditch, laser, door, closed-exit and arrow checks. Buttons and the exit still react (they are judged by position every frame); a fizzler fires one frame late.
 2. Landing on a closed exit through a portal completes the chamber (the exit check never asks whether it is open).
 3. Releasing a button linked to a box throws and stops the frame loop. No current chamber does this.
 4. The "inside a fizzler" flag clears only on a tile with no fizzler at all, even a switched-off one.
