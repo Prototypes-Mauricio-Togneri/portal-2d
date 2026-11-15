@@ -10,8 +10,8 @@
   <defs>
     <!-- The bevel's slope: darker at its foot by the floor, lighter towards the top -->
     <linearGradient id="slope" gradientUnits="userSpaceOnUse" x1="0" y1="3" x2="0" y2="46">
-      <stop offset="0" stop-color="rgb(56, 59, 65)"/>
-      <stop offset="1" stop-color="rgb(84, 87, 94)"/>
+      <stop offset="0" stop-color="rgb(105, 108, 115)"/>
+      <stop offset="1" stop-color="rgb(136, 139, 147)"/>
     </linearGradient>
 
     <!-- Fine grain, repeating every 128 px, so it matches across every quarter -->
@@ -24,8 +24,8 @@
     <!-- The bevel along the top edge, full width and 48 px deep, wide enough for a portal to sit on: outline, slope, then the lit lip -->
     <g id="band">
       <rect x="0" y="0" width="256" height="48" fill="url(#slope)"/>
-      <rect x="0" y="0" width="256" height="3" fill="rgb(34, 36, 40)"/>
-      <rect x="0" y="46" width="256" height="2" fill="rgb(140, 144, 151)"/>
+      <rect x="0" y="0" width="256" height="3" fill="rgb(80, 82, 87)"/>
+      <rect x="0" y="46" width="256" height="2" fill="rgb(196, 200, 208)"/>
     </g>
 
     <!-- The top bevel of a lone wall, mitred into the side bevels at both ends -->
@@ -54,17 +54,17 @@
 
     <!-- The seam along the top edge, where the wall continues: a groove and its lit lip -->
     <g id="seamFull">
-      <rect x="0" y="0" width="256" height="2" fill="rgb(50, 52, 57)"/>
-      <rect x="0" y="2" width="256" height="1.5" fill="rgb(122, 126, 133)"/>
+      <rect x="0" y="0" width="256" height="2" fill="rgb(98, 101, 106)"/>
+      <rect x="0" y="2" width="256" height="1.5" fill="rgb(177, 181, 188)"/>
     </g>
     <g id="seamInset">
-      <rect x="48" y="0" width="160" height="2" fill="rgb(50, 52, 57)"/>
-      <rect x="48" y="2" width="160" height="1.5" fill="rgb(122, 126, 133)"/>
+      <rect x="48" y="0" width="160" height="2" fill="rgb(98, 101, 106)"/>
+      <rect x="48" y="2" width="160" height="1.5" fill="rgb(177, 181, 188)"/>
     </g>
   </defs>
 
   <!-- The top surface of every tile -->
-  <rect x="0" y="0" width="1280" height="256" fill="rgb(97, 100, 106)"/>
+  <rect x="0" y="0" width="1280" height="256" fill="rgb(150, 153, 160)"/>
   <rect x="0" y="0" width="1280" height="256" filter="url(#grain)"/>
 
   <!-- 1. Lone: a bevel on every side -->
