@@ -7,6 +7,7 @@ import {GameKey, type HistoryKey} from '@/game/game_key'
 import type {FrameInput} from '@/game/frame_input'
 import {Input, type PointerPosition} from '@/game/input'
 import type {KeyBindings} from '@/game/key_bindings'
+import {MissRipple} from '@/game/miss_ripple'
 import {getChamberHash, type ReplayData, type ReplayStep} from '@/game/replay_data'
 import {hasAmbientLife, Renderer} from '@/game/renderer'
 import {Action, actionOfPress} from '@/game/rules/action'
@@ -27,9 +28,10 @@ import {StepAnimation} from '@/game/step_animation'
  * frames, redrawn every frame until it ends, paused or not; the next press
  * ends it at once. When a step fizzles, what it took breaks up over a few
  * frames, a door or the exit a step opens or closes slides open or shut, a
- * fizzler a step switches crumbles away or forms, and a laser or a light
- * barrier a step switches fades out or in; no press waits for them nor cuts them short. While
- * anything glows, breaks up or changes, every frame is drawn too. Nothing is drawn over time when the player asks for reduced
+ * fizzler a step switches crumbles away or forms, a laser or a light
+ * barrier a step switches fades out or in, and a portal shot that misses
+ * ripples where it stopped; no press waits for them nor cuts them short. While
+ * anything glows, breaks up, changes or ripples, every frame is drawn too. Nothing is drawn over time when the player asks for reduced
  * motion: the glows hold steady. Undo and redo bring back
  * earlier states from the run's history, silently and at once. Every press it acts on is logged, so the run
  * since the last load can be replayed without a browser. When a mouse button
@@ -106,6 +108,7 @@ export class Level {
   private readonly animation = new StepAnimation() // The step being drawn over a few frames, if any
   private readonly fizzle = new FizzleParticles() // What the latest fizzle took, breaking up over a few frames, if anything
   private readonly changes = new ElementTransitions() // The doors, the exit, the fizzlers, the lasers and the light barriers changing over a few frames after a step switched them, if any
+  private readonly ripple = new MissRipple() // Where the latest missed portal shot stopped, rippling over a few frames, if anywhere
   private frameTime = 0 // The latest frame's time, in milliseconds on the frame clock; redraws outside a frame use it, so a step being drawn never goes back
   private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time something could be drawn over time
   private ambientDrawn = false // Whether the latest frame was drawn for what moves with time alone, so the frame after it ends draws it still
@@ -165,6 +168,7 @@ export class Level {
     this.animation.finish()
     this.fizzle.clear()
     this.changes.clear()
+    this.ripple.clear()
 
     this.playEvents(start.events)
 
@@ -310,14 +314,15 @@ export class Level {
 
   /**
    * Draws the current state, part way through the step being drawn, if any,
-   * with what moves with time alone at this time, what breaks up and the
-   * doors, the exit, the fizzlers, the lasers and the light barriers changing included, or held
-   * still when the player asks for reduced motion.
+   * with what moves with time alone at this time, what breaks up, a missed
+   * shot's ripple and the doors, the exit, the fizzlers, the lasers and the
+   * light barriers changing included, or held still when the player asks for
+   * reduced motion.
    * @param time - Now, in milliseconds on the frame clock
    */
   private render(time: number): void {
     if (this.state !== null) {
-      this.renderer.render(this.state, this.animation.transitionAt(time), this.reducedMotion.matches ? null : time, this.fizzle, this.changes)
+      this.renderer.render(this.state, this.animation.transitionAt(time), this.reducedMotion.matches ? null : time, this.fizzle, this.changes, this.ripple)
     }
   }
 
@@ -502,8 +507,9 @@ export class Level {
   /**
    * Takes a step of the rules: records it in the history and the log,
    * counts the move, starts drawing the step when it changed the state, with
-   * each door, exit, fizzler, laser and light barrier it switched changing, and what it took
-   * breaking up when it fizzled, and plays the sounds of what happened.
+   * each door, exit, fizzler, laser and light barrier it switched changing, what it took
+   * breaking up when it fizzled and a ripple where a portal shot it refused
+   * stopped, and plays the sounds of what happened.
    * @param state - The state before the step
    * @param action - The action stepped
    * @param result - What the rules' step gave for it
@@ -532,6 +538,11 @@ export class Level {
       this.fizzle.start(state, next, time)
     }
 
+    // Only a shot's refusal ripples: a refused crossing or interact shows nothing
+    if (((action === Action.BLUE) || (action === Action.ORANGE)) && result.events.includes(GameEvent.REFUSED) && !this.reducedMotion.matches) {
+      this.ripple.start(next, action, time)
+    }
+
     this.playEvents(result.events)
 
     if (next.completed) {
@@ -543,7 +554,7 @@ export class Level {
 
   /**
    * Undoes or redoes a step, silently and at once, ending anything breaking
-   * up and any element changing, and logs the press. Nothing can be undone once the
+   * up, any element changing and any ripple, and logs the press. Nothing can be undone once the
    * chamber is completed.
    * @param state - The state now
    * @param key - Undo or redo
@@ -567,6 +578,7 @@ export class Level {
     this.state = restored
     this.fizzle.clear()
     this.changes.clear()
+    this.ripple.clear()
 
     if (key === GameKey.UNDO) {
       this.undoCount++
@@ -623,9 +635,9 @@ export class Level {
       stateUpdated = this.update(delta, this.input, time)
     }
 
-    // So does anything that glows, breaks up or changes, paused or not, and
-    // the first frame after it stops, which draws it still
-    const ambient = (this.state !== null) && !this.reducedMotion.matches && (hasAmbientLife(this.state) || this.fizzle.isRunningAt(time) || this.changes.isRunningAt(time))
+    // So does anything that glows, breaks up, changes or ripples, paused or
+    // not, and the first frame after it stops, which draws it still
+    const ambient = (this.state !== null) && !this.reducedMotion.matches && (hasAmbientLife(this.state) || this.fizzle.isRunningAt(time) || this.changes.isRunningAt(time) || this.ripple.isRunningAt(time))
 
     if (stateUpdated || wasAnimating || ambient || this.ambientDrawn) {
       this.render(time)

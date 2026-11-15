@@ -62,13 +62,22 @@ export type PiecePlacement = {
 export type PiecePlacer = (offsetX: number, offsetY: number, index: number) => PiecePlacement | null
 
 /**
+ * Draws by code, not from a sprite, in a frame drawn facing up: its origin at
+ * a point, x running right and y down, before the frame is turned.
+ * @param ctx - The canvas's context, turned and placed; whatever it changes is undone afterwards
+ * @param tileSize - Side of a tile, in pixels
+ */
+export type CodeDrawing = (ctx: CanvasRenderingContext2D, tileSize: number) => void
+
+/**
  * Paints the chamber's sprites onto a canvas for the renderer. Tiles are
  * square, sized to fit the chamber in the screen area, and row 0 is at the
  * bottom. Each sprite is drawn shrunk to the tile size (sprite_scaling), its
  * overhang around its tile, turned in quarter turns from facing up, at whole
  * canvas pixels; a raised one over the shared drop shadow made from its
  * shape. A layer can be painted apart, on a canvas of its own, and laid down
- * later, with the shadow under its whole shape. Sets the canvas's width and
+ * later, with the shadow under its whole shape. What is drawn by code
+ * instead is placed and turned the same way. Sets the canvas's width and
  * height attributes only; its styling belongs to the page.
  */
 export class TilePainter {
@@ -472,6 +481,33 @@ export class TilePainter {
           }
         }
       }
+    } finally {
+      this.context.restore()
+    }
+  }
+
+  /**
+   * Draws by code at a point, in a frame turned the way it faces, as a
+   * sprite drawn facing up is turned. Nothing is drawn while only shadows
+   * are painted.
+   * @param x - Column of the frame's origin, in tiles: a tile's middle is its column plus a half
+   * @param y - Row of the frame's origin, in tiles: a tile's middle is its row plus a half
+   * @param way - The way the frame is turned to face, from facing up as drawn
+   * @param draw - What is drawn in it
+   */
+  drawInFrame(x: number, y: number, way: Direction, draw: CodeDrawing): void {
+    if (this.pass === 'shadows') {
+      return
+    }
+
+    const turn = TURNS[way]
+
+    this.context.save()
+
+    try {
+      this.context.translate(x * this.tileSize, this.canvas.height - (y * this.tileSize))
+      this.context.transform(turn.cos, turn.sin, -turn.sin, turn.cos, 0, 0)
+      draw(this.context, this.tileSize)
     } finally {
       this.context.restore()
     }

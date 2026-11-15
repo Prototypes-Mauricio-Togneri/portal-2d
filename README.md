@@ -5,6 +5,7 @@
 - create new sprite for the box
 - prevent from shooting a portal while holding a box?
 - replace the sprite for the wall that cannot be used for portals. use the wall sprite with another color
+- avoid steping on a box -> only allow to carry it in front?
 - show hints for tutorial
   - how to shot portals
   - show a hint when standing on a button

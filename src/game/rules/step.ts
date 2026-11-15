@@ -308,13 +308,14 @@ function move(draft: StateDraft, movement: Movement): void {
 }
 
 /**
- * Whether something on a tile stops a shot.
+ * Whether something on a tile stops a shot. Exported for the miss ripple,
+ * which tells a shot stopped by an element from one stopped by a wall.
  * @param draft - The state, a step's draft or a settled state
  * @param x - Column
  * @param y - Row
  * @returns True when it does
  */
-function stopsShot(draft: StateReader, x: number, y: number): boolean {
+export function stopsShot(draft: StateReader, x: number, y: number): boolean {
   for (const kind of SHOT_BLOCKED_WHEN_BLOCKED) {
     if (draft.isBlockedAt(kind, x, y)) {
       return true

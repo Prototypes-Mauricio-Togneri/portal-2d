@@ -1,6 +1,7 @@
 import {drawLaserGlows, ELEMENT_DRAWINGS, glowStrength} from '@/game/element_drawings'
 import type {BlockedShares, ElementTransitions} from '@/game/element_transitions'
 import type {FizzleParticles} from '@/game/fizzle_particles'
+import type {MissRipple} from '@/game/miss_ripple'
 import type {CompiledChamber} from '@/game/rules/compiled_chamber'
 import {DRAW_LAYERS, type DrawLayer} from '@/game/rules/draw_layer'
 import {ELEMENT_REGISTRY} from '@/game/rules/element_registry'
@@ -118,9 +119,9 @@ export function hasAmbientLife(state: RulesState): boolean {
  * doors and the exit still sliding open or shut, the fizzlers still
  * crumbling away or forming and the lasers and light barriers still fading
  * out or in, drawn part way. Last, over everything, the lasers' and portals' glows are added
- * to what lies beneath, pulsing, and what a fizzle took breaks up; at no
- * time given, nothing changes over time, the glows hold steady and nothing
- * breaks up.
+ * to what lies beneath, pulsing, what a fizzle took breaks up and a missed
+ * shot ripples where it stopped; at no time given, nothing changes over
+ * time, the glows hold steady and nothing breaks up or ripples.
  */
 export class Renderer {
   private readonly painter: TilePainter // Paints the tiles
@@ -259,14 +260,15 @@ export class Renderer {
 
   /**
    * Draws a whole frame, back to front: the backdrop, every layer above it,
-   * then the glows and the pieces of what a fizzle took.
+   * then the glows, the pieces of what a fizzle took and a missed shot's ripple.
    * @param state - The state to draw
    * @param transition - The step being drawn, ending on the state drawn, or null (the default) to draw the state as it is
    * @param time - Now, in milliseconds on the frame clock, for what moves with time alone, or null (the default) to hold it still
    * @param fizzle - What a fizzle took, breaking up, or null (the default) when nothing can
    * @param changes - The doors, the exit, the fizzlers, the lasers and the light barriers changing over time, or null (the default) when none can
+   * @param ripple - Where the latest missed shot stopped, rippling, or null (the default) when none can
    */
-  render(state: RulesState, transition: StepTransition | null = null, time: number | null = null, fizzle: FizzleParticles | null = null, changes: ElementTransitions | null = null): void {
+  render(state: RulesState, transition: StepTransition | null = null, time: number | null = null, fizzle: FizzleParticles | null = null, changes: ElementTransitions | null = null, ripple: MissRipple | null = null): void {
     // A canvas not yet sized for a chamber has nothing to draw
     if (this.painter.blockSize <= 0) {
       return
@@ -286,6 +288,10 @@ export class Renderer {
 
     if ((time !== null) && (fizzle !== null)) {
       fizzle.draw(this.painter, time)
+    }
+
+    if ((time !== null) && (ripple !== null)) {
+      ripple.draw(this.painter, time)
     }
   }
 }

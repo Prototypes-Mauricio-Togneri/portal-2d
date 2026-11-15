@@ -28,8 +28,8 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 
 | # | Colour | RGB | Used for |
 |---|--------|-----|----------|
-| 1 | Blue | 40, 140, 220 | The blue portal |
-| 2 | Orange | 255, 160, 30 | The orange portal |
+| 1 | Blue | 40, 140, 220 | The blue portal, and a missed blue shot's ripple, drawn by the game in code (see [miss](#miss)) |
+| 2 | Orange | 255, 160, 30 | The orange portal, and a missed orange shot's ripple |
 | 3 | Red | 220, 60, 50 | The floor button (caution) |
 | 4 | Green | 0, 160, 100 | The subject |
 | 5 | Crimson | 235, 30, 55 | Lasers, and the lit slot of their end plates |
@@ -126,6 +126,7 @@ The game draws from the bottom up, each later row over the earlier ones:
 | 9 | Fields | `fizzler_on`, whole or in pieces (see [fizzle](#fizzle)) |
 | 10 | Glow | `laser_glow`, `portal_*_glow` |
 | 11 | Fizzle | `portal_*`, `box`, in pieces (see [fizzle](#fizzle)) |
+| 12 | Miss | None: a missed shot's ripple, drawn in code (see [miss](#miss)) |
 
 ## Glow
 
@@ -134,6 +135,10 @@ The three glows are drawn last, over everything, and added to the colours beneat
 ## Fizzle
 
 When the subject walks into a fizzler that is on, each portal it loses and a box it carries break up: the game cuts the sprite, as last drawn, into small square pieces, 9 across a tile, which round off into dots as they drift a short way out from its middle (0.15 of the sprite's side on average, 0.2 at most), shrink and fade in about 0.6 s, over everything. When a fizzler switches off, its field crumbles the same way in about 0.4 s, but in place, in its own layer: `fizzler_on` is cut into square pieces, 7 across, each rounding off into a circle as it starts to go, which shrink and fade where they are, one after another, leaving nothing; when it switches back on, they grow back in reverse, and one switched back part way turns back from where it is. There is nothing extra to draw, but the pieces show the sprite's own pixels, so a portal or box drawn as a thin outline breaks into very few. With reduced motion, and in the home menu's map and the gallery, nothing breaks up or forms.
+
+## Miss
+
+When a portal shot misses, the game draws a ripple in the shot's colour where it stopped, over everything, from no sprite: the face the shot met lights up as a line 0.84 of a tile long and 0.05 wide across the shot, fading in about 0.28 s, and two thin half rings, 90 ms apart, spread back towards the subject, from 0.2 to 0.8 of a tile along the face and up to 0.28 of a tile back, thinning and fading in about 0.42 s each, so all of it stays within the tile's width and is gone in about 0.52 s. It sits where a portal would have opened on a wall, 0.125 of a tile in; on the near edge of a door, the exit, a fizzler or a raised barrier; on the near face of a light barrier's band when the band runs across the shot, or at its end on the tile's edge when it runs along it; and, for a shot that left the chamber through an open door or exit in its edge, just inside the doorway. A shot from inside a fizzler that is on does nothing, so draws nothing. With reduced motion, and in the home menu's map and the gallery, nothing ripples.
 
 ## Sliding doors
 
