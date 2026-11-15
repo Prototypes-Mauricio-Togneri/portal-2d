@@ -12,11 +12,11 @@
  * Custom, level with it, the one in use lit.
  * Right, Enter or a click steps from an About row into its pages or changelog,
  * or from Controls into its layouts. Up and Down move the highlight (or scroll
- * the changelog) in the column that has the keyboard, Left and Escape step
- * back a column, closing the section from the second. Every move of the
- * highlight clicks. Picking a layout puts it in use; picking Custom also
- * opens its dialog, where each key is set. Settings ends with Reset progress,
- * which asks first in a dialog. While either dialog is open the menu ignores
+ * the changelog) in the column that has the keyboard, Left, Escape and
+ * Backspace step back a column, closing the section from the second. Every
+ * move of the highlight clicks. Picking a layout puts it in use; picking
+ * Custom also opens its dialog, where each key is set. Settings ends with
+ * Reset progress, which asks first in a dialog. While either dialog is open the menu ignores
  * the keyboard and Escape closes it, with a click. In development the first
  * column starts with Playground, which opens no section: Enter, Space or a
  * click starts the playground, a chamber for trying every element.
@@ -552,8 +552,8 @@ function stepIn(): void {
 }
 
 /**
- * Left and Escape step back from the third column to its About or Controls
- * row, with a click, or close the open section.
+ * Left, Escape and Backspace step back from the third column to its About or
+ * Controls row, with a click, or close the open section.
  */
 function stepBack(): void {
   if (activeColumn.value !== 'details') {
@@ -815,7 +815,8 @@ function handleEnter(event: KeyboardEvent): void {
 }
 
 /**
- * Arrow keys, Enter and Escape drive the menu, unless a dialog is open.
+ * Arrow keys, Enter, Escape and Backspace drive the menu, unless a dialog is
+ * open.
  * @param event - Keyboard event
  */
 function handleKeydown(event: KeyboardEvent): void {
@@ -856,6 +857,13 @@ function handleKeydown(event: KeyboardEvent): void {
       break
     case 'Escape':
       // A held Escape that just closed a dialog must not close the section too
+      if (!event.repeat) {
+        stepBack()
+      }
+      break
+    case 'Backspace':
+      // Steps back like Escape, once per press, and never sends the browser back a page
+      event.preventDefault()
       if (!event.repeat) {
         stepBack()
       }
