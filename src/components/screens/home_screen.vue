@@ -18,8 +18,9 @@
  * Custom also opens its dialog, where each key is set. Settings ends with
  * Reset progress, which asks first in a dialog. While either dialog is open the menu ignores
  * the keyboard and Escape closes it, with a click. In development the first
- * column starts with Playground, which opens no section: Enter, Space or a
- * click starts the playground, a chamber for trying every element.
+ * column starts with Playground, highlighted on the first arrival, which opens
+ * no section: Enter, Space or a click starts the playground, a chamber for
+ * trying every element.
  */
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, useId, useTemplateRef} from 'vue'
 import type {Ref} from 'vue'
@@ -212,12 +213,12 @@ const detailColumnId = `${menuId}-details`
 
 // Back from a chamber, Play is open with that chamber highlighted and the keyboard in the second
 // column; on the first arrival only the sections show, with Play highlighted and nothing open.
-// Back from the playground, only the sections show, with Playground highlighted
+// In development, the first arrival and the way back from the playground highlight Playground instead
 const rememberedChamber = CHAMBERS.findIndex((chamber) => chamber.number === lastChamber())
 const backFromPlayground = playgroundOpenedLast()
 const returning = rememberedChamber !== -1 && !backFromPlayground
 
-const highlightedSection = ref<MenuSection>(backFromPlayground ? 'playground' : 'play')
+const highlightedSection = ref<MenuSection>(import.meta.env.DEV && !returning ? 'playground' : 'play')
 const openSection = ref<MenuSection | null>(returning ? 'play' : null)
 const activeColumn = ref<MenuColumn>(returning ? 'items' : 'sections')
 const highlightedChamber = ref(Math.max(rememberedChamber, 0))

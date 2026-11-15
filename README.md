@@ -2,7 +2,6 @@
 
 ## TODO
 
-- in development mode, preselect "PLAYGROUND" instead of "PLAY"
 - in the main menu, when the second level of "PLAY" is opened, always focus the highlighted row on the next available chamber. if none available (i.e. all completed), then focus it on the first one
 
 - prevent from shooting a portal while holding a box?
