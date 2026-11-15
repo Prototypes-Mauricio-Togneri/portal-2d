@@ -2,7 +2,6 @@
 
 ## TODO
 
-- replace the sprite for the wall that cannot be used for portals. use the wall sprite with another color
 - avoid steping on a box -> only allow to carry it in front?
 - show hints for tutorial
   - how to shot portals
