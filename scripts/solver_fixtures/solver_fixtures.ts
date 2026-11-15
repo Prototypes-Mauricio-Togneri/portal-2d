@@ -257,7 +257,8 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
   // entering the fizzler at (2,1), which sends it back: round the loop that
   // is 11 moves, or 8 when crossing row 4 through the portal faces (0,4) and
   // (6,4); then 2 more from the button to the exit. So 10 moves with both
-  // portals, and 13 moves with none (one portal crosses nothing)
+  // portals, and 13 moves with none (one portal crosses nothing). The box is
+  // put down for the shots, which take free hands, and that costs no move
   {
     name: 'fizzler_box',
     covers: 'A fizzler sends a carried box back to its start, so the box goes round it, crossing the top corridor through a portal or walking the long way.',
@@ -268,10 +269,12 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
         'up',
         'up',
         'up',
+        'interact',
         'turnRight',
         'orange',
         'turnLeft',
         'blue',
+        'interact',
         'left',
         'down',
         'down',

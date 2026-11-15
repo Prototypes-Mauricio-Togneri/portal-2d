@@ -234,33 +234,34 @@ function specimenData(on: boolean): ChamberData {
 }
 
 /**
- * The specimen with everything on: the subject picks up the box it stands
- * on, opens blue on the wall below it and orange on the wall to its left,
- * and is left facing left.
+ * The specimen with everything on: the subject opens blue on the wall below
+ * it and orange on the wall to its left, then picks up the box it stands on
+ * (shooting takes free hands), and is left facing left.
  */
 export const SPECIMEN_ON: SpecimenRun = {
   data: specimenData(true),
   actions: [
-    Action.INTERACT,
     Action.TURN_DOWN,
     Action.BLUE,
     Action.TURN_LEFT,
     Action.ORANGE,
+    Action.INTERACT,
   ],
 }
 
 /**
- * The specimen with everything off: the subject picks up the box it stands
- * on, opens blue on the wall above it and orange on the inner wall to its
- * right, through the lowered barrier there, and is left facing right.
+ * The specimen with everything off: the subject opens blue on the wall above
+ * it and orange on the inner wall to its right, through the lowered barrier
+ * there, then picks up the box it stands on (shooting takes free hands), and
+ * is left facing right.
  */
 export const SPECIMEN_OFF: SpecimenRun = {
   data: specimenData(false),
   actions: [
-    Action.INTERACT,
     Action.BLUE,
     Action.TURN_RIGHT,
     Action.ORANGE,
+    Action.INTERACT,
   ],
 }
 

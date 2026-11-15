@@ -19,7 +19,7 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 
 - Stands on one tile and always faces one of the four directions. The way it faces matters, because portals are shot that way.
 - Moving in a direction first turns it that way, then steps onto the next tile if it can enter it. Walking into something it can't enter only turns it.
-- Can carry one box at a time. The box goes everywhere with it, through portals too.
+- Can carry one box at a time. The box goes everywhere with it, through portals too. While carrying it, it can't shoot portals: trying plays the error sound.
 
 ## Portals
 

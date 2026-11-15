@@ -3,7 +3,6 @@
 ## TODO
 
 - create new sprite for the box using the new svg file
-- prevent from shooting a portal while holding a box?
 - replace the sprite for the wall that cannot be used for portals. use the wall sprite with another color
 - avoid steping on a box -> only allow to carry it in front?
 - show hints for tutorial
@@ -21,6 +20,10 @@ Light beams: the player can pass through. they can be deflected. they can "turn 
 Light beam receptor: if a light beam touches them, they activate.
 
 Excursion Funnel (Tractor Beam): Massive tubes of swirling blue light that push or pull anything caught inside them. They can be reversed and routed through portals. (CONVEYOR BELT)
+
+## Level design
+
+https://steamcommunity.com/sharedfiles/filedetails/?id=157895158
 
 ## YouTube
 

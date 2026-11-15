@@ -376,10 +376,10 @@ export function shotStop(draft: StateReader, x: number, y: number, direction: Di
 /**
  * Shoots a portal the way the subject faces, unless it stands somewhere
  * that keeps it from shooting (a fizzler that is on), which does nothing,
- * silently. The shot goes on until something stops it, a miss, or it
- * reaches a wall (shotStop): a wall that takes portals and has room on its
- * side facing the shot opens the portal there; any other wall, outside the
- * chamber included, is a miss.
+ * silently, or carries a box, which is refused. The shot goes on until
+ * something stops it, a miss, or it reaches a wall (shotStop): a wall that
+ * takes portals and has room on its side facing the shot opens the portal
+ * there; any other wall, outside the chamber included, is a miss.
  * @param draft - The step's state
  * @param color - The portal shot
  */
@@ -388,6 +388,13 @@ function shoot(draft: StateDraft, color: PortalColor): void {
     if (draft.isBlockedAt(kind, draft.subjectX, draft.subjectY)) {
       return
     }
+  }
+
+  // Shooting takes free hands
+  if (draft.isCarrying) {
+    draft.emit(GameEvent.REFUSED)
+
+    return
   }
 
   const direction = draft.facing

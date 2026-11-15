@@ -23,7 +23,7 @@ export type GameEvent =
 export const GameEvent = {
   BLUE_PORTAL_OPENED: 'bluePortalOpened', // A blue portal opened on a wall
   ORANGE_PORTAL_OPENED: 'orangePortalOpened', // An orange portal opened on a wall
-  REFUSED: 'refused', // A shot missed, or a switch was used while carrying a box
+  REFUSED: 'refused', // A shot missed or was tried while carrying a box, or a switch was used while carrying one
   BOX_PICKED_UP: 'boxPickedUp', // The subject picked up a box
   FIZZLED: 'fizzled', // The subject entered an active fizzler, closing both portals
   CROSSED: 'crossed', // The subject came out of a portal

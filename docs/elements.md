@@ -95,7 +95,7 @@ The subject comes out on the tile in front of the other portal, facing away from
 
 #### Shoot blue or orange
 
-While the subject stands in a fizzler that is on, the portal keys do nothing, without a sound. Otherwise the shot leaves the subject's tile the way it faces and goes on tile by tile; the subject's own tile never stops it.
+While the subject stands in a fizzler that is on, the portal keys do nothing, without a sound. While it carries a box, they are refused: `refused`, with the error sound and no ripple, since no shot leaves (it can't stand in a fizzler that is on while carrying one, so the two never meet). Otherwise the shot leaves the subject's tile the way it faces and goes on tile by tile; the subject's own tile never stops it.
 
 - A fizzler or a light barrier that is on, a raised barrier, a closed door or the closed exit stops it: a miss. Ditches, lasers, boxes, buttons, switches, arrows and anything not blocked let it through.
 - Reaching the edge of the chamber is a miss.
@@ -175,6 +175,7 @@ Every way these rules differ from the original game's, which this game played un
 8. **`edge_is_wall`** — Outside the chamber's edge is wall that takes no portals. The original rules never checked the edge when walking, so only the chamber's own walls kept the subject in, and a shot checked it only before each tile, so a wall just past the edge could take a portal (the validator rejects walls outside the chamber). Fixture: `edge_is_wall`.
 9. **`completed_is_final`** — Once the chamber is completed, a step changes nothing. The original rules kept applying keys after completion, which only showed in frame recordings, since the game pauses at the completion dialog. No fixture: the replay check plays every action on each recorded solution's completed state, and none may change it or report anything.
 10. **`every_laser_blocks`** — Two lasers crossing on a tile keep the subject out while either of them is on. In the original rules only the first one listed there counted, so with that one off the subject walked into the other while it was still on. No current chamber shows it: chamber 1's crossing pair is linked by nothing and always on. Fixture: `crossing_lasers_either_blocks`.
+11. **`no_shot_while_carrying`** — The portal keys don't shoot while the subject carries a box: `refused`, with the error sound. The original rules let it shoot with a box in hand. Putting the box down, shooting and picking it up again gives the same state, with no extra move, except on a switch, where the box can't be put down, and on a tile holding another box listed before it, which the pick-up takes instead. Fixture: `no_shot_while_carrying`.
 
 ## Adding an element
 

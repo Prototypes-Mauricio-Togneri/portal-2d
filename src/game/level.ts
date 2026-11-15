@@ -522,7 +522,9 @@ export class Level {
    */
   private applyStep(state: RulesState, action: Action, result: StepResult, time: number): boolean {
     const next = result.state
-    const shot = (action === Action.BLUE) || (action === Action.ORANGE)
+    // A shot tried while carrying a box never leaves, so its refusal is the
+    // error sound, with no ripple
+    const shot = ((action === Action.BLUE) || (action === Action.ORANGE)) && !state.isCarrying
 
     this.history.record(state, next)
     this.logStep(action, next)

@@ -32,7 +32,7 @@ The shortcuts the macro search takes:
 | 2 | Shot lines | `shot_lines.ts` | Yes | All searches | Tiles whose shot a way stops at the same tile share one result: the first takes the shot through the rules, the others reuse it with only the subject's tile changed. Not on tiles where the subject can be kept from shooting (fizzlers) |
 | 3 | No-op skips | `action_filter.ts` | Yes | All searches | An interact or a move that can't change anything but the facing isn't taken through the rules |
 | 4 | Regions | `walk_graph.ts`, `macro_route.ts` | Yes | Any route | The subject is stored on its region's smallest tile: the tiles it can walk between both ways (one-way arrows make "the tiles a walk reaches" wrong). A shot line gives one state per region. The route's counts are taken from the actions it expands to |
-| 5 | Limited box drops | `action_filter.ts` | No, a guess | Any route | A carried box is put down only on a button, at its start, on or next to the other box, next to a switch or a fizzler, or in front of either portal while both are open. In an unusual layout (a one-way arrow right before a switch, say) it could miss every route; a wrong "unsolvable" would show, since every catalogue chamber has a recorded solution |
+| 5 | Limited box drops | `action_filter.ts` | No, a guess | Any route | A carried box is put down only on a button, at its start, on or next to the other box, next to a switch or a fizzler, or in front of either portal while both are open. Since shooting takes free hands, a route that puts the box down just to shoot from somewhere else is missed too. In an unusual layout (a one-way arrow right before a switch, say) it could miss every route; a wrong "unsolvable" would show, since every catalogue chamber has a recorded solution |
 
 ## How it's checked
 
@@ -85,7 +85,7 @@ What the numbers say:
 
 - Chamber 3's any-route search expanded all but 2 of the states it kept, so 1.13 million is close to all its any-route states. Its route (166 moves, 26 portals) isn't optimal: the recorded solution takes 121 and 28.
 - Given 10 minutes (all three chambers at once, which slows each by about 25%), chamber 1 kept 6,151,720 states with 2,366,824 still waiting (66,148 at 5 minutes), and chamber 2 kept 6,988,696 with 2,369,944 waiting (1,555,084 at 5 minutes). Both keep growing past five times chamber 3's total.
-- Every box drop in chambers 1 and 2's recorded solutions is one the drop limit allows, so it isn't what keeps them from finishing.
+- Every box drop in chambers 1 and 2's recorded solutions was one the drop limit allows, so it isn't what keeps them from finishing. Since shooting takes free hands (2026-11-15), chamber 2's solution also puts the box down twice just to shoot, where the limit doesn't allow it, and chamber 3's any-route search finds 187 moves and 25 portals instead (1,124,333 states kept, 125 s, with `--max-states=3000000 --max-seconds=240`).
 - Where the time goes: shots are 88–92% of the rules' steps (34–67 first shots on a line per expanded state), at 270,000–450,000 steps a second. A 15-second profile of chamber 1's any-route search (before the no-op skips) put 45% of the time in the rules' step and 27% in packing states into keys and back.
 - Run-to-run noise is about ±10% on the states expanded in 5 minutes.
 
