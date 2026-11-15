@@ -101,7 +101,7 @@ While the subject stands in a fizzler that is on, the portal keys do nothing, wi
 - Reaching the edge of the chamber is a miss.
 - A wall takes the portal on its side facing the subject, unless it already holds a portal, of either colour, on that side or on either neighbouring side; a portal on the far side doesn't stop it. A raised barrier on the wall's tile stops the shot first.
 
-A hit opens the portal of that colour there, closing it wherever it was before: `bluePortalOpened` or `orangePortalOpened`. A miss: `refused` (the game also draws a ripple where the shot stopped, see `docs/sprites.md`).
+A hit opens the portal of that colour there, closing it wherever it was before: `bluePortalOpened` or `orangePortalOpened`. A miss: `refused` (the game plays the shot sound instead of the error sound, and draws a ripple where the shot stopped, see `docs/sprites.md`).
 
 #### Interact
 

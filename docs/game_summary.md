@@ -25,7 +25,7 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 
 - There is one blue and one orange portal. Shooting a colour again moves that portal: the old one closes.
 - A shot leaves in the direction the subject faces and travels in a straight line, instantly (no projectile is shown). The first wall it reaches takes the portal, on the side facing the subject.
-- A shot misses (an error sound, nothing on screen) when a closed door, the closed exit, a raised barrier, or a light barrier or a fizzler that is on is in the way, or when the wall can't take a portal there.
+- A hit plays its portal's opening sound. A shot misses (a shot sound, and a short ripple where it stopped) when a closed door, the closed exit, a raised barrier, or a light barrier or a fizzler that is on is in the way, or when the wall can't take a portal there.
 - A wall tile can't take a portal on a side that already holds one, or on the two sides next to it; only the opposite side is still free. Shots never go through portals.
 - Crossing: with both portals open, walking into a wall on the side that holds a portal takes the subject through. It comes out on the tile in front of the other portal, facing away from it.
 - A crossing is refused (error sound) when the subject couldn't walk onto that tile, for example an open ditch, a closed door or a laser that is on. It then stays where it was.
@@ -71,7 +71,7 @@ Every chamber is closed in by walls (or barriers, doors and the exit) along its 
 | 15  | Portal           | The half of the wall tile facing the floor, filled blue or orange                                   |
 
 - A step glides the subject one tile; a crossing slides it into one portal and out of the other. Everything else changes at once.
-- Each event has a sound: a portal opening (one per colour), a miss or refused crossing, a box picked up, a fizzle, a crossing, a door or the exit opening or closing, a button pressed or released, a switch used.
+- Each event has a sound: a portal opening (one per colour), a missed shot, a refused crossing, a box picked up, a fizzle, a crossing, a door or the exit opening or closing, a button pressed or released, a switch used.
 
 ## Buttons, switches and links
 

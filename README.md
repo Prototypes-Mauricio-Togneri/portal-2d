@@ -16,13 +16,11 @@ Antlines (Indicator Lights): The glowing dotted lines built into the floor and w
 
 Discouragement Redirection Cube: A specialized cube with built-in glass lenses used exclusively to reflect Thermal Discouragement Beams (lasers).
 
-Excursion Funnel (Tractor Beam): Massive tubes of swirling blue light that push or pull anything caught inside them. They can be reversed and routed through portals. (CONVEYOR BELT)
-
-Hard Light Bridges: Solid, semi-transparent sheets of light. They can be walked on like normal floors, routed through portals, or used vertically as bullet-proof shields against Turrets. (IT'S LIKE A WALL)
-
 Light beams: the player can pass through. they can be deflected. they can "turn on" some special switches
 
 Light beam receptor: if a light beam touches them, they activate.
+
+Excursion Funnel (Tractor Beam): Massive tubes of swirling blue light that push or pull anything caught inside them. They can be reversed and routed through portals. (CONVEYOR BELT)
 
 ## YouTube
 

@@ -10,6 +10,7 @@ import fizzlerUrl from '@/assets/audio/sound/fizzler.mp3'
 import menuButtonUrl from '@/assets/audio/sound/menu_button.mp3'
 import portalBlueUrl from '@/assets/audio/sound/portal_blue.mp3'
 import portalOrangeUrl from '@/assets/audio/sound/portal_orange.mp3'
+import shootUrl from '@/assets/audio/sound/shoot.mp3'
 import startUrl from '@/assets/audio/sound/start.mp3'
 import switchUrl from '@/assets/audio/sound/switch.mp3'
 
@@ -22,6 +23,7 @@ export class Sound {
 
   static readonly PORTAL_BLUE = new Sound(portalBlueUrl, 0.27) // Blue portal opened
   static readonly PORTAL_ORANGE = new Sound(portalOrangeUrl, 0.24) // Orange portal opened
+  static readonly SHOOT = new Sound(shootUrl, 0.25) // Portal shot missed: nothing there takes a portal
   static readonly BUTTON_ON = new Sound(buttonOnUrl, 0.27) // Button pressed down
   static readonly BUTTON_OFF = new Sound(buttonOffUrl, 0.56) // Button released
   static readonly BOX = new Sound(boxUrl, 0.05) // Box picked up

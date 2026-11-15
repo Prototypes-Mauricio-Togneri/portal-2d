@@ -328,12 +328,16 @@ export class Level {
 
   /**
    * Plays the sound of each thing that happened, in order, and counts the
-   * portals opened.
+   * portals opened. A portal shot that misses plays the shot sound instead
+   * of the error sound; any other refusal plays the error sound.
    * @param events - What happened
+   * @param shot - Whether a portal shot made it happen
    */
-  private playEvents(events: readonly GameEvent[]): void {
+  private playEvents(events: readonly GameEvent[], shot = false): void {
     for (const event of events) {
-      Level.SOUNDS[event].play()
+      const sound = (shot && (event === GameEvent.REFUSED)) ? Sound.SHOOT : Level.SOUNDS[event]
+
+      sound.play()
 
       if ((event === GameEvent.BLUE_PORTAL_OPENED) || (event === GameEvent.ORANGE_PORTAL_OPENED)) {
         this.portalCount++
@@ -509,7 +513,7 @@ export class Level {
    * counts the move, starts drawing the step when it changed the state, with
    * each door, exit, fizzler, laser and light barrier it switched changing, what it took
    * breaking up when it fizzled and a ripple where a portal shot it refused
-   * stopped, and plays the sounds of what happened.
+   * stopped, and plays the sounds of what happened, a missed portal shot's own.
    * @param state - The state before the step
    * @param action - The action stepped
    * @param result - What the rules' step gave for it
@@ -518,6 +522,7 @@ export class Level {
    */
   private applyStep(state: RulesState, action: Action, result: StepResult, time: number): boolean {
     const next = result.state
+    const shot = (action === Action.BLUE) || (action === Action.ORANGE)
 
     this.history.record(state, next)
     this.logStep(action, next)
@@ -539,11 +544,11 @@ export class Level {
     }
 
     // Only a shot's refusal ripples: a refused crossing or interact shows nothing
-    if (((action === Action.BLUE) || (action === Action.ORANGE)) && result.events.includes(GameEvent.REFUSED) && !this.reducedMotion.matches) {
+    if (shot && result.events.includes(GameEvent.REFUSED) && !this.reducedMotion.matches) {
       this.ripple.start(next, action, time)
     }
 
-    this.playEvents(result.events)
+    this.playEvents(result.events, shot)
 
     if (next.completed) {
       this.onCompleted?.()
