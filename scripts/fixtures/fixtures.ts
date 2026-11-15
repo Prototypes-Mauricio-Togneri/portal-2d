@@ -12,6 +12,7 @@ import portalOntoClosedExit from '@scripts/fixtures/portal_onto_closed_exit.json
 import portalOntoDitch from '@scripts/fixtures/portal_onto_ditch.json'
 import portalOntoFizzler from '@scripts/fixtures/portal_onto_fizzler.json'
 import portalOntoLaser from '@scripts/fixtures/portal_onto_laser.json'
+import twoBoxesFizzler from '@scripts/fixtures/two_boxes_fizzler.json'
 import twoButtonsOneDoor from '@scripts/fixtures/two_buttons_one_door.json'
 
 // Short replays on tiny chambers (the JSON files next to this one): each pins
@@ -232,6 +233,48 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 0,
       portals: 1,
       finalHash: 'cb488332',
+    },
+  },
+  {
+    name: 'no_box_put_down_on_a_box',
+    behaviour: 'Carrying a box onto a tile where another box rests is allowed, but putting it down there is refused: the subject keeps carrying it.',
+    chamber: twoBoxesFizzler,
+    actions: [
+      'interact',
+      'right',
+      'interact',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: 'acb5d739',
+    },
+  },
+  {
+    name: 'box_sent_home_sends_box_home',
+    behaviour: 'A carried box destroyed by a fizzler goes back to its start tile, and the other box, put down there, goes back to its own start: a tile never holds two boxes.',
+    chamber: twoBoxesFizzler,
+    actions: [
+      'interact',
+      'right',
+      'right',
+      'interact',
+      'left',
+      'interact',
+      'left',
+      'interact',
+      'right',
+      'right',
+      'interact',
+      'right',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 8,
+      portals: 0,
+      finalHash: '42dcec07',
     },
   },
   {

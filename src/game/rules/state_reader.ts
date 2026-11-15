@@ -202,6 +202,23 @@ export abstract class StateReader {
   }
 
   /**
+   * The first box resting on a tile, in the chamber's box list, leaving out
+   * the carried one, which sits on the subject's tile.
+   * @param x - Column
+   * @param y - Row
+   * @returns Its index, or NO_BOX when no box rests there
+   */
+  restingBoxAt(x: number, y: number): number {
+    for (let i = 0; i < this.chamber.stateLayout.boxCount; i++) {
+      if ((i !== this.carriedBox) && (this.boxX(i) === x) && (this.boxY(i) === y)) {
+        return i
+      }
+    }
+
+    return NO_BOX
+  }
+
+  /**
    * Whether any box is on a tile, carried or not.
    * @param x - Column
    * @param y - Row

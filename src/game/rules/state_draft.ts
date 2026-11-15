@@ -143,7 +143,8 @@ export class StateDraft extends StateReader {
   }
 
   /**
-   * Puts a box back on the tile it starts on.
+   * Puts a box back on the tile it starts on. A tile holds at most one box,
+   * so a box resting there goes back to its own start the same way.
    * @param index - The box's index in the chamber's box list
    * @throws RangeError for a box the chamber doesn't have
    */
@@ -155,6 +156,17 @@ export class StateDraft extends StateReader {
     }
 
     this.moveBox(index, start.x, start.y)
+
+    // Only a box away from its own start is sent on, and it lands there, so
+    // each box moves at most once and the chain ends
+    this.chamber.boxStarts.forEach((otherStart, other) => {
+      const restsHere = (other !== this.carriedBox) && (this.boxX(other) === start.x) && (this.boxY(other) === start.y)
+      const startsElsewhere = (otherStart.x !== start.x) || (otherStart.y !== start.y)
+
+      if (restsHere && startsElsewhere) {
+        this.sendBoxToStart(other)
+      }
+    })
   }
 
   /**

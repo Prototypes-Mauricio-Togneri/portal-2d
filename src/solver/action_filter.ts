@@ -40,7 +40,7 @@ const DROP_NEXT_TO_KINDS = [
  * skips putting a carried box down anywhere but where that is likely to
  * matter: on a tile whose element judges what lies on it (a button), at the
  * box's start,
- * on or next to another box (to pick that one up), next to an element the
+ * next to another box (to pick that one up), next to an element the
  * subject needs free hands for or that destroys a carried box (a switch, a
  * fizzler), and in front of either portal while both are open (the step
  * before coming out on such a tile). That is a guess that can, in an
@@ -195,9 +195,9 @@ export class ActionFilter {
 
   /**
    * Marks the places, in this expansion, where the carried box may be put
-   * down that depend on the state: the box's start, every other box's tile
-   * and the tiles next to it, and the tile in front of each portal while
-   * both are open.
+   * down that depend on the state: the box's start, the tiles next to every
+   * other box (not its own, where the rules refuse a second box), and the
+   * tile in front of each portal while both are open.
    * @param state - The state expanded, carrying a box
    */
   private markDropSpots(state: RulesState): void {
@@ -210,10 +210,8 @@ export class ActionFilter {
 
     for (let box = 0; box < index.chamber.boxStarts.length; box++) {
       if (box !== state.carriedBox) {
-        const tile = index.tileNumber(state.boxX(box), state.boxY(box))
-
-        if (tile !== NO_NUMBER) {
-          this.markAround(this.dropSerials, tile, this.serial)
+        for (const direction of DIRECTIONS) {
+          this.markTile(state.boxX(box) + DELTAS[direction].dx, state.boxY(box) + DELTAS[direction].dy)
         }
       }
     }

@@ -43,7 +43,7 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 | 7   | Exit          | Reaching it completes the chamber; closed or open                                                                                               | Only when open                                       | Only when open                                                  | Yes                               |
 | 8   | Fizzler       | When on, closes both portals and sends a carried box back to its start                                                                          | Yes                                                  | Only when off                                                   | Yes                               |
 | 9   | Laser         | Horizontal or vertical; two can cross on one tile                                                                                               | Only when off                                        | Yes                                                             | Yes                               |
-| 10  | Box           | Can be carried; holds a button down; several can share a tile                                                                                   | Yes                                                  | Yes                                                             | Yes (sent back to its start)      |
+| 10  | Box           | Can be carried; holds a button down; one per tile                                                                                               | Yes                                                  | Yes                                                             | Yes (sent back to its start)      |
 | 11  | Button        | Held down while the subject or a box is on it; its linked elements change while it's held                                                       | Yes                                                  | Yes                                                             | No                                |
 | 12  | Switch        | Interact to use it (not while carrying a box); it changes its linked elements, and using it again repeats that                                  | Yes                                                  | Yes                                                             | No                                |
 | 13  | Arrow         | One-way: the subject can enter only in the arrow's direction, and can only move or turn that way while on it                                    | Only in its direction                                | Yes                                                             | No                                |
@@ -86,12 +86,12 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 
 - Entering a fizzler that is on (walking, coming out of a portal, or the fizzler turning on under the subject) closes both portals and sends a carried box back to its start.
 - While standing in a fizzler that is on, no portal can be shot.
-- A box lying on the floor is never affected.
+- A box lying on the floor is never affected, unless it lies on the start tile of the box sent back, which sends it back to its own start.
 
 ## Other details
 
 - Something closing under the subject (a door, the exit, a light barrier, a ditch, a laser) doesn't hurt it: it can still turn, shoot, interact and walk off.
-- Boxes never block the subject or shots, and several can lie on one tile.
+- Boxes never block the subject or shots. A tile holds one box: a box can't be put down where another lies, and a box sent back to its start sends one lying there back to its own start.
 - Once the subject reaches the open exit, the chamber is complete and nothing more changes.
 
 ## Chambers and progress

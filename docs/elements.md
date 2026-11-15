@@ -107,13 +107,17 @@ A hit opens the portal of that colour there, closing it wherever it was before: 
 #### Interact
 
 - On a switch: while carrying a box, `refused`. Otherwise the switch is used: `switchUsed`, then it unblocks its links. It can be used any number of times, and each use unblocks its links again (so a linked box is sent back each time).
-- Otherwise, while carrying a box: the box is put down on the subject's tile, without a sound. A tile can hold several boxes.
-- Otherwise, on a tile with a box: the subject picks it up (the first one in the chamber's box list): `boxPickedUp`.
+- Otherwise, while carrying a box: if another box rests on the subject's tile, `refused`, since a tile holds [one box](#one-box-per-tile). Otherwise the box is put down there, without a sound.
+- Otherwise, on a tile with a box: the subject picks it up: `boxPickedUp`.
 - Otherwise nothing happens.
 
 ### The fizzler rule
 
-If the subject stands in a fizzler that is on, both portals close and a carried box is destroyed: it goes back to its start tile and is no longer carried. `fizzled` is reported at most once per step, and only if the subject wasn't standing in a fizzler that was on when the step began: it walked or crossed into the field, or the field turned on under it. Nothing remembers having been inside a field.
+If the subject stands in a fizzler that is on, both portals close and a carried box is destroyed: it goes back to its start tile (see [one box per tile](#one-box-per-tile)) and is no longer carried. `fizzled` is reported at most once per step, and only if the subject wasn't standing in a fizzler that was on when the step began: it walked or crossed into the field, or the field turned on under it. Nothing remembers having been inside a field.
+
+### One box per tile
+
+A tile holds at most one box. The carried box, which sits on the subject's tile, doesn't count, so the subject can carry a box over a tile where another rests, but can't put it down there (see [Interact](#interact)). A box sent back to its start tile, destroyed by a fizzler or sent back by a link, sends the box resting there, if any, back to its own start the same way, and so on. Each box moves at most once, so the chain ends. Nothing reports it.
 
 ### Buttons
 
@@ -132,7 +136,7 @@ A button or switch names its links by element id. Only blocked walls (one tile e
 | 5 | Exit | Opened: `exitOpened` | Closed: `exitClosed` |
 | 6 | Fizzler | Off | On (see [the fizzler rule](#the-fizzler-rule)) |
 | 7 | Laser | Off | On |
-| 8 | Box | Back to its start tile, unless it is carried | Nothing; the validator warns about a box linked to a button |
+| 8 | Box | Back to its start tile (see [one box per tile](#one-box-per-tile)), unless it is carried | Nothing; the validator warns about a box linked to a button |
 
 A door or the exit reports its event only when it actually opens or closes; the others are silent.
 
@@ -176,7 +180,8 @@ Every way these rules differ from the original game's, which this game played un
 8. **`edge_is_wall`** — Outside the chamber's edge is wall that takes no portals. The original rules never checked the edge when walking, so only the chamber's own walls kept the subject in, and a shot checked it only before each tile, so a wall just past the edge could take a portal (the validator rejects walls outside the chamber). Fixture: `edge_is_wall`.
 9. **`completed_is_final`** — Once the chamber is completed, a step changes nothing. The original rules kept applying keys after completion, which only showed in frame recordings, since the game pauses at the completion dialog. No fixture: the replay check plays every action on each recorded solution's completed state, and none may change it or report anything.
 10. **`every_laser_blocks`** — Two lasers crossing on a tile keep the subject out while either of them is on. In the original rules only the first one listed there counted, so with that one off the subject walked into the other while it was still on. No current chamber shows it: chamber 1's crossing pair is linked by nothing and always on. Fixture: `crossing_lasers_either_blocks`.
-11. **`no_shot_while_carrying`** — The portal keys don't shoot while the subject carries a box: `refused`, with the error sound. The original rules let it shoot with a box in hand. Putting the box down, shooting and picking it up again gives the same state, with no extra move, except on a switch, where the box can't be put down, and on a tile holding another box listed before it, which the pick-up takes instead. Fixture: `no_shot_while_carrying`.
+11. **`no_shot_while_carrying`** — The portal keys don't shoot while the subject carries a box: `refused`, with the error sound. The original rules let it shoot with a box in hand. Putting the box down, shooting and picking it up again gives the same state, with no extra move, except on a switch or a tile where another box rests, where the box can't be put down. Fixture: `no_shot_while_carrying`.
+12. **`one_box_per_tile`** — A tile holds at most one box, the carried one aside: putting a box down where another rests is refused, with the error sound, and a box sent back to its start tile sends the box resting there back to its own start. The original rules let any number of boxes share a tile, through either. No recorded solution ever had two boxes on one tile. Fixtures: `no_box_put_down_on_a_box`, `box_sent_home_sends_box_home`.
 
 ## Adding an element
 

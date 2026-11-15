@@ -447,7 +447,8 @@ export function canInteract(draft: StateReader, x: number, y: number): boolean {
 /**
  * The interact key, when it can do anything (canInteract): an element on
  * the subject's tile that takes it (a switch) does; otherwise a carried box
- * is put down, or else the first box on the tile is picked up.
+ * is put down, unless another box rests there (refused), or else the box on
+ * the tile is picked up.
  * @param draft - The step's state
  */
 function interact(draft: StateDraft): void {
@@ -467,7 +468,12 @@ function interact(draft: StateDraft): void {
   }
 
   if (draft.isCarrying) {
-    draft.dropBox()
+    // A tile holds at most one box, so the carried one can't join another
+    if (draft.restingBoxAt(x, y) === NO_BOX) {
+      draft.dropBox()
+    } else {
+      draft.emit(GameEvent.REFUSED)
+    }
 
     return
   }
