@@ -94,7 +94,7 @@ Every sprite is 256 px, or 384 px when it overhangs, except the three strips (12
 | 11 | `door_closed` | A closed door: stops walking and shots. Its two leaves meet on the tile's middle line (see [sliding doors](#sliding-doors)). An open door isn't drawn, so its tile shows the floor |
 | 12 | `exit_closed` | The exit, closed. Its two leaves meet on the tile's middle line, as a door's do. The open exit isn't drawn, so its tile shows the floor; walking onto it completes the chamber |
 | 13 | `button_up` | A floor button, released |
-| 14 | `button_pressed` | A floor button, held down by the subject or a box. A box on a button is drawn at half size, centred, so the button's rim must show around it |
+| 14 | `button_pressed` | A floor button, held down by the subject or a box. A box on a button is drawn as on the floor, over it |
 | 15 | `switch` | A switch, used with the interact key. It has no on or off |
 | 16 | `box` | A box. Carried, it is drawn at half size in front of the subject and turned with it, so there is no carrying pose to draw |
 | 17 | `fizzler_on` | A fizzler that is on: the subject walks through it and loses its portals and any box it carries; it stops shots. Drawn over everything, so keep it see-through. A fizzler that is off isn't drawn (see [fizzle](#fizzle)) |

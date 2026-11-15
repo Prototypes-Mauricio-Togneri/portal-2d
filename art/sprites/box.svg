@@ -4,9 +4,10 @@
     core with four light corner blocks, their inner corners cut off, a light
     disc in the middle, and on each side a grey tab joined to the disc by a
     slightly lighter bar. A thin dark slate outline runs round the outside
-    only, so the light blocks read on the light floor. 180 px across, the
-    outline included. One quarter (a tab, its bar and the corner block to
-    its left) is drawn and turned.
+    only, so the light blocks read on the light floor. Drawn 184 px across,
+    the outline included, then scaled to 80 % round the tile's middle, so
+    about 147 px. One quarter (a tab, its bar and the corner block to its
+    left) is drawn and turned.
   -->
   <defs>
     <!-- The dark core, under the blocks and tabs -->
@@ -32,24 +33,27 @@
     </g>
   </defs>
 
-  <!-- The outline: the outer shape stroked under everything, so only its outer half shows -->
-  <g fill="rgb(44, 48, 54)" stroke="rgb(44, 48, 54)" stroke-width="6" stroke-linejoin="round">
-    <use href="#core"/>
-    <use href="#quarter-outline"/>
-    <use href="#quarter-outline" transform="rotate(90 128 128)"/>
-    <use href="#quarter-outline" transform="rotate(180 128 128)"/>
-    <use href="#quarter-outline" transform="rotate(270 128 128)"/>
+  <!-- The whole box, scaled to 80 % round the tile's middle -->
+  <g transform="translate(128 128) scale(0.8) translate(-128 -128)">
+    <!-- The outline: the outer shape stroked under everything, so only its outer half shows -->
+    <g fill="rgb(44, 48, 54)" stroke="rgb(44, 48, 54)" stroke-width="10" stroke-linejoin="round">
+      <use href="#core"/>
+      <use href="#quarter-outline"/>
+      <use href="#quarter-outline" transform="rotate(90 128 128)"/>
+      <use href="#quarter-outline" transform="rotate(180 128 128)"/>
+      <use href="#quarter-outline" transform="rotate(270 128 128)"/>
+    </g>
+
+    <!-- The core -->
+    <use href="#core" fill="rgb(83, 83, 84)"/>
+
+    <!-- Four quarters -->
+    <use href="#quarter"/>
+    <use href="#quarter" transform="rotate(90 128 128)"/>
+    <use href="#quarter" transform="rotate(180 128 128)"/>
+    <use href="#quarter" transform="rotate(270 128 128)"/>
+
+    <!-- The disc -->
+    <circle cx="128" cy="128" r="37.1" fill="rgb(201, 198, 199)"/>
   </g>
-
-  <!-- The core -->
-  <use href="#core" fill="rgb(83, 83, 84)"/>
-
-  <!-- Four quarters -->
-  <use href="#quarter"/>
-  <use href="#quarter" transform="rotate(90 128 128)"/>
-  <use href="#quarter" transform="rotate(180 128 128)"/>
-  <use href="#quarter" transform="rotate(270 128 128)"/>
-
-  <!-- The disc -->
-  <circle cx="128" cy="128" r="37.1" fill="rgb(201, 198, 199)"/>
 </svg>

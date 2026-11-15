@@ -1,8 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 140 140">
   <!--
     The floor button, pressed (docs/sprites.md): the same as button_up.svg,
-    its dome lit up in the game's caution red. A box on it is drawn at half
-    size in the middle, so the plate and the clamps stay in sight around it.
+    its dome lit up in the game's caution red. A box on it is drawn as on the
+    floor, narrower than the dome, so the plate and the clamps stay in sight
+    around it.
     Drawn on a 140-unit grid, lit from overhead, so it is the same on every
     side.
   -->

@@ -570,27 +570,18 @@ function drawSwitches(painter: TilePainter, state: RulesState): void {
 }
 
 /**
- * Draws the boxes that lie in the chamber, at half size on a button so the
- * button shows. A carried box is drawn with the subject.
+ * Draws the boxes that lie in the chamber, on a button as on the floor. A
+ * carried box is drawn with the subject.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  */
 function drawBoxes(painter: TilePainter, state: RulesState): void {
-  const chamber = state.chamber
-
-  for (let i = 0; i < chamber.stateLayout.boxCount; i++) {
+  for (let i = 0; i < state.chamber.stateLayout.boxCount; i++) {
     if (i === state.carriedBox) {
       continue
     }
 
-    const x = state.boxX(i)
-    const y = state.boxY(i)
-
-    if (chamber.elementAt('button', x, y) === NO_ELEMENT) {
-      painter.drawSprite('box', x, y)
-    } else {
-      painter.drawHalfSprite('box', x, y, Direction.UP, 0)
-    }
+    painter.drawSprite('box', state.boxX(i), state.boxY(i))
   }
 }
 
