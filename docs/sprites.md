@@ -83,7 +83,7 @@ Every sprite is 256 px, or 384 px when it overhangs, except the three strips (12
 |---|------|---------------|
 | 1 | `floor` | A floor tile. It repeats across the whole chamber, so its edges tile seamlessly |
 | 2 | `wall` | The wall strip (see [joins](#joins)). Walls stop walking and take portals |
-| 3 | `blocked_wall` | The strip of a blocked wall, which refuses portals: the wall's shape in dark brushed steel, riveted in the middle of each quarter, so it reads apart from the wall at a glance |
+| 3 | `blocked_wall` | The strip of a blocked wall, which refuses portals: the wall's shape in brushed steel, darker than the wall, riveted in the middle of each quarter, so it reads apart from the wall at a glance |
 | 4 | `ditch` | The open ditch strip: a pit. It stops walking but lets shots through |
 | 5 | `ditch_bridged` | A ditch bridged over: walkable |
 | 6 | `light_barrier_on` | A light barrier that is on: stops walking and shots. A see-through band of pale teal hard light, 96 px wide (teal at 64 % over a faint deep teal rim), with a faint honeycomb and bright edges, so it reads as a surface of light rather than a ray. It is light, not a solid block, so it casts no shadow. One that is off isn't drawn (its connectors are); switched, it fades out or in over about 0.25 s, as a laser does. Drawn over floor only |

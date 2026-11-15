@@ -4,14 +4,15 @@
     256 px tiles, left to right lone, horizontal run, vertical run, inner
     corners and solid, built exactly like the wall strip (wall.svg), so the
     two meet edge to edge in one mass. Only the colours and the top surface
-    differ: dark brushed steel plates, riveted at the middle of every quarter,
-    where the top is flat in every tile and no quarter's edge cuts a rivet.
+    differ: brushed steel plates, darker than the wall, riveted at the middle
+    of every quarter, where the top is flat in every tile and no quarter's
+    edge cuts a rivet.
   -->
   <defs>
     <!-- The bevel's slope: darker at its foot by the floor, lighter towards the top -->
     <linearGradient id="slope" gradientUnits="userSpaceOnUse" x1="0" y1="3" x2="0" y2="46">
-      <stop offset="0" stop-color="rgb(28, 30, 34)"/>
-      <stop offset="1" stop-color="rgb(46, 49, 55)"/>
+      <stop offset="0" stop-color="rgb(65, 68, 72)"/>
+      <stop offset="1" stop-color="rgb(85, 89, 95)"/>
     </linearGradient>
 
     <!-- Brushed grain: long streaks running left to right, repeating every 128 px, so it matches across every quarter -->
@@ -23,12 +24,12 @@
 
     <!-- A rivet: a dome lit from overhead, brightest on top, in a dark ring -->
     <radialGradient id="dome" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="rgb(150, 155, 163)"/>
-      <stop offset="0.6" stop-color="rgb(98, 103, 111)"/>
-      <stop offset="1" stop-color="rgb(60, 64, 70)"/>
+      <stop offset="0" stop-color="rgb(197, 202, 211)"/>
+      <stop offset="0.6" stop-color="rgb(142, 147, 156)"/>
+      <stop offset="1" stop-color="rgb(101, 105, 112)"/>
     </radialGradient>
     <g id="rivet">
-      <circle cx="0" cy="0" r="9" fill="rgb(22, 24, 27)"/>
+      <circle cx="0" cy="0" r="9" fill="rgb(58, 61, 64)"/>
       <circle cx="0" cy="0" r="7" fill="url(#dome)"/>
     </g>
 
@@ -43,8 +44,8 @@
     <!-- The bevel along the top edge, full width and 48 px deep, wide enough for a portal to sit on: outline, slope, then the lit lip -->
     <g id="band">
       <rect x="0" y="0" width="256" height="48" fill="url(#slope)"/>
-      <rect x="0" y="0" width="256" height="3" fill="rgb(16, 17, 20)"/>
-      <rect x="0" y="46" width="256" height="2" fill="rgb(104, 109, 117)"/>
+      <rect x="0" y="0" width="256" height="3" fill="rgb(51, 53, 56)"/>
+      <rect x="0" y="46" width="256" height="2" fill="rgb(148, 154, 162)"/>
     </g>
 
     <!-- The top bevel of a lone wall, mitred into the side bevels at both ends -->
@@ -73,17 +74,17 @@
 
     <!-- The seam along the top edge, where the wall continues: a groove and its lit lip -->
     <g id="seamFull">
-      <rect x="0" y="0" width="256" height="2" fill="rgb(20, 22, 25)"/>
-      <rect x="0" y="2" width="256" height="1.5" fill="rgb(84, 89, 96)"/>
+      <rect x="0" y="0" width="256" height="2" fill="rgb(56, 58, 62)"/>
+      <rect x="0" y="2" width="256" height="1.5" fill="rgb(127, 132, 140)"/>
     </g>
     <g id="seamInset">
-      <rect x="48" y="0" width="160" height="2" fill="rgb(20, 22, 25)"/>
-      <rect x="48" y="2" width="160" height="1.5" fill="rgb(84, 89, 96)"/>
+      <rect x="48" y="0" width="160" height="2" fill="rgb(56, 58, 62)"/>
+      <rect x="48" y="2" width="160" height="1.5" fill="rgb(127, 132, 140)"/>
     </g>
   </defs>
 
   <!-- The top surface of every tile, with its rivets -->
-  <rect x="0" y="0" width="1280" height="256" fill="rgb(56, 60, 66)"/>
+  <rect x="0" y="0" width="1280" height="256" fill="rgb(96, 101, 107)"/>
   <rect x="0" y="0" width="1280" height="256" filter="url(#grain)"/>
   <use xlink:href="#rivets"/>
   <use xlink:href="#rivets" x="256"/>
