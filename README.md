@@ -3,7 +3,6 @@
 ## TODO
 
 - avoid leaving one box on top of another
-- avoid steping on a box -> only allow to carry it in front?
 - show hints for tutorial
   - how to shot portals
   - show a hint when standing on a button

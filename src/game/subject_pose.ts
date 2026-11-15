@@ -7,20 +7,14 @@ import {DELTAS, OPPOSITES} from '@/game/rules/step'
 import type {StepTransition} from '@/game/step_animation'
 
 /**
- * The foot the subject has forward while it walks.
- */
-export type Foot = 'left' | 'right'
-
-/**
  * Where the subject is drawn in a frame: its tile, part way between two
- * while a step is being drawn, the way it faces, the foot it has forward,
- * and the one tile it shows inside while it slides through a portal.
+ * while a step is being drawn, the way it faces, and the one tile it shows
+ * inside while it slides through a portal.
  */
 export type SubjectPose = {
   readonly x: number // Column, part way between two while it glides
   readonly y: number // Row, part way between two while it glides
   readonly facing: Direction // The way it faces
-  readonly foot: Foot | null // The foot it has forward while it walks, or null while it stands
   readonly clip: PositionData | null // The tile it shows only inside, or null to show it whole
 }
 
@@ -29,11 +23,9 @@ export type SubjectPose = {
  * it one tile, it glides from the tile it left to the tile it reached.
  * Through a portal, it slides into the entry portal, shown only inside the
  * tile it left, then out of the exit portal, shown only inside the tile it
- * reached, each half one tile's travel at the pace of a glide. While it
- * glides or slides it walks, one foot forward, the foot the tile it left
- * gives. The distance still to go is rounded to whole canvas pixels, so its
- * edges stay sharp. Every other step, and a frame drawing no step, shows it
- * standing where it stands.
+ * reached, each half one tile's travel at the pace of a glide. The distance
+ * still to go is rounded to whole canvas pixels, so its edges stay sharp.
+ * Every other step, and a frame drawing no step, shows it where it stands.
  * @param state - The state drawn
  * @param transition - The step being drawn, ending on the state drawn, or null
  * @param tileSize - Side of a tile, in canvas pixels
@@ -44,7 +36,6 @@ export function subjectPose(state: RulesState, transition: StepTransition | null
     x: state.subjectX,
     y: state.subjectY,
     facing: state.facing,
-    foot: null,
     clip: null,
   }
 
@@ -71,29 +62,14 @@ export function subjectPose(state: RulesState, transition: StepTransition | null
     x: state.subjectX - (dx * behind),
     y: state.subjectY - (dy * behind),
     facing: state.facing,
-    foot: footLeaving(from),
     clip: null,
   }
 }
 
 /**
- * The foot the subject puts forward on a step leaving its tile: the left
- * from one colour of a checkerboard laid over the chamber, the right from the
- * other, so each move to a neighbouring tile puts the other foot forward
- * (the move after a portal crossing may not), the same way every time it is
- * drawn.
- * @param state - The state before the step
- * @returns The foot
- */
-function footLeaving(state: RulesState): Foot {
-  return (((state.subjectX + state.subjectY) % 2) === 0) ? 'left' : 'right'
-}
-
-/**
  * Where the subject is drawn part way through a portal crossing: two tiles'
  * travel, the first into the entry portal's wall, facing it, the second out
- * of the exit portal's wall, facing the way it came out, walking all the way
- * on the foot the tile it left gives.
+ * of the exit portal's wall, facing the way it came out.
  * @param from - The state before the crossing
  * @param to - The state after it
  * @param progress - How far the drawing has gone, eased, from 0 to 1
@@ -117,7 +93,6 @@ function crossingPose(from: RulesState, to: RulesState, progress: number, tileSi
       x: from.subjectX + (into.dx * ahead),
       y: from.subjectY + (into.dy * ahead),
       facing: entryWay,
-      foot: footLeaving(from),
       clip: {
         x: from.subjectX,
         y: from.subjectY,
@@ -132,7 +107,6 @@ function crossingPose(from: RulesState, to: RulesState, progress: number, tileSi
     x: to.subjectX - (out.dx * behind),
     y: to.subjectY - (out.dy * behind),
     facing: to.facing,
-    foot: footLeaving(from),
     clip: {
       x: to.subjectX,
       y: to.subjectY,
