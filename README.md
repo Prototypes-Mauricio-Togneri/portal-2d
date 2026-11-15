@@ -2,6 +2,7 @@
 
 ## TODO
 
+- do not allow to place portals in door walls
 - implement antlines
 - split plan 04 into two:
   - new mechanics (add to the plan the info from this file)
