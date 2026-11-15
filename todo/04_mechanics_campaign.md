@@ -38,7 +38,7 @@ Stages 00, 01 and 03 are done: their parts below are what they delivered, though
 **What stage 02 left** (stopped, README decision 10)
 
 - No solvability check, no par from a solver, no shortcut finder, no dead-end warning and no generated chambers. Every chamber is proven solvable by its recorded solution, and every rule by its fixtures.
-- The solver prototype in `src/solver/` and its check, `npm run solver:check`, which `npm run verify` runs on every chamber file (`docs/solver.md`). No mechanic depends on the solver; keeping that check passing is all it asks (R5, open decision 7).
+- The solver prototype in `src/solver/` and its check, `npm run solver:check`, which `npm run verify` runs on every chamber file (`docs/solver.md`). No mechanic depends on the solver; keeping that check passing is all it asks (R5, decision 18).
 
 **From stage 03 (look and sound)**, done 2026-11-14
 
@@ -106,62 +106,18 @@ Stages 00, 01 and 03 are done: their parts below are what they delivered, though
 | 4 | 2026-11-06 | No new keys. Every mechanic works with the game keys there are: the moves, both portals, interact, undo and redo (by default the arrows, A, D, Space, Z and X; Ctrl, which turned in place, has since gone) |
 | 5 | 2026-11-06 | A mechanic the solver cannot judge within budget does not ship (stage 05 publishes only solver-checked chambers). Superseded by README decision 10: no solver judges chambers; a mechanic ships on its chambers' recorded solutions and its rule fixtures |
 | 6 | 2026-11-08 | A mechanic's chambers go into the campaign in this same stage: its teach chamber and the rest of its run, as the campaign plan sets (replaces "a teach and a proof chamber per mechanic; full wings are stage 04's job") |
-| 7 | 2026-11-06 | Chamber links (`/chamber/N`, by position) stay as they are until this stage picks the numbering scheme (README decision 4); stage 03 only made the count start at 0 for the tutorial. Settled by README decision 13: links stay by position, with no redirects (open decision 6) |
+| 7 | 2026-11-06 | Chamber links (`/chamber/N`, by position) stay as they are until this stage picks the numbering scheme (README decision 4); stage 03 only made the count start at 0 for the tutorial. Settled by README decision 13: links stay by position, with no redirects |
 | 8 | 2026-11-06 | Unchanged from `AGENTS.md`: desktop only; colour meanings (blue interaction and success, orange the second portal, red caution, green a completed chamber); `localStorage` keys keep the `portal-2d.` prefix, as a convention, and analytics event and parameter names never change, even after a rename (renaming one splits its history) |
 | 9 | 2026-11-08 | Stages 03 and 04 swapped (README decision 11): look and sound come first, so this stage builds on the reworked look and sound |
 | 10 | 2026-11-08 | The campaign is 20 chambers in total, numbered 0–19: the tutorial (0), today's three (1–3) and 16 new ones built here. No wings: one ordered list, with no wing manifest, wing menu level, wing unlocking, wing music or wing analytics parameter (replaces about 120 chambers in about 10 wings) |
-| 11 | 2026-11-08 | All seven mechanics stay in this plan; how many make the campaign is settled at this stage's revisit (open decision 5). Six since decision 15 dropped conveyors, three since decision 16 |
+| 11 | 2026-11-08 | All seven mechanics stay in this plan; how many make the campaign is settled at this stage's revisit (decision 16). Six since decision 15 dropped conveyors, three since decision 16 |
 | 12 | 2026-11-08 | Medals and difficulty from data moved here from the old stage 04, since they need the final chambers. Difficulty from data was dropped by decision 13, medals by decision 17 |
-| 13 | 2026-11-09 | The author is the only player during development, and a few friends play later (README decision 13): no compatibility work, so links stay by position with no redirect table, no retired-id list and no migration of stored progress. Difficulty from player data and the histogram are dropped, since a few friends are far below any useful sample: the chamber order comes from playtests, with the friends' analytics informing them. Analytics stays. Lab chambers matter once friends play (open decision 2) |
+| 13 | 2026-11-09 | The author is the only player during development, and a few friends play later (README decision 13): no compatibility work, so links stay by position with no redirect table, no retired-id list and no migration of stored progress. Difficulty from player data and the histogram are dropped, since a few friends are far below any useful sample: the chamber order comes from playtests, with the friends' analytics informing them. Analytics stays. Lab chambers matter once friends play (decision 18) |
 | 14 | 2026-11-09 | README decision 10 applied in full: no solvability check, no par from a solver, no shortcut finder, no dead-end warning, no generated, daily or endless chambers. Mechanics ship on recorded solutions and rule fixtures; the medals' par is the best recorded solution, labelled "target" (medals since dropped, decision 17). The old go/no-go point that dropped timed buttons, push blocks and echo without a solver is superseded by README decision 11 (all seven mechanics stay in the plan), and the solver-budget and medal-par points are removed (the data-volume point went with decision 13) |
 | 15 | 2026-11-15 | Conveyors dropped. They stood for the original game's Excursion Funnel, but as fixed floor tiles that portals never change they lost what made it a portal mechanic: their one use of their own (sending a box where the subject can't go) was small, carrying the subject overlapped with slide floors, and timed buttons already make timing puzzles. Six mechanics remain; their phase and open decision were removed and the rest renumbered |
-| 16 | 2026-11-15 | The campaign's new mechanics are slide floors, rotating arrows and live lasers, about 4 chambers each, with about 4 for the existing elements (open decision 5). Echo, timed buttons and push blocks are dropped from the plan, with their phases, the open decisions only they needed (echo, what counts as a tick) and their go/no-go points; their specs stay in git history (README open decision 3 settled). The phases and open decisions left were renumbered |
+| 16 | 2026-11-15 | The campaign's new mechanics are slide floors, rotating arrows and live lasers, about 4 chambers each, with about 4 for the existing elements. Echo, timed buttons and push blocks are dropped from the plan, with their phases, the open decisions only they needed (echo, what counts as a tick) and their go/no-go points; their specs stay in git history (README open decision 3 settled). The phases and open decisions left were renumbered |
 | 17 | 2026-11-15 | Medals dropped from the plan, with their phase, their open decisions (undo, thresholds) and storing the best moves and portals: the time stays the only score (README open decision 1 settled) |
-| 18 | 2026-11-15 | The other open decisions settled as recommended: today's laser tiles stay their own element (open decision 1); unfinished chambers go straight into the catalogue while only the author plays, and into a development-only lab list once friends play (open decision 2); a beam stops at the subject, which it leaves unharmed (open decision 3); a mirror box's angle is fixed in the chamber file (open decision 4); and the solver check skips, and names, each chamber it can't handle (open decision 7) |
-
-## Open decisions
-
-**1. What happens to today's laser tiles once live lasers exist?**
-- *A. Keep them as their own element* (a fixed "laser field"). Existing chambers stay unchanged and need no upgrade.
-- *B. Convert them to emitter plus beam,* rewriting the chamber files that use them (no upgrader, README decision 13). One laser family, but today's chambers change behaviour (beams could then bend through portals) and their recorded solutions must be redone.
-- *C. Remove them.* All three current chambers use lasers or would need redesign.
-- **Settled by decision 18: A.** R3 draws the two so they read as different things.
-
-**2. Where do a mechanic's chambers live while being built?**
-- *A. A development-only lab list:* lab chambers outside the catalogue, playable only in `npm run dev` and included in the local checks. A chamber moves into the catalogue, with a permanent id, once it is finished (recorded solution, cold playtest).
-- *B. Straight into the catalogue.* Playable at once, with no extra route. While only the author plays (README decision 13), an unfinished chamber reaches nobody and an early permanent id costs nothing; once friends play, unfinished chambers would reach them. Cost: the Play menu can't scroll until Phase 6, so the list must stay short until then.
-- *C. Keep them only as replay fixtures.* Nobody can play them by hand, so no cold playtest.
-- **Settled by decision 18: B while only the author plays, A once friends play**, so unfinished chambers never reach them.
-
-**3. What happens when a beam reaches the subject?**
-- *A. The subject blocks the beam:* the beam ends at the subject's tile and nothing happens to the subject. Walking into a lit beam tile is refused, as with lasers today. Standing in a beam becomes a tool (it switches a receiver off).
-- *B. The beam acts like a fizzler on the subject:* portals cleared, carried box reset. That's harsher, and it is a second way to lose portals.
-- *C. The beam passes through the subject harmlessly.* Simple, but it wastes a design lever.
-- **Settled by decision 18: A.**
-
-**4. How does a mirror box's angle get set?**
-- *A. Fixed in the chamber data* (`/` or `\`). Simplest; the puzzle is where you put it.
-- *B. Set by the subject's facing when it is dropped.* More expressive, but it adds an orientation to every mirror box state.
-- *C. Rotated with a key.* Breaks decision 4.
-- **Settled by decision 18: A** for the first version; revisit B after playtests.
-
-**5. Which mechanics make the campaign?** The campaign has 16 new chambers in all (decision 10). A full teach → test → twist → combine run is 10–12 chambers per mechanic, so spread over all six, each gets about 2 or 3 and the existing elements get none.
-- *A. All six,* about 2 or 3 chambers each. Cost: each mechanic is taught and then left behind, with no room for hard chambers.
-- *B. A few,* for example slide floors, rotating arrows and live lasers, about 5 chambers each; the rest are cut or left for later. Cost: fewer new ideas in the campaign.
-- *C. More than 20 chambers.* Cost: reopens README decision 11.
-- **Settled by decision 16: B**, with slide floors, rotating arrows and live lasers at about 4 chambers each and about 4 for the existing elements; echo, timed buttons and push blocks are dropped.
-
-**6. Chamber numbering and links** (README open decision 6). Links follow position. This stage inserts 16 chambers among the existing ones, and playtests may reorder them, so any link built from position will shift.
-- *A. Links by permanent id* (`/chamber/<id>`); the screen shows the position number. Cost: the number in the address differs from the one on screen.
-- *B. Links by a permanent slug per chamber* (`/chamber/<slug>`). Cost: every chamber needs a unique title, kept forever like an id.
-- *C. Links by position* (`/chamber/N`), as today. Cost: shifts whenever this stage inserts or reorders chambers.
-- **Settled by README decision 13: C**, with no redirect table. There is no compatibility work, so a friend's old link may open another chamber or none, and that is accepted. (The recommendation was A, with old links redirected.)
-
-**7. What does the solver check do with a mechanic it doesn't know?** (R5; added 2026-11-09, replacing the histogram, which README decision 13 removed.) The prototype stays and its check runs in `npm run verify` (README decision 10), but it only knows today's elements, and most mechanics break it once their chambers are in `src/chambers/`.
-- *A. Teach the solver each mechanic:* its state in the key, and the walks, shot lines and skipped actions made to match. Cost: solver work for a stopped stage, on every mechanic.
-- *B. Skip what it doesn't know:* the check leaves out, and names, each chamber that uses an element the solver doesn't support or whose key needs more than 64 bits, and keeps checking the rest and its solver fixtures. Cost: a small change to `scripts/check_solver.ts`; the prototype is checked on fewer chambers as the campaign grows.
-- *C. Remove the prototype and its check.* Cost: a revisit starts from git history instead of working code (`docs/solver.md` stays).
-- **Settled by decision 18: B**, before the first mechanic's chambers exist.
+| 18 | 2026-11-15 | The other open decisions settled as recommended: today's laser tiles stay their own element; unfinished chambers go straight into the catalogue while only the author plays, and into a development-only lab list once friends play; a beam stops at the subject, which it leaves unharmed; a mirror box's angle is fixed in the chamber file; and the solver check skips, and names, each chamber it can't handle. With every open decision settled, the section was removed; their options stay in git history |
 
 ## Steps
 
@@ -188,9 +144,9 @@ Every mechanic phase repeats these seven steps (R1–R7). Each phase below gives
   - a state along its recorded solution or 100,000 seeded random steps doesn't come back unchanged from the key. Unpacking sets each button pressed exactly when the subject or a box is on it, and any state value the key doesn't hold to 0;
   - from a state along its recorded solution, the rules' step disagrees with the solver's walks (a move onto a plain tile only steps the subject, and its carried box, one tile; a tile whose element reacts to the subject, `reactsToSubject`, ends a walk), its shared shots (a shot from anywhere on a line gives the same result, apart from the subject's tile), its skipped no-op interacts and moves, or its regions.
 
-  So a mechanic that adds state, makes a plain move do more than step the subject, or makes a shot's result depend on where on its line the subject stands, fails `npm run verify` as soon as one of its chambers is in. Handle it as open decision 7 settles: the check skips and names that chamber. Verified by `npm run verify` passing with the mechanic's chambers in.
+  So a mechanic that adds state, makes a plain move do more than step the subject, or makes a shot's result depend on where on its line the subject stands, fails `npm run verify` as soon as one of its chambers is in. As decision 18 settles, the check skips and names that chamber. Verified by `npm run verify` passing with the mechanic's chambers in.
 - **R6 Docs.** A `docs/elements.md` row, notes and interactions; AGENTS.md if rules text or keyboard ownership changes. Verified by reading the docs against the spec.
-- **R7 Chambers.** A teach chamber and one proof chamber (test or twist), where open decision 2 puts them, each with a recorded solution; they join the campaign as the campaign plan sets (open decision 5). The author plays each cold and writes down any confusion as signage notes in the campaign plan table. Verified by the local checks plus the playtest notes.
+- **R7 Chambers.** A teach chamber and one proof chamber (test or twist), where decision 18 puts them, each with a recorded solution; they join the campaign as the campaign plan sets (decision 16). The author plays each cold and writes down any confusion as signage notes in the campaign plan table. Verified by the local checks plus the playtest notes.
 
 ### Campaign plan
 
@@ -200,11 +156,11 @@ Every mechanic phase repeats these seven steps (R1–R7). Each phase below gives
 - *Twist*: an unexpected consequence of the rules (a fizzler mid-slide, a beam blocking your own path).
 - *Combine*: with earlier mechanics.
 
-A full run was planned at 10–12 chambers per mechanic (1–2 teach, about 3 test, about 3 twist, 3–4 combine). With 16 new chambers for the whole campaign (decision 10), that no longer fits, so the campaign takes three mechanics at about 4 chambers each (open decision 5). A combine chamber can serve two mechanics at once.
+A full run was planned at 10–12 chambers per mechanic (1–2 teach, about 3 test, about 3 twist, 3–4 combine). With 16 new chambers for the whole campaign (decision 10), that no longer fits, so the campaign takes three mechanics at about 4 chambers each (decision 16). A combine chamber can serve two mechanics at once.
 
 The existing elements need chambers too (portal basics, boxes and buttons, doors and switches, blocked walls, light barriers and ditches, fizzlers, arrows, laser fields); the tutorial (chamber 0) and today's three chambers already cover some of them. Switchable blocked walls (switchable portal surfaces, already used in chambers 2 and 3) deserve a teach chamber of their own.
 
-**Campaign plan table** (chamber counts set by open decision 5; the rest filled in from the playtests during the mechanic phases and Phase 4):
+**Campaign plan table** (chamber counts set by decision 16; the rest filled in from the playtests during the mechanic phases and Phase 4):
 
 | # | Mechanic or element | New chambers | Teach notes (signage, confusion seen) | Sounds needed | Colours |
 |---|---|---|---|---|---|
@@ -218,8 +174,8 @@ The existing elements need chambers too (portal basics, boxes and buttons, doors
 
 - [ ] **Revisit.** Re-read stage 01's element definition contract, format v2 and replay format, and stage 03's palette module and animation layer. Rename everything in this file to their real names; set the status to Ready.
 - [ ] **Hook check.** Compare the three hooks under *Depends on* with what stage 01's element system supports. For each missing hook, either add it to the engine once, as its own step here, with replays proving no change to existing chambers, or drop the mechanics that need it (go/no-go point 1).
-- [x] **Settle open decisions 1–5 and 7.** Record the answers under *Decisions made*. Open decision 5 also sets the chamber counts in the campaign plan table and which mechanic phases run.
-- [ ] **Lab chambers (only once open decision 2 calls for A, when friends play).** A lab folder of chamber files, a development-only way to open one (registered only when `import.meta.env.DEV`, so it never ships), and the local checks covering it. Verified by opening a lab chamber in `npm run dev` and confirming the production build contains none. If friends start playing only later in this stage, build it then; if they never do during it, tick it with "not applicable".
+- [x] **Settle the open decisions.** Record the answers under *Decisions made* (decisions 16–18). The choice of mechanics also sets the chamber counts in the campaign plan table and which mechanic phases run.
+- [ ] **Lab chambers (only once friends play, decision 18).** A lab folder of chamber files, a development-only way to open one (registered only when `import.meta.env.DEV`, so it never ships), and the local checks covering it. Verified by opening a lab chamber in `npm run dev` and confirming the production build contains none. If friends start playing only later in this stage, build it then; if they never do during it, tick it with "not applicable".
 - [ ] **Interaction table.** Add a section to `docs/elements.md` listing every element against every other. Each cell is a rule, "can't happen" (chamber validation forbids it) or "to do". Existing elements fill their cells first, from the current rules.
 - [ ] **Outcome assertions in replays.** Confirm stage 01's replay format can assert an outcome: completes, does not complete, or reaches an expected state hash. It already can: every recorded solution and fixture pins whether the chamber completes, its moves, its portals and its final state hash, and the replay check reports each mismatch. Verified by one passing and one deliberately failing fixture.
 - [ ] **Names and colours.** Choose names for the new elements and colours for them from stage 03's palette module (decision 1, R3 constraints), and record them in `docs/elements.md`.
@@ -245,7 +201,7 @@ Chambers. Teach: a slide-floor room where stepping on slides you to the far wall
 - [ ] **R2 Element and format.** The slide floor element file and its optional list in format v2.
 - [ ] **R3 Drawing and sounds.** A pale floor tile with thin diagonal lines; slide start and stop events, with placeholder sounds.
 - [ ] **R4 Fixtures.** Slide to a wall, onto a normal tile, through a portal onto a slide and onto a normal tile, a fizzler mid-slide, an arrow mid-slide, the exit mid-slide, a refused loop, and a button passed over without being pressed.
-- [ ] **R5 Solver check.** A slide carries the subject past the next tile, where the solver's walks expect it to stop, unless the slide floor counts as an element that reacts to the subject (`reactsToSubject` in its definition): walks then end there, which likely keeps them right. `npm run verify` passes with the slide chambers in (open decision 7).
+- [ ] **R5 Solver check.** A slide carries the subject past the next tile, where the solver's walks expect it to stop, unless the slide floor counts as an element that reacts to the subject (`reactsToSubject` in its definition): walks then end there, which likely keeps them right. `npm run verify` passes with the slide chambers in (decision 18).
 - [ ] **R6 Docs.** The slide floor in `docs/elements.md`.
 - [ ] **R7 Chambers.** Teach and test chambers, solutions, a cold playtest.
 
@@ -264,7 +220,7 @@ Chambers. Teach: an arrow corridor that only leads away from the exit until a sw
 - [ ] **R2 Element and format.** Make arrows linkable; add the optional `id` and `turnedDirection`.
 - [ ] **R3 Drawing and sounds.** A small notch showing the other direction; a turn event.
 - [ ] **R4 Fixtures.** Turned by a button and back, turned by a switch for good, turning while the subject stands on it, a slide ending on a turned arrow.
-- [ ] **R5 Solver check.** Each linked arrow adds a blocked flag, one more key bit. If the turn is stored as that flag and walking reads it through `allowsWay`, the check likely passes as it is. `npm run verify` passes with the arrow chambers in (open decision 7).
+- [ ] **R5 Solver check.** Each linked arrow adds a blocked flag, one more key bit. If the turn is stored as that flag and walking reads it through `allowsWay`, the check likely passes as it is. `npm run verify` passes with the arrow chambers in (decision 18).
 - [ ] **R6 Docs.** Update the arrow's row: "Can be activated/deactivated?" becomes "Yes, when linked".
 - [ ] **R7 Chambers.** Teach and twist chambers, solutions, a cold playtest.
 
@@ -274,39 +230,39 @@ Draft spec:
 - **Emitter**: sits on a wall tile and fires from one face. It can be linked (on/off), on by default. The wall still holds portals on its other faces.
 - **Beam**: not stored. After every change within a step, it is traced from each lit emitter, tile by tile:
   - It passes floor, ditches, fizzlers, laser fields, buttons, switches, arrows, slide floors and loose boxes.
-  - It stops at walls, light barriers that are on, closed doors, a closed exit, the subject (open decision 3, option A) and the chamber edge.
+  - It stops at walls, light barriers that are on, closed doors, a closed exit, the subject (decision 18) and the chamber edge.
   - At a wall side holding a portal whose open side faces the beam, with both portals open, it continues from the other portal's exit tile in that portal's direction.
   - At a mirror box it turns 90° by the box's angle.
   - At a receiver's face it lights the receiver and stops.
   - If it would enter the same tile in the same direction twice, it stops (a beam loop through portals).
 - A tile a beam crosses blocks walking, like a lit laser field. Portal shots pass beams.
 - **Receiver**: sits on a wall tile and listens on one face. Lit, it acts as a pressed button (activates its links); unlit, as a released button (deactivates them). As with a button (settled in stage 01), deactivating a link to a box does nothing.
-- **Mirror box**: carried like a box (Space). It holds buttons down like a box, goes through portals with the subject, is reset by fizzlers like a box, and reflects beams by a fixed `/` or `\` (open decision 4).
+- **Mirror box**: carried like a box (Space). It holds buttons down like a box, goes through portals with the subject, is reset by fizzlers like a box, and reflects beams by a fixed `/` or `\` (decision 18).
 - **Settling a step**: apply the action and the subject's movement; trace the beams; evaluate buttons (by position) and receivers (by beams) in chamber data order; apply their links; trace again; repeat until nothing changes. If a state repeats (a receiver opening a door that blocks its own beam), stop at the first repeat, keep that state, and report it in the local checks as an oscillation warning.
 
 Chambers. Teach: one emitter and one receiver that opens the exit door, with a wall between them; place a portal pair to route the beam around. Test: the beam has to turn a corner, coming out of a portal on a perpendicular wall. Twist: once routed, the beam blocks your own path, so you must route it, stand in it to switch the receiver off, or route it again after crossing. Combine: carry a mirror box through portals to bend a beam onto a receiver behind a fizzler (the box resets if you carry it through).
 
 - [ ] **R1 Spec.** Finalise the spec above, including the settling rule, and fill the rows for emitter, beam, receiver and mirror box.
-- [ ] **R2 Element and format.** Element files for emitter, receiver and mirror box; optional lists in format v2. Laser fields are kept as decided in open decision 1.
+- [ ] **R2 Element and format.** Element files for emitter, receiver and mirror box; optional lists in format v2. Laser fields stay their own element (decision 18).
 - [ ] **R3 Drawing and sounds.** The beam as a thin line, coloured unlike a laser field; emitter and receiver as wall notches; the mirror box as a box with a diagonal. Receiver on/off events.
 - [ ] **R4 Fixtures.** A straight beam, a beam through portals, a beam loop, a beam blocked by the subject, a mirror bend, a mirror carried through a portal, a receiver opening and closing a door, an oscillation that settles deterministically, a fizzler resetting a carried mirror.
-- [ ] **R5 Solver check.** Each mirror box adds a tile to the key, like a box (8 bits on today's chamber sizes). Beams add no bits, being derived, but if the subject blocks them (open decision 3, A), where it stands can change links, which the solver's walks and shared shots assume it can't. `npm run verify` passes with the laser chambers in (open decision 7).
+- [ ] **R5 Solver check.** Each mirror box adds a tile to the key, like a box (8 bits on today's chamber sizes). Beams add no bits, being derived, but if the subject blocks them (decision 18), where it stands can change links, which the solver's walks and shared shots assume it can't. `npm run verify` passes with the laser chambers in (decision 18).
 - [ ] **R6 Docs.** All four entries in `docs/elements.md`, with the settling rule written out.
 - [ ] **R7 Chambers.** Teach and test chambers, solutions, a cold playtest; neither raises an oscillation warning in the replay check or the random walk.
 
 ### Phase 4 — Mechanics wrap-up
 
 - [ ] **Interaction table complete.** No "to do" cells left; each cell is backed by a rule fixture or forbidden by chamber validation.
-- [ ] **Docs and AGENTS.md.** `docs/elements.md` covers every element; AGENTS.md's layout and rules mention the new elements, and the lab chambers if they were built (open decision 2).
+- [ ] **Docs and AGENTS.md.** `docs/elements.md` covers every element; AGENTS.md's layout and rules mention the new elements, and the lab chambers if they were built (decision 18).
 - [ ] **Campaign plan table.** Fill in its teach notes, sounds and colours with real results from the playtests. Verify: every row the plan keeps is filled in.
 
 ### Phase 5 — Catalogue and links that scale
 
 - [ ] **Load chambers without a hand-kept list.** Replace the static imports in `src/services/chamber_catalogue.ts` with `import.meta.glob`, excluding stage 01's recorded solutions, which sit next to the chamber files as `chamber_N.solution.json` (for example `['@/chambers/chamber_*.json', '!@/chambers/*.solution.json']`). The play order stays one typed list of permanent ids; chamber files stay named by permanent id (`chamber_<id>.json`), and display numbers come from position, never typed by hand. Renaming a chamber file renames its solution file too. Start eager (every chamber in the bundle; 20 chambers ≈ 12–16 KB gzipped); switch to lazy loading only if stage 03's bundle-size watch flags it. Verify: build output size recorded before and after.
 - [ ] **Catalogue check.** A local check that every chamber file appears in the play order exactly once, ids are unique, and every chamber has a recorded solution (from 01's checks). Verify: break each rule once on purpose and the check fails.
-- [ ] **Numbering and links** (open decision 6, settled by README decision 13). Links stay by position (`/chamber/N`): the route in `src/router.ts` doesn't change, and there is no redirect table; unknown chambers still fall back home. Verify: in `npm run preview`, the first and the last number open their chambers and an unknown one goes home.
+- [ ] **Numbering and links** (decision 7, settled by README decision 13). Links stay by position (`/chamber/N`): the route in `src/router.ts` doesn't change, and there is no redirect table; unknown chambers still fall back home. Verify: in `npm run preview`, the first and the last number open their chambers and an unknown one goes home.
 - [ ] **Progress follows the chamber.** Progress is already keyed by id (00); links and the last chamber kept in memory follow position, as today. Verify: reorder two chambers in the play order locally; completions, best times and the highlight on return follow the chamber.
-- [ ] **Analytics stays comparable.** `chamber_number` keeps meaning the position in the list (0 for the tutorial, then 1, 2, 3…), like the links (open decision 6), and `chamber_id` follows the chamber across reorders; no new parameter is needed. Verify: a production preview build sends the position as `chamber_number` (GA4 DebugView).
+- [ ] **Analytics stays comparable.** `chamber_number` keeps meaning the position in the list (0 for the tutorial, then 1, 2, 3…), like the links (decision 7), and `chamber_id` follows the chamber across reorders; no new parameter is needed. Verify: a production preview build sends the position as `chamber_number` (GA4 DebugView).
 
 ### Phase 6 — A Play menu that scales
 
@@ -317,7 +273,7 @@ Chambers. Teach: one emitter and one receiver that opens the exit door, with a w
 
 ### Phase 7 — Campaign content
 
-- [ ] **Chamber plan.** List the 16 new chambers in this file, in play order together with chambers 0–3, each with its mechanic or element and its part (teach, test, twist or combine), following the campaign plan table and open decision 5. Starting order: the existing elements first, then the new mechanics in the order built. Later reorders follow playtests, with the friends' analytics informing them: a chamber never moves before the chambers that teach what it needs, the tutorial stays first, and each reorder goes in the changelog. Verify: every mechanic this stage shipped has chambers or a recorded reason it doesn't, and the total is 20.
+- [ ] **Chamber plan.** List the 16 new chambers in this file, in play order together with chambers 0–3, each with its mechanic or element and its part (teach, test, twist or combine), following the campaign plan table and decision 16. Starting order: the existing elements first, then the new mechanics in the order built. Later reorders follow playtests, with the friends' analytics informing them: a chamber never moves before the chambers that teach what it needs, the tutorial stays first, and each reorder goes in the changelog. Verify: every mechanic this stage shipped has chambers or a recorded reason it doesn't, and the total is 20.
 - [ ] **Authoring workflow before the editor.** Until stage 05's editor exists: hand-write chamber v2 JSON; a development-only route (behind `import.meta.env.DEV`, never in production builds) that loads a chamber file from disk and reloads on save, extending this stage's lab route (Phase 0, if built by then) rather than adding a second one; record the solution by playing it with 01's recorder; tick a per-chamber checklist (solution recorded, one playtest by someone else). Verify: one chamber goes through the whole workflow; a production build has no development route.
 - [ ] **Place chambers 0–3 in the campaign.** The tutorial and today's three chambers keep permanent ids 0 and 1–3 wherever the plan puts them; their links follow their new places. Verify: their completions and best times survive.
 - [ ] **Author release 1** (about four new chambers; each release ships with a changelog entry in `src/services/changelog.ts`). Verify: `npm run verify` and the catalogue check pass; playtested.
@@ -333,11 +289,11 @@ Chambers. Teach: one emitter and one receiver that opens the exit door, with a w
 
 ## Local checks added
 
-- Lab chambers, once built (open decision 2), are included in the local checks.
+- Lab chambers, once built (decision 18), are included in the local checks.
 - Rule fixtures replay with their expected outcome (completes, does not complete, or expected state).
 - Chamber validation: forbidden element overlaps (Phase 1); emitters and receivers sit on wall tiles with an open face.
 - Oscillation warning: any chamber or fixture in which the replay check or the random walk meets a repeating receiver state is reported.
-- The solver check skips, and names, each chamber it can't handle (open decision 7).
+- The solver check skips, and names, each chamber it can't handle (decision 18).
 - No new size check: the engine smoke check and the random walk already print each chamber's state size, so growth from each mechanic stays visible.
 - Catalogue check: every chamber file in the play order exactly once, ids unique, every chamber with a recorded solution.
 
@@ -364,12 +320,12 @@ Revised 2026-11-09 (decisions 13 and 14): the solver budget, no-solver, medal pa
 
 - **Interactions multiply.** Each new element must be defined against every other. The interaction table and fixtures exist so that gaps show up as "to do" cells, not as player bug reports.
 - **Beams settle in surprising ways.** Feedback through receivers and loops through portals are handled by deterministic rules and warnings, but they can still confuse players. Watch the playtest notes.
-- **State growth.** Mirror boxes (positions) grow the state. The printed state size shows it early; they also break the solver check unless open decision 7 handles it.
+- **State growth.** Mirror boxes (positions) grow the state. The printed state size shows it early; the solver check skips, and names, a chamber it can't handle (decision 18).
 - **New elements must read clearly.** Slide floor and plain floor, beam and laser field must stay distinct. R3's check and the cold playtests catch this.
 - **"Moves" changes meaning.** A slide moves many tiles on one key. Follow stage 01's definition (one move) and note any change in meaning, because analytics parameter names are permanent and their history spans the change.
-- **Lab chambers leaking.** Once friends play, unfinished chambers in the catalogue reach them, and the Play menu overflows until Phase 6 makes it scroll. Switch to the lab list then (open decision 2).
+- **Lab chambers leaking.** Once friends play, unfinished chambers in the catalogue reach them, and the Play menu overflows until Phase 6 makes it scroll. Switch to the lab list then (decision 18).
 - **Feeling borrowed.** Keep names, looks and combinations original (decision 1).
-- **Mechanics barely used.** With 16 new chambers, each mechanic gets about 4 (open decision 5), so a full run doesn't fit; a combine chamber can serve two at once.
+- **Mechanics barely used.** With 16 new chambers, each mechanic gets about 4 (decision 16), so a full run doesn't fit; a combine chamber can serve two at once.
 - **Content volume.** 16 chambers are most of the campaign phases' work. Ship them in small releases, so the game grows instead of waiting.
 - **Reordering surprises players.** Display numbers and links change after a reorder, which friends will see. Progress is safe (keyed by id); say what changed in the changelog.
 
