@@ -9,6 +9,7 @@ import {DOOR_ELEMENT} from '@/game/rules/elements/door'
 import {EXIT_ELEMENT} from '@/game/rules/elements/exit'
 import {FIZZLER_ELEMENT} from '@/game/rules/elements/fizzler'
 import {LASER_ELEMENT} from '@/game/rules/elements/laser'
+import {LIGHT_BARRIER_ELEMENT} from '@/game/rules/elements/light_barrier'
 import {SWITCH_ELEMENT} from '@/game/rules/elements/switch'
 import {WALL_ELEMENT} from '@/game/rules/elements/wall'
 
@@ -17,6 +18,7 @@ export const ELEMENT_REGISTRY = [
   ARROW_ELEMENT,
   WALL_ELEMENT,
   BARRIER_ELEMENT,
+  LIGHT_BARRIER_ELEMENT,
   DITCH_ELEMENT,
   LASER_ELEMENT,
   DOOR_ELEMENT,
@@ -51,8 +53,8 @@ export type ElementKind = RegisteredElement['kind']
 type BlockableElement = Extract<RegisteredElement, {readonly defaultBlocked: boolean}>
 
 /**
- * The name of an element type that has a blocked flag: a barrier, ditch,
- * laser, door, the exit or a fizzler.
+ * The name of an element type that has a blocked flag: a barrier, light
+ * barrier, ditch, laser, door, the exit or a fizzler.
  */
 export type BlockableKind = BlockableElement['kind']
 

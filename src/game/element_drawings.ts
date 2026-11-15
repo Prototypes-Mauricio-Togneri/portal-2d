@@ -108,6 +108,7 @@ const GAP_SIDE_KINDS: readonly PlacedKind[] = [
   'exit',
   'fizzler',
   'barrier',
+  'lightBarrier',
   'ditch',
 ]
 
@@ -219,7 +220,7 @@ function drawJoinedTile(painter: TilePainter, name: SpriteName, joins: JoinTest,
 
 /**
  * Whether a tile lines a gap: a wall, outside the chamber, or a door, the
- * exit, a fizzler, a barrier or a ditch, in any state.
+ * exit, a fizzler, a barrier, a light barrier or a ditch, in any state.
  * @param chamber - The chamber
  * @param x - Column
  * @param y - Row
@@ -277,7 +278,7 @@ function crumblePlacer(share: number, seed: number): PiecePlacer {
  * Builds a drawing for a type whose elements can be blocked: each element's
  * sprite for whether it is.
  * @param kind - The element type
- * @param blockedSprite - Its sprite while blocked (a barrier raised, a door or the exit closed, a fizzler on)
+ * @param blockedSprite - Its sprite while blocked (a barrier raised, a light barrier on, a door or the exit closed, a fizzler on)
  * @param unblockedSprite - Its sprite while not
  * @returns The drawing
  */
@@ -562,6 +563,7 @@ export const ELEMENT_DRAWINGS: Readonly<Record<ElementKind, ElementDrawing>> = {
   arrow: drawArrows,
   wall: drawWalls,
   barrier: blockableDrawing('barrier', 'barrier_raised', 'barrier_lowered'),
+  lightBarrier: blockableDrawing('lightBarrier', 'light_barrier_on', 'light_barrier_off'),
   ditch: drawDitches,
   laser: drawLasers,
   door: slidingDrawing('door', 'door_closed'),

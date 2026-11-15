@@ -21,6 +21,7 @@ export const CHAMBER_FIELDS = [
   'exit',
   'walls',
   'barriers',
+  'lightBarriers',
   'ditches',
   'boxes',
   'buttons',
@@ -66,7 +67,7 @@ const DIRECTED_FIELDS = [
   'direction',
 ]
 
-/** The fields a barrier, ditch, door, fizzler or the exit may have */
+/** The fields a barrier, light barrier, ditch, door, fizzler or the exit may have */
 const BLOCKABLE_FIELDS = [
   'x',
   'y',
@@ -363,7 +364,7 @@ class ChamberParser {
   }
 
   /**
-   * Reads a barrier, ditch, door, fizzler or the exit.
+   * Reads a barrier, light barrier, ditch, door, fizzler or the exit.
    * @param value - The value
    * @param field - Its path
    * @returns The element, or null when it is wrong
@@ -608,6 +609,7 @@ class ChamberParser {
     const exit = this.readBlockable(file.exit, 'exit')
     const walls = this.readList(file.walls, 'walls', (entry, field) => this.readWall(entry, field))
     const barriers = this.readList(file.barriers, 'barriers', (entry, field) => this.readBlockable(entry, field))
+    const lightBarriers = this.readList(file.lightBarriers, 'lightBarriers', (entry, field) => this.readBlockable(entry, field))
     const ditches = this.readList(file.ditches, 'ditches', (entry, field) => this.readBlockable(entry, field))
     const boxes = this.readList(file.boxes, 'boxes', (entry, field) => this.readBox(entry, field))
     const buttons = this.readList(file.buttons, 'buttons', (entry, field) => this.readTrigger(entry, field))
@@ -622,9 +624,9 @@ class ChamberParser {
     // Every wrong entry was reported and left out of its list, so the chamber
     // is only built when nothing was wrong
     if ((this.problems.length > 0) || (version === null) || (size === null) || (subject === null) || (exit === null) ||
-      (walls === null) || (barriers === null) || (ditches === null) || (boxes === null) || (buttons === null) ||
-      (arrows === null) || (fizzlers === null) || (doors === null) || (switches === null) || (lasers === null) ||
-      (groups === null) || (par === null)) {
+      (walls === null) || (barriers === null) || (lightBarriers === null) || (ditches === null) || (boxes === null) ||
+      (buttons === null) || (arrows === null) || (fizzlers === null) || (doors === null) || (switches === null) ||
+      (lasers === null) || (groups === null) || (par === null)) {
       return null
     }
 
@@ -635,6 +637,7 @@ class ChamberParser {
       exit: exit,
       walls: walls,
       barriers: barriers,
+      lightBarriers: lightBarriers,
       ditches: ditches,
       boxes: boxes,
       buttons: buttons,

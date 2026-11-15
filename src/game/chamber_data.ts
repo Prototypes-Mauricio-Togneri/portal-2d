@@ -34,8 +34,8 @@ export type WallData = (PositionData | WallRangeData) & {
 }
 
 /**
- * An element a button or switch can open and close: barrier, ditch, door,
- * fizzler or exit.
+ * An element a button or switch can open and close: barrier, light barrier,
+ * ditch, door, fizzler or exit.
  */
 export type BlockableData = PositionData & {
   readonly id?: number // Target for button and switch links; absent means it cannot be linked

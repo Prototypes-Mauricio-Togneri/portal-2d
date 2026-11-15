@@ -2,6 +2,8 @@ import type {ChamberData} from '@/game/chamber_data'
 import brokenChamberFields from '@scripts/fixtures/broken_chamber_fields.json'
 import brokenChamberLayout from '@scripts/fixtures/broken_chamber_layout.json'
 import formatV2Example from '@scripts/fixtures/format_v2_example.json'
+import lightBarrierInWall from '@scripts/fixtures/light_barrier_in_wall.json'
+import lightBarrierSharedTile from '@scripts/fixtures/light_barrier_shared_tile.json'
 
 // Chamber files for the chamber check (npm run chamber:check), outside the
 // catalogue: a format 2 example, typed here without a cast so the build
@@ -75,5 +77,17 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
       'error buttons[1] at (3, 2): links id 7, which nothing has',
       'error at (5, 3): the chamber\'s edge is open here: an edge tile needs a wall, a barrier, a door or the exit',
     ],
+  },
+  {
+    name: 'light_barrier_in_wall',
+    // A light barrier stands only on the floor, unlike a barrier
+    data: lightBarrierInWall,
+    problems: ['error lightBarriers[0] at (2, 0): a light barrier can\'t be inside a wall (only one barrier can)'],
+  },
+  {
+    name: 'light_barrier_shared_tile',
+    // A light barrier is a fixed element of its own, and a switch's link reaches it, so the overlap is the only problem
+    data: lightBarrierSharedTile,
+    problems: ['error doors[0] at (3, 1): more than one element on a tile: lightBarrier (lightBarriers[0]), door (doors[0]); only two crossing lasers can share one'],
   },
 ]

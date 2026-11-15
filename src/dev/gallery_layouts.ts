@@ -61,7 +61,7 @@ function at(x: number, y: number): PositionData {
  * An element that can be blocked, at a tile.
  * @param x - Column
  * @param y - Row, counted from the bottom
- * @param on - Whether it is blocked: a barrier raised, a ditch open, a door or the exit closed, a fizzler or a laser on
+ * @param on - Whether it is blocked: a barrier raised, a light barrier on, a ditch open, a door or the exit closed, a fizzler or a laser on
  * @returns The element's entry
  */
 function blockable(x: number, y: number, on: boolean): BlockableData {
@@ -92,12 +92,12 @@ function laser(x: number, y: number, direction: 'H' | 'V', on: boolean): LaserDa
 /**
  * The specimen chamber: 10 × 8 tiles, an inner wall splitting it, with every
  * element. The exit and one door sit in the outer wall, whose right side
- * refuses portals, the other door and the fizzler in the inner wall, and a
- * barrier on the inner wall; arrows
- * point all four ways, two lasers cross, one box lies on a button and
+ * refuses portals, the other door and the fizzler in the inner wall, a
+ * barrier on the inner wall and a light barrier in the bottom right corner;
+ * arrows point all four ways, two lasers cross, one box lies on a button and
  * another on the floor, and the subject stands on a third. Column 4 and
  * row 3 stay clear, so the subject's shots reach the walls.
- * @param on - Whether every element that can be blocked is: barriers raised, ditches open, doors and the exit closed, the fizzler and lasers on
+ * @param on - Whether every element that can be blocked is: barriers raised, the light barrier on, ditches open, doors and the exit closed, the fizzler and lasers on
  * @returns The chamber
  */
 function specimenData(on: boolean): ChamberData {
@@ -169,6 +169,7 @@ function specimenData(on: boolean): ChamberData {
       blockable(5, 5, on),
       blockable(6, 3, on),
     ],
+    lightBarriers: [blockable(8, 1, on)],
     ditches: [
       blockable(2, 5, on),
       blockable(3, 5, on),

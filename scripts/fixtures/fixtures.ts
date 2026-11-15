@@ -5,6 +5,7 @@ import buttonBehindCarriedBox from '@scripts/fixtures/button_behind_carried_box.
 import carriedBoxLink from '@scripts/fixtures/carried_box_link.json'
 import crossingLasers from '@scripts/fixtures/crossing_lasers.json'
 import fizzlersInARow from '@scripts/fixtures/fizzlers_in_a_row.json'
+import lightBarrier from '@scripts/fixtures/light_barrier.json'
 import openEdge from '@scripts/fixtures/open_edge.json'
 import portalOntoClosedExit from '@scripts/fixtures/portal_onto_closed_exit.json'
 import portalOntoDitch from '@scripts/fixtures/portal_onto_ditch.json'
@@ -14,8 +15,8 @@ import twoButtonsOneDoor from '@scripts/fixtures/two_buttons_one_door.json'
 
 // Short replays on tiny chambers (the JSON files next to this one): each pins
 // how the rules play a change from the original rules (docs/elements.md,
-// "Changes from the original rules"), and a few pin how undo and redo
-// replay. The replay check runs them. The chambers are read without the
+// "Changes from the original rules") or an element the original game didn't
+// have, and a few pin how undo and redo replay. The replay check runs them. The chambers are read without the
 // layout checks, so the one open at the edge still plays
 
 /**
@@ -284,6 +285,24 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 1,
       portals: 0,
       finalHash: 'c71db24b',
+    },
+  },
+  {
+    name: 'light_barrier_switches_off_and_on',
+    behaviour: 'A light barrier that is on stops a shot and the subject; switched off by a button, it lets both through, and it is on again once the button is released.',
+    chamber: lightBarrier,
+    actions: [
+      'orange',
+      'right',
+      'blue',
+      'right',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 1,
+      finalHash: '9b3c0610',
     },
   },
 ]

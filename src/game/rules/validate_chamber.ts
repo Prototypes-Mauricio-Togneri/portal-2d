@@ -5,7 +5,7 @@ import {type ChamberProblem, chamberError, chamberWarning, type ProblemTile} fro
  * What can stand on a tile at the start: a wall, a fixed element, a box or
  * the subject.
  */
-type OccupantKind = 'wall' | 'barrier' | 'ditch' | 'door' | 'exit' | 'fizzler' | 'arrow' | 'button' | 'switch' | 'laser' | 'box' | 'subject'
+type OccupantKind = 'wall' | 'barrier' | 'lightBarrier' | 'ditch' | 'door' | 'exit' | 'fizzler' | 'arrow' | 'button' | 'switch' | 'laser' | 'box' | 'subject'
 
 /**
  * Something standing on a tile at the start.
@@ -37,6 +37,7 @@ type LinkTarget = {
 /** The elements that sit fixed on a floor tile; only two crossing lasers may share one */
 const FIXTURES: readonly OccupantKind[] = [
   'barrier',
+  'lightBarrier',
   'ditch',
   'door',
   'exit',
@@ -63,6 +64,10 @@ const EDGE_KINDS: readonly OccupantKind[] = [
 function describeKind(kind: OccupantKind): string {
   if ((kind === 'subject') || (kind === 'exit')) {
     return `the ${kind}`
+  }
+
+  if (kind === 'lightBarrier') {
+    return 'a light barrier'
   }
 
   return (kind === 'arrow') ? 'an arrow' : `a ${kind}`
@@ -205,6 +210,7 @@ class ChamberValidator {
     this.placeElement(chamber.subject, 'subject', 'subject')
     this.placeElement(chamber.exit, 'exit', 'exit')
     chamber.barriers?.forEach((element, index) => this.placeElement(element, 'barrier', `barriers[${index}]`))
+    chamber.lightBarriers?.forEach((element, index) => this.placeElement(element, 'lightBarrier', `lightBarriers[${index}]`))
     chamber.ditches?.forEach((element, index) => this.placeElement(element, 'ditch', `ditches[${index}]`))
     chamber.boxes?.forEach((element, index) => this.placeElement(element, 'box', `boxes[${index}]`))
     chamber.buttons?.forEach((element, index) => this.placeElement(element, 'button', `buttons[${index}]`))
@@ -304,6 +310,7 @@ class ChamberValidator {
     }
 
     addElements(chamber.barriers, 'barrier', 'barriers')
+    addElements(chamber.lightBarriers, 'lightBarrier', 'lightBarriers')
     addElements(chamber.ditches, 'ditch', 'ditches')
     addElements(chamber.boxes, 'box', 'boxes')
     addElements(chamber.fizzlers, 'fizzler', 'fizzlers')

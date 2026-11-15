@@ -1,7 +1,7 @@
 /**
  * Where something is drawn, back to front, in the original game's drawing order: the
- * floor, the arrows, the walls, the blockers (barriers, ditches, lasers,
- * doors and the exit), the portals, the buttons and switches, the boxes, the
+ * floor, the arrows, the walls, the blockers (barriers, light barriers,
+ * ditches, lasers, doors and the exit), the portals, the buttons and switches, the boxes, the
  * subject, then the fizzlers over everything. The core step draws the floor,
  * the portals and the subject; inside a layer, elements are drawn in the
  * element registry's order. No two elements of one layer start on the same
