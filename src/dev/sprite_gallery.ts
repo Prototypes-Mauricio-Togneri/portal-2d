@@ -66,10 +66,10 @@ type FrameSize = {
 }
 
 /** Width of the home menu's map in a 1920 × 1080 window, in page pixels */
-const MENU_MAP_WIDTH = 647
+const MENU_MAP_WIDTH = 632
 
 /** Height of the home menu's map in a 1920 × 1080 window, in page pixels */
-const MENU_MAP_HEIGHT = 485
+const MENU_MAP_HEIGHT = 474
 
 /** Side of a tile the chambers are drawn at, in canvas pixels */
 const CHAMBER_TILE_SIZE = 40

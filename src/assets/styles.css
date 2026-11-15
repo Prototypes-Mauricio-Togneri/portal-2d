@@ -34,8 +34,8 @@
   --color-chamber: rgba(32, 32, 32, 1);
 
   /* Typography */
-  --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
-  --font-body: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Oxanium', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Chakra Petch', 'Helvetica Neue', Arial, sans-serif;
 
   /* Motion */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -199,7 +199,7 @@ a {
   flex: 1;
   min-width: 0;
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.03em;

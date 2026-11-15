@@ -1180,12 +1180,13 @@ onBeforeUnmount(() => {
 }
 
 /* Three fixed tracks, so the sections stay put when the open section's items (wide enough for the
-   longest setting name beside its switch) and, widest, Play's chamber map appear beside them */
+   longest setting name beside its switch) and, widest, Play's chamber map appear beside them. The
+   sections' track is wide enough for the longest of them, the development-only Playground */
 .home-menu {
   --menu-row-gap: 0.25rem;
 
   display: grid;
-  grid-template-columns: minmax(13rem, 1fr) minmax(28rem, 1.7fr) 2.6fr;
+  grid-template-columns: minmax(16.5rem, 1fr) minmax(28rem, 1.7fr) 2.6fr;
   align-items: start;
   column-gap: 3rem;
 }

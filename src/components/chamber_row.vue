@@ -42,10 +42,12 @@ defineProps<ChamberRowProps>()
 </template>
 
 <style scoped>
-/* Best time between the name and the figure, in the muted sign face */
+/* Best time between the name and the figure, muted, in the sign face, whose digits share one width
+   so the times line up from row to row */
 .chamber-row-time {
   flex: none;
   color: rgba(var(--color-ink-rgb), 0.6);
+  font-family: var(--font-display);
   font-size: 1.125rem;
   font-variant-numeric: tabular-nums;
   font-weight: 600;

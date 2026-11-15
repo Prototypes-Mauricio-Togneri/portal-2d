@@ -169,9 +169,10 @@ onMounted(() => {
   border-top-color: var(--color-blue);
 }
 
+/* Small enough that the longest title, "Chamber 10 complete", fits on one line */
 .dialog-title {
   font-family: var(--font-display);
-  font-size: 2.25rem;
+  font-size: 2rem;
   font-weight: 700;
   line-height: 1.05;
 }

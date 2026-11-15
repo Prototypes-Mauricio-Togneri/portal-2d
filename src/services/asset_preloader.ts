@@ -36,13 +36,13 @@ const IMAGE_URLS = Object.values(import.meta.glob<string>('@/assets/images/**/*'
 
 // The font faces index.html requests from Google Fonts; keep the two in step
 const FONT_FACES = [
-  '600 1rem "Barlow Condensed"',
-  '700 1rem "Barlow Condensed"',
-  '400 1rem "Barlow"',
-  '500 1rem "Barlow"',
-  '600 1rem "Barlow"',
-  'italic 400 1rem "Barlow"',
-  'italic 600 1rem "Barlow"',
+  '600 1rem "Oxanium"',
+  '700 1rem "Oxanium"',
+  '400 1rem "Chakra Petch"',
+  '500 1rem "Chakra Petch"',
+  '600 1rem "Chakra Petch"',
+  'italic 400 1rem "Chakra Petch"',
+  'italic 600 1rem "Chakra Petch"',
 ]
 
 /**

@@ -610,7 +610,8 @@ onBeforeUnmount(() => {
   font-variant-numeric: tabular-nums;
 }
 
-/* The clock: stopwatch, small caption and tabular digits so the readout never shifts; dimmed
+/* The clock: stopwatch, small caption and digits in the sign face, whose digits share one width, so
+   the readout never shifts (the body face's digits vary and have no tabular form); dimmed
    until the first key starts it. Caption and digits share a baseline, the stopwatch is centred on the digits */
 .sign-time {
   grid-column: 2;
@@ -653,6 +654,7 @@ onBeforeUnmount(() => {
 .sign-time-value {
   position: relative;
   top: -0.0625rem; /* A hair above the baseline so the digits sit centred beside the stopwatch */
+  font-family: var(--font-display);
   font-size: 1.125rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
