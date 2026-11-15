@@ -1,4 +1,4 @@
-import type {ArrowData, BeamData, BlockableData, BoxData, ChamberData, LinkGroupData, ParData, SubjectData, TriggerData, WallData} from '@/game/chamber_data'
+import type {ArrowData, BeamData, BlockableData, BlockedWallData, BoxData, ChamberData, LinkGroupData, ParData, SubjectData, TriggerData, WallData, WallRangeData} from '@/game/chamber_data'
 import {type ChamberProblem, chamberError} from '@/game/rules/chamber_problem'
 import {isJsonObject, type JsonObject} from '@/game/rules/json_object'
 
@@ -20,7 +20,7 @@ export const CHAMBER_FIELDS = [
   'subject',
   'exit',
   'walls',
-  'barriers',
+  'blockedWalls',
   'lightBarriers',
   'ditches',
   'boxes',
@@ -67,7 +67,7 @@ const DIRECTED_FIELDS = [
   'direction',
 ]
 
-/** The fields a barrier, ditch, door, fizzler or the exit may have */
+/** The fields a ditch, door, fizzler or the exit may have */
 const BLOCKABLE_FIELDS = [
   'x',
   'y',
@@ -98,14 +98,7 @@ const BEAM_FIELDS = [
   'blocked',
 ]
 
-/** The fields a one-tile wall entry may have */
-const WALL_TILE_FIELDS = [
-  'x',
-  'y',
-  'takesPortals',
-]
-
-/** The corners of a wall rectangle, all required */
+/** The corners of a wall rectangle, all required, which are all the fields it has */
 const WALL_CORNER_FIELDS = [
   'xFrom',
   'xTo',
@@ -113,10 +106,18 @@ const WALL_CORNER_FIELDS = [
   'yTo',
 ]
 
-/** The fields a wall rectangle may have */
-const WALL_RECTANGLE_FIELDS = [
+/** The fields a one-tile blocked wall entry may have */
+const BLOCKED_WALL_TILE_FIELDS = [
+  'x',
+  'y',
+  'id',
+  'blocked',
+]
+
+/** The fields a blocked wall rectangle may have: no id, since only a one-tile blocked wall can be linked */
+const BLOCKED_WALL_RECTANGLE_FIELDS = [
   ...WALL_CORNER_FIELDS,
-  'takesPortals',
+  'blocked',
 ]
 
 /** The fields of a link group, all required */
@@ -364,7 +365,7 @@ class ChamberParser {
   }
 
   /**
-   * Reads a barrier, ditch, door, fizzler or the exit.
+   * Reads a ditch, door, fizzler or the exit.
    * @param value - The value
    * @param field - Its path
    * @returns The element, or null when it is wrong
@@ -490,43 +491,19 @@ class ChamberParser {
   }
 
   /**
-   * Reads a wall entry: one tile when it has x or y, otherwise a rectangle.
-   * @param value - The value
+   * Reads a rectangle's corners, already checked to be its only required
+   * fields.
+   * @param entry - The rectangle entry
    * @param field - Its path
-   * @returns The wall, or null when it is wrong
+   * @returns The corners, or null when one is wrong or the from corner is past the to corner
    */
-  readWall(value: unknown, field: string): WallData | null {
-    if (isJsonObject(value) && (('x' in value) || ('y' in value))) {
-      const entry = this.readObject(value, field, WALL_TILE_FIELDS, POSITION_FIELDS)
-
-      if (entry === null) {
-        return null
-      }
-
-      const x = this.readInteger(entry.x, fieldPath(field, 'x'), null)
-      const y = this.readInteger(entry.y, fieldPath(field, 'y'), null)
-      const takesPortals = this.readOptionalBoolean(entry.takesPortals, fieldPath(field, 'takesPortals'))
-
-      return ((x === null) || (y === null) || (takesPortals === null)) ? null : {
-        x: x,
-        y: y,
-        takesPortals: takesPortals,
-      }
-    }
-
-    const entry = this.readObject(value, field, WALL_RECTANGLE_FIELDS, WALL_CORNER_FIELDS)
-
-    if (entry === null) {
-      return null
-    }
-
+  private readCorners(entry: JsonObject, field: string): WallRangeData | null {
     const xFrom = this.readInteger(entry.xFrom, fieldPath(field, 'xFrom'), null)
     const xTo = this.readInteger(entry.xTo, fieldPath(field, 'xTo'), null)
     const yFrom = this.readInteger(entry.yFrom, fieldPath(field, 'yFrom'), null)
     const yTo = this.readInteger(entry.yTo, fieldPath(field, 'yTo'), null)
-    const takesPortals = this.readOptionalBoolean(entry.takesPortals, fieldPath(field, 'takesPortals'))
 
-    if ((xFrom === null) || (xTo === null) || (yFrom === null) || (yTo === null) || (takesPortals === null)) {
+    if ((xFrom === null) || (xTo === null) || (yFrom === null) || (yTo === null)) {
       return null
     }
 
@@ -539,7 +516,77 @@ class ChamberParser {
       xTo: xTo,
       yFrom: yFrom,
       yTo: yTo,
-      takesPortals: takesPortals,
+    }
+  }
+
+  /**
+   * Reads a wall entry: one tile when it has x or y, otherwise a rectangle.
+   * @param value - The value
+   * @param field - Its path
+   * @returns The wall, or null when it is wrong
+   */
+  readWall(value: unknown, field: string): WallData | null {
+    if (isJsonObject(value) && (('x' in value) || ('y' in value))) {
+      const entry = this.readObject(value, field, POSITION_FIELDS, POSITION_FIELDS)
+
+      if (entry === null) {
+        return null
+      }
+
+      const x = this.readInteger(entry.x, fieldPath(field, 'x'), null)
+      const y = this.readInteger(entry.y, fieldPath(field, 'y'), null)
+
+      return ((x === null) || (y === null)) ? null : {
+        x: x,
+        y: y,
+      }
+    }
+
+    const entry = this.readObject(value, field, WALL_CORNER_FIELDS, WALL_CORNER_FIELDS)
+
+    return (entry === null) ? null : this.readCorners(entry, field)
+  }
+
+  /**
+   * Reads a blocked wall entry: one tile when it has x or y, which may have
+   * an id, otherwise a rectangle, which may not.
+   * @param value - The value
+   * @param field - Its path
+   * @returns The blocked wall, or null when it is wrong
+   */
+  readBlockedWall(value: unknown, field: string): BlockedWallData | null {
+    if (isJsonObject(value) && (('x' in value) || ('y' in value))) {
+      const entry = this.readObject(value, field, BLOCKED_WALL_TILE_FIELDS, POSITION_FIELDS)
+
+      if (entry === null) {
+        return null
+      }
+
+      const x = this.readInteger(entry.x, fieldPath(field, 'x'), null)
+      const y = this.readInteger(entry.y, fieldPath(field, 'y'), null)
+      const id = this.readOptionalId(entry.id, fieldPath(field, 'id'))
+      const blocked = this.readOptionalBoolean(entry.blocked, fieldPath(field, 'blocked'))
+
+      return ((x === null) || (y === null) || (id === null) || (blocked === null)) ? null : {
+        x: x,
+        y: y,
+        id: id,
+        blocked: blocked,
+      }
+    }
+
+    const entry = this.readObject(value, field, BLOCKED_WALL_RECTANGLE_FIELDS, WALL_CORNER_FIELDS)
+
+    if (entry === null) {
+      return null
+    }
+
+    const corners = this.readCorners(entry, field)
+    const blocked = this.readOptionalBoolean(entry.blocked, fieldPath(field, 'blocked'))
+
+    return ((corners === null) || (blocked === null)) ? null : {
+      ...corners,
+      blocked: blocked,
     }
   }
 
@@ -608,7 +655,7 @@ class ChamberParser {
     const subject = this.readSubject(file.subject, 'subject')
     const exit = this.readBlockable(file.exit, 'exit')
     const walls = this.readList(file.walls, 'walls', (entry, field) => this.readWall(entry, field))
-    const barriers = this.readList(file.barriers, 'barriers', (entry, field) => this.readBlockable(entry, field))
+    const blockedWalls = this.readList(file.blockedWalls, 'blockedWalls', (entry, field) => this.readBlockedWall(entry, field))
     const lightBarriers = this.readList(file.lightBarriers, 'lightBarriers', (entry, field) => this.readBeam(entry, field))
     const ditches = this.readList(file.ditches, 'ditches', (entry, field) => this.readBlockable(entry, field))
     const boxes = this.readList(file.boxes, 'boxes', (entry, field) => this.readBox(entry, field))
@@ -624,7 +671,7 @@ class ChamberParser {
     // Every wrong entry was reported and left out of its list, so the chamber
     // is only built when nothing was wrong
     if ((this.problems.length > 0) || (version === null) || (size === null) || (subject === null) || (exit === null) ||
-      (walls === null) || (barriers === null) || (lightBarriers === null) || (ditches === null) || (boxes === null) ||
+      (walls === null) || (blockedWalls === null) || (lightBarriers === null) || (ditches === null) || (boxes === null) ||
       (buttons === null) || (arrows === null) || (fizzlers === null) || (doors === null) || (switches === null) ||
       (lasers === null) || (groups === null) || (par === null)) {
       return null
@@ -636,7 +683,7 @@ class ChamberParser {
       subject: subject,
       exit: exit,
       walls: walls,
-      barriers: barriers,
+      blockedWalls: blockedWalls,
       lightBarriers: lightBarriers,
       ditches: ditches,
       boxes: boxes,

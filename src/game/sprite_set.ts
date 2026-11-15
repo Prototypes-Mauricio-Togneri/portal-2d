@@ -79,11 +79,9 @@ export function quarterRect(tileSize: number, quarter: TileQuarter): QuarterRect
 export const SPRITE_SHAPES = {
   floor: 'tile',
   wall: 'strip',
-  wall_no_portals: 'strip',
+  blocked_wall: 'strip',
   ditch: 'strip',
   ditch_bridged: 'tile',
-  barrier_raised: 'tile',
-  barrier_lowered: 'tile',
   light_barrier_on: 'tile',
   light_barrier_end_on: 'tile',
   light_barrier_end_off: 'tile',
@@ -123,7 +121,6 @@ export const SPRITE_EXTENSIONS: readonly string[] = [
  * theirs as one mass.
  */
 export const RAISED_SPRITES: ReadonlySet<SpriteName> = new Set<SpriteName>([
-  'barrier_raised',
   'door_closed',
   'exit_closed',
   'switch',

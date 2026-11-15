@@ -7,14 +7,15 @@ export const NO_NUMBER = -1
 
 /**
  * Numbers a chamber's places for the solver: every tile that isn't wall, in
- * row order, and every side of a wall that takes portals facing such a tile,
+ * row order, and every side of a wall that can take portals (a wall, or a
+ * blocked wall a link reaches or that starts unblocked) facing such a tile,
  * where a portal can open. A state key stores these numbers instead of
  * columns and rows, so its fields are only as wide as the chamber needs.
  */
 export class ChamberIndex {
   readonly chamber: CompiledChamber // The chamber numbered
   readonly tileCount: number // Tiles that aren't wall
-  readonly sideCount: number // Sides of walls that take portals, facing a tile that isn't wall
+  readonly sideCount: number // Sides of walls that can take portals, facing a tile that isn't wall
   private readonly tileNumbers: Int32Array // Each cell's tile number, or NO_NUMBER on a wall
   private readonly tileCells: Int32Array // Each tile's cell
   private readonly sideNumbers: Int32Array // Each cell's side numbers, four per cell in DIRECTIONS order, or NO_NUMBER
@@ -45,7 +46,7 @@ export class ChamberIndex {
 
     for (let y = 0; y < chamber.height; y++) {
       for (let x = 0; x < chamber.width; x++) {
-        if (!chamber.takesPortals(x, y)) {
+        if (!chamber.canTakePortals(x, y)) {
           continue
         }
 

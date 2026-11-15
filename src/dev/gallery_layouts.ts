@@ -61,7 +61,7 @@ function at(x: number, y: number): PositionData {
  * An element that can be blocked, at a tile.
  * @param x - Column
  * @param y - Row, counted from the bottom
- * @param on - Whether it is blocked: a barrier raised, a ditch open, a door or the exit closed, a fizzler on
+ * @param on - Whether it is blocked: a blocked wall refusing portals, a ditch open, a door or the exit closed, a fizzler on
  * @returns The element's entry
  */
 function blockable(x: number, y: number, on: boolean): BlockableData {
@@ -91,13 +91,14 @@ function beam(x: number, y: number, direction: 'H' | 'V', on: boolean): BeamData
 
 /**
  * The specimen chamber: 10 × 8 tiles, an inner wall splitting it, with every
- * element. The exit and one door sit in the outer wall, whose right side
- * refuses portals, the other door and the fizzler in the inner wall, a
- * barrier on the inner wall and two light barriers in the bottom right corner;
+ * element. The exit and one door sit in the outer wall, whose right side is
+ * a blocked wall that always refuses portals, the other door, the fizzler and
+ * a blocked wall that refuses them only while on in the inner wall, and two
+ * light barriers in the bottom right corner;
  * arrows point all four ways, two lasers cross, one box lies on a button and
  * another on the floor, and the subject stands on a third. Column 4 and
  * row 3 stay clear, so the subject's shots reach the walls.
- * @param on - Whether every element that can be blocked is: barriers raised, the light barriers on, ditches open, doors and the exit closed, the fizzler and lasers on
+ * @param on - Whether every element that can be blocked is: the inner blocked wall refusing portals, the light barriers on, ditches open, doors and the exit closed, the fizzler and lasers on
  * @returns The chamber
  */
 function specimenData(on: boolean): ChamberData {
@@ -144,31 +145,24 @@ function specimenData(on: boolean): ChamberData {
         yFrom: 1,
         yTo: 6,
       },
+      at(6, 1),
+      at(6, 4),
+      at(6, 6),
+    ],
+    blockedWalls: [
       {
         xFrom: 9,
         xTo: 9,
         yFrom: 1,
         yTo: 6,
-        takesPortals: false,
       },
-      at(6, 1),
-      {
-        xFrom: 6,
-        xTo: 6,
-        yFrom: 3,
-        yTo: 4,
-      },
-      at(6, 6),
+      blockable(6, 3, on),
     ],
     doors: [
       blockable(3, 0, on),
       blockable(6, 2, on),
     ],
     fizzlers: [blockable(6, 5, on)],
-    barriers: [
-      blockable(5, 5, on),
-      blockable(6, 3, on),
-    ],
     lightBarriers: [
       beam(7, 1, 'H', on),
       beam(8, 1, 'H', on),
@@ -251,9 +245,9 @@ export const SPECIMEN_ON: SpecimenRun = {
 
 /**
  * The specimen with everything off: the subject opens blue on the wall above
- * it and orange on the inner wall to its right, through the lowered barrier
- * there, then picks up the box it stands on (shooting takes free hands), and
- * is left facing right.
+ * it and orange on the blocked wall in the inner wall to its right, which
+ * takes portals while off, then picks up the box it stands on (shooting
+ * takes free hands), and is left facing right.
  */
 export const SPECIMEN_OFF: SpecimenRun = {
   data: specimenData(false),

@@ -16,47 +16,44 @@
     },
     "walls": [
         {
+            "x": 0,
+            "y": 4
+        },
+        {
+            "x": 6,
+            "y": 4
+        }
+    ],
+    "blockedWalls": [
+        {
             "xFrom": 0,
             "xTo": 6,
             "yFrom": 0,
-            "yTo": 0,
-            "takesPortals": false
+            "yTo": 0
         },
         {
             "xFrom": 0,
             "xTo": 6,
             "yFrom": 5,
-            "yTo": 5,
-            "takesPortals": false
+            "yTo": 5
         },
         {
             "xFrom": 0,
             "xTo": 0,
             "yFrom": 1,
-            "yTo": 3,
-            "takesPortals": false
-        },
-        {
-            "x": 0,
-            "y": 4
+            "yTo": 3
         },
         {
             "xFrom": 6,
             "xTo": 6,
             "yFrom": 2,
-            "yTo": 3,
-            "takesPortals": false
-        },
-        {
-            "x": 6,
-            "y": 4
+            "yTo": 3
         },
         {
             "xFrom": 2,
             "xTo": 4,
             "yFrom": 2,
-            "yTo": 3,
-            "takesPortals": false
+            "yTo": 3
         }
     ],
     "fizzlers": [

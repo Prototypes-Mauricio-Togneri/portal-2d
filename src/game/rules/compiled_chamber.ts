@@ -2,12 +2,13 @@ import type {ChamberData, PositionData, WallData} from '@/game/chamber_data'
 import {Direction, parseDirection} from '@/game/direction'
 import {listEntries, type PlacedEntry} from '@/game/rules/chamber_entries'
 import {ELEMENT_REGISTRY, type ElementKind} from '@/game/rules/element_registry'
-import {StateLayout} from '@/game/rules/state_layout'
+import {NOT_STORED, StateLayout} from '@/game/rules/state_layout'
 
 /**
  * An element type the compiled chamber finds by tile: every type in the
  * registry but walls, which have flags of their own, and boxes, which move
- * (where they are is state).
+ * (where they are is state). A blocked wall is found on every tile of its
+ * entry.
  */
 export type PlacedKind = Exclude<ElementKind, 'wall' | 'box'>
 
@@ -38,7 +39,7 @@ export type SubjectStart = {
  */
 type TileIndex = {
   readonly first: Int32Array // The first element of the type on each cell, in list order, or NO_ELEMENT
-  readonly next: Int32Array // For each element, the next one of the type on its cell, or NO_ELEMENT
+  readonly next: Int32Array // For each element on one tile, the next one of the type on its cell, or NO_ELEMENT
 }
 
 /**
@@ -144,7 +145,7 @@ function resolveLinks(ids: readonly number[], linkIds: LinkIds): readonly LinkTa
 
 /**
  * The fixed part of a chamber, built once per load: its
- * size, its walls and which of them take portals, where each element is and
+ * size, its walls and which of them can take portals, where each element is and
  * which way it points, what each link reaches, where the subject and each
  * box start, and how its state is laid out. Every lookup takes the
  * same time whatever the chamber's size. Outside the chamber's edge is wall
@@ -157,8 +158,8 @@ export class CompiledChamber {
   readonly boxStarts: readonly PositionData[] // Each box's start tile, in list order
   readonly subjectStart: SubjectStart // Where the subject starts
   readonly stateLayout: StateLayout // How this chamber's state is laid out
-  private readonly walls: Uint8Array // 1 on each cell holding a wall
-  private readonly portalWalls: Uint8Array // 1 on each cell holding a wall that takes portals
+  private readonly walls: Uint8Array // 1 on each cell holding a wall, blocked walls included
+  private readonly portalWalls: Uint8Array // 1 on each cell holding a wall that can take portals: a wall, or a blocked wall a link reaches or that starts unblocked
   private readonly tileIndexes = new Map<PlacedKind, TileIndex>() // Where each type's elements are
   private readonly entries = new Map<PlacedKind, readonly PlacedEntry[]>() // Each type's entries, in list order
   private readonly directions = new Map<PlacedKind, readonly (Direction | null)[]>() // Which way each element points, by type, then index
@@ -206,6 +207,7 @@ export class CompiledChamber {
     })
 
     this.stateLayout = new StateLayout(data, linked)
+    this.placeBlockedWalls()
   }
 
   /**
@@ -223,33 +225,62 @@ export class CompiledChamber {
   }
 
   /**
-   * Marks the wall tiles, and those that take portals. Only the part of a
-   * wall entry inside the chamber is marked.
-   * @param walls - The wall entries: single tiles or inclusive rectangles
+   * Calls back for each cell of an entry's tiles inside the chamber: one
+   * tile, or each tile of a rectangle (a blocked wall's).
+   * @param entry - The entry
+   * @param visit - Called with each cell
    */
-  private placeWalls(walls: readonly WallData[]): void {
-    for (const wall of walls) {
-      const xFrom = ('x' in wall) ? wall.x : wall.xFrom
-      const xTo = ('x' in wall) ? wall.x : wall.xTo
-      const yFrom = ('y' in wall) ? wall.y : wall.yFrom
-      const yTo = ('y' in wall) ? wall.y : wall.yTo
-      const takesPortals = (wall.takesPortals ?? true) ? 1 : 0
-
-      for (let y = Math.max(yFrom, 0); y <= Math.min(yTo, this.height - 1); y++) {
-        for (let x = Math.max(xFrom, 0); x <= Math.min(xTo, this.width - 1); x++) {
-          const cell = this.cellOf(x, y)
-
-          this.walls[cell] = 1
-          this.portalWalls[cell] = takesPortals
-        }
+  private forEachCell(entry: PlacedEntry, visit: (cell: number) => void): void {
+    for (let y = Math.max(entry.y, 0); y <= Math.min(entry.yTo ?? entry.y, this.height - 1); y++) {
+      for (let x = Math.max(entry.x, 0); x <= Math.min(entry.xTo ?? entry.x, this.width - 1); x++) {
+        visit(this.cellOf(x, y))
       }
     }
   }
 
   /**
+   * Marks the wall tiles, all of which take portals. Only the part of a
+   * wall entry inside the chamber is marked.
+   * @param walls - The wall entries: single tiles or inclusive rectangles
+   */
+  private placeWalls(walls: readonly WallData[]): void {
+    for (const wall of walls) {
+      const corner = {
+        x: ('x' in wall) ? wall.x : wall.xFrom,
+        y: ('y' in wall) ? wall.y : wall.yFrom,
+        xTo: ('x' in wall) ? wall.x : wall.xTo,
+        yTo: ('y' in wall) ? wall.y : wall.yTo,
+      }
+
+      this.forEachCell(corner, (cell) => {
+        this.walls[cell] = 1
+        this.portalWalls[cell] = 1
+      })
+    }
+  }
+
+  /**
+   * Marks the blocked walls' tiles as wall, and those that can take portals:
+   * a blocked wall a link reaches, or one that starts unblocked. Run once
+   * the state's layout knows which elements links reach.
+   */
+  private placeBlockedWalls(): void {
+    this.entriesOf('blockedWall').forEach((entry, index) => {
+      const canTakePortals = (this.stateLayout.flagOffset('blockedWall', index) !== NOT_STORED) || (!this.stateLayout.isBlockedAtStart('blockedWall', index))
+
+      this.forEachCell(entry, (cell) => {
+        this.walls[cell] = 1
+        this.portalWalls[cell] = canTakePortals ? 1 : 0
+      })
+    })
+  }
+
+  /**
    * Indexes one element type by cell. The elements on a cell are chained in
-   * list order, so a tile can hold more than one (two crossing lasers). An
-   * element outside the chamber keeps its index but sits on no cell.
+   * list order, so a tile can hold more than one (two crossing lasers). A
+   * rectangle entry (a blocked wall's) is found on each of its tiles, which
+   * hold nothing else. An element outside the chamber keeps its index but
+   * sits on no cell.
    * @param entries - The type's entries, in file order
    * @returns The type's index
    */
@@ -260,21 +291,17 @@ export class CompiledChamber {
     const last = new Int32Array(cells).fill(NO_ELEMENT)
 
     entries.forEach((entry, index) => {
-      const cell = this.cellOf(entry.x, entry.y)
+      this.forEachCell(entry, (cell) => {
+        const previous = last[cell] ?? NO_ELEMENT
 
-      if (cell === OUTSIDE) {
-        return
-      }
+        if (previous === NO_ELEMENT) {
+          first[cell] = index
+        } else {
+          next[previous] = index
+        }
 
-      const previous = last[cell] ?? NO_ELEMENT
-
-      if (previous === NO_ELEMENT) {
-        first[cell] = index
-      } else {
-        next[previous] = index
-      }
-
-      last[cell] = index
+        last[cell] = index
+      })
     })
 
     return {
@@ -312,13 +339,14 @@ export class CompiledChamber {
   }
 
   /**
-   * Whether a tile holds a wall a portal can open on, as the chamber file
-   * says. A barrier raised on it stops shots, but that is the step's to judge.
+   * Whether a tile holds a wall a portal can ever open on: a wall, or a
+   * blocked wall a link reaches or that starts unblocked. Whether a blocked
+   * wall is blocked now is the step's to judge.
    * @param x - Column
    * @param y - Row
-   * @returns True on a wall that takes portals; false elsewhere, outside the chamber included
+   * @returns True on a wall that can take portals; false elsewhere, outside the chamber included
    */
-  takesPortals(x: number, y: number): boolean {
+  canTakePortals(x: number, y: number): boolean {
     const cell = this.cellOf(x, y)
 
     return (cell !== OUTSIDE) && (this.portalWalls[cell] === 1)
@@ -371,7 +399,8 @@ export class CompiledChamber {
   }
 
   /**
-   * The tile an element sits on.
+   * The tile an element sits on: for a rectangle (a blocked wall's), its
+   * lower left tile.
    * @param kind - The element type
    * @param index - The element's index in the type's list
    * @returns Its entry, which holds its column and row

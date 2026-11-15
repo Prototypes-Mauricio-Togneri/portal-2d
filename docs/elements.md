@@ -1,12 +1,12 @@
 # Chamber Elements
 
-Reference for the elements a chamber file (`src/chambers/*.json`) can contain, carried over from the original game's help page with the light barrier added, followed by the chamber file format, the rules and what adding an element touches.
+Reference for the elements a chamber file (`src/chambers/*.json`) can contain, carried over from the original game's help page with the light barrier and the blocked wall added in place of its barrier, followed by the chamber file format, the rules and what adding an element touches.
 
 | # | Element | Description | Can be activated/deactivated? | Can portals go through it? | Can the subject go through it? | Quantity |
 |---|---------|-------------|-------------------------------|----------------------------|--------------------------------|----------|
 | 1 | Subject | The initial position of the subject | No | No | No | 1 |
-| 2 | Wall | A solid wall, the only element that can hold a portal | No | No | No | 0..∞ |
-| 3 | Barrier | A barrier | Yes | No | No | 0..∞ |
+| 2 | Wall | A solid wall, which holds portals | No | No | No | 0..∞ |
+| 3 | Blocked wall | A wall that refuses portals while blocked | Yes | No | No | 0..∞ |
 | 4 | Light barrier | A field of light, on a floor tile only | Yes | No | No | 0..∞ |
 | 5 | Ditch | A hole in the floor | Yes | Yes | No | 0..∞ |
 | 6 | Box | Can be picked up and used to activate buttons | Yes | Yes | Yes | 0..∞ |
@@ -21,8 +21,8 @@ Reference for the elements a chamber file (`src/chambers/*.json`) can contain, c
 ## Notes
 
 - Activate/deactivate means the element changes its state when a button is pushed or a switch is turned on, if they are linked to the element.
-- Barriers, light barriers, ditches, doors, fizzlers, exits and lasers can be locked or unlocked by enabling their linked activator. Boxes, instead, are reset to their original position.
-- Buttons and switches can be linked to many objects. For example, pushing a button can unlock a door and enable a barrier at the same time.
+- Blocked walls, light barriers, ditches, doors, fizzlers, exits and lasers can be locked or unlocked by enabling their linked activator. Boxes, instead, are reset to their original position.
+- Buttons and switches can be linked to many objects. For example, pushing a button can unlock a door and switch off a light barrier at the same time.
 
 ## Chamber format
 
@@ -34,15 +34,16 @@ A chamber file is a JSON object in format 2 (`ChamberData` in `src/game/chamber_
 | 2 | `size` | `width` and `height`, in tiles, each 1 or more. |
 | 3 | `subject` | Where the subject starts: `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required. |
 | 4 | `exit` | The exit, a single entry: `x`, `y`, and optionally `id` and `blocked`. |
-| 5 | `walls` | One tile (`x`, `y`) or a rectangle of tiles (`xFrom`, `xTo`, `yFrom`, `yTo`, both ends included, each from no greater than its to), each with an optional `takesPortals`: true when absent, false for a wall that refuses portals. |
-| 6 | `barriers`, `ditches`, `doors`, `fizzlers` | `x`, `y`, and optionally `id` and `blocked`. |
-| 7 | `lasers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn, and two lasers can share a tile only when they cross), and optionally `id` and `blocked`. |
-| 8 | `lightBarriers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn), and optionally `id` and `blocked`. |
-| 9 | `boxes` | `x`, `y`, and optionally `id`. |
-| 10 | `buttons`, `switches` | `x`, `y` and `links`, all required: the ids of the elements and link groups it acts on (see [links](#links)). |
-| 11 | `arrows` | `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required: the one way the subject can enter the tile. |
-| 12 | `groups` | Link groups, each with an `id` and `links`, both required: the ids of the elements it stands for, never another group. |
-| 13 | `par` | How well the chamber can be solved, for medals: optionally `moves` and `portals`, each 0 or more. Reserved: nothing writes it yet (see `docs/solver.md`). |
+| 5 | `walls` | One tile (`x`, `y`) or a rectangle of tiles (`xFrom`, `xTo`, `yFrom`, `yTo`, both ends included, each from no greater than its to): walls, which take portals. |
+| 6 | `blockedWalls` | One tile (`x`, `y`, and optionally `id` and `blocked`) or a rectangle of tiles (corners as for `walls`, and optionally `blocked`): blocked walls, which refuse portals while blocked. Only a one-tile entry can have an `id`, so only it can be linked. |
+| 7 | `ditches`, `doors`, `fizzlers` | `x`, `y`, and optionally `id` and `blocked`. |
+| 8 | `lasers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn, and two lasers can share a tile only when they cross), and optionally `id` and `blocked`. |
+| 9 | `lightBarriers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn), and optionally `id` and `blocked`. |
+| 10 | `boxes` | `x`, `y`, and optionally `id`. |
+| 11 | `buttons`, `switches` | `x`, `y` and `links`, all required: the ids of the elements and link groups it acts on (see [links](#links)). |
+| 12 | `arrows` | `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required: the one way the subject can enter the tile. |
+| 13 | `groups` | Link groups, each with an `id` and `links`, both required: the ids of the elements it stands for, never another group. |
+| 14 | `par` | How well the chamber can be solved, for medals: optionally `moves` and `portals`, each 0 or more. Reserved: nothing writes it yet (see `docs/solver.md`). |
 
 - **`id`:** 1 or more, unique among every element and group, and needed only by what a button, switch or group links to; an element without one can't be linked.
 - **`blocked`:** true when absent (see [blocking](#blocking)).
@@ -50,13 +51,13 @@ A chamber file is a JSON object in format 2 (`ChamberData` in `src/game/chamber_
 
 ## Rules
 
-The rules the game plays, in `src/game/rules/` (`step.ts`), pinned by each chamber's recorded solution and by the behaviour fixtures (`npm run replay:check`). They follow the original game's rules apart from the [changes from the original rules](#changes-from-the-original-rules) listed at the end, and add the light barrier, an element the original game didn't have (fixture: `light_barrier_switches_off_and_on`).
+The rules the game plays, in `src/game/rules/` (`step.ts`), pinned by each chamber's recorded solution and by the behaviour fixtures (`npm run replay:check`). They follow the original game's rules apart from the [changes from the original rules](#changes-from-the-original-rules) listed at the end, and add two elements the original game didn't have, in place of its barrier: the light barrier, which plays a barrier's rules on a floor tile (fixture: `light_barrier_switches_off_and_on`), and the blocked wall, which a link can switch between refusing and taking portals, as a barrier on a wall did (fixture: `blocked_wall_switches_off_and_on`).
 
 Tiles are counted with x growing to the right and y growing upwards from the bottom row, so "up" is towards a higher y. Chambers the validator rejects (see [what the validator rejects](#what-the-validator-rejects)) are outside these rules.
 
 ### Blocking
 
-Barriers, light barriers, ditches, doors, the exit, fizzlers and lasers each have one flag, `blocked` in the chamber file (true when absent). Blocked means: a barrier is raised, a ditch is open, a door or the exit is closed, a light barrier, a fizzler or a laser is on. Buttons and switches change it through [links](#links); nothing else does.
+Blocked walls, light barriers, ditches, doors, the exit, fizzlers and lasers each have one flag, `blocked` in the chamber file (true when absent). Blocked means: a blocked wall refuses portals, a ditch is open, a door or the exit is closed, a light barrier, a fizzler or a laser is on. Buttons and switches change it through [links](#links); nothing else does.
 
 ### A step
 
@@ -84,8 +85,8 @@ Events are reported in the order they happen. The rules keep no counters: the ga
 On an arrow tile, the three directions other than the arrow's do nothing at all. Every other move or turn first faces the subject that way. A turn does only that, unless the subject already faced that way: then it moves like a move. No key turns in place: the game takes a turn only to face the subject to the mouse pointer, when a mouse button is bound. To move, it looks at the next tile in that direction:
 
 - **Outside the chamber:** a [wall that takes no portals](#outside-the-chamber).
-- **A wall:** if both portals are open and this wall holds one of them on the side facing the subject, the subject [crosses](#crossing-a-portal) that portal. Otherwise nothing more happens.
-- **Any other tile:** the subject steps onto it if it can enter it. It can't enter a tile with a blocked barrier, light barrier, ditch, door, exit or laser, nor an arrow tile unless it moves the arrow's way. Fizzlers, boxes (even while carrying one), buttons and switches never stop it. Walking into something it can't enter leaves it facing that way, without a sound.
+- **A wall, blocked or not:** if both portals are open and this wall holds one of them on the side facing the subject, the subject [crosses](#crossing-a-portal) that portal. Otherwise nothing more happens.
+- **Any other tile:** the subject steps onto it if it can enter it. It can't enter a tile with a blocked light barrier, ditch, door, exit or laser, nor an arrow tile unless it moves the arrow's way. Fizzlers, boxes (even while carrying one), buttons and switches never stop it. Walking into something it can't enter leaves it facing that way, without a sound.
 
 Only the tile the subject moves onto is checked, never the one it leaves (see [something blocking under the subject](#something-blocking-under-the-subject)).
 
@@ -97,9 +98,9 @@ The subject comes out on the tile in front of the other portal, facing away from
 
 While the subject stands in a fizzler that is on, the portal keys do nothing, without a sound. While it carries a box, they are refused: `refused`, with the error sound and no ripple, since no shot leaves (it can't stand in a fizzler that is on while carrying one, so the two never meet). Otherwise the shot leaves the subject's tile the way it faces and goes on tile by tile; the subject's own tile never stops it.
 
-- A fizzler or a light barrier that is on, a raised barrier, a closed door or the closed exit stops it: a miss. Ditches, lasers, boxes, buttons, switches, arrows and anything not blocked let it through.
+- A fizzler or a light barrier that is on, a closed door or the closed exit stops it: a miss. Ditches, lasers, boxes, buttons, switches, arrows and anything not blocked let it through.
 - Reaching the edge of the chamber is a miss.
-- A wall takes the portal on its side facing the subject, unless it already holds a portal, of either colour, on that side or on either neighbouring side; a portal on the far side doesn't stop it. A raised barrier on the wall's tile stops the shot first.
+- A wall takes the portal on its side facing the subject, unless it already holds a portal, of either colour, on that side or on either neighbouring side; a portal on the far side doesn't stop it. A blocked wall takes it the same way only while it isn't blocked; while it is, the shot is a miss.
 
 A hit opens the portal of that colour there, closing it wherever it was before: `bluePortalOpened` or `orangePortalOpened`. A miss: `refused` (the game plays the shot sound instead of the error sound, and draws a ripple where the shot stopped, see `docs/sprites.md`).
 
@@ -120,11 +121,11 @@ A button is held down while the subject or any box is on its tile. Each pass jud
 
 ### Links
 
-A button or switch names its links by element id. Only barriers, light barriers, ditches, boxes, fizzlers, doors, lasers and the exit can be linked. A link can also name a link group (format 2), which stands for its elements: they act at the group's place in the list, in the group's order.
+A button or switch names its links by element id. Only blocked walls (one tile each), light barriers, ditches, boxes, fizzlers, doors, lasers and the exit can be linked. A link can also name a link group (format 2), which stands for its elements: they act at the group's place in the list, in the group's order.
 
 | # | Element | Unblocked (button pressed, switch used) | Blocked (button released) |
 |---|---------|-----------------------------------------|---------------------------|
-| 1 | Barrier | Lowered | Raised, and a portal on its tile closes |
+| 1 | Blocked wall | Takes portals | Refuses portals, and a portal on any of its sides closes |
 | 2 | Light barrier | Off | On |
 | 3 | Ditch | Bridged | Open |
 | 4 | Door | Opened: `doorOpened` | Closed: `doorClosed` |
@@ -135,7 +136,7 @@ A button or switch names its links by element id. Only barriers, light barriers,
 
 A door or the exit reports its event only when it actually opens or closes; the others are silent.
 
-A barrier can sit on a wall tile. While raised it stops shots before they reach the wall, so the wall takes no portal, and raising it closes a portal already there. A light barrier stands only on a floor tile, which never holds a portal, so switching it on closes none.
+A blocked wall is a wall in every state: it stops walking and shots, and joins the walls around it. Blocking it closes a portal already on it, silently. A light barrier stands only on a floor tile, which never holds a portal, so switching it on closes none.
 
 ### The exit
 
@@ -143,7 +144,7 @@ A step that ends with the subject on the exit completes the chamber. The subject
 
 ### Something blocking under the subject
 
-A door or the exit closing, a barrier rising, a ditch opening, or a light barrier or a laser turning on under the subject does nothing to it: it can still turn, shoot, interact and walk off. A box on such a tile stays there. A fizzler turning on under the subject runs the fizzler rule in that same step.
+A door or the exit closing, a ditch opening, or a light barrier or a laser turning on under the subject does nothing to it: it can still turn, shoot, interact and walk off. A box on such a tile stays there. A fizzler turning on under the subject runs the fizzler rule in that same step.
 
 ### Outside the chamber
 
@@ -153,11 +154,11 @@ Outside the chamber's edge counts as a wall that takes no portals, and the valid
 
 A chamber file is read field by field, then checked as a whole (`src/game/rules/`, run on every chamber by `npm run chamber:check`). Each problem names its field and, where it has one, its tile. Errors keep a chamber from loading:
 
-- **Fields:** a missing field, an unknown or misspelled one, a value of the wrong kind or out of range (see the [chamber format](#chamber-format)), a wall rectangle whose from corner is past its to corner, or a `version` other than 2.
+- **Fields:** a missing field, an unknown or misspelled one (an `id` on a blocked wall rectangle among them), a value of the wrong kind or out of range (see the [chamber format](#chamber-format)), a wall or blocked wall rectangle whose from corner is past its to corner, or a `version` other than 2.
 - **Ids and links:** an id used twice (elements and groups share the ids), a link naming an id nothing has, and a group naming another group.
-- **Bounds:** anything outside the chamber, and the same wall tile listed twice.
-- **What shares a tile:** a wall holds nothing but at most one barrier, so the subject, the exit and a light barrier are never inside a wall. A floor tile holds at most one of a barrier, light barrier, ditch, door, exit, fizzler, arrow, button, switch or laser, except two lasers that cross (one `H`, one `V`). A box and the subject start on plain floor or a button, with at most one box per tile; the subject and a box may share it.
-- **The edge:** every tile on the chamber's edge holds a wall, a barrier, a door or the exit, so the chamber is enclosed.
+- **Bounds:** anything outside the chamber, and the same wall tile listed twice, by walls or blocked walls.
+- **What shares a tile:** a wall or blocked wall holds nothing else, so the subject, the exit and a light barrier are never inside a wall. A floor tile holds at most one of a light barrier, ditch, door, exit, fizzler, arrow, button, switch or laser, except two lasers that cross (one `H`, one `V`). A box and the subject start on plain floor or a button, with at most one box per tile; the subject and a box may share it.
+- **The edge:** every tile on the chamber's edge holds a wall, a blocked wall, a door or the exit, so the chamber is enclosed.
 
 One warning doesn't keep a chamber from loading: a button linked to a box, since releasing the button does nothing to the box.
 
@@ -165,7 +166,7 @@ One warning doesn't keep a chamber from loading: a button linked to a box, since
 
 Every way these rules differ from the original game's, which this game played until stage 01 replaced them, each with its short id and the behaviour fixtures that pin it (`scripts/fixtures/fixtures.ts`). These rules take one action per step, finish it before the next and change nothing once the chamber is completed.
 
-1. **`portal_exit_checked`** — Coming out of a portal onto a tile the subject couldn't walk onto is refused, with the error sound. The original rules ignored every walking check there, so the subject could stand on an open ditch, in a laser that is on, on a raised barrier, a closed door or a wrong-way arrow. Fixtures: `portal_onto_open_ditch_refused`, `portal_onto_active_laser_refused`.
+1. **`portal_exit_checked`** — Coming out of a portal onto a tile the subject couldn't walk onto is refused, with the error sound. The original rules ignored every walking check there, so the subject could stand on an open ditch, in a laser that is on, on a closed door or a wrong-way arrow. Fixtures: `portal_onto_open_ditch_refused`, `portal_onto_active_laser_refused`.
 2. **`closed_exit_by_portal`** — Coming out of a portal onto the closed exit is refused like any tile the subject can't enter. The original rules completed the chamber. This is the closed-exit case of `portal_exit_checked`, kept as an id of its own because of the completion. Fixture: `portal_onto_closed_exit_refused`.
 3. **`box_link_release`** — Releasing a button linked to a box does nothing to the box. The original rules stopped the game with an error. Fixture: `box_linked_button_release_does_nothing`.
 4. **`fizzler_without_flag`** — The fizzler rule runs every step. The original rules counted the subject as inside a field until it stood on a tile with no fizzler at all, even after stepping onto one that is off, and nothing fizzled while it was inside: walking on from such a tile into another field, or that fizzler turning on, kept the portals, and a box picked up inside a field was kept. Fixture: `fizzler_rule_every_step`.
@@ -181,7 +182,7 @@ Every way these rules differ from the original game's, which this game played un
 
 Element types are described by data in `src/game/rules/`, but a new one still touches several files, because the chamber file reader and the validator list elements by hand:
 
-1. **Definition:** a file in `src/game/rules/elements/` that calls `defineElement` with its entry type. It gives the fixed properties (its field in a chamber file, one entry or a list, the tiles it sits on, its draw layer, whether links reach it, its blocked flag's default or none, when it blocks walking, shots and shooting from its tile, whether it takes portals or reacts to the subject entering or leaving, its events) and hooks for the rest (`interact`, `subjectInside`, `everyPass`, `linkUnblocked`, `linkBlocked`).
+1. **Definition:** a file in `src/game/rules/elements/` that calls `defineElement` with its entry type. It gives the fixed properties (its field in a chamber file, one entry or a list, the tiles it sits on, its draw layer, whether links reach it, its blocked flag's default or none, when it blocks walking, shots and shooting from its tile, when it takes portals, whether it reacts to the subject entering or leaving, its events) and hooks for the rest (`interact`, `subjectInside`, `everyPass`, `linkUnblocked`, `linkBlocked`).
 2. **Registry:** its line in `ELEMENT_REGISTRY` (`element_registry.ts`), whose order is the drawing order within a layer. The element fields of `ChamberData`, the compiled chamber's lookups and the state's blocked flags follow from it.
 3. **Entry type:** a new one in `src/game/chamber_data.ts`, when none of the existing ones fits.
 4. **Reader:** its field in `CHAMBER_FIELDS` and its list read in `chamber_parser.ts`.

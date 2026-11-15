@@ -1,7 +1,7 @@
 import {GameEvent} from '@/game/game_event'
 import type {ElementDefinition, ElementEntry} from '@/game/rules/element_definition'
 import {ARROW_ELEMENT} from '@/game/rules/elements/arrow'
-import {BARRIER_ELEMENT} from '@/game/rules/elements/barrier'
+import {BLOCKED_WALL_ELEMENT} from '@/game/rules/elements/blocked_wall'
 import {BOX_ELEMENT} from '@/game/rules/elements/box'
 import {BUTTON_ELEMENT} from '@/game/rules/elements/button'
 import {DITCH_ELEMENT} from '@/game/rules/elements/ditch'
@@ -17,7 +17,7 @@ import {WALL_ELEMENT} from '@/game/rules/elements/wall'
 export const ELEMENT_REGISTRY = [
   ARROW_ELEMENT,
   WALL_ELEMENT,
-  BARRIER_ELEMENT,
+  BLOCKED_WALL_ELEMENT,
   LIGHT_BARRIER_ELEMENT,
   DITCH_ELEMENT,
   LASER_ELEMENT,
@@ -43,7 +43,7 @@ export const CORE_STEP_EVENTS: readonly GameEvent[] = [
 export type RegisteredElement = (typeof ELEMENT_REGISTRY)[number]
 
 /**
- * The name of an element type in the registry, such as 'barrier'.
+ * The name of an element type in the registry, such as 'door'.
  */
 export type ElementKind = RegisteredElement['kind']
 
@@ -53,8 +53,8 @@ export type ElementKind = RegisteredElement['kind']
 type BlockableElement = Extract<RegisteredElement, {readonly defaultBlocked: boolean}>
 
 /**
- * The name of an element type that has a blocked flag: a barrier, light
- * barrier, ditch, laser, door, the exit or a fizzler.
+ * The name of an element type that has a blocked flag: a blocked wall, a
+ * light barrier, ditch, laser, door, the exit or a fizzler.
  */
 export type BlockableKind = BlockableElement['kind']
 

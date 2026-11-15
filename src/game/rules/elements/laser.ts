@@ -32,7 +32,7 @@ export const LASER_ELEMENT = defineElement<BeamData>()({
   blocksWalking: 'whenBlocked',
   blocksShots: 'never',
   stopsShootingFrom: 'never',
-  takesPortals: false,
+  takesPortals: 'never',
   reactsToSubject: false,
   events: [],
   hooks: {

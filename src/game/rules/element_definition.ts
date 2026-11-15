@@ -32,6 +32,12 @@ export type ShotBlocking = 'never' | 'whenBlocked' | 'always'
 export type ShootingFromBlocking = 'never' | 'whenBlocked'
 
 /**
+ * When a portal can open on an element's tile: a wall always, a blocked wall
+ * only while it isn't blocked.
+ */
+export type PortalTaking = 'never' | 'always' | 'whenUnblocked'
+
+/**
  * What an element does in a step of the rules, beyond what its fixed data
  * says. Each hook gets the draft of the step's state and the element's index
  * in its type's list. A step runs them in this order: the action (interact
@@ -60,7 +66,7 @@ declare const entryType: unique symbol
  * stays with the browser-side renderer, looked up by kind.
  */
 export type ElementDefinition<Entry = unknown> = {
-  readonly kind: string // Its name, such as 'barrier'
+  readonly kind: string // Its name, such as 'door'
   readonly fileKey: string // Its field in a chamber file
   readonly count: ElementCount // One required entry, or a list that may be left out
   readonly sitsOn: ElementGround // Which tiles it can sit on
@@ -70,7 +76,7 @@ export type ElementDefinition<Entry = unknown> = {
   readonly blocksWalking: WalkBlocking // When it keeps the subject off its tile
   readonly blocksShots: ShotBlocking // When it stops a portal shot on its tile
   readonly stopsShootingFrom: ShootingFromBlocking // When standing on it keeps the portal keys from shooting
-  readonly takesPortals: boolean // Whether a portal can open on it; a wall entry can refuse them
+  readonly takesPortals: PortalTaking // When a portal can open on it
   readonly reactsToSubject: boolean // Whether entering or leaving its tile can change the state
   readonly events: readonly GameEvent[] // The events it reports
   readonly hooks?: ElementHooks // What it does in a step beyond its fixed data; absent when the core step does it all

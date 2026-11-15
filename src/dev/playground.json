@@ -17,6 +17,12 @@
     "walls": [
         {
             "xFrom": 0,
+            "xTo": 6,
+            "yFrom": 0,
+            "yTo": 0
+        },
+        {
+            "xFrom": 8,
             "xTo": 14,
             "yFrom": 0,
             "yTo": 0
@@ -132,20 +138,6 @@
             "xTo": 13,
             "yFrom": 11,
             "yTo": 13
-        },
-        {
-            "xFrom": 5,
-            "xTo": 5,
-            "yFrom": 11,
-            "yTo": 13,
-            "takesPortals": false
-        },
-        {
-            "xFrom": 9,
-            "xTo": 9,
-            "yFrom": 11,
-            "yTo": 13,
-            "takesPortals": false
         }
     ],
     "doors": [
@@ -200,11 +192,18 @@
             "id": 31
         }
     ],
-    "barriers": [
+    "blockedWalls": [
         {
-            "x": 6,
-            "y": 2,
-            "id": 32
+            "xFrom": 5,
+            "xTo": 5,
+            "yFrom": 11,
+            "yTo": 13
+        },
+        {
+            "xFrom": 9,
+            "xTo": 9,
+            "yFrom": 11,
+            "yTo": 13
         },
         {
             "x": 7,
@@ -213,6 +212,12 @@
         }
     ],
     "lightBarriers": [
+        {
+            "x": 6,
+            "y": 2,
+            "id": 32,
+            "direction": "H"
+        },
         {
             "x": 7,
             "y": 2,

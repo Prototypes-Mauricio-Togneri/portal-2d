@@ -16,43 +16,40 @@
     },
     "walls": [
         {
+            "x": 0,
+            "y": 2
+        },
+        {
+            "x": 6,
+            "y": 2
+        }
+    ],
+    "blockedWalls": [
+        {
             "xFrom": 0,
             "xTo": 6,
             "yFrom": 4,
-            "yTo": 4,
-            "takesPortals": false
+            "yTo": 4
         },
         {
             "x": 0,
-            "y": 3,
-            "takesPortals": false
-        },
-        {
-            "x": 0,
-            "y": 2
+            "y": 3
         },
         {
             "xFrom": 0,
             "xTo": 0,
             "yFrom": 0,
-            "yTo": 1,
-            "takesPortals": false
+            "yTo": 1
         },
         {
             "x": 6,
-            "y": 3,
-            "takesPortals": false
-        },
-        {
-            "x": 6,
-            "y": 2
+            "y": 3
         },
         {
             "xFrom": 2,
             "xTo": 6,
             "yFrom": 0,
-            "yTo": 1,
-            "takesPortals": false
+            "yTo": 1
         }
     ],
     "lasers": [

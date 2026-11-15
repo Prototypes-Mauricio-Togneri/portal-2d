@@ -15,14 +15,14 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 
 - **Tile:** 256 × 256 px. The game shrinks each sprite once to the tile size on screen: about 40 px for chamber 1 on a 1080p screen, about 170 px for the tutorial on a high-DPI screen, and smaller still in the home menu's map.
 - **Overhang:** a sprite that spills past its tile (a glow, a portal reaching into the room, a wide subject) is 384 × 384 px: its tile is the centred 256 px square, with 64 px of margin on every side. Any sprite may overhang; the game tells by the file's size.
-- **Strips:** `wall`, `wall_no_portals` and `ditch` are 1280 × 256 px, five tiles side by side (see [joins](#joins)).
+- **Strips:** `wall`, `blocked_wall` and `ditch` are 1280 × 256 px, five tiles side by side (see [joins](#joins)).
 - **Any other size** is refused, and the sprite isn't drawn.
 
 ## Look
 
 - **View:** straight down, no perspective. A wall shows its top, never a front face.
 - **Light:** from directly overhead, so every side of an object is shaded the same: no highlight on one side, no shadow on the other.
-- **Shadows:** don't draw a shadow falling outside the object. The game adds one shared drop shadow, made from each sprite's shape, under what stands raised (walls, raised barriers, closed doors, the closed exit, switches, boxes, the subject): a soft dark rim all round, with no offset, since the light is overhead. Walls cast theirs as one mass, so a run of walls has one shadow along its open sides.
+- **Shadows:** don't draw a shadow falling outside the object. The game adds one shared drop shadow, made from each sprite's shape, under what stands raised (walls, blocked walls, closed doors, the closed exit, switches, boxes, the subject): a soft dark rim all round, with no offset, since the light is overhead. Walls cast theirs as one mass, so a run of walls has one shadow along its open sides.
 - **Readable small:** every sprite must still read at 40 px. On and off must differ at a glance, and the subject's facing must show from its shape alone.
 - **Colours:** the ones that carry a meaning are listed here and copied by hand into the CSS tokens (`src/assets/styles.css`), since the menus use the same colours (crimson and teal, which they don't use, have no token). Keep blue and orange off every other sprite, so nothing is mistaken for a portal; the one exception is the fizzler's see-through cobalt (30, 80, 210 at 62 %), deeper than the blue portal and with no edge lines. Changing one of these means redrawing the sprites that use it, along with its CSS token.
 
@@ -47,7 +47,7 @@ A sprite with a direction is drawn once, one way, and the game turns it in quart
 | 4 | `laser_on`, `laser_glow` | A beam running left to right through the tile's middle, touching both side edges, so neighbouring laser tiles make one beam | A quarter turn for a vertical laser; two lasers crossing on a tile are both drawn |
 | 5 | `light_barrier_on` | A band running left to right through the tile's middle, touching both side edges, so neighbouring light barriers make one band | A quarter turn for a vertical light barrier |
 | 6 | `laser_end_on`, `laser_end_off`, `light_barrier_end_on`, `light_barrier_end_off` | At the left end of a beam or band running left to right: the plate on the tile's left edge, centred on it | To each end of each run of lasers, or of light barriers, on the run's end tile: as drawn at a left end, a half turn at a right end, a quarter turn at a top or bottom end |
-| 7 | `door_closed`, `exit_closed`, `fizzler_on` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when more of what lines the gap lies above and below it than left and right: walls, the chamber's edge, doors, the exit, fizzlers, barriers, light barriers and ditches |
+| 7 | `door_closed`, `exit_closed`, `fizzler_on` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when more of what lines the gap lies above and below it than left and right: walls (blocked or not), the chamber's edge, doors, the exit, fizzlers, light barriers and ditches |
 
 ## Joins
 
@@ -71,7 +71,7 @@ Quarters from different strip tiles end up side by side, so:
 
 Outside the chamber counts as open, so walls along the chamber's edge are bevelled on their outer side too, and the chamber reads as a raised block with a finished border.
 
-A wall that refuses portals is drawn from its own strip, `wall_no_portals`, but joins every wall alike, so both kinds make one mass with one shadow, each tile cut from its own kind's strip. Its strip keeps the wall strip's shape exactly, bevels and seams in the same places, so where the two kinds meet their edges line up and only the surface changes.
+A blocked wall, which refuses portals, is drawn from its own strip, `blocked_wall`, while blocked, but joins every wall alike, so both kinds make one mass with one shadow, each tile cut from its own kind's strip. Its strip keeps the wall strip's shape exactly, bevels and seams in the same places, so where the two kinds meet their edges line up and only the surface changes. A blocked wall a link reaches is drawn with the walls as a wall, and while it is blocked its `blocked_wall` tile is painted over it among the blockers, so it switches surface at once, with no mark of its own; one no link reaches never changes, so it is drawn with the walls in its own strip, or as a wall when it starts unblocked.
 
 In the ditch strip, read "wall" as "open ditch" and "floor" as anything else. It shows the pit's inner sides, the same depth everywhere: 82 px wide, fading from the lit rim to near black, lined with seams that crowd closer together as they go down, so the pit reads as a deep shaft. A bridged ditch is drawn on its own (`ditch_bridged`) and ends the pit.
 
@@ -83,31 +83,29 @@ Every sprite is 256 px, or 384 px when it overhangs, except the three strips (12
 |---|------|---------------|
 | 1 | `floor` | A floor tile. It repeats across the whole chamber, so its edges tile seamlessly |
 | 2 | `wall` | The wall strip (see [joins](#joins)). Walls stop walking and take portals |
-| 3 | `wall_no_portals` | The strip of a wall that refuses portals: the wall's shape in dark brushed steel, riveted in the middle of each quarter, so it reads apart from the wall at a glance |
+| 3 | `blocked_wall` | The strip of a blocked wall, which refuses portals: the wall's shape in dark brushed steel, riveted in the middle of each quarter, so it reads apart from the wall at a glance |
 | 4 | `ditch` | The open ditch strip: a pit. It stops walking but lets shots through |
 | 5 | `ditch_bridged` | A ditch bridged over: walkable |
-| 6 | `barrier_raised` | A raised barrier: stops walking and shots. Drawn over floor or over a wall tile, so it must read on both |
-| 7 | `barrier_lowered` | A lowered barrier, flush: walkable, lets shots through |
-| 8 | `light_barrier_on` | A light barrier that is on: stops walking and shots. A see-through band of pale teal hard light, 96 px wide (teal at 64 % over a faint deep teal rim), with a faint honeycomb and bright edges, so it reads as a surface of light rather than a ray. It is light, not a solid block, so it casts no shadow. One that is off isn't drawn (its connectors are); switched, it fades out or in over about 0.25 s, as a laser does. Drawn over floor only |
-| 9 | `light_barrier_end_on` | A light barrier's connector while it is on: a dark steel plate where the band starts or stops, a little taller than the band, its slot as long as the band and lit. Drawn at both ends of each run of light barriers, over the bands, fading with its band |
-| 10 | `light_barrier_end_off` | The same connector with its slot dark: drawn at both ends of each run, on or off, under `light_barrier_end_on`, so the two must match but for the slot |
-| 11 | `door_closed` | A closed door: stops walking and shots. Its two leaves meet on the tile's middle line (see [sliding doors](#sliding-doors)). An open door isn't drawn, so its tile shows the floor |
-| 12 | `exit_closed` | The exit, closed. Its two leaves meet on the tile's middle line, as a door's do. The open exit isn't drawn, so its tile shows the floor; walking onto it completes the chamber |
-| 13 | `button_up` | A floor button, released |
-| 14 | `button_pressed` | A floor button, held down by the subject or a box. A box on a button is drawn as on the floor, over it |
-| 15 | `switch` | A switch, used with the interact key. It has no on or off |
-| 16 | `box` | A box. Carried, it is drawn at half size in front of the subject and turned with it, so there is no carrying pose to draw |
-| 17 | `fizzler_on` | A fizzler that is on: the subject walks through it and loses its portals and any box it carries; it stops shots. Drawn over everything, so keep it see-through. A fizzler that is off isn't drawn (see [fizzle](#fizzle)) |
-| 18 | `laser_on` | A laser beam that is on: stops walking, lets shots through. A beam that is off isn't drawn (its end plates are); switched, it fades out or in over about 0.25 s, its glow with it |
-| 19 | `laser_glow` | The beam's glow (see [glow](#glow)) |
-| 20 | `laser_end_on` | A laser's end plate while the laser is on: a small plate where the beam starts or stops, its slot lit. Drawn at both ends of each run of lasers, over the beams, fading with its beam |
-| 21 | `laser_end_off` | The same plate with its slot dark: drawn at both ends of each run, on or off, under `laser_end_on`, so the two must match but for the slot |
-| 22 | `arrow` | A floor arrow |
-| 23 | `portal_blue` | The blue portal |
-| 24 | `portal_orange` | The orange portal |
-| 25 | `portal_blue_glow` | The blue portal's glow |
-| 26 | `portal_orange_glow` | The orange portal's glow |
-| 27 | `subject` | The test subject seen from above, facing up. A face, visor or lit mark on its front makes the facing unmistakable |
+| 6 | `light_barrier_on` | A light barrier that is on: stops walking and shots. A see-through band of pale teal hard light, 96 px wide (teal at 64 % over a faint deep teal rim), with a faint honeycomb and bright edges, so it reads as a surface of light rather than a ray. It is light, not a solid block, so it casts no shadow. One that is off isn't drawn (its connectors are); switched, it fades out or in over about 0.25 s, as a laser does. Drawn over floor only |
+| 7 | `light_barrier_end_on` | A light barrier's connector while it is on: a dark steel plate where the band starts or stops, a little taller than the band, its slot as long as the band and lit. Drawn at both ends of each run of light barriers, over the bands, fading with its band |
+| 8 | `light_barrier_end_off` | The same connector with its slot dark: drawn at both ends of each run, on or off, under `light_barrier_end_on`, so the two must match but for the slot |
+| 9 | `door_closed` | A closed door: stops walking and shots. Its two leaves meet on the tile's middle line (see [sliding doors](#sliding-doors)). An open door isn't drawn, so its tile shows the floor |
+| 10 | `exit_closed` | The exit, closed. Its two leaves meet on the tile's middle line, as a door's do. The open exit isn't drawn, so its tile shows the floor; walking onto it completes the chamber |
+| 11 | `button_up` | A floor button, released |
+| 12 | `button_pressed` | A floor button, held down by the subject or a box. A box on a button is drawn as on the floor, over it |
+| 13 | `switch` | A switch, used with the interact key. It has no on or off |
+| 14 | `box` | A box. Carried, it is drawn at half size in front of the subject and turned with it, so there is no carrying pose to draw |
+| 15 | `fizzler_on` | A fizzler that is on: the subject walks through it and loses its portals and any box it carries; it stops shots. Drawn over everything, so keep it see-through. A fizzler that is off isn't drawn (see [fizzle](#fizzle)) |
+| 16 | `laser_on` | A laser beam that is on: stops walking, lets shots through. A beam that is off isn't drawn (its end plates are); switched, it fades out or in over about 0.25 s, its glow with it |
+| 17 | `laser_glow` | The beam's glow (see [glow](#glow)) |
+| 18 | `laser_end_on` | A laser's end plate while the laser is on: a small plate where the beam starts or stops, its slot lit. Drawn at both ends of each run of lasers, over the beams, fading with its beam |
+| 19 | `laser_end_off` | The same plate with its slot dark: drawn at both ends of each run, on or off, under `laser_end_on`, so the two must match but for the slot |
+| 20 | `arrow` | A floor arrow |
+| 21 | `portal_blue` | The blue portal |
+| 22 | `portal_orange` | The orange portal |
+| 23 | `portal_blue_glow` | The blue portal's glow |
+| 24 | `portal_orange_glow` | The orange portal's glow |
+| 25 | `subject` | The test subject seen from above, facing up. A face, visor or lit mark on its front makes the facing unmistakable |
 
 ## Order
 
@@ -117,8 +115,8 @@ The game draws from the bottom up, each later row over the earlier ones:
 |---|-------|---------|
 | 1 | Floor | `floor` |
 | 2 | Floor marks | `arrow` |
-| 3 | Structure | `wall`, `wall_no_portals` |
-| 4 | Blockers | `barrier_*`, `light_barrier_on`, then `light_barrier_end_*` over the bands, `ditch`, `ditch_bridged`, `laser_on`, then `laser_end_*` over the beams, `door_closed`, `exit_closed` |
+| 3 | Structure | `wall`, `blocked_wall` for the blocked walls no link reaches |
+| 4 | Blockers | `blocked_wall` over the blocked walls a link reaches while blocked, `light_barrier_on`, then `light_barrier_end_*` over the bands, `ditch`, `ditch_bridged`, `laser_on`, then `laser_end_*` over the beams, `door_closed`, `exit_closed` |
 | 5 | Portals | `portal_*` |
 | 6 | Fixtures | `button_*`, `switch` |
 | 7 | Items | `box` |
@@ -138,7 +136,7 @@ When the subject walks into a fizzler that is on, each portal it loses and a box
 
 ## Miss
 
-When a portal shot misses, the game draws a ripple in the shot's colour where it stopped, over everything, from no sprite: the face the shot met lights up as a line 0.84 of a tile long and 0.05 wide across the shot, fading in about 0.28 s, and two thin half rings, 90 ms apart, spread back towards the subject, from 0.2 to 0.8 of a tile along the face and up to 0.28 of a tile back, thinning and fading in about 0.42 s each, so all of it stays within the tile's width and is gone in about 0.52 s. It sits where a portal would have opened on a wall, 0.125 of a tile in; on the near edge of a door, the exit, a fizzler or a raised barrier; on the near face of a light barrier's band when the band runs across the shot, or at its end on the tile's edge when it runs along it; and, for a shot that left the chamber through an open door or exit in its edge, just inside the doorway. A shot from inside a fizzler that is on does nothing, so draws nothing. With reduced motion, and in the home menu's map and the gallery, nothing ripples.
+When a portal shot misses, the game draws a ripple in the shot's colour where it stopped, over everything, from no sprite: the face the shot met lights up as a line 0.84 of a tile long and 0.05 wide across the shot, fading in about 0.28 s, and two thin half rings, 90 ms apart, spread back towards the subject, from 0.2 to 0.8 of a tile along the face and up to 0.28 of a tile back, thinning and fading in about 0.42 s each, so all of it stays within the tile's width and is gone in about 0.52 s. It sits where a portal would have opened on a wall, 0.125 of a tile in; on the near edge of a door, the exit or a fizzler; on the near face of a light barrier's band when the band runs across the shot, or at its end on the tile's edge when it runs along it; and, for a shot that left the chamber through an open door or exit in its edge, just inside the doorway. A shot from inside a fizzler that is on does nothing, so draws nothing. With reduced motion, and in the home menu's map and the gallery, nothing ripples.
 
 ## Sliding doors
 

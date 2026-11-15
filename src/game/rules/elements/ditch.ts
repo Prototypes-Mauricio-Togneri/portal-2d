@@ -32,7 +32,7 @@ export const DITCH_ELEMENT = defineElement<BlockableData>()({
   blocksWalking: 'whenBlocked',
   blocksShots: 'never',
   stopsShootingFrom: 'never',
-  takesPortals: false,
+  takesPortals: 'never',
   reactsToSubject: false,
   events: [],
   hooks: {

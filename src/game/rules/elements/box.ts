@@ -27,7 +27,7 @@ export const BOX_ELEMENT = defineElement<BoxData>()({
   blocksWalking: 'never',
   blocksShots: 'never',
   stopsShootingFrom: 'never',
-  takesPortals: false,
+  takesPortals: 'never',
   reactsToSubject: false,
   events: [GameEvent.BOX_PICKED_UP],
   hooks: {

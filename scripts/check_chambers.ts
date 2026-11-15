@@ -13,8 +13,8 @@ import {CHAMBER_CASES, type ChamberCase, FORMAT_V2_EXAMPLE} from '@scripts/fixtu
 // layout checked). Every chamber in src/chambers and the playground must load
 // without an error, and each case in scripts/fixtures/format_examples.ts must report exactly
 // the problems pinned for it. The format 2 example, compiled, must reach
-// exactly the pinned links (its link group expanded) and refuse portals on
-// exactly the pinned walls. Every chamber file, the playground, every fixture
+// exactly the pinned links (its link group expanded) and refuse portals for
+// good on exactly the pinned walls. Every chamber file, the playground, every fixture
 // chamber and the format 2 example, compiled, must answer wall, no portals and no element on
 // the ring of tiles just outside its edge. Then checks the element registry
 // against the format: every element's field is one the parser accepts and
@@ -22,19 +22,18 @@ import {CHAMBER_CASES, type ChamberCase, FORMAT_V2_EXAMPLE} from '@scripts/fixtu
 // per chamber, case, compiled example and registry check, then any problem
 // below it, and exits non-zero on any failure
 
-/** What each button's and switch's links reach in the compiled format 2 example: its group stands for the door and the barrier, in that order */
+/** What each button's and switch's links reach in the compiled format 2 example: its group stands for the door and the linked blocked wall, in that order */
 const EXAMPLE_LINKS: readonly string[] = [
-  'button 0: door 0, barrier 0',
-  'switch 0: door 0, barrier 0, exit 0',
+  'button 0: door 0, blockedWall 0',
+  'switch 0: door 0, blockedWall 0, exit 0',
 ]
 
-/** The wall tiles of the compiled format 2 example that refuse portals, row by row from the bottom: the wall in the middle and the top row */
+/** The wall tiles of the compiled format 2 example that refuse portals for good, row by row from the bottom: the blocked wall in the middle and the top row but its linked tile (3, 4), which can take portals once unblocked */
 const EXAMPLE_WALLS_REFUSING_PORTALS: readonly string[] = [
   '(3, 2)',
   '(0, 4)',
   '(1, 4)',
   '(2, 4)',
-  '(3, 4)',
   '(4, 4)',
   '(5, 4)',
   '(6, 4)',
@@ -187,8 +186,8 @@ function checkOutsideEdge(label: string, data: unknown): boolean {
         mismatches.push(`(${x}, ${y}) is not a wall`)
       }
 
-      if (compiled.takesPortals(x, y)) {
-        mismatches.push(`(${x}, ${y}) takes portals`)
+      if (compiled.canTakePortals(x, y)) {
+        mismatches.push(`(${x}, ${y}) can take portals`)
       }
 
       for (const kind of PLACED_KINDS) {
@@ -226,7 +225,7 @@ function printMissing(label: string, lines: readonly string[], other: readonly s
 
 /**
  * Compiles the format 2 example and compares its links and the walls that
- * refuse portals with what is pinned.
+ * refuse portals for good with what is pinned.
  * @returns Whether both are as pinned
  */
 function checkCompiledExample(): boolean {
@@ -240,7 +239,7 @@ function checkCompiledExample(): boolean {
 
   for (let y = 0; y < compiled.height; y++) {
     for (let x = 0; x < compiled.width; x++) {
-      if (compiled.isWall(x, y) && (!compiled.takesPortals(x, y))) {
+      if (compiled.isWall(x, y) && (!compiled.canTakePortals(x, y))) {
         refusing.push(`(${x}, ${y})`)
       }
     }
@@ -259,7 +258,7 @@ function checkCompiledExample(): boolean {
   printMissing('links not pinned', links, EXAMPLE_LINKS)
   printMissing('links not reached', EXAMPLE_LINKS, links)
   printMissing('wall refusing portals, not pinned', refusing, EXAMPLE_WALLS_REFUSING_PORTALS)
-  printMissing('wall pinned as refusing portals, but takes them', EXAMPLE_WALLS_REFUSING_PORTALS, refusing)
+  printMissing('wall pinned as refusing portals, but can take them', EXAMPLE_WALLS_REFUSING_PORTALS, refusing)
 
   return false
 }

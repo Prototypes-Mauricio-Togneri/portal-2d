@@ -33,7 +33,7 @@ export const SWITCH_ELEMENT = defineElement<TriggerData>()({
   blocksWalking: 'never',
   blocksShots: 'never',
   stopsShootingFrom: 'never',
-  takesPortals: false,
+  takesPortals: 'never',
   reactsToSubject: false,
   events: [GameEvent.SWITCH_USED],
   hooks: {

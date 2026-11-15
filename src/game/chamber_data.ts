@@ -26,16 +26,26 @@ export type WallRangeData = {
 }
 
 /**
- * A wall entry: one tile when it has x and y, otherwise a rectangle of tiles,
- * that may refuse portals.
+ * A wall entry, which takes portals: one tile when it has x and y, otherwise
+ * a rectangle of tiles.
  */
-export type WallData = (PositionData | WallRangeData) & {
-  readonly takesPortals?: boolean // Whether portals can open on it; true when absent
-}
+export type WallData = PositionData | WallRangeData
 
 /**
- * An element a button or switch can open and close: barrier, ditch, door,
- * fizzler or exit.
+ * A blocked wall entry, a wall that refuses portals while blocked: one tile
+ * when it has x and y, which a button or switch can link, otherwise a
+ * rectangle of tiles, which none can.
+ */
+export type BlockedWallData = (PositionData & {
+  readonly id?: number // Target for button and switch links; absent means it cannot be linked
+  readonly blocked?: boolean // Initial state; true when absent
+}) | (WallRangeData & {
+  readonly blocked?: boolean // Initial state; true when absent
+})
+
+/**
+ * An element a button or switch can open and close: ditch, door, fizzler or
+ * exit.
  */
 export type BlockableData = PositionData & {
   readonly id?: number // Target for button and switch links; absent means it cannot be linked

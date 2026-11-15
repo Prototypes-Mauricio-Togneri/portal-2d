@@ -58,7 +58,7 @@ export const FIZZLER_ELEMENT = defineElement<BlockableData>()({
   blocksWalking: 'never',
   blocksShots: 'whenBlocked',
   stopsShootingFrom: 'whenBlocked',
-  takesPortals: false,
+  takesPortals: 'never',
   reactsToSubject: true,
   events: [GameEvent.FIZZLED],
   hooks: {

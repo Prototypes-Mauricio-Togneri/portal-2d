@@ -1,11 +1,11 @@
-import type {ChamberData, PositionData} from '@/game/chamber_data'
+import type {ChamberData, PositionData, WallRangeData} from '@/game/chamber_data'
 import {type ChamberProblem, chamberError, chamberWarning, type ProblemTile} from '@/game/rules/chamber_problem'
 
 /**
  * What can stand on a tile at the start: a wall, a fixed element, a box or
  * the subject.
  */
-type OccupantKind = 'wall' | 'barrier' | 'lightBarrier' | 'ditch' | 'door' | 'exit' | 'fizzler' | 'arrow' | 'button' | 'switch' | 'laser' | 'box' | 'subject'
+type OccupantKind = 'wall' | 'blockedWall' | 'lightBarrier' | 'ditch' | 'door' | 'exit' | 'fizzler' | 'arrow' | 'button' | 'switch' | 'laser' | 'box' | 'subject'
 
 /**
  * Something standing on a tile at the start.
@@ -34,9 +34,14 @@ type LinkTarget = {
   readonly links: readonly number[] // A group's ids, empty for an element
 }
 
+/** The walls: a tile holds at most one, and nothing else */
+const WALL_KINDS: readonly OccupantKind[] = [
+  'wall',
+  'blockedWall',
+]
+
 /** The elements that sit fixed on a floor tile; only two crossing lasers may share one */
 const FIXTURES: readonly OccupantKind[] = [
-  'barrier',
   'lightBarrier',
   'ditch',
   'door',
@@ -51,7 +56,7 @@ const FIXTURES: readonly OccupantKind[] = [
 /** What may stand on a tile of the chamber's edge, so that the chamber is enclosed */
 const EDGE_KINDS: readonly OccupantKind[] = [
   'wall',
-  'barrier',
+  'blockedWall',
   'door',
   'exit',
 ]
@@ -68,6 +73,10 @@ function describeKind(kind: OccupantKind): string {
 
   if (kind === 'lightBarrier') {
     return 'a light barrier'
+  }
+
+  if (kind === 'blockedWall') {
+    return 'a blocked wall'
   }
 
   return (kind === 'arrow') ? 'an arrow' : `a ${kind}`
@@ -159,46 +168,53 @@ class ChamberValidator {
   }
 
   /**
-   * Places every wall tile, reporting an entry that reaches outside the
-   * chamber and a tile listed twice.
+   * Places every wall and blocked wall tile, reporting an entry that reaches
+   * outside the chamber and a tile listed twice.
    */
   private placeWalls(): void {
-    const walls = this.chamber.walls ?? []
+    this.chamber.walls?.forEach((wall, index) => this.placeWall(wall, 'wall', `walls[${index}]`))
+    this.chamber.blockedWalls?.forEach((wall, index) => this.placeWall(wall, 'blockedWall', `blockedWalls[${index}]`))
+  }
 
-    walls.forEach((wall, index) => {
-      const field = `walls[${index}]`
-      const xFrom = ('x' in wall) ? wall.x : wall.xFrom
-      const xTo = ('x' in wall) ? wall.x : wall.xTo
-      const yFrom = ('y' in wall) ? wall.y : wall.yFrom
-      const yTo = ('y' in wall) ? wall.y : wall.yTo
-      const outside = (xFrom < 0) || (yFrom < 0) || (xTo >= this.chamber.size.width) || (yTo >= this.chamber.size.height)
+  /**
+   * Places the tiles of one wall or blocked wall entry, reporting it when it
+   * reaches outside the chamber and each tile another entry already lists.
+   * @param wall - The entry: one tile or an inclusive rectangle
+   * @param kind - A wall or a blocked wall
+   * @param field - Where in the file it is listed
+   */
+  private placeWall(wall: PositionData | WallRangeData, kind: OccupantKind, field: string): void {
+    const xFrom = ('x' in wall) ? wall.x : wall.xFrom
+    const xTo = ('x' in wall) ? wall.x : wall.xTo
+    const yFrom = ('y' in wall) ? wall.y : wall.yFrom
+    const yTo = ('y' in wall) ? wall.y : wall.yTo
+    const outside = (xFrom < 0) || (yFrom < 0) || (xTo >= this.chamber.size.width) || (yTo >= this.chamber.size.height)
 
-      // Only the part inside the chamber is walked, so a rectangle with huge
-      // corners in a file from anywhere costs no more than the chamber itself
-      for (let x = Math.max(xFrom, 0); x <= Math.min(xTo, this.chamber.size.width - 1); x++) {
-        for (let y = Math.max(yFrom, 0); y <= Math.min(yTo, this.chamber.size.height - 1); y++) {
-          if ((this.occupants.get(tileKey(x, y))?.list ?? []).some((occupant) => occupant.kind === 'wall')) {
-            this.problems.push(chamberError(field, {
-              x: x,
-              y: y,
-            }, 'lists a wall tile that another wall entry already lists'))
-          }
-
-          this.addOccupant(x, y, {
-            kind: 'wall',
-            field: field,
-            laserDirection: null,
-          })
+    // Only the part inside the chamber is walked, so a rectangle with huge
+    // corners in a file from anywhere costs no more than the chamber itself
+    for (let x = Math.max(xFrom, 0); x <= Math.min(xTo, this.chamber.size.width - 1); x++) {
+      for (let y = Math.max(yFrom, 0); y <= Math.min(yTo, this.chamber.size.height - 1); y++) {
+        if ((this.occupants.get(tileKey(x, y))?.list ?? []).some((occupant) => WALL_KINDS.includes(occupant.kind))) {
+          this.problems.push(chamberError(field, {
+            x: x,
+            y: y,
+          }, 'lists a wall tile that another wall entry already lists'))
         }
-      }
 
-      if (outside) {
-        this.problems.push(chamberError(field, {
-          x: xFrom,
-          y: yFrom,
-        }, 'reaches outside the chamber'))
+        this.addOccupant(x, y, {
+          kind: kind,
+          field: field,
+          laserDirection: null,
+        })
       }
-    })
+    }
+
+    if (outside) {
+      this.problems.push(chamberError(field, {
+        x: xFrom,
+        y: yFrom,
+      }, 'reaches outside the chamber'))
+    }
   }
 
   /**
@@ -209,7 +225,6 @@ class ChamberValidator {
 
     this.placeElement(chamber.subject, 'subject', 'subject')
     this.placeElement(chamber.exit, 'exit', 'exit')
-    chamber.barriers?.forEach((element, index) => this.placeElement(element, 'barrier', `barriers[${index}]`))
     chamber.lightBarriers?.forEach((element, index) => this.placeElement(element, 'lightBarrier', `lightBarriers[${index}]`))
     chamber.ditches?.forEach((element, index) => this.placeElement(element, 'ditch', `ditches[${index}]`))
     chamber.boxes?.forEach((element, index) => this.placeElement(element, 'box', `boxes[${index}]`))
@@ -222,25 +237,23 @@ class ChamberValidator {
   }
 
   /**
-   * Checks what shares each tile: a wall holds at most a barrier; a floor
-   * tile holds at most one fixed element, or two crossing lasers; a box and
-   * the subject start on plain floor or a button, with at most one box.
+   * Checks what shares each tile: a wall holds nothing else; a floor tile
+   * holds at most one fixed element, or two crossing lasers; a box and the
+   * subject start on plain floor or a button, with at most one box.
    */
   private checkOverlaps(): void {
     for (const entry of this.occupants.values()) {
       const tile = entry.tile
       const list = entry.list
-      const walls = list.filter((occupant) => occupant.kind === 'wall')
+      const walls = list.filter((occupant) => WALL_KINDS.includes(occupant.kind))
       const fixtures = list.filter((occupant) => FIXTURES.includes(occupant.kind))
       const boxes = list.filter((occupant) => occupant.kind === 'box')
       const subject = list.find((occupant) => occupant.kind === 'subject')
 
       if (walls.length > 0) {
         for (const occupant of list) {
-          const isOnlyBarrier = (occupant.kind === 'barrier') && (fixtures.length === 1)
-
-          if ((occupant.kind !== 'wall') && (!isOnlyBarrier)) {
-            this.problems.push(chamberError(occupant.field, tile, `${describeKind(occupant.kind)} can't be inside a wall (only one barrier can)`))
+          if (!WALL_KINDS.includes(occupant.kind)) {
+            this.problems.push(chamberError(occupant.field, tile, `${describeKind(occupant.kind)} can't be inside a wall`))
           }
         }
 
@@ -309,7 +322,20 @@ class ChamberValidator {
       }))
     }
 
-    addElements(chamber.barriers, 'barrier', 'barriers')
+    chamber.blockedWalls?.forEach((wall, index) => {
+      // Only a one-tile blocked wall can have an id
+      if ('x' in wall) {
+        this.addTarget(wall.id, {
+          kind: 'blockedWall',
+          field: `blockedWalls[${index}]`,
+          tile: {
+            x: wall.x,
+            y: wall.y,
+          },
+          links: [],
+        })
+      }
+    })
     addElements(chamber.lightBarriers, 'lightBarrier', 'lightBarriers')
     addElements(chamber.ditches, 'ditch', 'ditches')
     addElements(chamber.boxes, 'box', 'boxes')
@@ -383,8 +409,8 @@ class ChamberValidator {
   }
 
   /**
-   * Checks that every tile of the chamber's edge holds a wall, a barrier, a
-   * door or the exit.
+   * Checks that every tile of the chamber's edge holds a wall, a blocked
+   * wall, a door or the exit.
    */
   private checkEdge(): void {
     const width = this.chamber.size.width
@@ -399,7 +425,7 @@ class ChamberValidator {
           this.problems.push(chamberError('', {
             x: x,
             y: y,
-          }, 'the chamber\'s edge is open here: an edge tile needs a wall, a barrier, a door or the exit'))
+          }, 'the chamber\'s edge is open here: an edge tile needs a wall, a door or the exit'))
         }
       }
     }

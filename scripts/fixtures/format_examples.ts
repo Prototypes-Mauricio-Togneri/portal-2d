@@ -11,7 +11,7 @@ import lightBarrierSharedTile from '@scripts/fixtures/light_barrier_shared_tile.
 // fails when it doesn't fit the format, and cases that pin exactly what
 // loading a file reports, broken ones included
 
-/** A format 2 chamber using every addition (walls refusing portals, a link group named by a button and a switch, an empty par) and leaving out every list it doesn't need */
+/** A format 2 chamber using every addition (blocked walls, one tile of them linked, a link group named by a button and a switch, an empty par) and leaving out every list it doesn't need */
 export const FORMAT_V2_EXAMPLE: ChamberData = formatV2Example
 
 /**
@@ -52,7 +52,7 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
       'error size.width: is less than 1',
       'error subject.direction: is not one of UP, DOWN, LEFT, RIGHT',
       'error exit.y: is missing',
-      'error walls[0].takesPortal: is not a field of a chamber file here (misspelled?)',
+      'error walls[0].takesPortals: is not a field of a chamber file here (misspelled?)',
       'error walls[1]: a rectangle\'s from corner is past its to corner',
       'error boxes: is not a list',
       'error buttons[0].links[0]: is less than 1',
@@ -67,23 +67,23 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
     problems: [
       'error walls[4] at (0, 2): lists a wall tile that another wall entry already lists',
       'error ditches[1] at (9, 2): is outside the chamber',
-      'error exit at (5, 1): the exit can\'t be inside a wall (only one barrier can)',
+      'error exit at (5, 1): the exit can\'t be inside a wall',
       'error subject at (2, 3): the subject can only start on plain floor or a button',
       'error boxes[0] at (3, 1): a box can only start on plain floor or a button',
       'error boxes[2] at (4, 2): two boxes start on one tile',
       'error lasers[0] at (1, 1): more than one element on a tile: door (doors[0]), laser (lasers[0]); only two crossing lasers can share one',
-      'error doors[0] at (1, 1): id 1 is also used by barriers[0]',
+      'error doors[0] at (1, 1): id 1 is also used by blockedWalls[0]',
       'error groups[0]: links group groups[1]; a group can only name elements',
       'warning buttons[0] at (2, 1): links a box: pressing sends it back to its start, releasing does nothing to it',
       'error buttons[1] at (3, 2): links id 7, which nothing has',
-      'error at (5, 3): the chamber\'s edge is open here: an edge tile needs a wall, a barrier, a door or the exit',
+      'error at (5, 3): the chamber\'s edge is open here: an edge tile needs a wall, a door or the exit',
     ],
   },
   {
     name: 'light_barrier_in_wall',
-    // A light barrier stands only on the floor, unlike a barrier
+    // A light barrier stands only on the floor
     data: lightBarrierInWall,
-    problems: ['error lightBarriers[0] at (2, 0): a light barrier can\'t be inside a wall (only one barrier can)'],
+    problems: ['error lightBarriers[0] at (2, 0): a light barrier can\'t be inside a wall'],
   },
   {
     name: 'light_barrier_shared_tile',

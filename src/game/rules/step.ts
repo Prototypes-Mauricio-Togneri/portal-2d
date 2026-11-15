@@ -96,6 +96,9 @@ function isPlacedElement(definition: RegisteredElement): definition is PlacedEle
 /** The element types found by tile, in registry order */
 const PLACED_ELEMENTS: readonly PlacedElement[] = ELEMENT_REGISTRY.filter(isPlacedElement)
 
+/** The element types found by tile on the floor: a type that sits on a wall (a blocked wall) stops walking and shots by being a wall, which isWall answers */
+const FLOOR_ELEMENTS: readonly PlacedElement[] = PLACED_ELEMENTS.filter((definition: ElementDefinition) => definition.sitsOn !== 'wall')
+
 /** The element types with a blocked flag, in registry order */
 const BLOCKABLE_ELEMENTS = ELEMENT_REGISTRY.filter(isBlockableElement)
 
@@ -105,7 +108,7 @@ const WALK_BLOCKED_WHEN_BLOCKED: readonly BlockableKind[] = BLOCKABLE_ELEMENTS
   .map((definition) => definition.kind)
 
 /** Types that always keep the subject off their tile */
-const WALK_BLOCKED_ALWAYS: readonly PlacedKind[] = PLACED_ELEMENTS
+const WALK_BLOCKED_ALWAYS: readonly PlacedKind[] = FLOOR_ELEMENTS
   .filter((definition: ElementDefinition) => definition.blocksWalking === 'always')
   .map((definition) => definition.kind)
 
@@ -120,7 +123,7 @@ const SHOT_BLOCKED_WHEN_BLOCKED: readonly BlockableKind[] = BLOCKABLE_ELEMENTS
   .map((definition) => definition.kind)
 
 /** Types that always stop a shot on their tile */
-const SHOT_BLOCKED_ALWAYS: readonly PlacedKind[] = PLACED_ELEMENTS
+const SHOT_BLOCKED_ALWAYS: readonly PlacedKind[] = FLOOR_ELEMENTS
   .filter((definition: ElementDefinition) => definition.blocksShots === 'always')
   .map((definition) => definition.kind)
 
@@ -332,6 +335,18 @@ export function stopsShot(draft: StateReader, x: number, y: number): boolean {
 }
 
 /**
+ * Whether a wall takes portals now: a wall always, a blocked wall only while
+ * it isn't blocked.
+ * @param draft - The step's state
+ * @param x - Column of the wall
+ * @param y - Row of the wall
+ * @returns True when a portal can open on it; false outside the chamber
+ */
+function takesPortalsNow(draft: StateDraft, x: number, y: number): boolean {
+  return draft.chamber.canTakePortals(x, y) && (!draft.isBlockedAt('blockedWall', x, y))
+}
+
+/**
  * Whether a wall has room for a portal on its side facing a shot: no portal
  * of either colour on that side or either neighbouring side. One on the far
  * side doesn't count.
@@ -400,7 +415,7 @@ function shoot(draft: StateDraft, color: PortalColor): void {
   const direction = draft.facing
   const stop = shotStop(draft, draft.subjectX, draft.subjectY, direction)
 
-  if ((!stopsShot(draft, stop.x, stop.y)) && draft.chamber.takesPortals(stop.x, stop.y) && hasRoomForPortal(draft, stop.x, stop.y, direction)) {
+  if ((!stopsShot(draft, stop.x, stop.y)) && takesPortalsNow(draft, stop.x, stop.y) && hasRoomForPortal(draft, stop.x, stop.y, direction)) {
     draft.openPortal(color, stop.x, stop.y, OPPOSITES[direction])
     draft.emit(PORTAL_OPENED[color])
 

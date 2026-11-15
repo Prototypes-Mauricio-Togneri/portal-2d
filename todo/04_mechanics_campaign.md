@@ -89,14 +89,14 @@ Stages 00, 01 and 03 are done: their parts below are what they delivered, though
 
 **How elements work today** (the base the new mechanics extend; the full rules are under "Rules" in `docs/elements.md`, the code in `src/game/rules/`)
 
-- Walking: `move` in `step.ts` first faces the subject the way pressed; on an arrow tile only the arrow's way acts. Then `canEnter` refuses a wall, a tile outside the chamber, a tile with a blocked barrier, ditch, door, exit or laser (each definition's `blocksWalking`), and an arrow tile entered against its way. Walking into a wall that holds a portal on the side facing the subject, with both portals open, crosses it (`crossPortal`). The tile in front of the other portal goes through the same `canEnter`, so a crossing onto a tile the subject can't enter is refused.
-- Shots: `shoot` in `step.ts` goes tile by tile the way the subject faces. A fizzler that is on, a raised barrier, a closed door or the closed exit stops it (`blocksShots`); everything else lets it through. It opens the portal on the first wall it reaches if that wall takes portals and no portal sits on that side or a neighbouring side; outside the edge counts as a wall that takes none. Standing in a fizzler that is on silences the portal keys (`stopsShootingFrom`).
-- Links: `CompiledChamber` (`compiled_chamber.ts`) resolves each button's and switch's links once, groups expanded. The draft's `applyLinks` (`state_draft.ts`) runs each linked element's `linkUnblocked` or `linkBlocked` hook. A button (`elements/button.ts`, judged in every pass) unblocks its links going down and blocks them coming up. A switch (`elements/switch.ts`, on the interact key) only ever unblocks them, and is refused while the subject carries a box. Only barriers, ditches, boxes, fizzlers, doors, lasers and the exit can be linked (`linkable`).
+- Walking: `move` in `step.ts` first faces the subject the way pressed; on an arrow tile only the arrow's way acts. Then `canEnter` refuses a wall (a blocked wall included), a tile outside the chamber, a tile with a blocked light barrier, ditch, door, exit or laser (each definition's `blocksWalking`), and an arrow tile entered against its way. Walking into a wall that holds a portal on the side facing the subject, with both portals open, crosses it (`crossPortal`). The tile in front of the other portal goes through the same `canEnter`, so a crossing onto a tile the subject can't enter is refused.
+- Shots: `shoot` in `step.ts` goes tile by tile the way the subject faces. A fizzler or a light barrier that is on, a closed door or the closed exit stops it (`blocksShots`); everything else lets it through. It opens the portal on the first wall it reaches if that wall takes portals (a blocked wall only while unblocked) and no portal sits on that side or a neighbouring side; outside the edge counts as a wall that takes none. Standing in a fizzler that is on silences the portal keys (`stopsShootingFrom`).
+- Links: `CompiledChamber` (`compiled_chamber.ts`) resolves each button's and switch's links once, groups expanded. The draft's `applyLinks` (`state_draft.ts`) runs each linked element's `linkUnblocked` or `linkBlocked` hook. A button (`elements/button.ts`, judged in every pass) unblocks its links going down and blocks them coming up. A switch (`elements/switch.ts`, on the interact key) only ever unblocks them, and is refused while the subject carries a box. Only blocked walls (one tile each), light barriers, ditches, boxes, fizzlers, doors, lasers and the exit can be linked (`linkable`).
 - The repeat loop: after the action and the carried box following, `settle` in `step.ts` runs passes until one changes nothing (capped at 32), then the exit check. A pass runs the hooks of the elements on the subject's tile (the fizzler rule), then every element's pass hook (the buttons).
 - Lasers: one on/off tile each, blocking walking only. `direction` (`H`/`V`) changes only the drawing and lets two crossing lasers share a tile, which either one blocks while it is on.
 - Arrows: fixed and unlinkable (`elements/arrow.ts`, `blocksWalking: 'alongDirection'`).
 - Boxes: block nothing, and a tile can hold several (the validator allows one per tile at the start). Picking up and putting down are in the core step's `interact`, not a box hook. A carried box moves onto the subject's tile after each action (`carryBoxAlong` in `state_draft.ts`). The fizzler rule sends a carried box back to its start, and a link sends a box back unless it is carried; releasing a button linked to a box does nothing (the validator warns).
-- Barriers can sit on wall tiles (`sitsOn: 'floorOrWall'`; chamber 2 has 8 like this, chamber 3 has 1). A raised barrier stops shots before they reach the wall, so that wall takes portals only while the barrier is down, and raising it closes a portal there (`raiseBarrier` in `elements/barrier.ts`). This is already a switchable portal surface. Format 2 also lets a wall entry refuse portals for good (`takesPortals: false`), which no chamber uses yet.
+- Blocked walls (`blockedWalls` in the chamber file, `elements/blocked_wall.ts`) are walls that refuse portals while blocked and take them like any wall while not; walls in `walls` always take portals. Only a one-tile blocked wall can have an `id` and be linked: unblocking it lets it take portals, and blocking it again closes a portal on any of its sides (`blockWall`). Every chamber uses blocked walls; chamber 2 has 8 switchable ones and chamber 3 has 1, and the rest are never linked, so they refuse portals for good. This is already a switchable portal surface.
 - Drawing: `Renderer.render` (`src/game/renderer.ts`) draws layer by layer (`DRAW_LAYERS` in `draw_layer.ts`): floor, arrows and walls, drawn once per chamber and tile size as a backdrop, then the blockers, portals, buttons and switches, boxes, the subject and fizzlers, then the lasers' and portals' glows and the fizzle particles over everything. Inside a layer, each element type is drawn in registry order by its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`), as its sprite for its state (`src/game/sprite_set.ts`), through the tile painter, which turns sprites in quarter turns. A sprite with no file is drawn as its placeholder (`src/game/sprite_placeholders.ts`), in the named `rgba()` colours of stage 03's palette module, `src/game/palette.ts`.
 
 ## Decisions made
@@ -199,7 +199,7 @@ Ordered by design value against state growth and build cost, cheapest high-value
 | # | Mechanic | Design value | New state | Why here |
 |---|---|---|---|---|
 | 1 | Slide floors | High: momentum through portals, very much this game's own | None: a slide is resolved inside one step | Best ratio; also tests the "movement continuation" hook and the landing checks stage 01 fixed |
-| 2 | Rotating arrows | Medium alone, high with slides | One flag per linked arrow (a link flag, like a barrier's) | Tiny; proves "link actions beyond open/close" |
+| 2 | Rotating arrows | Medium alone, high with slides | One flag per linked arrow (a link flag, like a blocked wall's) | Tiny; proves "link actions beyond open/close" |
 | 3 | Live lasers (emitters, beams, receivers, mirror boxes) | Highest: beams bend through portals, which matches the stage's theme | Beams and lit receivers are derived, not stored; mirror boxes add positions like boxes do | Biggest mechanic, built once the hooks are proven |
 | 4 | Conveyors | Medium-high: the world moves as you do; boxes travel through portals on their own | No new fields, but box positions change every tick, so many more states are reachable | Moderate cost; reuses the tick from open decision 4 |
 | 5 | Timed buttons | Medium: route-length puzzles | One counter (0..N) per timed button, up to ×(N+1) states each | Cheap to build, but it multiplies the states; capped |
@@ -210,7 +210,7 @@ Ordered by design value against state growth and build cost, cheapest high-value
 
 Every mechanic phase repeats these seven steps (R1–R7). Each phase below gives the mechanic-specific content.
 
-- **R1 Rules spec.** Finalise the draft spec in this file and fill the mechanic's row of the interaction table (Phase 0). Verified by checking every column: portals (subject, shots, beams), loose and carried boxes, fizzlers, buttons, switches, arrows, ditches, barriers, doors, exit, laser fields and every earlier new mechanic.
+- **R1 Rules spec.** Finalise the draft spec in this file and fill the mechanic's row of the interaction table (Phase 0). Verified by checking every column: portals (subject, shots, beams), loose and carried boxes, fizzlers, buttons, switches, arrows, ditches, blocked walls, light barriers, doors, exit, laser fields and every earlier new mechanic.
 - **R2 Element and format.** One element definition file in stage 01's layout, plus an optional list in format v2 whose type accepts the JSON import without a cast. If an existing element changes, rewrite the chamber files that use it; there is no upgrader (README decision 13). Verified by the build, and by every existing replay still passing unchanged.
 - **R3 Drawing and sound events.** Drawing in stage 03's look: a sprite for each state, added to `docs/sprites.md` and the sprite set, drawn in code as an SVG in `art/sprites/` and exported to its file; colours distinct from every existing element; no portal blue or orange, and none of the UI's meanings (red = caution, green = completed). Movement the mechanic causes animates through stage 03's animation layer, and reduced motion shows plain steps. Sound events get sounds in the style of stage 03's sound, or reuse existing sounds until those exist. Verified in the sprite gallery and in `npm run dev` at 1× and 2× pixel ratio, with the sound setting off silencing it.
 - **R4 Rule fixtures.** One tiny chamber and recorded inputs for each spec bullet and edge case, each asserting its expected outcome. Verified by the local replay check passing, and failing once when the rule is deliberately broken (a one-off spot check, then reverted).
@@ -233,7 +233,7 @@ Every mechanic phase repeats these seven steps (R1–R7). Each phase below gives
 
 A full run was planned at 10–12 chambers per mechanic (1–2 teach, about 3 test, about 3 twist, 3–4 combine). With 16 new chambers for the whole campaign (decision 10), that no longer fits: a run shrinks to a teach chamber and one or two more, or some mechanics are left out (open decision 8). A combine chamber can serve two mechanics at once.
 
-The existing elements need chambers too (portal basics, boxes and buttons, doors and switches, barriers and ditches, fizzlers, arrows, laser fields); the tutorial (chamber 0) and today's three chambers already cover some of them. Barriers over walls (switchable portal surfaces, already used in chambers 2 and 3) deserve a teach chamber of their own.
+The existing elements need chambers too (portal basics, boxes and buttons, doors and switches, blocked walls, light barriers and ditches, fizzlers, arrows, laser fields); the tutorial (chamber 0) and today's three chambers already cover some of them. Switchable blocked walls (switchable portal surfaces, already used in chambers 2 and 3) deserve a teach chamber of their own.
 
 **Campaign plan table** (chamber counts set at the revisit by open decision 8; the rest filled in from the playtests during the mechanic phases and Phase 8):
 
@@ -264,7 +264,7 @@ The existing elements need chambers too (portal basics, boxes and buttons, doors
 Draft spec:
 - A floor tile with no state of its own; not linkable in this version.
 - When the subject enters a slide floor (by walking, by coming out of a portal or by being conveyed), it keeps moving in its travel direction, one tile at a time, all inside the same step.
-- Each tile entered gets the full landing checks. An open ditch, a lit laser field or beam, a raised barrier, a closed door or a closed exit stops the slide on the current tile. An arrow stops it unless the travel matches the arrow's direction, in which case the subject enters the arrow and stops there (arrows are not slide floor). An active fizzler fires as the subject passes (portals cleared, carried box reset) and the slide goes on.
+- Each tile entered gets the full landing checks. An open ditch, a lit laser field or beam, a light barrier that is on, a closed door or a closed exit stops the slide on the current tile. An arrow stops it unless the travel matches the arrow's direction, in which case the subject enters the arrow and stops there (arrows are not slide floor). An active fizzler fires as the subject passes (portals cleared, carried box reset) and the slide goes on.
 - If the next tile is a wall holding a portal whose open side faces the subject, and the other portal is open, the subject comes out of the other portal facing away from it. It keeps sliding in that direction if the exit tile is a slide floor, and stops there otherwise.
 - Entering a normal tile ends the slide on it. Entering the open exit ends the slide and completes the chamber.
 - Buttons and switches react only to the tile where the subject stops; passing over a button does not press it.
@@ -291,7 +291,7 @@ Draft spec:
 - Activated through a link, it points `turnedDirection`; deactivated, it points its original direction. A button holds it turned while pressed; a switch turns it for good (switches only ever activate).
 - If the subject stands on the arrow when it turns, it stays, and can then leave only in the new direction. Ctrl-turning follows the arrow, as today.
 - Slides stop on arrows (Phase 1).
-- State: the arrow's link flag, the same kind as a barrier's.
+- State: the arrow's link flag, the same kind as a blocked wall's.
 
 Chambers. Teach: an arrow corridor that only leads away from the exit until a switch turns the last arrow. Test: an arrow held turned by a button you must put a box on. Twist: the button that turns the arrow is the tile you stand on, so stepping off turns it back behind you, a one-way trap. Combine: arrows that change where a slide ends.
 
@@ -309,7 +309,7 @@ Draft spec:
 - **Emitter**: sits on a wall tile and fires from one face. It can be linked (on/off), on by default. The wall still holds portals on its other faces.
 - **Beam**: not stored. After every change within a step, it is traced from each lit emitter, tile by tile:
   - It passes floor, ditches, fizzlers, laser fields, buttons, switches, arrows, slide floors, conveyors and loose boxes.
-  - It stops at walls, active barriers, closed doors, a closed exit, the subject (open decision 5, option A) and the chamber edge.
+  - It stops at walls, light barriers that are on, closed doors, a closed exit, the subject (open decision 5, option A) and the chamber edge.
   - At a wall side holding a portal whose open side faces the beam, with both portals open, it continues from the other portal's exit tile in that portal's direction.
   - At a mirror box it turns 90° by the box's angle.
   - At a receiver's face it lights the receiver and stops.
@@ -335,7 +335,7 @@ Draft spec:
 - A floor tile with a direction. It can be linked (on/off), on by default.
 - At the end of every tick (open decision 4), everything standing on an active conveyor moves one tile in its direction, all at once: the subject and loose boxes (open decision 7). Boxes may stack, as today. There is no chaining: one tile per tick, even onto another conveyor.
 - The subject moves only where walking would allow; otherwise it stays. Carried onto a slide floor, it slides. Carried into a wall holding a portal from the tile in front of it, with both portals open, it goes through, exactly as if it had walked.
-- A loose box moves unless the next tile is a wall, an active barrier, a closed door or a closed exit. A box moved onto an open ditch falls and resets to its start, as a fizzled box does. A box carried into a wall holding a portal (open side facing it, both portals open) comes out of the other portal. This is the first time a box goes through a portal without the subject (a twist, confirmed at R1).
+- A loose box moves unless the next tile is a wall, a light barrier that is on, a closed door or a closed exit. A box moved onto an open ditch falls and resets to its start, as a fizzled box does. A box carried into a wall holding a portal (open side facing it, both portals open) comes out of the other portal. This is the first time a box goes through a portal without the subject (a twist, confirmed at R1).
 - A box conveyed onto a button presses it in the same step's settling.
 - Chamber validation: a conveyor can't share a tile with a wall, ditch, door, exit, arrow, switch or slide floor.
 
@@ -375,7 +375,7 @@ Only if go/no-go point 3 says yes.
 
 Draft spec:
 - A solid block. It blocks walking and shots, holds buttons down, and reflects beams by a fixed `/` or `\`. It can't be carried.
-- Walking into it pushes it one tile if the tile beyond is free for a block (not a wall, active barrier, closed door, closed exit, open ditch, another block, the exit, or a switch); otherwise the move is refused.
+- Walking into it pushes it one tile if the tile beyond is free for a block (not a wall, light barrier that is on, closed door, closed exit, open ditch, another block, the exit, or a switch); otherwise the move is refused.
 - Pushed into a wall holding a portal (open side facing it, both portals open), it comes out of the other portal if that exit tile is free for it.
 - Pushed onto an active fizzler, it resets to its start.
 - Pushing can create dead ends (a block in a corner). No warning reports them (README decision 10): undo and Restart chamber get the player out.

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="256" viewBox="0 0 1280 256">
   <!--
-    The strip of a wall that refuses portals (docs/sprites.md, joins): five
+    The strip of a blocked wall, which refuses portals (docs/sprites.md, joins): five
     256 px tiles, left to right lone, horizontal run, vertical run, inner
     corners and solid, built exactly like the wall strip (wall.svg), so the
     two meet edge to edge in one mass. Only the colours and the top surface

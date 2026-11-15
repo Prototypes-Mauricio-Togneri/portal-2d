@@ -21,7 +21,7 @@ function switchLightBarrierOn(draft: StateDraft, index: number): void {
   draft.setBlocked('lightBarrier', index, true)
 }
 
-/** A field of light on a floor tile, which keeps the subject and shots out while it is on, like a barrier on the floor; its direction only changes the drawing */
+/** A field of light on a floor tile, which keeps the subject and shots out while it is on; its direction only changes the drawing */
 export const LIGHT_BARRIER_ELEMENT = defineElement<BeamData>()({
   kind: 'lightBarrier',
   fileKey: 'lightBarriers',
@@ -33,7 +33,7 @@ export const LIGHT_BARRIER_ELEMENT = defineElement<BeamData>()({
   blocksWalking: 'whenBlocked',
   blocksShots: 'whenBlocked',
   stopsShootingFrom: 'never',
-  takesPortals: false,
+  takesPortals: 'never',
   reactsToSubject: false,
   events: [],
   hooks: {

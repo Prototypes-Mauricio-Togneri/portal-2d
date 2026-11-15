@@ -61,7 +61,7 @@ const RING_FADE_POWER = 1.4
 /** How far into a wall's tile the ripple sits, as a share of a tile: where a portal's oval would open */
 const WALL_INSET = 0.125
 
-/** How far into an element's tile: at its near edge, since a door, the exit, a fizzler and a raised barrier fill their tile */
+/** How far into an element's tile: at its near edge, since a door, the exit and a fizzler fill their tile */
 const ELEMENT_INSET = 0.06
 
 /** How far into a light barrier's tile when its band runs across the shot: the band's near face, 80 px into the 256 px sprite */

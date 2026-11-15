@@ -32,7 +32,7 @@ export const BUTTON_ELEMENT = defineElement<TriggerData>()({
   blocksWalking: 'never',
   blocksShots: 'never',
   stopsShootingFrom: 'never',
-  takesPortals: false,
+  takesPortals: 'never',
   reactsToSubject: true,
   events: [
     GameEvent.BUTTON_PRESSED,

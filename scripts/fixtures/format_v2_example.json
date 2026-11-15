@@ -23,13 +23,6 @@
         },
         {
             "xFrom": 0,
-            "xTo": 6,
-            "yFrom": 4,
-            "yTo": 4,
-            "takesPortals": false
-        },
-        {
-            "xFrom": 0,
             "xTo": 0,
             "yFrom": 1,
             "yTo": 3
@@ -39,18 +32,29 @@
             "xTo": 6,
             "yFrom": 1,
             "yTo": 3
+        }
+    ],
+    "blockedWalls": [
+        {
+            "x": 3,
+            "y": 4,
+            "id": 2
+        },
+        {
+            "xFrom": 0,
+            "xTo": 2,
+            "yFrom": 4,
+            "yTo": 4
+        },
+        {
+            "xFrom": 4,
+            "xTo": 6,
+            "yFrom": 4,
+            "yTo": 4
         },
         {
             "x": 3,
-            "y": 2,
-            "takesPortals": false
-        }
-    ],
-    "barriers": [
-        {
-            "x": 3,
-            "y": 3,
-            "id": 2
+            "y": 2
         }
     ],
     "buttons": [

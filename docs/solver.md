@@ -18,8 +18,8 @@ The ground rule: every rule effect comes from the rules' own `step` (`src/game/r
 
 The pieces, in `src/solver/`:
 
-- **Chamber index** (`chamber_index.ts`): numbers every tile that isn't wall, and every wall side a portal can open on.
-- **State key** (`state_key_codec.ts`): a settled state packed into 64 bits from those numbers: the subject's tile and facing, the carried box, each portal (closed or a wall side), each box's tile, one bit per blocked flag. It leaves out what settling decides: each button's pressed flag, the carried box's tile (the subject's) and the completion (the subject on the exit). The current chambers need 52–53 bits.
+- **Chamber index** (`chamber_index.ts`): numbers every tile that isn't wall, and every wall side a portal can ever open on: a wall's, or a blocked wall's that a link reaches or that starts unblocked.
+- **State key** (`state_key_codec.ts`): a settled state packed into 64 bits from those numbers: the subject's tile and facing, the carried box, each portal (closed or a wall side), each box's tile, one bit per blocked flag. It leaves out what settling decides: each button's pressed flag, the carried box's tile (the subject's) and the completion (the subject on the exit). Chambers 1 to 3 need 49–53 bits.
 - **State set** (`state_set.ts`): keys in typed arrays of a capacity fixed up front, numbered in the order added, each with the entry it was reached from, so a route can be rebuilt. 10 million keys go in in 1.7 s and are found in 2.1 s, in 188 MiB.
 - **Baseline search** (`baseline_search.ts`): every action from every state, cheapest first (Dijkstra). Exact and slow (about 35,000 states a second on a real chamber); it is the reference the macro search is checked against on the tiny chambers.
 - **Macro search** (`macro_search.ts`): one step is a whole walk, then one action that a walk can't do: interact, a shot each way the subject may face, or a move a walk doesn't cover (onto or off an event tile, into a portal). Turning is free, so a state is stored with the subject facing its tile's canonical way (the first way it may move there). Three modes: any route (breadth first, stops at the first completed state), fewest moves and fewest portals (cheapest first on moves then portals, or the reverse). The route found is turned back into key presses (`macro_route.ts`) and replayed through the rules, and must reach every state the search stored.
@@ -48,13 +48,15 @@ The tiny chambers are in `scripts/solver_fixtures/` (`solver_fixtures.ts` lists 
 
 All in Node 24 on the author's machine (8 cores), one search at a time unless said otherwise.
 
-Size of the problem. The upper bound is tiles × 4 facings × (wall sides + 1)² for the portals × (tiles + 1)² for the boxes × 2^flags:
+Size of the problem, as the chambers are now (`npm run solve`, 2026-11-15). The upper bound is tiles × 4 facings × (wall sides + 1)² for the portals × (tiles + 1)² for the boxes × 2^flags:
 
 | # | Chamber | Size | Tiles | Portal wall sides | Flags | Boxes | Buttons | Upper bound | Key bits |
 |---|---------|------|-------|-------------------|-------|-------|---------|-------------|----------|
-| 1 | 1 | 20×20 | 262 | 225 | 6 | 2 | 5 | ~10^14.4 | 53 |
-| 2 | 2 | 23×13 | 189 | 169 | 9 | 2 | 2 | ~10^14.6 | 53 |
-| 3 | 3 | 23×17 | 268 | 212 | 5 | 2 | 4 | ~10^14.1 | 52 |
+| 1 | 1 | 20×20 | 252 | 213 | 6 | 2 | 5 | ~10^14.3 | 50 |
+| 2 | 2 | 23×13 | 185 | 165 | 9 | 2 | 2 | ~10^14.6 | 53 |
+| 3 | 3 | 23×17 | 241 | 182 | 5 | 2 | 4 | ~10^13.8 | 49 |
+
+The searches below ran on 2026-11-08, before the chambers' barriers became blocked walls, when the barriers' floor tiles still counted as tiles (262, 189 and 268) and their key took 52–53 bits; nothing could ever stand on those tiles, so the states the searches reach are the same now, only numbered more tightly.
 
 States expanded in 5 minutes as the shortcuts were added (the par searches don't use regions or limited drops):
 

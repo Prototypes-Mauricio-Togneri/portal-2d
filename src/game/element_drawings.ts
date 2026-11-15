@@ -2,8 +2,9 @@ import {Direction} from '@/game/direction'
 import type {BlockedShares} from '@/game/element_transitions'
 import {pieceNumber} from '@/game/piece_number'
 import {type CompiledChamber, NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
-import type {BlockableKind, ElementKind} from '@/game/rules/element_registry'
+import type {ElementKind} from '@/game/rules/element_registry'
 import type {RulesState} from '@/game/rules/rules_state'
+import {NOT_STORED} from '@/game/rules/state_layout'
 import {STRIP_TILE, type SpriteName, TILE_QUARTERS, type TileQuarter} from '@/game/sprite_set'
 import type {PiecePlacer, TilePainter} from '@/game/tile_painter'
 
@@ -12,8 +13,10 @@ import type {PiecePlacer, TilePainter} from '@/game/tile_painter'
 // element is drawn as its sprite for its state (docs/sprites.md), switched
 // off as well as on, except an open door or exit, a fizzler that is off, and
 // a laser's or a light barrier's beam that is off, which aren't drawn at
-// all; their end plates show where a beam ends, lit or not. Walls and open
-// ditches join their neighbours, quarter by quarter, and doors, the exit and
+// all; their end plates show where a beam ends, lit or not. Walls, blocked
+// walls and open ditches join their neighbours, quarter by quarter (a blocked
+// wall a link reaches is drawn in the backdrop as a wall, its blocked surface
+// painted over it while it is blocked), and doors, the exit and
 // fizzlers are turned to the walls beside them; a door or the exit sliding
 // open or shut, a fizzler crumbling away or forming, or a laser or a light
 // barrier fading out or in, is drawn part way. Beside them, what moves with
@@ -62,11 +65,6 @@ type BeamSprites = {
  * Whether a tile counts as part of a joined mass: a wall, or an open ditch.
  */
 type JoinTest = (x: number, y: number) => boolean
-
-/**
- * The element types that fill a gap in a wall, turned to the walls beside them.
- */
-type GapKind = 'door' | 'exit' | 'fizzler'
 
 /**
  * The element types that slide open and shut.
@@ -123,7 +121,6 @@ const GAP_SIDE_KINDS: readonly PlacedKind[] = [
   'door',
   'exit',
   'fizzler',
-  'barrier',
   'lightBarrier',
   'ditch',
 ]
@@ -251,8 +248,8 @@ function drawJoinedTile(painter: TilePainter, name: SpriteName, joins: JoinTest,
 }
 
 /**
- * Whether a tile lines a gap: a wall, outside the chamber, or a door, the
- * exit, a fizzler, a barrier, a light barrier or a ditch, in any state.
+ * Whether a tile lines a gap: a wall, blocked or not, outside the chamber,
+ * or a door, the exit, a fizzler, a light barrier or a ditch, in any state.
  * @param chamber - The chamber
  * @param x - Column
  * @param y - Row
@@ -302,26 +299,6 @@ function crumblePlacer(share: number, seed: number): PiecePlacer {
       scale: 1 - own,
       alpha: 1 - (own * own),
       roundness: Math.min(own / CRUMBLE_ROUNDED_BY, 1),
-    }
-  }
-}
-
-/**
- * Builds a drawing for a type whose elements can be blocked: each element's
- * sprite for whether it is.
- * @param kind - The element type
- * @param blockedSprite - Its sprite while blocked (a barrier raised)
- * @param unblockedSprite - Its sprite while not
- * @returns The drawing
- */
-function blockableDrawing(kind: Exclude<BlockableKind, 'ditch' | BeamKind | GapKind>, blockedSprite: SpriteName, unblockedSprite: SpriteName): ElementDrawing {
-  return (painter, state) => {
-    const chamber = state.chamber
-
-    for (let i = 0; i < chamber.countOf(kind); i++) {
-      const position = chamber.positionOf(kind, i)
-
-      painter.drawSprite(state.isBlocked(kind, i) ? blockedSprite : unblockedSprite, position.x, position.y)
     }
   }
 }
@@ -396,22 +373,70 @@ function drawArrows(painter: TilePainter, state: RulesState): void {
 }
 
 /**
- * Draws every wall tile inside the chamber, joined to the walls around it;
- * outside the chamber counts as open, so the walls along its edge are
- * bevelled on their outer side too. A wall that refuses portals is drawn from
- * its own strip, but joins every wall alike, so both kinds make one mass.
+ * Whether a tile is part of the chamber's mass of walls, blocked walls
+ * included; outside the chamber counts as open, so the walls along its edge
+ * are bevelled on their outer side too.
+ * @param chamber - The chamber
+ * @returns The join test
+ */
+function wallJoins(chamber: CompiledChamber): JoinTest {
+  return (x, y) => (x >= 0) && (y >= 0) && (x < chamber.width) && (y < chamber.height) && chamber.isWall(x, y)
+}
+
+/**
+ * Whether a blocked wall can change, because a link reaches it.
+ * @param chamber - The chamber
+ * @param index - The blocked wall's index in the chamber's blocked wall list
+ * @returns True when a link reaches it
+ */
+function isSwitchable(chamber: CompiledChamber, index: number): boolean {
+  return chamber.stateLayout.flagOffset('blockedWall', index) !== NOT_STORED
+}
+
+/**
+ * Draws every wall tile inside the chamber, joined to the walls around it,
+ * for the backdrop, which is the same in every state. A blocked wall no link
+ * reaches is drawn from its own strip while blocked, and one a link reaches
+ * as a wall, its blocked surface painted over it in a later layer while it
+ * is blocked; both kinds join every wall alike, so they make one mass.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  */
 function drawWalls(painter: TilePainter, state: RulesState): void {
   const chamber = state.chamber
-  const joins: JoinTest = (x, y) => (x >= 0) && (y >= 0) && (x < chamber.width) && (y < chamber.height) && chamber.isWall(x, y)
+  const joins = wallJoins(chamber)
 
   for (let x = 0; x < chamber.width; x++) {
     for (let y = 0; y < chamber.height; y++) {
-      if (chamber.isWall(x, y)) {
-        drawJoinedTile(painter, chamber.takesPortals(x, y) ? 'wall' : 'wall_no_portals', joins, x, y)
+      if (!chamber.isWall(x, y)) {
+        continue
       }
+
+      const blockedWall = chamber.elementAt('blockedWall', x, y)
+      const blocked = (blockedWall !== NO_ELEMENT) && (!isSwitchable(chamber, blockedWall)) && state.isBlocked('blockedWall', blockedWall)
+
+      drawJoinedTile(painter, blocked ? 'blocked_wall' : 'wall', joins, x, y)
+    }
+  }
+}
+
+/**
+ * Draws the blocked surface over each blocked wall a link reaches while it is
+ * blocked, joined like the wall drawn beneath it in the backdrop, whose
+ * shape it keeps, so only the surface changes. Only a one-tile blocked wall
+ * can be linked.
+ * @param painter - Paints on the canvas
+ * @param state - The state drawn
+ */
+function drawBlockedWalls(painter: TilePainter, state: RulesState): void {
+  const chamber = state.chamber
+  const joins = wallJoins(chamber)
+
+  for (let i = 0; i < chamber.countOf('blockedWall'); i++) {
+    if (isSwitchable(chamber, i) && state.isBlocked('blockedWall', i)) {
+      const position = chamber.positionOf('blockedWall', i)
+
+      drawJoinedTile(painter, 'blocked_wall', joins, position.x, position.y)
     }
   }
 }
@@ -589,7 +614,7 @@ function drawBoxes(painter: TilePainter, state: RulesState): void {
 export const ELEMENT_DRAWINGS: Readonly<Record<ElementKind, ElementDrawing>> = {
   arrow: drawArrows,
   wall: drawWalls,
-  barrier: blockableDrawing('barrier', 'barrier_raised', 'barrier_lowered'),
+  blockedWall: drawBlockedWalls,
   lightBarrier: beamDrawing('lightBarrier', LIGHT_BARRIER_SPRITES),
   ditch: drawDitches,
   laser: beamDrawing('laser', LASER_SPRITES),

@@ -13,7 +13,7 @@ export const ARROW_ELEMENT = defineElement<ArrowData>()({
   blocksWalking: 'alongDirection',
   blocksShots: 'never',
   stopsShootingFrom: 'never',
-  takesPortals: false,
+  takesPortals: 'never',
   reactsToSubject: false,
   events: [],
 })

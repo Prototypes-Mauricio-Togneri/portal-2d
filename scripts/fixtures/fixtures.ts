@@ -1,5 +1,6 @@
 import type {ChamberData} from '@/game/chamber_data'
 import type {ReplayExpectation, ReplayStep} from '@/game/replay_data'
+import blockedWall from '@scripts/fixtures/blocked_wall.json'
 import boxLinkedButton from '@scripts/fixtures/box_linked_button.json'
 import buttonBehindCarriedBox from '@scripts/fixtures/button_behind_carried_box.json'
 import carriedBoxLink from '@scripts/fixtures/carried_box_link.json'
@@ -16,7 +17,8 @@ import twoButtonsOneDoor from '@scripts/fixtures/two_buttons_one_door.json'
 // Short replays on tiny chambers (the JSON files next to this one): each pins
 // how the rules play a change from the original rules (docs/elements.md,
 // "Changes from the original rules") or an element the original game didn't
-// have, and a few pin how undo and redo replay. The replay check runs them. The chambers are read without the
+// have (the light barrier, the blocked wall that a link switches), and a few
+// pin how undo and redo replay. The replay check runs them. The chambers are read without the
 // layout checks, so the one open at the edge still plays
 
 /**
@@ -329,6 +331,24 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 2,
       portals: 1,
       finalHash: '9b3c0610',
+    },
+  },
+  {
+    name: 'blocked_wall_switches_off_and_on',
+    behaviour: 'A blocked wall refuses a portal; unblocked by a button, it takes one, and once the button is released it is blocked again and the portal on it closes, staying closed when the button goes down again.',
+    chamber: blockedWall,
+    actions: [
+      'orange',
+      'right',
+      'orange',
+      'right',
+      'left',
+    ],
+    expected: {
+      completed: false,
+      moves: 3,
+      portals: 1,
+      finalHash: 'fb67a237',
     },
   },
 ]
