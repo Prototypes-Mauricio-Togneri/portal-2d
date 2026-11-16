@@ -19,8 +19,9 @@
 | 2 | `01_engine_v2.md` (file removed) | Done | Sounds out of the rules, engine runnable without a browser, replays on today's engine, recorded solutions and a local replay check, undo/redo, input rewrite (remappable keys), v2 rules and chamber format, the three inherited bugs fixed, v2 checked against the old rules, old engine deleted |
 | 3 | `02_solver.md` (file removed; see `docs/solver.md`) | Stopped | Solver prototype on the current chambers (go/no-go: no-go on 2026-11-08, decision 10); the rest was dropped: solvability and par in the local checks, shortcut finder, dead-end warning, hints, generated chambers |
 | 4 | `03_look_and_sound.md` (file removed) | Done | Visual rework, one tutorial chamber (chamber 0) |
-| 5 | `04_mechanics_campaign.md` | Draft | Lasers through portals, slide floors and rotating arrows; the campaign completed at 20 chambers, a menu and catalogue that scale, chamber numbering and links |
-| 6 | `05_creator_platform.md` | Draft | Editor, sharing in the link, share only what you solved |
+| 5 | `04a_mechanics.md` | Draft | Lasers through portals, slide floors and rotating arrows, each with a teach and a proof chamber |
+| 6 | `04b_campaign.md` | Draft | The campaign completed at 20 chambers, a menu and catalogue that scale, chamber numbering and links |
+| 7 | `05_creator_platform.md` | Draft | Editor, sharing in the link, share only what you solved |
 ## The idea
 
 The moonshot isn't "more chambers". It is turning the rules into a pure function — *current state + one keypress → next state* — with the frame loop only animating and drawing. Once that exists, five things become possible: a solver that understands every chamber, replays, an editor, a daily puzzle, and leaderboards that can be verified by re-running a replay. Almost everything in stages 02–05 hangs off stage 01.
@@ -106,6 +107,7 @@ These replace the rougher claims in the original roadmap. Re-check them when rev
 | 12 | 2026-11-08 | A private fan game: played only by the author and a few friends, never published on Steam or any other platform. It stays "Portal 2D" with Valve's name, logo and assets (open decision 5 settled), so stage 03 drops all identity work and becomes "Look and sound" (`03_look_and_sound.md`). Stage 03 also drops the colour-blind palettes, portal shapes and relaxed mode, the camera (every chamber fits the screen) and preview deploys; the renderer stays on the 2D canvas unless stage 03's profiling shows it can't hold 60 fps (open decision 4 settled). Stages 04 and 05 were updated to match |
 | 13 | 2026-11-09 | The author is the only player during development; a few friends will play later (decision 12). No compatibility work, ever: saves and settings may be reset by updates, with no migrations, and links and the chamber and replay formats may break. Done in the code the same day: chamber format 1 support removed (the upgrader and its example), the progress migration from version 1 and the guard against overwriting a newer save removed, and the format, ruleset and chamber-id fields dropped from recorded solutions. Analytics was removed and restored the same day, so it stays as it was (Firebase events, the attempts counter, the undo count). Kept: permanent chamber ids (they name the chamber files, key stored progress and are analytics' `chamber_id`), the recorded solutions and their checks, and the chamber hash. For the plan: links may follow position with no redirects (open decision 6 settled), no retired-id list, no data migrations. Difficulty from player data and the histogram stay dropped, since a few friends are far below any useful sample (stage 04 had set about 50 players), so the chamber order comes from playtests, with the friends' analytics informing them. Stage 05's Stage B (accounts, community) is removed, since a few friends are no audience (open decisions 7 and 8 settled). Stages 03–05 were updated to match, and stages 04 and 05 now also apply decision 10 in full |
 | 14 | 2026-11-15 | Stage 04 settles its open decisions (its decisions 16–18): the campaign's new mechanics are slide floors, rotating arrows and live lasers; echo, timed buttons and push blocks are dropped, and so are medals, so the time stays the only score (open decisions 1 and 3 settled) |
+| 15 | 2026-11-16 | Stage 04 splits in two. 04a (`04a_mechanics.md`) builds slide floors, rotating arrows and live lasers, each with its rules, fixtures, docs and a teach and a proof chamber that prove it in play. 04b (`04b_campaign.md`) builds the rest of the 16 new chambers and their order, and the catalogue, links and Play menu that scale to 20. Stage 04's decisions 1–19 stay in 04a with their numbers, and 04b cites them as "04a decision N". 04b's parts that need no new mechanic (lab chambers, chambers for the existing elements, catalogue, links, menu) may start before 04a is done. Earlier decisions here that name stage 04 mean both halves |
 
 ## Open decisions
 
@@ -126,12 +128,13 @@ Each one belongs to the stage that must settle it, and appears there with option
 
 | # | Stage | Needs | Unlocks |
 |---|---|---|---|
-| 1 | 00 Fixes | — | Safe reordering of chambers; analytics history for stage 04; first local check |
+| 1 | 00 Fixes | — | Safe reordering of chambers; analytics history for stage 04b; first local check |
 | 2 | 01 Engine v2 | 00 | Replays, undo, a browser-free pure step, data-described elements, chamber format v2 |
 | 3 | 02 Solver | 01 | The prototype's measurements only (stopped after phase A, decision 10) |
 | 4 | 03 Look and sound | 01 | The visual rework, a tutorial chamber |
-| 5 | 04 Mechanics and campaign | 01, 03 | New element types, each with rule fixtures, docs and chambers with recorded solutions; 20 chambers |
-| 6 | 05 Creator platform | 01, 03, 04 | Editor, shared chambers |
+| 5 | 04a Mechanics | 01, 03 | New element types, each with rule fixtures, docs and a teach and a proof chamber with recorded solutions |
+| 6 | 04b Campaign | 01, 03, 04a (only for the chambers built around its mechanics) | 20 chambers; a catalogue, links and a Play menu that scale |
+| 7 | 05 Creator platform | 01, 03, 04a, 04b | Editor, shared chambers |
 
 ## Engineering backbone (woven in)
 
@@ -143,7 +146,8 @@ Local commands only, growing stage by stage:
 | 2 | 01 | Engine loads under Node; every recorded solution is replayed and must complete; v2 checked against the old rules |
 | 3 | 02 | The solver check in `npm run verify`; no solvability or par check (stopped after phase A, decision 10) |
 | 4 | 03–05 | Bundle size watch |
-| 5 | 04 | Each new mechanic ships with at least one chamber and a recorded solution; the catalogue check |
+| 5 | 04a | Each new mechanic ships with at least one chamber and a recorded solution |
+| 6 | 04b | The catalogue check |
 
 ## What we deliberately skip
 
