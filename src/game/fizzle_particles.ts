@@ -96,8 +96,8 @@ export class FizzleParticles {
   /**
    * Starts breaking up what a step's fizzlers took. When the subject was
    * caught in a field (fizzled): each portal open before it and closed after
-   * it, where it was, and a box carried before it and gone after it, where it
-   * was carried at the step's end. Otherwise only each portal a fizzler
+   * it, where it was, and a box carried before it and gone after it, unless
+   * it was put down, where it was carried at the step's end. Otherwise only each portal a fizzler
    * closed by switching on: one closed in the step whose wall side faced a
    * fizzler that is on after it, so a portal a blocked wall closed in the
    * same step still just vanishes. And each box destroyed where it lay or
@@ -134,7 +134,9 @@ export class FizzleParticles {
       }
     }
 
-    if (subjectFizzled && (before.carriedBox !== NO_BOX) && (after.carriedBox === NO_BOX)) {
+    // A box put down in the step was let go before the field could take it,
+    // even when a button it landed on switched the field on under the subject
+    if (subjectFizzled && (before.carriedBox !== NO_BOX) && (after.carriedBox === NO_BOX) && (!events.includes(GameEvent.BOX_PUT_DOWN))) {
       const ahead = DELTAS[after.facing]
 
       bursts.push({

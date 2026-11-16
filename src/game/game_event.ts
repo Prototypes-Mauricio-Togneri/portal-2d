@@ -26,7 +26,7 @@ export type GameEvent =
 export const GameEvent = {
   BLUE_PORTAL_OPENED: 'bluePortalOpened', // A blue portal opened on a wall
   ORANGE_PORTAL_OPENED: 'orangePortalOpened', // An orange portal opened on a wall
-  REFUSED: 'refused', // A shot missed or was tried while carrying a box, a portal crossing was refused, a switch was used while carrying one, or a box was put down where another rests
+  REFUSED: 'refused', // A shot missed or was tried while carrying a box, a portal crossing was refused, a switch was used while carrying one, or a box was put down where another rests and the tile faced can't take it
   BOX_PICKED_UP: 'boxPickedUp', // The subject picked up a box
   BOX_PUT_DOWN: 'boxPutDown', // The subject put down the box it carried
   BOX_DESTROYED: 'boxDestroyed', // A box lying where a door closed, a ditch opened, or a laser, a light barrier or a fizzler switched on went back to its start

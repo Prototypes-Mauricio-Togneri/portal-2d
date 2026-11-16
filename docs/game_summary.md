@@ -19,7 +19,7 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 
 - Stands on one tile and always faces one of the four directions. The way it faces matters, because portals are shot that way.
 - Moving in a direction first turns it that way, then steps onto the next tile if it can enter it. Walking into something it can't enter only turns it.
-- Can carry one box at a time. It picks up the box under it, or else the box on the tile it faces, if it could step onto that tile (not through an arrow pointing another way or something that blocks walking, and not from a fizzler that is on). It puts a box down only on its own tile. The box goes everywhere with it, through portals too. While carrying it, it can't shoot portals: trying plays the error sound.
+- Can carry one box at a time. It picks up the box under it, or else the box on the tile it faces, if it could step onto that tile (not through an arrow pointing another way or something that blocks walking, and not from a fizzler that is on). It puts a box down on the tile it faces, if it could step onto that tile and no box, exit, switch or fizzler that is on is there, or else on its own tile. The box goes everywhere with it, through portals too. While carrying it, it can't shoot portals: trying plays the error sound.
 
 ## Portals
 
@@ -73,7 +73,7 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 - A step glides the subject one tile; a crossing slides it into one portal and out of the other. Turns happen at once.
 - When switched, doors, the exit and blocked walls slide open or shut, a ditch's grate slides in or out, a fizzler crumbles away or forms, and a laser or light barrier fades. A fizzle breaks the lost portals and a carried box into pieces, and so does a fizzler switching on with a portal facing it (silently), and a door closing or a laser, light barrier or fizzler switching on with a box lying there (silently); a box on a ditch that opens falls into the pit (silently), a missed shot ripples, and lasers and portals glow with a slow pulse.
 - With reduced motion, nothing animates: everything changes at once and the glows hold steady.
-- Each event has a sound: a portal opening (one per colour), a missed shot, a box picked up or put down (the same sound), a fizzle, a crossing, a door or the exit opening or closing, a button pressed or released, a switch used. Any refused action plays an error sound: a crossing, shooting or using a switch while carrying a box, or putting a box down on another.
+- Each event has a sound: a portal opening (one per colour), a missed shot, a box picked up or put down (the same sound), a fizzle, a crossing, a door or the exit opening or closing, a button pressed or released, a switch used. Any refused action plays an error sound: a crossing, shooting or using a switch while carrying a box, or putting a box down on another when the tile faced can't take it either.
 
 ## Buttons, switches and links
 
@@ -81,7 +81,7 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 - Pressing a button, or using a switch, opens what it is linked to: a blocked wall takes portals, a ditch is bridged, a door or the exit opens, a light barrier, fizzler or laser turns off, a box goes back to its start (unless it's being carried).
 - Releasing a button closes them again: the blocked wall refuses portals (closing any portal on it), the ditch opens, the door or exit closes, the light barrier, fizzler or laser turns back on (a fizzler closing any portal facing it). A released button does nothing to a box.
 - A button stays pressed only while the subject or a box is on it, so a box left on it keeps a door open while the subject walks away.
-- A switch only opens. Using it again repeats that (sending a linked box back each time); it never closes anything. It can't be used while carrying a box, so a box can't be put down on a switch.
+- A switch only opens. Using it again repeats that (sending a linked box back each time); it never closes anything. It can't be used while carrying a box, and a box is never put down on a switch, so none ever hides one.
 - Each element starts open or closed as the chamber sets it, before any button or switch acts on it.
 - Some links are shown by a dotted line on the floor, from the button or switch to the element, as in the original game, mostly in the tutorial and early chambers. It is cyan, and turns amber while the element is open in the sense above (a line to a box never does). It runs under walls and anything else on its way, and changes nothing in play.
 
@@ -94,7 +94,7 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 
 ## Other details
 
-- Something closing under the subject (a door, the exit, a light barrier, a ditch, a laser) doesn't hurt it: it can still turn, shoot, interact and walk off. A box it carries is kept, but putting it down there destroys it.
+- Something closing under the subject (a door, the exit, a light barrier, a ditch, a laser) doesn't hurt it: it can still turn, shoot, interact and walk off. A box it carries is kept, but putting it down there, facing a tile that can't take it, destroys it.
 - A box lying where a door closes, a ditch opens, or a laser, a light barrier or a fizzler switches on is destroyed: it goes back to its start, breaking up, or falling into the ditch.
 - Boxes never block the subject or shots. A tile holds one box: a box can't be put down where another lies, and a box sent back to its start sends one lying there back to its own start.
 - Once the subject reaches the open exit, the chamber is complete and nothing more changes.

@@ -13,23 +13,24 @@ Releasing a button closes or switches back on what it holds open, even under the
 ## Boxes
 
 4. A box that breaks up or falls goes back to its start tile: a fizzler destroys a box carried into it, and a door closing, a ditch opening, or a laser, a light barrier or a fizzler switching on destroys a box lying there. Keep each box's start tile reachable for as long as the box is needed.
-5. Send a box back with a switch, not a button: a button sends it back when pressed, but releasing it does nothing (the chamber check warns).
-6. Keep the chamber within the solver's state key, 64 bits: `npm run solve` prints each chamber's width (today's use 29 to 53 bits). Each box adds about 8 bits, and each element a link reaches 1.
+5. A box is put down on the tile the subject faces, and with the arrow keys the subject faces only the way it last walked: it can face a floor tile without stepping onto it only by walking straight at it, or by coming out of a portal facing it. Give each tile a box must be put down on, a button above all, a straight approach two tiles long, or a portal facing it; the middle of a 3 × 3 room has none from inside the room. Standing on the tile itself and facing a wall puts the box down there too.
+6. Send a box back with a switch, not a button: a button sends it back when pressed, but releasing it does nothing (the chamber check warns).
+7. Keep the chamber within the solver's state key, 64 bits: `npm run solve` prints each chamber's width (today's use 29 to 53 bits). Each box adds about 8 bits, and each element a link reaches 1.
 
 ## Portals
 
-7. Some wall sides never take a portal: those facing a door or the exit, those behind the end plate of a run of lasers or light barriers, and, on a wall tile that already holds a portal, every side but the opposite one. Don't plan a route that needs one.
-8. A fizzler switching on closes a portal facing it, so a portal in front of a fizzler lasts only while the fizzler is off.
+8. Some wall sides never take a portal: those facing a door or the exit, those behind the end plate of a run of lasers or light barriers, and, on a wall tile that already holds a portal, every side but the opposite one. Don't plan a route that needs one.
+9. A fizzler switching on closes a portal facing it, so a portal in front of a fizzler lasts only while the fizzler is off.
 
 ## Dead ends
 
-9. The controls legend doesn't show Undo yet, so a stuck player may only know Restart chamber. Avoid dead ends a player can walk into without noticing, such as an arrow leading into a pocket with no way back. A chamber that can be lost on purpose should make it obvious.
+10. The controls legend doesn't show Undo yet, so a stuck player may only know Restart chamber. Avoid dead ends a player can walk into without noticing, such as an arrow leading into a pocket with no way back. A chamber that can be lost on purpose should make it obvious.
 
 ## Antlines
 
-10. Draw antlines in the tutorial and the early chambers, from each button or switch to what it links, so the player learns how links work; later chambers can leave them out.
+11. Draw antlines in the tutorial and the early chambers, from each button or switch to what it links, so the player learns how links work; later chambers can leave them out.
 
 ## Checking a chamber
 
-11. Record its solution by playing it through (Download solution in the completion dialog, in `npm run dev`), and record it again after any change to the chamber but its antlines.
-12. Run `npm run chamber:check` and `npm run replay:check`. `npm run solve -- --par src/chambers/chamber_N.json --max-states=40000000` finds the fewest moves and the fewest portals, which shows any shortcut the design didn't intend.
+12. Record its solution by playing it through (Download solution in the completion dialog, in `npm run dev`), and record it again after any change to the chamber but its antlines.
+13. Run `npm run chamber:check` and `npm run replay:check`. `npm run solve -- --par src/chambers/chamber_N.json --max-states=40000000` finds the fewest moves and the fewest portals, which shows any shortcut the design didn't intend.

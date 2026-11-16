@@ -5,9 +5,12 @@ import {ELEMENT_REGISTRY} from '@/game/rules/element_registry'
 import {PORTAL_COLORS} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
 import {DIRECTIONS} from '@/game/rules/state_layout'
-import {allowsWay, canEnter, canInteract, canInteractInPlace, portalEntrance} from '@/game/rules/step'
+import {allowsWay, canEnter, canInteract, canInteractInPlace, portalEntrance, putDownTile} from '@/game/rules/step'
 import {type ChamberIndex, NO_NUMBER} from '@/solver/chamber_index'
 import {isPlacedKind, NO_WALK} from '@/solver/walk_graph'
+
+/** No way found yet, as an index in DIRECTIONS */
+const NO_WAY = -1
 
 /**
  * The element types found by tile that have one of the rules' hooks.
@@ -37,19 +40,21 @@ const DROP_NEXT_TO_KINDS = [
 /**
  * Picks out, for the solver's macro search, the interacts and moves that
  * can't change anything but where the subject faces, so the search skips
- * them instead of calling the rules' step. With limited drops, it also
- * skips putting a carried box down anywhere but where that is likely to
- * matter: on a tile whose element judges what lies on it (a button), at the
- * box's start,
+ * them instead of calling the rules' step. A carried box is put down once
+ * per tile it can land on: each way whose tile faced takes it, and one way
+ * that puts it underfoot. With limited drops, it also skips putting a
+ * carried box down anywhere but where that is likely to matter: on a tile
+ * whose element judges what lies on it (a button), at the box's start,
  * next to another box (to pick that one up), next to an element the
  * subject needs free hands for or that destroys a carried box (a switch, a
  * fizzler), and in front of either portal while both are open (the step
  * before coming out on such a tile). That is a guess that can, in an
  * unusual layout, miss every route or the cheapest one, so only the search
  * for any route uses it. Every other answer comes from the rules' own
- * checks: canInteractInPlace and canInteract, each way, for the interact
- * key, and for a move allowsWay and canEnter (built once per set of blocked
- * flags) and portalEntrance for a wall ahead. In one expansion only the
+ * checks: canInteractInPlace, then putDownTile each way while a box is
+ * carried, or else canInteract each way, for the interact key, and for a
+ * move allowsWay and canEnter (built once per set of blocked flags) and
+ * portalEntrance for a wall ahead. In one expansion only the
  * subject's tile and facing change, and a carried box goes with it, so the
  * expanded state answers for every tile its walk reaches. The solver check
  * compares every interact and move skipped without limited drops with the
@@ -139,9 +144,10 @@ export class ActionFilter {
    * The ways the subject may face on a tile the walk reached for the
    * interact key to change anything, as bits by index in DIRECTIONS. When
    * something on the tile takes the key (canInteractInPlace), the way
-   * doesn't matter, so only the tile's canonical way is given; otherwise
-   * each way that faces a box in reach (canInteract). Counts the tiles where
-   * it rules every way out.
+   * doesn't matter, so only the tile's canonical way is given; while a box
+   * is carried, one way per tile it lands on (putDownWays); otherwise each
+   * way that faces a box in reach (canInteract). Counts the tiles where it
+   * rules every way out.
    * @param tile - The tile's number
    * @param canonicalIndex - The tile's canonical facing, as an index in DIRECTIONS
    * @returns The ways for which the rules' step has to tell, as bits; 0 for none
@@ -153,14 +159,11 @@ export class ActionFilter {
     const y = this.index.tileY(tile)
 
     if (canInteractInPlace(state, x, y)) {
-      // While carrying, interact puts the box down (or a switch refuses)
-      if (this.limitDrops && state.isCarrying && (this.dropSpots[tile] !== 1) && (this.dropSerials[tile] !== this.serial)) {
-        this.skippedDropCount++
-
-        return 0
-      }
-
       return 1 << canonicalIndex
+    }
+
+    if (state.isCarrying) {
+      return this.putDownWays(state, x, y, canonicalIndex)
     }
 
     let ways = 0
@@ -176,6 +179,78 @@ export class ActionFilter {
     }
 
     return ways
+  }
+
+  /**
+   * The ways to face on a tile for the interact key to put a carried box
+   * down, as bits by index in DIRECTIONS: each way the subject may face
+   * there whose tile faced takes the box, and one way, the canonical one if
+   * it can, of those that put it underfoot (putDownTile), since they all give
+   * the same state. With limited drops, a way whose box would land anywhere
+   * but where that can matter is left out. Counts the tiles where every way
+   * is ruled out, but by limited drops.
+   * @param state - The state expanded, carrying a box
+   * @param x - Column of the tile
+   * @param y - Row of the tile
+   * @param canonicalIndex - The tile's canonical facing, as an index in DIRECTIONS
+   * @returns The ways for which the rules' step has to tell, as bits; 0 for none
+   */
+  private putDownWays(state: RulesState, x: number, y: number, canonicalIndex: number): number {
+    let ways = 0
+    let underfootIndex = NO_WAY
+    let limited = false
+
+    DIRECTIONS.forEach((direction, directionIndex) => {
+      // The subject can't face another way on a one-way tile
+      if (!allowsWay(state, x, y, direction)) {
+        return
+      }
+
+      const landing = putDownTile(state, x, y, direction)
+
+      if (landing === null) {
+        return
+      }
+
+      if ((landing.x === x) && (landing.y === y)) {
+        if ((underfootIndex === NO_WAY) || (directionIndex === canonicalIndex)) {
+          underfootIndex = directionIndex
+        }
+      } else if (this.mayLandOn(landing.x, landing.y)) {
+        ways |= 1 << directionIndex
+      } else {
+        limited = true
+      }
+    })
+
+    if (underfootIndex !== NO_WAY) {
+      if (this.mayLandOn(x, y)) {
+        ways |= 1 << underfootIndex
+      } else {
+        limited = true
+      }
+    }
+
+    if (limited) {
+      this.skippedDropCount++
+    } else if (ways === 0) {
+      this.skippedInteractCount++
+    }
+
+    return ways
+  }
+
+  /**
+   * Whether a carried box may be put down on a tile: always, but with
+   * limited drops, where that can matter.
+   * @param x - Column
+   * @param y - Row
+   * @returns True when the rules' step has to tell
+   */
+  private mayLandOn(x: number, y: number): boolean {
+    const tile = this.index.tileNumber(x, y)
+
+    return (!this.limitDrops) || (tile === NO_NUMBER) || (this.dropSpots[tile] === 1) || (this.dropSerials[tile] === this.serial)
   }
 
   /**

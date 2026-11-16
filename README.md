@@ -2,7 +2,6 @@
 
 ## TODO
 
-- allow to drop a box only in front of the subject? does it break any rule?
 - split plan 04 into two:
   - new mechanics (add to the plan the info from this file)
   - new levels

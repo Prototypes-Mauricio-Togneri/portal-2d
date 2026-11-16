@@ -90,8 +90,9 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
   // from (1,1) into (0,1) and out at (5,1), which needs both portals. The box
   // at (2,2) isn't next to (1,1), so the subject needs at least 1 move to a
   // tile next to it, (2,1) or (1,2), where it picks the box up facing it,
-  // and 1 back to (1,1); then 1 to cross, 1 onto the button and 3 from there
-  // to the exit: 7, so one route is both optimums
+  // and 1 back to (1,1); then 1 to cross, coming out at (5,1) facing the
+  // button, where it puts the box down without a move; then 2 up to the
+  // exit: 5, so one route is both optimums
   {
     name: 'box_through_portal',
     covers: 'Carrying a box through a portal: the only box must cross the ditch to hold down the button that opens the exit.',
@@ -106,15 +107,13 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
         'interact',
         'left',
         'left',
-        'left',
         'interact',
-        'right',
         'up',
         'up',
       ],
       expected: {
         completed: true,
-        moves: 7,
+        moves: 5,
         portals: 2,
         finalHash: '8a928f4b',
       },
@@ -129,15 +128,13 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
         'interact',
         'left',
         'left',
-        'left',
         'interact',
-        'right',
         'up',
         'up',
       ],
       expected: {
         completed: true,
-        moves: 7,
+        moves: 5,
         portals: 2,
         finalHash: '8a928f4b',
       },
@@ -145,11 +142,12 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
   },
   // No wall takes portals and the button is far from the door, so the box
   // must be on the button when the subject steps into the doorway. The
-  // subject picks the box at (3,1) up facing it from a tile next to it,
-  // (2,1) or (3,2), each 3 moves away, or from its own tile, 4 away, and
-  // carries it onto the button: 1 more from (2,1), 3 from (3,2) and 2 from
-  // (3,1), so 4 at least; then 7 to the exit, as short as the grid allows:
-  // 11 moves with no portal
+  // subject picks the box at (3,1) up from its tile, 4 moves away, or facing
+  // it from a tile next to it, (2,1) or (3,2), each 3 away, and puts it down
+  // on the button from its tile, or facing it from a tile next to it, (2,1)
+  // or (1,2). From the start to where it picks the box up, then to where it
+  // puts it down, then through (3,3) to the exit: from (2,1) for both, 3 +
+  // 0 + 6 = 9, and any other pair at least 11. So 9 moves with no portal
   {
     name: 'box_on_button',
     covers: 'A box left on a button holds open the door the subject must pass on its way to the exit.',
@@ -160,7 +158,7 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
         'down',
         'right',
         'interact',
-        'left',
+        'turnLeft',
         'interact',
         'up',
         'up',
@@ -168,11 +166,10 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
         'right',
         'right',
         'right',
-        'right',
       ],
       expected: {
         completed: true,
-        moves: 11,
+        moves: 9,
         portals: 0,
         finalHash: '83f1c2dd',
       },
@@ -183,7 +180,7 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
         'down',
         'right',
         'interact',
-        'left',
+        'turnLeft',
         'interact',
         'up',
         'up',
@@ -191,11 +188,10 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
         'right',
         'right',
         'right',
-        'right',
       ],
       expected: {
         completed: true,
-        moves: 11,
+        moves: 9,
         portals: 0,
         finalHash: '83f1c2dd',
       },
@@ -254,12 +250,15 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
       },
     },
   },
-  // The box must be carried from (1,1) to the button at (4,1) without
-  // entering the fizzler at (2,1), which sends it back: round the loop that
-  // is 11 moves, or 8 when crossing row 4 through the portal faces (0,4) and
-  // (6,4); then 2 more from the button to the exit. So 10 moves with both
-  // portals, and 13 moves with none (one portal crosses nothing). The box is
-  // put down for the shots, which take free hands, and that costs no move
+  // The box must reach the button at (4,1) without entering the fizzler at
+  // (2,1), which sends a carried box back and takes no box put down. It is
+  // put down on the button from (5,1), facing it, or from (4,1) or (3,1),
+  // both reached only through (5,1); so it is carried from (1,1) to (5,1):
+  // round the loop that is 10 moves, or 7 when crossing row 4 through the
+  // portal faces (0,4) and (6,4); then 1 more onto the exit. So 8 moves with
+  // both portals, and 11 moves with none (one portal crosses nothing). The
+  // box is put down for the shots, which take free hands, and that costs no
+  // move
   {
     name: 'fizzler_box',
     covers: 'A fizzler sends a carried box back to its start, so the box goes round it, crossing the top corridor through a portal or walking the long way.',
@@ -280,14 +279,13 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
         'down',
         'down',
         'down',
-        'left',
+        'turnLeft',
         'interact',
-        'right',
         'right',
       ],
       expected: {
         completed: true,
-        moves: 10,
+        moves: 8,
         portals: 2,
         finalHash: '8c0fc0dd',
       },
@@ -305,14 +303,13 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
         'down',
         'down',
         'down',
-        'left',
+        'turnLeft',
         'interact',
-        'right',
         'right',
       ],
       expected: {
         completed: true,
-        moves: 13,
+        moves: 11,
         portals: 0,
         finalHash: '8d8eebce',
       },
@@ -373,39 +370,35 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
   // No wall takes portals. The exit at (5,0) is open only while the button
   // at (7,1) is held, and isn't next to it, so the box at (2,2) must be left
   // on the button. The one-way arrow at (3,2) is the only way right and can't
-  // be crossed back, so the subject carries the box across: 3 moves to
-  // (4,2), wherever it picks the box up. The switch at (4,3), which opens the
-  // door at (7,2) to the button, refuses while the subject carries the box,
-  // so the box is put down before the switch and picked up after it, from its
-  // tile or one next to it. The only 6-move way from (4,2) over the switch to
-  // the button passes no tile before the switch but (4,2) and none after it
-  // next to (4,2), and on a grid a longer walk between two tiles is longer
-  // by an even number, so that leg takes at least 8 moves, such as stepping
-  // back to (4,2) for the box. Then 7 moves back up and round to the exit:
-  // 3 + 8 + 7 = 18 moves, the same route for both pars
+  // be crossed back, so the subject carries the box across. The switch at
+  // (4,3), which opens the door at (7,2) to the button, refuses while the
+  // subject carries the box, and the box is put down on the button only
+  // from (7,2), facing it, or from (7,1), reached through (7,2). So the
+  // subject walks from the start to the switch, at least 4 moves, then to
+  // (7,2), at least 4, then to the exit, at least 6: 14. The route takes
+  // each leg's shortest walk: it picks the box up facing it from the start,
+  // puts it down facing (5,2) from (4,2), and from (5,3), after the switch,
+  // picks it up again facing it. 14 moves, the same route for both pars
   {
     name: 'free_hands',
     covers: 'Putting a box down to free the hands: the switch that opens the door to the button refuses while the subject carries the box, which a one-way arrow made it bring along.',
     chamber: freeHands,
     fewestMoves: {
       actions: [
-        'right',
         'interact',
         'right',
         'right',
-        'interact',
-        'up',
-        'interact',
-        'down',
+        'right',
         'interact',
         'up',
+        'interact',
+        'right',
+        'turnDown',
+        'interact',
         'right',
         'right',
-        'right',
-        'down',
         'down',
         'interact',
-        'up',
         'up',
         'left',
         'left',
@@ -415,30 +408,27 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
       ],
       expected: {
         completed: true,
-        moves: 18,
+        moves: 14,
         portals: 0,
         finalHash: '4c7fd45d',
       },
     },
     fewestPortals: {
       actions: [
-        'right',
         'interact',
         'right',
         'right',
-        'interact',
-        'up',
-        'interact',
-        'down',
+        'right',
         'interact',
         'up',
+        'interact',
+        'right',
+        'turnDown',
+        'interact',
         'right',
         'right',
-        'right',
-        'down',
         'down',
         'interact',
-        'up',
         'up',
         'left',
         'left',
@@ -448,7 +438,7 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
       ],
       expected: {
         completed: true,
-        moves: 18,
+        moves: 14,
         portals: 0,
         finalHash: '4c7fd45d',
       },

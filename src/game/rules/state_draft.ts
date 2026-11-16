@@ -99,7 +99,7 @@ export class StateDraft extends StateReader {
   }
 
   /**
-   * Puts the carried box down where it is, on the subject's tile.
+   * Lets go of the carried box, leaving it on the tile it is on.
    */
   dropBox(): void {
     this.write(StateSlot.CARRIED_BOX, NO_BOX)

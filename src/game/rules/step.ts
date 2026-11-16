@@ -403,10 +403,27 @@ function shoot(draft: StateDraft, color: PortalColor): void {
 }
 
 /**
+ * Whether the subject reaches the tile it faces, to pick a box up there or
+ * put one down: a move that way could step onto that tile now, and no
+ * fizzler there is on. Picked up inside a field that is on, a box is
+ * destroyed, so reaching in from outside mustn't rescue it, nor put it
+ * there to be destroyed.
+ * @param draft - The state, a step's draft or a settled state
+ * @param x - Column of the subject's tile
+ * @param y - Row of the subject's tile
+ * @param facing - The way the subject faces
+ * @returns True when it reaches that tile
+ */
+function reachesAhead(draft: StateReader, x: number, y: number, facing: Direction): boolean {
+  const targetX = x + DELTAS[facing].dx
+  const targetY = y + DELTAS[facing].dy
+
+  return allowsWay(draft, x, y, facing) && canEnter(draft, targetX, targetY, facing) && (!draft.isBlockedAt('fizzler', targetX, targetY))
+}
+
+/**
  * The box the subject can reach on the tile it faces: one resting there,
- * when a move that way could step onto that tile now, and no fizzler there
- * is on. Picked up inside a field that is on, a box is destroyed, so reaching
- * in from outside mustn't rescue it.
+ * when the subject reaches that tile (reachesAhead).
  * @param draft - The state, a step's draft or a settled state
  * @param x - Column of the subject's tile
  * @param y - Row of the subject's tile
@@ -414,11 +431,9 @@ function shoot(draft: StateDraft, color: PortalColor): void {
  * @returns The box's index, or NO_BOX when it can reach none
  */
 function boxInReach(draft: StateReader, x: number, y: number, facing: Direction): number {
-  const targetX = x + DELTAS[facing].dx
-  const targetY = y + DELTAS[facing].dy
-  const box = draft.restingBoxAt(targetX, targetY)
+  const box = draft.restingBoxAt(x + DELTAS[facing].dx, y + DELTAS[facing].dy)
 
-  if ((box === NO_BOX) || (!allowsWay(draft, x, y, facing)) || (!canEnter(draft, targetX, targetY, facing)) || draft.isBlockedAt('fizzler', targetX, targetY)) {
+  if ((box === NO_BOX) || (!reachesAhead(draft, x, y, facing))) {
     return NO_BOX
   }
 
@@ -426,11 +441,65 @@ function boxInReach(draft: StateReader, x: number, y: number, facing: Direction)
 }
 
 /**
+ * Whether the tile the subject faces can take the box it carries: the
+ * subject reaches it (reachesAhead), no box rests there, since a tile holds
+ * one, and it holds neither the exit, which no box may lie on (nothing would
+ * destroy one there when it closes), nor an element that takes the interact
+ * key (a switch), which a box would hide and the key would never reach.
+ * @param draft - The state, a step's draft or a settled state
+ * @param x - Column of the subject's tile
+ * @param y - Row of the subject's tile
+ * @param facing - The way the subject faces
+ * @returns True when the box can be put down there
+ */
+function canTakeBoxAhead(draft: StateReader, x: number, y: number, facing: Direction): boolean {
+  const targetX = x + DELTAS[facing].dx
+  const targetY = y + DELTAS[facing].dy
+
+  if ((!reachesAhead(draft, x, y, facing)) || (draft.restingBoxAt(targetX, targetY) !== NO_BOX) || (draft.chamber.elementAt('exit', targetX, targetY) !== NO_ELEMENT)) {
+    return false
+  }
+
+  return INTERACT_HOOKS.every((interactHook) => draft.chamber.elementAt(interactHook.kind, targetX, targetY) === NO_ELEMENT)
+}
+
+/**
+ * Where the interact key puts a carried box down: on the tile the subject
+ * faces when it can take the box (canTakeBoxAhead), or else on the
+ * subject's own tile, unless another box rests there. Exported for the
+ * solver, like allowsWay, which takes one put-down per tile it lands on.
+ * @param draft - The state, a step's draft or a settled state, carrying a box
+ * @param x - Column of the subject's tile
+ * @param y - Row of the subject's tile
+ * @param facing - The way the subject faces
+ * @returns The tile, or null when the box can't be put down
+ */
+export function putDownTile(draft: StateReader, x: number, y: number, facing: Direction): PositionData | null {
+  if (canTakeBoxAhead(draft, x, y, facing)) {
+    return {
+      x: x + DELTAS[facing].dx,
+      y: y + DELTAS[facing].dy,
+    }
+  }
+
+  // A tile holds at most one box, so the carried one can't join another
+  if (draft.restingBoxAt(x, y) !== NO_BOX) {
+    return null
+  }
+
+  return {
+    x: x,
+    y: y,
+  }
+}
+
+/**
  * Whether something on a tile takes the interact key, whatever way the
- * subject faces: an element there (a switch), or a box carried, or a box
- * lying there. Then the key acts there and never on the tile faced. Exported
- * for the solver, like allowsWay, which takes such an interact once rather
- * than once per way.
+ * subject faces: an element there (a switch), or, with free hands, a box
+ * lying there. Then the key acts there and never on the tile faced. A
+ * carried box is put down where the subject faces first (putDownTile), so
+ * it doesn't count. Exported for the solver, like allowsWay, which takes
+ * such an interact once rather than once per way.
  * @param draft - The state, a step's draft or a settled state
  * @param x - Column of the subject's tile
  * @param y - Row of the subject's tile
@@ -443,16 +512,17 @@ export function canInteractInPlace(draft: StateReader, x: number, y: number): bo
     }
   }
 
-  return draft.isCarrying || (draft.firstBoxAt(x, y) !== NO_BOX)
+  return (!draft.isCarrying) && (draft.firstBoxAt(x, y) !== NO_BOX)
 }
 
 /**
  * Whether the interact key may do anything on a tile, facing a way:
- * something there takes it (canInteractInPlace), or a box lies in reach on
- * the tile faced (boxInReach). True doesn't promise a change: a switch
- * refuses while a box is carried, and a carried box can't be put down where
- * another rests. Exported for the solver, like allowsWay, so it skips
- * interacts that can't change anything.
+ * something there takes it (canInteractInPlace), or a box is carried, or a
+ * box lies in reach on the tile faced (boxInReach). True doesn't promise a
+ * change: a switch refuses while a box is carried, and a carried box can't
+ * be put down where the tile faced can't take it and another rests
+ * underfoot. Exported for the solver, like allowsWay, so it skips interacts
+ * that can't change anything.
  * @param draft - The state, a step's draft or a settled state
  * @param x - Column of the subject's tile
  * @param y - Row of the subject's tile
@@ -460,14 +530,15 @@ export function canInteractInPlace(draft: StateReader, x: number, y: number): bo
  * @returns False when it can't change anything
  */
 export function canInteract(draft: StateReader, x: number, y: number, facing: Direction): boolean {
-  return canInteractInPlace(draft, x, y) || (boxInReach(draft, x, y, facing) !== NO_BOX)
+  return canInteractInPlace(draft, x, y) || draft.isCarrying || (boxInReach(draft, x, y, facing) !== NO_BOX)
 }
 
 /**
  * The interact key, when it can do anything (canInteract): an element on
  * the subject's tile that takes it (a switch) does; otherwise a carried box
- * is put down, unless another box rests there (refused), or else the box on
- * the tile is picked up, or else the box in reach on the tile faced.
+ * is put down on the tile faced, or else underfoot, or refused when neither
+ * can take it (putDownTile); otherwise the box on the tile is picked up, or
+ * else the box in reach on the tile faced.
  * @param draft - The step's state
  */
 function interact(draft: StateDraft): void {
@@ -487,12 +558,14 @@ function interact(draft: StateDraft): void {
   }
 
   if (draft.isCarrying) {
-    // A tile holds at most one box, so the carried one can't join another
-    if (draft.restingBoxAt(x, y) === NO_BOX) {
+    const tile = putDownTile(draft, x, y, draft.facing)
+
+    if (tile === null) {
+      draft.emit(GameEvent.REFUSED)
+    } else {
+      draft.moveBox(draft.carriedBox, tile.x, tile.y)
       draft.dropBox()
       draft.emit(GameEvent.BOX_PUT_DOWN)
-    } else {
-      draft.emit(GameEvent.REFUSED)
     }
 
     return

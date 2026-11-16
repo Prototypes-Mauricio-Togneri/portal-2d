@@ -5,6 +5,7 @@ import boxInReach from '@scripts/fixtures/box_in_reach.json'
 import boxLinkedButton from '@scripts/fixtures/box_linked_button.json'
 import boxOnSwitchedElement from '@scripts/fixtures/box_on_switched_element.json'
 import boxOutOfReach from '@scripts/fixtures/box_out_of_reach.json'
+import boxPutDownInFront from '@scripts/fixtures/box_put_down_in_front.json'
 import boxPutDownOnOpenDitch from '@scripts/fixtures/box_put_down_on_open_ditch.json'
 import buttonBehindCarriedBox from '@scripts/fixtures/button_behind_carried_box.json'
 import carriedBoxLink from '@scripts/fixtures/carried_box_link.json'
@@ -225,18 +226,19 @@ export const FIXTURES: readonly Fixture[] = [
   },
   {
     name: 'no_box_put_down_on_a_box',
-    behaviour: 'Carrying a box onto a tile where another box rests is allowed, but putting it down there is refused: the subject keeps carrying it.',
+    behaviour: 'Carrying a box onto a tile where another box rests is allowed, but putting it down there, facing a wall, is refused: the subject keeps carrying it.',
     chamber: twoBoxesFizzler,
     actions: [
       'interact',
       'right',
+      'turnUp',
       'interact',
     ],
     expected: {
       completed: false,
       moves: 1,
       portals: 0,
-      finalHash: 'acb5d739',
+      finalHash: 'd89d06e2',
     },
   },
   {
@@ -501,7 +503,27 @@ export const FIXTURES: readonly Fixture[] = [
   },
   {
     name: 'box_breaks_up_in_closing_door',
-    behaviour: 'A box put down in an open doorway goes back to its start when the door closes on it: here the button holding the door open is left by the subject carrying the other box away.',
+    behaviour: 'A box put down in an open doorway, from the tile before it, goes back to its start when the door closes on it: here the button holding the door open is left by the subject carrying the other box away.',
+    chamber: boxOnSwitchedElement,
+    actions: [
+      'interact',
+      'right',
+      'right',
+      'interact',
+      'left',
+      'interact',
+      'left',
+    ],
+    expected: {
+      completed: false,
+      moves: 4,
+      portals: 0,
+      finalHash: 'bdb0a9e3',
+    },
+  },
+  {
+    name: 'box_falls_into_opening_ditch',
+    behaviour: 'A box put down on a bridged ditch goes back to its start when the ditch opens under it.',
     chamber: boxOnSwitchedElement,
     actions: [
       'interact',
@@ -522,8 +544,8 @@ export const FIXTURES: readonly Fixture[] = [
     },
   },
   {
-    name: 'box_falls_into_opening_ditch',
-    behaviour: 'A box put down on a bridged ditch goes back to its start when the ditch opens under it.',
+    name: 'box_breaks_up_in_laser_turning_on',
+    behaviour: 'A box put down in a laser that is off goes back to its start when the laser turns on.',
     chamber: boxOnSwitchedElement,
     actions: [
       'interact',
@@ -546,8 +568,8 @@ export const FIXTURES: readonly Fixture[] = [
     },
   },
   {
-    name: 'box_breaks_up_in_laser_turning_on',
-    behaviour: 'A box put down in a laser that is off goes back to its start when the laser turns on.',
+    name: 'box_breaks_up_in_light_barrier_turning_on',
+    behaviour: 'A box put down in a light barrier that is off goes back to its start when the light barrier turns on.',
     chamber: boxOnSwitchedElement,
     actions: [
       'interact',
@@ -572,8 +594,8 @@ export const FIXTURES: readonly Fixture[] = [
     },
   },
   {
-    name: 'box_breaks_up_in_light_barrier_turning_on',
-    behaviour: 'A box put down in a light barrier that is off goes back to its start when the light barrier turns on.',
+    name: 'box_breaks_up_in_fizzler_turning_on',
+    behaviour: 'A box put down in a fizzler that is off goes back to its start when the fizzler turns on, though the subject is outside it.',
     chamber: boxOnSwitchedElement,
     actions: [
       'interact',
@@ -600,39 +622,78 @@ export const FIXTURES: readonly Fixture[] = [
     },
   },
   {
-    name: 'box_breaks_up_in_fizzler_turning_on',
-    behaviour: 'A box put down in a fizzler that is off goes back to its start when the fizzler turns on, though the subject is outside it.',
-    chamber: boxOnSwitchedElement,
+    name: 'box_put_down_on_open_ditch_destroyed',
+    behaviour: 'A box put down, facing a wall, on a ditch that opened under the subject (it stepped off the button bridging it, carrying the box) is destroyed at once and goes back to its start, which is that button, so the ditch is bridged again.',
+    chamber: boxPutDownOnOpenDitch,
+    actions: [
+      'interact',
+      'right',
+      'turnUp',
+      'interact',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: '9daf2151',
+    },
+  },
+  {
+    name: 'box_put_down_in_front',
+    behaviour: 'Interact puts a carried box down on the tile the subject faces: from beside a button, it holds the button down, and the door it opens lets the subject through.',
+    chamber: boxPutDownInFront,
     actions: [
       'interact',
       'right',
       'right',
-      'right',
-      'right',
-      'right',
-      'right',
-      'right',
       'interact',
-      'left',
-      'left',
-      'left',
-      'left',
-      'left',
-      'left',
-      'interact',
-      'left',
+      'right',
+      'right',
+      'right',
     ],
     expected: {
       completed: false,
-      moves: 14,
+      moves: 5,
       portals: 0,
-      finalHash: 'bdb0a9e3',
+      finalHash: 'd719789f',
     },
   },
   {
-    name: 'box_put_down_on_open_ditch_destroyed',
-    behaviour: 'A box put down on a ditch that opened under the subject (it stepped off the button bridging it, carrying the box) is destroyed at once and goes back to its start, which is that button, so the ditch is bridged again.',
-    chamber: boxPutDownOnOpenDitch,
+    name: 'box_put_down_underfoot_facing_exit',
+    behaviour: 'A carried box is never put down on the exit: facing the open exit, it goes down on the subject\'s own tile.',
+    chamber: boxPutDownInFront,
+    actions: [
+      'interact',
+      'left',
+      'interact',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: 'faaceef0',
+    },
+  },
+  {
+    name: 'box_put_down_underfoot_facing_switch',
+    behaviour: 'A carried box is never put down on a switch: facing one, it goes down on the subject\'s own tile.',
+    chamber: boxPutDownInFront,
+    actions: [
+      'interact',
+      'turnRight',
+      'interact',
+    ],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 0,
+      finalHash: '5bb4f07d',
+    },
+  },
+  {
+    name: 'box_kept_on_switch',
+    behaviour: 'Standing on a switch, interact with a box in hand is refused, though the tile faced could take the box: the subject keeps carrying it.',
+    chamber: boxPutDownInFront,
     actions: [
       'interact',
       'right',
@@ -642,7 +703,40 @@ export const FIXTURES: readonly Fixture[] = [
       completed: false,
       moves: 1,
       portals: 0,
-      finalHash: '3b938616',
+      finalHash: 'c9ff4773',
+    },
+  },
+  {
+    name: 'box_put_down_underfoot_facing_a_box',
+    behaviour: 'A carried box is never put down where another box rests: facing one, it goes down on the subject\'s own tile.',
+    chamber: twoBoxesFizzler,
+    actions: [
+      'interact',
+      'interact',
+    ],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 0,
+      finalHash: '5532496b',
+    },
+  },
+  {
+    name: 'box_put_down_underfoot_facing_fizzler',
+    behaviour: 'A carried box is never put down in a fizzler that is on: facing one, it goes down on the subject\'s own tile.',
+    chamber: twoBoxesFizzler,
+    actions: [
+      'interact',
+      'right',
+      'right',
+      'right',
+      'interact',
+    ],
+    expected: {
+      completed: false,
+      moves: 3,
+      portals: 0,
+      finalHash: '9f1fef6b',
     },
   },
 ]

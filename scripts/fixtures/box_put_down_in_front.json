@@ -1,0 +1,62 @@
+{
+    "version": 2,
+    "size": {
+        "width": 9,
+        "height": 3
+    },
+    "subject": {
+        "x": 2,
+        "y": 1,
+        "direction": "LEFT"
+    },
+    "exit": {
+        "x": 0,
+        "y": 1,
+        "blocked": false
+    },
+    "walls": [
+        {
+            "xFrom": 0,
+            "xTo": 8,
+            "yFrom": 0,
+            "yTo": 0
+        },
+        {
+            "xFrom": 0,
+            "xTo": 8,
+            "yFrom": 2,
+            "yTo": 2
+        },
+        {
+            "x": 8,
+            "y": 1
+        }
+    ],
+    "boxes": [
+        {
+            "x": 2,
+            "y": 1
+        }
+    ],
+    "switches": [
+        {
+            "x": 3,
+            "y": 1,
+            "links": [1]
+        }
+    ],
+    "buttons": [
+        {
+            "x": 5,
+            "y": 1,
+            "links": [1]
+        }
+    ],
+    "doors": [
+        {
+            "x": 6,
+            "y": 1,
+            "id": 1
+        }
+    ]
+}

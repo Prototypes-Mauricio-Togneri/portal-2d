@@ -29,7 +29,7 @@ export const ELEMENT_REGISTRY = [
   FIZZLER_ELEMENT,
 ] as const satisfies readonly ElementDefinition[]
 
-/** The events the core step reports itself rather than an element: portals opening, crossing a portal, and a refusal (a missed shot, a refused crossing, a switch used while carrying a box, a box put down where another rests) */
+/** The events the core step reports itself rather than an element: portals opening, crossing a portal, and a refusal (a missed shot, a refused crossing, a switch used while carrying a box, a box put down where another rests and the tile faced can't take it) */
 export const CORE_STEP_EVENTS: readonly GameEvent[] = [
   GameEvent.BLUE_PORTAL_OPENED,
   GameEvent.ORANGE_PORTAL_OPENED,
