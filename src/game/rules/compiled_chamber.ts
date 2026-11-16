@@ -13,6 +13,18 @@ import {NOT_STORED, StateLayout} from '@/game/rules/state_layout'
 export type PlacedKind = Exclude<ElementKind, 'wall' | 'box'>
 
 /**
+ * The element types drawn as a beam running one way, which neighbours of the
+ * same type running the same way continue, with an end plate at each end of
+ * each run.
+ */
+export type BeamKind = 'laser' | 'lightBarrier'
+
+/**
+ * Which way a laser or a light barrier runs: H for horizontal, V for vertical.
+ */
+export type BeamOrientation = 'H' | 'V'
+
+/**
  * An element type a button or switch link can name.
  */
 export type LinkableKind = Extract<(typeof ELEMENT_REGISTRY)[number], {readonly linkable: true}>['kind']
@@ -55,6 +67,14 @@ export const NO_ELEMENT = -1
 
 /** What cellOf answers outside the chamber */
 const OUTSIDE = -1
+
+/** The way a laser or a light barrier runs when a wall on each side of its tile ends its run, behind its end plate */
+const BEAM_ALONG_SIDE: Readonly<Record<Direction, BeamOrientation>> = {
+  [Direction.UP]: 'V',
+  [Direction.DOWN]: 'V',
+  [Direction.LEFT]: 'H',
+  [Direction.RIGHT]: 'H',
+}
 
 /** The links of an element that has none */
 const NO_LINKS: readonly LinkTarget[] = []
@@ -355,7 +375,9 @@ export class CompiledChamber {
   /**
    * Whether a portal can ever open on one side of a wall: the wall can take
    * portals, and the tile that side faces holds no door or exit, since the
-   * walls beside a doorway never take one, open or closed.
+   * walls beside a doorway never take one, open or closed, and no laser or
+   * light barrier running towards the wall, since the wall at the end of a
+   * run, behind its end plate, never takes one either, on or off.
    * @param x - Column of the wall
    * @param y - Row of the wall
    * @param side - The side, the way it faces
@@ -364,8 +386,30 @@ export class CompiledChamber {
   canTakePortalOn(x: number, y: number, side: Direction): boolean {
     const facedX = x + DELTAS[side].dx
     const facedY = y + DELTAS[side].dy
+    const along = BEAM_ALONG_SIDE[side]
+    const doorway = (this.elementAt('door', facedX, facedY) !== NO_ELEMENT) || (this.elementAt('exit', facedX, facedY) !== NO_ELEMENT)
+    const runEnd = this.hasBeamAt('laser', facedX, facedY, along) || this.hasBeamAt('lightBarrier', facedX, facedY, along)
 
-    return this.canTakePortals(x, y) && (this.elementAt('door', facedX, facedY) === NO_ELEMENT) && (this.elementAt('exit', facedX, facedY) === NO_ELEMENT)
+    return this.canTakePortals(x, y) && (!doorway) && (!runEnd)
+  }
+
+  /**
+   * Whether a tile holds a laser or a light barrier running a way, either of
+   * two lasers that cross there.
+   * @param kind - The beam's type
+   * @param x - Column
+   * @param y - Row
+   * @param orientation - The way it runs
+   * @returns True when one does, false for none or outside the chamber
+   */
+  hasBeamAt(kind: BeamKind, x: number, y: number, orientation: BeamOrientation): boolean {
+    for (let index = this.elementAt(kind, x, y); index !== NO_ELEMENT; index = this.nextOnTile(kind, index)) {
+      if (this.entriesOf(kind)[index]?.direction === orientation) {
+        return true
+      }
+    }
+
+    return false
   }
 
   /**

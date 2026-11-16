@@ -20,7 +20,7 @@ function turnLaserOn(draft: StateDraft, index: number): void {
   draft.setBlocked('laser', index, true)
 }
 
-/** A laser beam the subject can't walk through while it is on; shots pass through it, and its direction only changes the drawing */
+/** A laser beam the subject can't walk through while it is on; shots pass through it, and its direction sets which way it is drawn and keeps portals off the wall at each end of its run, behind its end plate */
 export const LASER_ELEMENT = defineElement<BeamData>()({
   kind: 'laser',
   fileKey: 'lasers',

@@ -1,7 +1,7 @@
 import {Direction} from '@/game/direction'
 import type {BlockedShares} from '@/game/element_transitions'
 import {pieceNumber} from '@/game/piece_number'
-import {type CompiledChamber, NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
+import {type BeamKind, type BeamOrientation, type CompiledChamber, NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
 import type {ElementKind} from '@/game/rules/element_registry'
 import type {RulesState} from '@/game/rules/rules_state'
 import {NOT_STORED} from '@/game/rules/state_layout'
@@ -33,11 +33,6 @@ import type {PiecePlacer, TilePainter} from '@/game/tile_painter'
 export type ElementDrawing = (painter: TilePainter, state: RulesState, shares?: BlockedShares | null) => void
 
 /**
- * Which way a laser or a light barrier runs: H for horizontal, V for vertical.
- */
-type BeamOrientation = 'H' | 'V'
-
-/**
  * One end of a beam running a way: where the tile beyond it lies, and how
  * the end plate, drawn at the left end of a beam running left to right, is
  * turned there.
@@ -47,13 +42,6 @@ type BeamEnd = {
   readonly dy: number // Row step to the tile beyond the end (rows grow upwards)
   readonly turn: Direction // How the end plate is turned
 }
-
-/**
- * The element types drawn as a beam running one way, which neighbours of the
- * same type running the same way continue, with an end plate at each end of
- * each run.
- */
-type BeamKind = 'laser' | 'lightBarrier'
 
 /**
  * The sprites of a type drawn as a beam.
@@ -195,26 +183,6 @@ const BEAM_ENDS: Readonly<Record<BeamOrientation, readonly BeamEnd[]>> = {
  */
 function readOrientation(text: string | undefined): BeamOrientation | null {
   return ((text === 'H') || (text === 'V')) ? text : null
-}
-
-/**
- * Whether a tile holds a beam of a type running a way, either of two lasers
- * that cross there.
- * @param chamber - The chamber
- * @param kind - The beam's type
- * @param x - Column
- * @param y - Row
- * @param orientation - The way it runs
- * @returns True when one does, false for none or outside the chamber
- */
-function hasBeamAt(chamber: CompiledChamber, kind: BeamKind, x: number, y: number, orientation: BeamOrientation): boolean {
-  for (let index = chamber.elementAt(kind, x, y); index !== NO_ELEMENT; index = chamber.nextOnTile(kind, index)) {
-    if (readOrientation(chamber.entriesOf(kind)[index]?.direction) === orientation) {
-      return true
-    }
-  }
-
-  return false
 }
 
 /**
@@ -596,7 +564,7 @@ function beamDrawing(kind: BeamKind, sprites: BeamSprites): ElementDrawing {
  */
 function drawBeamEnds(painter: TilePainter, chamber: CompiledChamber, kind: BeamKind, sprites: BeamSprites, x: number, y: number, orientation: BeamOrientation, shine: number): void {
   for (const end of BEAM_ENDS[orientation]) {
-    if (!hasBeamAt(chamber, kind, x + end.dx, y + end.dy, orientation)) {
+    if (!chamber.hasBeamAt(kind, x + end.dx, y + end.dy, orientation)) {
       painter.drawSprite(sprites.endOff, x, y, end.turn)
 
       if (shine > 0) {

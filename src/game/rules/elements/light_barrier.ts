@@ -21,7 +21,7 @@ function switchLightBarrierOn(draft: StateDraft, index: number): void {
   draft.setBlocked('lightBarrier', index, true)
 }
 
-/** A field of light on a floor tile, which keeps the subject and shots out while it is on; its direction only changes the drawing */
+/** A field of light on a floor tile, which keeps the subject and shots out while it is on; its direction sets which way it is drawn and keeps portals off the wall at each end of its run, behind its end plate */
 export const LIGHT_BARRIER_ELEMENT = defineElement<BeamData>()({
   kind: 'lightBarrier',
   fileKey: 'lightBarriers',

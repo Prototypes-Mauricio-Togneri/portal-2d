@@ -1,0 +1,72 @@
+{
+    "version": 2,
+    "size": {
+        "width": 7,
+        "height": 4
+    },
+    "subject": {
+        "x": 2,
+        "y": 2,
+        "direction": "RIGHT"
+    },
+    "exit": {
+        "x": 0,
+        "y": 1
+    },
+    "walls": [
+        {
+            "xFrom": 0,
+            "xTo": 6,
+            "yFrom": 0,
+            "yTo": 0
+        },
+        {
+            "xFrom": 0,
+            "xTo": 6,
+            "yFrom": 3,
+            "yTo": 3
+        },
+        {
+            "x": 0,
+            "y": 2
+        },
+        {
+            "xFrom": 6,
+            "xTo": 6,
+            "yFrom": 1,
+            "yTo": 2
+        }
+    ],
+    "lightBarriers": [
+        {
+            "x": 1,
+            "y": 2,
+            "direction": "V",
+            "blocked": false
+        }
+    ],
+    "ditches": [],
+    "boxes": [],
+    "buttons": [],
+    "arrows": [],
+    "fizzlers": [],
+    "doors": [],
+    "switches": [],
+    "lasers": [
+        {
+            "x": 3,
+            "y": 2,
+            "direction": "H"
+        },
+        {
+            "x": 4,
+            "y": 2,
+            "direction": "H"
+        },
+        {
+            "x": 5,
+            "y": 2,
+            "direction": "H"
+        }
+    ]
+}

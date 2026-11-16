@@ -2,6 +2,7 @@
 
 ## TODO
 
+- reduce size of buttons and make corner brackets lighter
 - implement antlines
 - split plan 04 into two:
   - new mechanics (add to the plan the info from this file)

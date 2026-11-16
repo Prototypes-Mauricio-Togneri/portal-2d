@@ -7,6 +7,7 @@ import carriedBoxLink from '@scripts/fixtures/carried_box_link.json'
 import crossingLasers from '@scripts/fixtures/crossing_lasers.json'
 import fizzlersInARow from '@scripts/fixtures/fizzlers_in_a_row.json'
 import lightBarrier from '@scripts/fixtures/light_barrier.json'
+import noPortalBehindEndPlate from '@scripts/fixtures/no_portal_behind_end_plate.json'
 import noPortalBesideDoor from '@scripts/fixtures/no_portal_beside_door.json'
 import openEdge from '@scripts/fixtures/open_edge.json'
 import portalOntoDitch from '@scripts/fixtures/portal_onto_ditch.json'
@@ -294,6 +295,29 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 1,
       portals: 1,
       finalHash: 'adeb77c9',
+    },
+  },
+  {
+    name: 'no_portal_behind_end_plate',
+    behaviour: 'The wall at the end of a run of lasers or light barriers, behind its end plate, takes no portal, on or off: a shot along the lasers that are on misses, and so does one from inside the light barrier that is off at the wall it runs into, while the wall alongside the lasers takes one.',
+    chamber: noPortalBehindEndPlate,
+    actions: [
+      'blue',
+      'left',
+      'turnUp',
+      'orange',
+      'down',
+      'right',
+      'right',
+      'right',
+      'turnUp',
+      'blue',
+    ],
+    expected: {
+      completed: false,
+      moves: 5,
+      portals: 1,
+      finalHash: 'f6c42292',
     },
   },
   {
