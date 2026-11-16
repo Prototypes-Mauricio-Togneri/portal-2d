@@ -2,9 +2,6 @@
 
 ## TODO
 
-- put box on plate and make plate off? what about lasers, light barriers, fizzlers, etc?
-  doors?
-
 - pick up box if next to it (in addition to on top)?
 - split plan 04 into two:
   - new mechanics (add to the plan the info from this file)
