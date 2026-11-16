@@ -112,7 +112,7 @@ A hit opens the portal of that colour there, closing it wherever it was before: 
 - On a switch: while carrying a box, `refused`. Otherwise the switch is used: `switchUsed`, then it unblocks its links. It can be used any number of times, and each use unblocks its links again (so a linked box is sent back each time).
 - Otherwise, while carrying a box: if another box rests on the subject's tile, `refused`, since a tile holds [one box](#one-box-per-tile). Otherwise the box is put down there, without a sound.
 - Otherwise, on a tile with a box: the subject picks it up: `boxPickedUp`.
-- Otherwise, facing a tile where a box rests: the subject picks it up from where it stands, `boxPickedUp`, if a move that way could step onto that tile now (see [Move or turn](#move-or-turn): an arrow there must point that way, and nothing there may block walking) and no fizzler there is on. A box in a field that is on stays out of reach, since picked up inside the field it would be destroyed. The carried box then sits on the subject's tile, so a button the box held is released in the same step.
+- Otherwise, facing a tile where a box rests: the subject picks it up from where it stands, `boxPickedUp`, if a move that way could step onto that tile now (see [Move or turn](#move-or-turn): an arrow there must point that way, and nothing there may block walking) and no fizzler there is on. The carried box then sits on the subject's tile, so a button the box held is released in the same step.
 - Otherwise nothing happens.
 
 A box picked up while the subject stands in a fizzler that is on, from its own tile or the next, is destroyed in the same step (see [the fizzler rule](#the-fizzler-rule)).
