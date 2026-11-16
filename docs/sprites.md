@@ -141,7 +141,7 @@ When the subject fizzles (it walks or crosses into a fizzler that is on, or one 
 
 ## Fall
 
-When a ditch opens under a box lying on it, or the subject puts a box down on an open ditch, the game draws the box falling into the pit, from its own sprite, so there is nothing extra to draw. It hangs where it was for a moment while the grate starts to slide away, then drops ever faster, shrinking towards the middle of the pit to a quarter of its size and fading into the dark, in about 0.45 s, without a shadow and inside its tile: over the ditch and its sliding grate, under everything standing on the floor. The box is drawn back at its start at once. With reduced motion, and in the home menu's map and the gallery, nothing falls.
+When a ditch opens under a box lying on it, or the subject puts a box down on an open ditch, and the ditch is still open once the step ends, the game draws the box falling into the pit (a box sent back to a button that bridges the ditch again breaks up instead, see [fizzle](#fizzle)), from its own sprite, so there is nothing extra to draw. It hangs where it was for a moment while the grate starts to slide away, then drops ever faster, shrinking towards the middle of the pit to a quarter of its size and fading into the dark, in about 0.45 s, without a shadow and inside its tile: over the ditch and its sliding grate, under everything standing on the floor. The box is drawn back at its start at once. With reduced motion, and in the home menu's map and the gallery, nothing falls.
 
 ## Miss
 

@@ -16,7 +16,7 @@ export type DestroyedBox = {
   readonly size: number // Its side, as a share of a tile
   readonly way: Direction // The way it was turned to face
   readonly tile: PositionData // The tile it was destroyed on
-  readonly fell: boolean // Whether it fell into an open ditch, rather than broke up
+  readonly fell: boolean // Whether it fell into a ditch still open after the step, rather than broke up
 }
 
 /**
@@ -24,9 +24,11 @@ export type DestroyedBox = {
  * (boxDestroyed): each box that went back to its start from a tile holding
  * a door, a ditch, a laser, a light barrier or a fizzler, where it lay or
  * was put down. A box carried into a fizzler that is on is the fizzler
- * rule's, not one of these. A box a switch sends back from such a tile in
- * the same step as another is destroyed would be counted too, a case too
- * rare to tell apart.
+ * rule's, not one of these. One on a ditch falls in only while the ditch
+ * is still open after the step: sent back to a button that bridges it
+ * again, it breaks up, as the grate slides back over the pit. A box a
+ * switch sends back from such a tile in the same step as another is
+ * destroyed would be counted too, a case too rare to tell apart.
  * @param before - The state before the step
  * @param after - The state after the step
  * @param events - What happened in the step
@@ -65,7 +67,7 @@ export function findDestroyedBoxes(before: RulesState, after: RulesState, events
         x: x,
         y: y,
       },
-      fell: kind === 'ditch',
+      fell: (kind === 'ditch') && after.isBlockedAt('ditch', x, y),
     })
   })
 

@@ -630,8 +630,8 @@ export const FIXTURES: readonly Fixture[] = [
     },
   },
   {
-    name: 'box_put_down_on_open_ditch_falls',
-    behaviour: 'A box put down on a ditch that opened under the subject (it stepped off the button bridging it, carrying the box) falls in at once and goes back to its start, which is that button, so the ditch is bridged again.',
+    name: 'box_put_down_on_open_ditch_destroyed',
+    behaviour: 'A box put down on a ditch that opened under the subject (it stepped off the button bridging it, carrying the box) is destroyed at once and goes back to its start, which is that button, so the ditch is bridged again.',
     chamber: boxPutDownOnOpenDitch,
     actions: [
       'interact',
