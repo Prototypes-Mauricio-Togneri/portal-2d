@@ -1,4 +1,4 @@
-import type {Direction} from '@/game/direction'
+import {DELTAS, type Direction} from '@/game/direction'
 import type {GameEvent} from '@/game/game_event'
 import type {CompiledChamber, PlacedKind} from '@/game/rules/compiled_chamber'
 import {type BlockableKind, findElementDefinition} from '@/game/rules/element_registry'
@@ -203,6 +203,27 @@ export class StateDraft extends StateReader {
     for (const color of PORTAL_COLORS) {
       this.closePortal(color)
     }
+  }
+
+  /**
+   * Closes each portal on a wall side facing a tile, on a wall next to it.
+   * @param x - Column of the tile
+   * @param y - Row of the tile
+   * @returns Whether a portal closed
+   */
+  closePortalsFacing(x: number, y: number): boolean {
+    let closed = false
+
+    for (const color of PORTAL_COLORS) {
+      const side = this.portalSide(color)
+
+      if ((side !== null) && ((this.portalX(color) + DELTAS[side].dx) === x) && ((this.portalY(color) + DELTAS[side].dy) === y)) {
+        this.closePortal(color)
+        closed = true
+      }
+    }
+
+    return closed
   }
 
   /**

@@ -25,10 +25,10 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 
 - There is one blue and one orange portal. Shooting a colour again moves that portal: the old one closes.
 - A shot leaves in the direction the subject faces and travels in a straight line, instantly (no projectile is shown). The first wall it reaches takes the portal, on the side facing the subject.
-- A hit plays its portal's opening sound. A shot misses (a shot sound, and a short ripple where it stopped) when a closed door, the closed exit, or a light barrier or a fizzler that is on is in the way, or when the wall can't take a portal there (a blocked wall refuses them while blocked).
+- A hit plays its portal's opening sound. A shot misses (a shot sound, and a short ripple where it stopped) when a closed door, the closed exit, or a light barrier or a fizzler that is on is in the way, or when the wall can't take a portal there (a blocked wall refuses them while blocked, and the side of a wall facing a door or the exit never takes one, open or closed).
 - A wall tile can't take a portal on a side that already holds one, or on the two sides next to it; only the opposite side is still free. Shots never go through portals.
 - Crossing: with both portals open, walking into a wall on the side that holds a portal takes the subject through. It comes out on the tile in front of the other portal, facing away from it.
-- A crossing is refused (error sound) when the subject couldn't walk onto that tile, for example an open ditch, a closed door or a laser that is on. It then stays where it was.
+- A crossing is refused (error sound) when the subject couldn't walk onto that tile, for example an open ditch or a laser that is on. It then stays where it was. No portal ever faces a door or the exit, so a crossing never lands in a doorway.
 
 ## Tiles
 
@@ -71,7 +71,7 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 | 15  | Portal           | A glowing blue or orange oval on the wall's edge facing the floor                                   |
 
 - A step glides the subject one tile; a crossing slides it into one portal and out of the other. Turns happen at once.
-- When switched, doors, the exit and blocked walls slide open or shut, a ditch's grate slides in or out, a fizzler crumbles away or forms, and a laser or light barrier fades. A fizzle breaks the lost portals and a carried box into pieces, a missed shot ripples, and lasers and portals glow with a slow pulse.
+- When switched, doors, the exit and blocked walls slide open or shut, a ditch's grate slides in or out, a fizzler crumbles away or forms, and a laser or light barrier fades. A fizzle breaks the lost portals and a carried box into pieces, and so does a fizzler switching on with a portal facing it (silently), a missed shot ripples, and lasers and portals glow with a slow pulse.
 - With reduced motion, nothing animates: everything changes at once and the glows hold steady.
 - Each event has a sound: a portal opening (one per colour), a missed shot, a box picked up, a fizzle, a crossing, a door or the exit opening or closing, a button pressed or released, a switch used. Any refused action plays an error sound: a crossing, shooting or using a switch while carrying a box, or putting a box down on another. Putting a box down is silent.
 
@@ -79,7 +79,7 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 
 - A button or switch is linked to elements elsewhere in the chamber: blocked walls (one tile each), light barriers, ditches, doors, the exit, fizzlers, lasers and boxes. One can be linked to many, and several can share an element.
 - Pressing a button, or using a switch, opens what it is linked to: a blocked wall takes portals, a ditch is bridged, a door or the exit opens, a light barrier, fizzler or laser turns off, a box goes back to its start (unless it's being carried).
-- Releasing a button closes them again: the blocked wall refuses portals (closing any portal on it), the ditch opens, the door or exit closes, the light barrier, fizzler or laser turns back on. A released button does nothing to a box.
+- Releasing a button closes them again: the blocked wall refuses portals (closing any portal on it), the ditch opens, the door or exit closes, the light barrier, fizzler or laser turns back on (a fizzler closing any portal facing it). A released button does nothing to a box.
 - A button stays pressed only while the subject or a box is on it, so a box left on it keeps a door open while the subject walks away.
 - A switch only opens. Using it again repeats that (sending a linked box back each time); it never closes anything. It can't be used while carrying a box, so a box can't be put down on a switch.
 - Each element starts open or closed as the chamber sets it, before any button or switch acts on it.
@@ -87,6 +87,7 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 ## Fizzlers in detail
 
 - Entering a fizzler that is on (walking, coming out of a portal, or the fizzler turning on under the subject) closes both portals and sends a carried box back to its start.
+- A portal can be shot past a fizzler that is off, or from inside it, onto the wall beyond; when the fizzler turns on, that portal closes and breaks up. So a crossing lands in a fizzler that is on only when the crossing itself turns it on, for example by leaving the button that held it off.
 - While standing in a fizzler that is on, no portal can be shot.
 - A box lying on the floor is never affected, unless it lies on the start tile of the box sent back, which sends it back to its own start.
 

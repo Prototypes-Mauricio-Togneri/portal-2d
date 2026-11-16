@@ -1,9 +1,9 @@
-import type {Direction} from '@/game/direction'
+import {DELTAS, type Direction} from '@/game/direction'
 import {PALETTE} from '@/game/palette'
 import {NO_ELEMENT} from '@/game/rules/compiled_chamber'
 import {PortalColor} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
-import {DELTAS, shotStop, stopsShot} from '@/game/rules/step'
+import {shotStop, stopsShot} from '@/game/rules/step'
 import type {TilePainter} from '@/game/tile_painter'
 
 /**

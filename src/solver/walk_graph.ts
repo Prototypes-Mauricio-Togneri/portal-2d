@@ -1,8 +1,9 @@
+import {DELTAS} from '@/game/direction'
 import {NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
 import {ELEMENT_REGISTRY, type ElementKind} from '@/game/rules/element_registry'
 import type {RulesState} from '@/game/rules/rules_state'
 import {DIRECTIONS} from '@/game/rules/state_layout'
-import {allowsWay, canEnter, DELTAS} from '@/game/rules/step'
+import {allowsWay, canEnter} from '@/game/rules/step'
 import {type ChamberIndex, NO_NUMBER} from '@/solver/chamber_index'
 
 /** A walk edge's target where the subject can't simply walk that way */

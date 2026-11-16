@@ -1,9 +1,9 @@
 import type {PositionData} from '@/game/chamber_data'
-import type {Direction} from '@/game/direction'
+import {DELTAS, type Direction} from '@/game/direction'
 import {GameEvent} from '@/game/game_event'
 import {PORTAL_COLORS, PortalColor} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
-import {DELTAS, OPPOSITES} from '@/game/rules/step'
+import {OPPOSITES} from '@/game/rules/step'
 import type {StepTransition} from '@/game/step_animation'
 
 /**

@@ -74,13 +74,14 @@ export class Level {
     [Direction.RIGHT]: Action.TURN_RIGHT,
   }
 
-  /** The sound each event of the rules plays */
-  private static readonly SOUNDS: Readonly<Record<GameEvent, Sound>> = {
+  /** The sound each event of the rules plays, or null for one shown but not heard */
+  private static readonly SOUNDS: Readonly<Record<GameEvent, Sound | null>> = {
     [GameEvent.BLUE_PORTAL_OPENED]: Sound.PORTAL_BLUE,
     [GameEvent.ORANGE_PORTAL_OPENED]: Sound.PORTAL_ORANGE,
     [GameEvent.REFUSED]: Sound.ERROR,
     [GameEvent.BOX_PICKED_UP]: Sound.BOX,
     [GameEvent.FIZZLED]: Sound.FIZZLER,
+    [GameEvent.PORTAL_FIZZLED]: null,
     [GameEvent.CROSSED]: Sound.CROSS,
     [GameEvent.DOOR_OPENED]: Sound.DOOR_OPEN,
     [GameEvent.DOOR_CLOSED]: Sound.DOOR_CLOSE,
@@ -353,7 +354,8 @@ export class Level {
   /**
    * Plays the sound of each thing that happened, in order, and counts the
    * portals opened. A portal shot that misses plays the shot sound instead
-   * of the error sound; any other refusal plays the error sound.
+   * of the error sound; any other refusal plays the error sound. A portal a
+   * fizzler closes by turning on plays none.
    * @param events - What happened
    * @param shot - Whether a portal shot made it happen
    */
@@ -361,7 +363,7 @@ export class Level {
     for (const event of events) {
       const sound = (shot && (event === GameEvent.REFUSED)) ? Sound.SHOOT : Level.SOUNDS[event]
 
-      sound.play()
+      sound?.play()
 
       if ((event === GameEvent.BLUE_PORTAL_OPENED) || (event === GameEvent.ORANGE_PORTAL_OPENED)) {
         this.portalCount++
@@ -565,8 +567,9 @@ export class Level {
       this.changes.start(state, next, time)
     }
 
-    if (result.events.includes(GameEvent.FIZZLED) && !this.reducedMotion.matches) {
-      this.fizzle.start(state, next, time)
+    // A fizzler breaks up what it takes: both portals and a carried box when the subject is caught in it, a portal facing it when it turns on
+    if ((result.events.includes(GameEvent.FIZZLED) || result.events.includes(GameEvent.PORTAL_FIZZLED)) && !this.reducedMotion.matches) {
+      this.fizzle.start(state, next, result.events, time)
     }
 
     // Only a shot's refusal ripples: a refused crossing or interact shows nothing

@@ -38,10 +38,13 @@ export type SolverFixture = {
 /** Every solver fixture, run by the replay check and the solver check */
 export const SOLVER_FIXTURES: readonly SolverFixture[] = [
   // Only two wall faces take portals, (0,1) facing right and (6,1) facing
-  // left, so the one useful crossing is walking left from (1,1) onto the exit
-  // at (5,1); reaching (1,1) takes at least 3 moves, so 4 moves is the least
-  // and it needs both portals. Without a crossing (0 or 1 portal) the subject
-  // walks round the top, at least the 7 tiles between it and the exit
+  // left, so the only crossings land on (1,1) or (5,1). (5,1) is a dead end
+  // below the exit at (5,2), reached on foot only through the exit, so the
+  // first crossing walks left from (1,1), which takes at least 3 moves to
+  // reach; the crossing and the step up onto the exit make 5 moves, the
+  // least, and a crossing needs both portals. Without a crossing (0 or 1
+  // portal) the subject walks round the top, at least the 6 tiles between it
+  // and the exit
   {
     name: 'portal_walk',
     covers: 'Walking through a portal: crossing over the ditches takes fewer moves than walking round, so the two pars come from different routes.',
@@ -56,12 +59,13 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
         'turnLeft',
         'blue',
         'left',
+        'up',
       ],
       expected: {
         completed: true,
-        moves: 4,
+        moves: 5,
         portals: 2,
-        finalHash: 'a2f3f787',
+        finalHash: '25eacbf6',
       },
     },
     fewestPortals: {
@@ -72,13 +76,12 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
         'right',
         'down',
         'down',
-        'down',
       ],
       expected: {
         completed: true,
-        moves: 7,
+        moves: 6,
         portals: 0,
-        finalHash: '5e8ab6eb',
+        finalHash: '4d6f36bc',
       },
     },
   },

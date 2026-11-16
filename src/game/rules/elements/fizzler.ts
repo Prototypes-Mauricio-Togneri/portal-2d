@@ -13,12 +13,20 @@ function turnFizzlerOff(draft: StateDraft, index: number): void {
 }
 
 /**
- * Turns a fizzler on, when a link blocks it.
+ * Turns a fizzler on, when a link blocks it, closing a portal on any wall
+ * side facing its tile. Such a portal opened while the fizzler was off,
+ * since one that is on stops shots and keeps the subject from shooting.
  * @param draft - The step's state
  * @param index - The fizzler's index in the chamber's fizzler list
  */
 function turnFizzlerOn(draft: StateDraft, index: number): void {
+  const position = draft.chamber.positionOf('fizzler', index)
+
   draft.setBlocked('fizzler', index, true)
+
+  if (draft.closePortalsFacing(position.x, position.y)) {
+    draft.emit(GameEvent.PORTAL_FIZZLED)
+  }
 }
 
 /**
@@ -46,7 +54,7 @@ function applyFizzlerRule(draft: StateDraft, index: number): void {
   }
 }
 
-/** An emancipation field: while it is on, standing in it closes both portals and destroys a carried box, it stops shots, and the subject can't shoot from it */
+/** An emancipation field: while it is on, standing in it closes both portals and destroys a carried box, it stops shots, and the subject can't shoot from it; turning on, it closes a portal facing it */
 export const FIZZLER_ELEMENT = defineElement<BlockableData>()({
   kind: 'fizzler',
   fileKey: 'fizzlers',
@@ -60,7 +68,10 @@ export const FIZZLER_ELEMENT = defineElement<BlockableData>()({
   stopsShootingFrom: 'whenBlocked',
   takesPortals: 'never',
   reactsToSubject: true,
-  events: [GameEvent.FIZZLED],
+  events: [
+    GameEvent.FIZZLED,
+    GameEvent.PORTAL_FIZZLED,
+  ],
   hooks: {
     subjectInside: applyFizzlerRule,
     linkUnblocked: turnFizzlerOff,

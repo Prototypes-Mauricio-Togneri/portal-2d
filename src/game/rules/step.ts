@@ -1,5 +1,5 @@
 import type {PositionData} from '@/game/chamber_data'
-import {Direction} from '@/game/direction'
+import {DELTAS, Direction} from '@/game/direction'
 import {GameEvent} from '@/game/game_event'
 import {Action, MOVEMENTS, type Movement} from '@/game/rules/action'
 import {type CompiledChamber, NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
@@ -34,40 +34,12 @@ type KindHook<Hook> = {
 }
 
 /**
- * A column and row step.
- */
-export type Delta = {
-  readonly dx: number // Column step
-  readonly dy: number // Row step
-}
-
-/**
  * An element type found by tile.
  */
 type PlacedElement = Extract<RegisteredElement, {readonly kind: PlacedKind}>
 
 /** The most passes of the repeat loop a step may need; one more is a mistake in the rules, reported as an error */
 export const PASS_CAP = 32
-
-/** The step one tile each way takes */
-export const DELTAS: Readonly<Record<Direction, Delta>> = {
-  [Direction.UP]: {
-    dx: 0,
-    dy: 1,
-  },
-  [Direction.DOWN]: {
-    dx: 0,
-    dy: -1,
-  },
-  [Direction.LEFT]: {
-    dx: -1,
-    dy: 0,
-  },
-  [Direction.RIGHT]: {
-    dx: 1,
-    dy: 0,
-  },
-}
 
 /** The way opposite each way */
 export const OPPOSITES: Readonly<Record<Direction, Direction>> = {
@@ -335,15 +307,17 @@ export function stopsShot(draft: StateReader, x: number, y: number): boolean {
 }
 
 /**
- * Whether a wall takes portals now: a wall always, a blocked wall only while
- * it isn't blocked.
+ * Whether a side of a wall takes portals now: a wall's always, a blocked
+ * wall's only while it isn't blocked, but never a side facing a door or the
+ * exit.
  * @param draft - The step's state
  * @param x - Column of the wall
  * @param y - Row of the wall
+ * @param side - The side, the way it faces
  * @returns True when a portal can open on it; false outside the chamber
  */
-function takesPortalsNow(draft: StateDraft, x: number, y: number): boolean {
-  return draft.chamber.canTakePortals(x, y) && (!draft.isBlockedAt('blockedWall', x, y))
+function takesPortalsNow(draft: StateDraft, x: number, y: number, side: Direction): boolean {
+  return draft.chamber.canTakePortalOn(x, y, side) && (!draft.isBlockedAt('blockedWall', x, y))
 }
 
 /**
@@ -392,9 +366,9 @@ export function shotStop(draft: StateReader, x: number, y: number, direction: Di
  * Shoots a portal the way the subject faces, unless it stands somewhere
  * that keeps it from shooting (a fizzler that is on), which does nothing,
  * silently, or carries a box, which is refused. The shot goes on until
- * something stops it, a miss, or it reaches a wall (shotStop): a wall that
- * takes portals and has room on its side facing the shot opens the portal
- * there; any other wall, outside the chamber included, is a miss.
+ * something stops it, a miss, or it reaches a wall (shotStop): a wall whose
+ * side facing the shot takes portals and has room opens the portal there;
+ * any other wall, outside the chamber included, is a miss.
  * @param draft - The step's state
  * @param color - The portal shot
  */
@@ -415,8 +389,10 @@ function shoot(draft: StateDraft, color: PortalColor): void {
   const direction = draft.facing
   const stop = shotStop(draft, draft.subjectX, draft.subjectY, direction)
 
-  if ((!stopsShot(draft, stop.x, stop.y)) && takesPortalsNow(draft, stop.x, stop.y) && hasRoomForPortal(draft, stop.x, stop.y, direction)) {
-    draft.openPortal(color, stop.x, stop.y, OPPOSITES[direction])
+  const side = OPPOSITES[direction]
+
+  if ((!stopsShot(draft, stop.x, stop.y)) && takesPortalsNow(draft, stop.x, stop.y, side) && hasRoomForPortal(draft, stop.x, stop.y, direction)) {
+    draft.openPortal(color, stop.x, stop.y, side)
     draft.emit(PORTAL_OPENED[color])
 
     return

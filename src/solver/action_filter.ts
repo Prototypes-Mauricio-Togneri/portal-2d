@@ -1,10 +1,11 @@
+import {DELTAS} from '@/game/direction'
 import {NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
 import type {ElementDefinition, ElementHooks} from '@/game/rules/element_definition'
 import {ELEMENT_REGISTRY} from '@/game/rules/element_registry'
 import {PORTAL_COLORS} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
 import {DIRECTIONS} from '@/game/rules/state_layout'
-import {allowsWay, canEnter, canInteract, DELTAS, portalEntrance} from '@/game/rules/step'
+import {allowsWay, canEnter, canInteract, portalEntrance} from '@/game/rules/step'
 import {type ChamberIndex, NO_NUMBER} from '@/solver/chamber_index'
 import {isPlacedKind, NO_WALK} from '@/solver/walk_graph'
 

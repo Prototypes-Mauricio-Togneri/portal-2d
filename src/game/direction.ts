@@ -14,6 +14,34 @@ export const Direction = {
 } as const
 
 /**
+ * A column and row step.
+ */
+export type Delta = {
+  readonly dx: number // Column step
+  readonly dy: number // Row step
+}
+
+/** The step one tile each way takes */
+export const DELTAS: Readonly<Record<Direction, Delta>> = {
+  [Direction.UP]: {
+    dx: 0,
+    dy: 1,
+  },
+  [Direction.DOWN]: {
+    dx: 0,
+    dy: -1,
+  },
+  [Direction.LEFT]: {
+    dx: -1,
+    dy: 0,
+  },
+  [Direction.RIGHT]: {
+    dx: 1,
+    dy: 0,
+  },
+}
+
+/**
  * Narrows a direction read from chamber JSON.
  * @param value - The direction string from the data
  * @returns The same value, typed as a Direction

@@ -1,7 +1,6 @@
 import type {PositionData} from '@/game/chamber_data'
-import {Direction} from '@/game/direction'
+import {DELTAS, Direction} from '@/game/direction'
 import {PALETTE} from '@/game/palette'
-import {DELTAS} from '@/game/rules/step'
 import {type ScaledSprite, scaledShadow, scaledSprite, shadowBlur} from '@/game/sprite_scaling'
 import {quarterRect, RAISED_SPRITES, type SpriteName, type TileQuarter} from '@/game/sprite_set'
 

@@ -7,8 +7,8 @@ import carriedBoxLink from '@scripts/fixtures/carried_box_link.json'
 import crossingLasers from '@scripts/fixtures/crossing_lasers.json'
 import fizzlersInARow from '@scripts/fixtures/fizzlers_in_a_row.json'
 import lightBarrier from '@scripts/fixtures/light_barrier.json'
+import noPortalBesideDoor from '@scripts/fixtures/no_portal_beside_door.json'
 import openEdge from '@scripts/fixtures/open_edge.json'
-import portalOntoClosedExit from '@scripts/fixtures/portal_onto_closed_exit.json'
 import portalOntoDitch from '@scripts/fixtures/portal_onto_ditch.json'
 import portalOntoFizzler from '@scripts/fixtures/portal_onto_fizzler.json'
 import portalOntoLaser from '@scripts/fixtures/portal_onto_laser.json'
@@ -70,36 +70,19 @@ export const FIXTURES: readonly Fixture[] = [
     },
   },
   {
-    name: 'portal_onto_closed_exit_refused',
-    behaviour: 'Coming out of a portal onto the closed exit is refused, so the chamber is not completed.',
-    chamber: portalOntoClosedExit,
-    actions: [
-      'blue',
-      'up',
-      'orange',
-      'up',
-    ],
-    expected: {
-      completed: false,
-      moves: 1,
-      portals: 2,
-      finalHash: 'af6e425b',
-    },
-  },
-  {
     name: 'portal_onto_fizzler_fizzles_at_once',
-    behaviour: 'Coming out of a portal onto an active fizzler fizzles in the same step, so stepping off at once still loses both portals.',
+    behaviour: 'Coming out of a portal into a fizzler that the crossing itself switches on, by leaving the button that held it off, fizzles in the same step, so stepping off at once still loses both portals.',
     chamber: portalOntoFizzler,
     actions: [
       'blue',
-      'up',
+      'turnLeft',
       'orange',
-      'up',
+      'left',
       'left',
     ],
     expected: {
       completed: false,
-      moves: 3,
+      moves: 2,
       portals: 2,
       finalHash: 'e3e6fbbd',
     },
@@ -275,6 +258,42 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 8,
       portals: 0,
       finalHash: '42dcec07',
+    },
+  },
+  {
+    name: 'no_portal_beside_door_or_exit',
+    behaviour: 'A wall side facing a door or the exit takes no portal, even open: a shot past the open exit at the wall behind it misses, and so does one from inside the open door at its frame, while the wall facing plain floor above takes one.',
+    chamber: noPortalBesideDoor,
+    actions: [
+      'blue',
+      'right',
+      'right',
+      'up',
+      'turnLeft',
+      'orange',
+      'up',
+      'blue',
+    ],
+    expected: {
+      completed: false,
+      moves: 4,
+      portals: 1,
+      finalHash: '2764e9cf',
+    },
+  },
+  {
+    name: 'fizzler_on_closes_portal_facing_it',
+    behaviour: 'A portal shot past a fizzler while it is off, onto the wall behind it, closes when the fizzler switches on.',
+    chamber: portalOntoFizzler,
+    actions: [
+      'blue',
+      'up',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 1,
+      finalHash: 'adeb77c9',
     },
   },
   {

@@ -18,7 +18,7 @@ The ground rule: every rule effect comes from the rules' own `step` (`src/game/r
 
 The pieces, in `src/solver/`:
 
-- **Chamber index** (`chamber_index.ts`): numbers every tile that isn't wall, and every wall side a portal can ever open on: a wall's, or a blocked wall's that a link reaches or that starts unblocked.
+- **Chamber index** (`chamber_index.ts`): numbers every tile that isn't wall, and every wall side a portal can ever open on: a wall's, or a blocked wall's that a link reaches or that starts unblocked, but never one facing a door or the exit.
 - **State key** (`state_key_codec.ts`): a settled state packed into 64 bits from those numbers: the subject's tile and facing, the carried box, each portal (closed or a wall side), each box's tile, one bit per blocked flag. It leaves out what settling decides: each button's pressed flag, the carried box's tile (the subject's) and the completion (the subject on the exit). Chambers 1 to 3 need 49–53 bits.
 - **State set** (`state_set.ts`): keys in typed arrays of a capacity fixed up front, numbered in the order added, each with the entry it was reached from, so a route can be rebuilt. 10 million keys go in in 1.7 s and are found in 2.1 s, in 188 MiB.
 - **Baseline search** (`baseline_search.ts`): every action from every state, cheapest first (Dijkstra). Exact and slow (about 35,000 states a second on a real chamber); it is the reference the macro search is checked against on the tiny chambers.
@@ -48,16 +48,16 @@ The tiny chambers are in `scripts/solver_fixtures/` (`solver_fixtures.ts` lists 
 
 All in Node 24 on the author's machine (8 cores), one search at a time unless said otherwise.
 
-Size of the problem, as the chambers are now (`npm run solve`, 2026-11-15). The upper bound is tiles × 4 facings × (wall sides + 1)² for the portals × (tiles + 1)^boxes for the boxes × 2^flags:
+Size of the problem, as the chambers are now (`npm run solve`, 2026-11-16). The upper bound is tiles × 4 facings × (wall sides + 1)² for the portals × (tiles + 1)^boxes for the boxes × 2^flags:
 
 | # | Chamber | Size | Tiles | Portal wall sides | Flags | Boxes | Buttons | Upper bound | Key bits |
 |---|---------|------|-------|-------------------|-------|-------|---------|-------------|----------|
-| 1 | 0 (tutorial) | 12×10 | 61 | 64 | 2 | 1 | 2 | ~10^8.4 | 31 |
-| 2 | 1 | 20×20 | 252 | 213 | 6 | 2 | 5 | ~10^14.3 | 50 |
-| 3 | 2 | 23×13 | 185 | 165 | 9 | 2 | 2 | ~10^14.6 | 53 |
-| 4 | 3 | 23×17 | 241 | 182 | 5 | 2 | 4 | ~10^13.8 | 49 |
+| 1 | 0 (tutorial) | 12×10 | 61 | 58 | 2 | 1 | 2 | ~10^8.3 | 29 |
+| 2 | 1 | 20×20 | 252 | 209 | 6 | 2 | 5 | ~10^14.3 | 50 |
+| 3 | 2 | 23×13 | 185 | 161 | 9 | 2 | 2 | ~10^14.5 | 53 |
+| 4 | 3 | 23×17 | 241 | 175 | 5 | 2 | 4 | ~10^13.7 | 49 |
 
-The searches below ran on 2026-11-08 and are a record, not today's figures. The chambers' barriers have since become blocked walls; their floor tiles then still counted as tiles (262, 189 and 268, with a key of 52–53 bits), but nothing could stand on them, so that only renumbered the states. The rules have changed too (shooting takes free hands, and a tile holds one box, both 2026-11-15), which changes the states a chamber can reach.
+The searches below ran on 2026-11-08 and are a record, not today's figures. The chambers' barriers have since become blocked walls; their floor tiles then still counted as tiles (262, 189 and 268, with a key of 52–53 bits), but nothing could stand on them, so that only renumbered the states. The rules have changed too (shooting takes free hands, and a tile holds one box, both 2026-11-15; the walls beside a door or the exit take no portal, which also left fewer wall sides to number, and a fizzler switching on closes a portal facing it, both 2026-11-16), which changes the states a chamber can reach.
 
 States expanded in 5 minutes as the shortcuts were added (the par searches don't use regions or limited drops):
 

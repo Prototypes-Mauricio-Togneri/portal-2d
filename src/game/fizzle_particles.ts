@@ -1,10 +1,10 @@
-import type {Direction} from '@/game/direction'
+import {DELTAS, type Direction} from '@/game/direction'
+import {GameEvent} from '@/game/game_event'
 import {pieceNumber} from '@/game/piece_number'
 import {CARRIED_BOX_AHEAD, PORTAL_SPRITES} from '@/game/renderer'
 import {PORTAL_COLORS} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
 import {NO_BOX} from '@/game/rules/state_layout'
-import {DELTAS} from '@/game/rules/step'
 import type {SpriteName} from '@/game/sprite_set'
 import type {PiecePlacement, TilePainter} from '@/game/tile_painter'
 
@@ -92,21 +92,34 @@ export class FizzleParticles {
   private burstCount = 0 // Bursts started so far, which seeds each new one
 
   /**
-   * Starts breaking up what a step that fizzled took: each portal open
-   * before it and closed after it, where it was, and a box carried before it
-   * and gone after it, where it was carried at the step's end. Replaces
-   * anything still breaking up, unless the step took nothing.
+   * Starts breaking up what a step's fizzlers took. When the subject was
+   * caught in a field (fizzled): each portal open before it and closed after
+   * it, where it was, and a box carried before it and gone after it, where it
+   * was carried at the step's end. Otherwise only each portal a fizzler
+   * closed by switching on: one closed in the step whose wall side faced a
+   * fizzler that is on after it, so a portal a blocked wall closed in the
+   * same step still just vanishes. Replaces anything still breaking up,
+   * unless the step took nothing.
    * @param before - The state before the step
    * @param after - The state after the step
+   * @param events - What happened in the step
    * @param time - Now, in milliseconds on the frame clock
    */
-  start(before: RulesState, after: RulesState, time: number): void {
+  start(before: RulesState, after: RulesState, events: readonly GameEvent[], time: number): void {
     const bursts: Burst[] = []
+    const subjectFizzled = events.includes(GameEvent.FIZZLED)
 
     for (const color of PORTAL_COLORS) {
       const side = before.portalSide(color)
 
-      if ((side !== null) && (after.portalSide(color) === null)) {
+      if ((side === null) || (after.portalSide(color) !== null)) {
+        continue
+      }
+
+      const facedX = before.portalX(color) + DELTAS[side].dx
+      const facedY = before.portalY(color) + DELTAS[side].dy
+
+      if (subjectFizzled || after.isBlockedAt('fizzler', facedX, facedY)) {
         bursts.push({
           sprite: PORTAL_SPRITES[color],
           x: before.portalX(color) + 0.5,
@@ -118,7 +131,7 @@ export class FizzleParticles {
       }
     }
 
-    if ((before.carriedBox !== NO_BOX) && (after.carriedBox === NO_BOX)) {
+    if (subjectFizzled && (before.carriedBox !== NO_BOX) && (after.carriedBox === NO_BOX)) {
       const ahead = DELTAS[after.facing]
 
       bursts.push({

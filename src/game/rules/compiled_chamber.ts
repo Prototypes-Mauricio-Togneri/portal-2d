@@ -1,5 +1,5 @@
 import type {ChamberData, PositionData, WallData} from '@/game/chamber_data'
-import {Direction, parseDirection} from '@/game/direction'
+import {DELTAS, Direction, parseDirection} from '@/game/direction'
 import {listEntries, type PlacedEntry} from '@/game/rules/chamber_entries'
 import {ELEMENT_REGISTRY, type ElementKind} from '@/game/rules/element_registry'
 import {NOT_STORED, StateLayout} from '@/game/rules/state_layout'
@@ -350,6 +350,22 @@ export class CompiledChamber {
     const cell = this.cellOf(x, y)
 
     return (cell !== OUTSIDE) && (this.portalWalls[cell] === 1)
+  }
+
+  /**
+   * Whether a portal can ever open on one side of a wall: the wall can take
+   * portals, and the tile that side faces holds no door or exit, since the
+   * walls beside a doorway never take one, open or closed.
+   * @param x - Column of the wall
+   * @param y - Row of the wall
+   * @param side - The side, the way it faces
+   * @returns True when a portal can open there; false elsewhere, outside the chamber included
+   */
+  canTakePortalOn(x: number, y: number, side: Direction): boolean {
+    const facedX = x + DELTAS[side].dx
+    const facedY = y + DELTAS[side].dy
+
+    return this.canTakePortals(x, y) && (this.elementAt('door', facedX, facedY) === NO_ELEMENT) && (this.elementAt('exit', facedX, facedY) === NO_ELEMENT)
   }
 
   /**
