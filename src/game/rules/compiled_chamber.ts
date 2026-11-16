@@ -38,6 +38,15 @@ export type LinkTarget = {
 }
 
 /**
+ * An antline as the game draws it: the element it leads to, whose blocked
+ * flag lights it, and its corner tiles.
+ */
+export type CompiledAntline = {
+  readonly target: LinkTarget // The element it leads to
+  readonly path: readonly PositionData[] // Its corner tiles, from the button or switch to the element
+}
+
+/**
  * Where the subject starts, and which way it faces.
  */
 export type SubjectStart = {
@@ -167,7 +176,8 @@ function resolveLinks(ids: readonly number[], linkIds: LinkIds): readonly LinkTa
  * The fixed part of a chamber, built once per load: its
  * size, its walls and which of them can take portals, where each element is and
  * which way it points, what each link reaches, where the subject and each
- * box start, and how its state is laid out. Every lookup takes the
+ * box start, how its state is laid out, and its antlines, for the drawing.
+ * Every lookup takes the
  * same time whatever the chamber's size. Outside the chamber's edge is wall
  * that takes no portals, with no element on it. Built from a chamber whose
  * fields have been read (readChamber), even one the validator rejects.
@@ -178,6 +188,7 @@ export class CompiledChamber {
   readonly boxStarts: readonly PositionData[] // Each box's start tile, in list order
   readonly subjectStart: SubjectStart // Where the subject starts
   readonly stateLayout: StateLayout // How this chamber's state is laid out
+  readonly antlines: readonly CompiledAntline[] // The antlines, which are only drawn; one leading to no element, which the validator rejects, is left out
   private readonly walls: Uint8Array // 1 on each cell holding a wall, blocked walls included
   private readonly portalWalls: Uint8Array // 1 on each cell holding a wall that can take portals: a wall, or a blocked wall a link reaches or that starts unblocked
   private readonly tileIndexes = new Map<PlacedKind, TileIndex>() // Where each type's elements are
@@ -217,6 +228,17 @@ export class CompiledChamber {
       this.tileIndexes.set(definition.kind, this.indexTiles(entries))
       this.links.set(definition.kind, entries.map((entry) => resolveLinks(entry.links ?? [], linkIds)))
     }
+
+    this.antlines = (data.antlines ?? []).flatMap((antline) => {
+      const target = linkIds.elements.get(antline.link)
+
+      return (target === undefined) ? [] : [
+        {
+          target: target,
+          path: antline.path,
+        },
+      ]
+    })
 
     const linked: LinkTarget[] = []
 

@@ -1,4 +1,4 @@
-import type {ChamberData, PositionData, WallRangeData} from '@/game/chamber_data'
+import type {AntlineData, ChamberData, PositionData, WallRangeData} from '@/game/chamber_data'
 import {type ChamberProblem, chamberError, chamberWarning, type ProblemTile} from '@/game/rules/chamber_problem'
 
 /**
@@ -95,7 +95,8 @@ function tileKey(x: number, y: number): string {
 /**
  * Checks how the parts of a format 2 chamber fit together: everything inside
  * the chamber, at most one fixed element per tile, ids unique and links
- * naming something, and an enclosed edge.
+ * naming something, antlines leading from a button or switch to an element it
+ * links, and an enclosed edge.
  */
 class ChamberValidator {
   readonly problems: ChamberProblem[] = [] // Every problem found so far
@@ -409,6 +410,110 @@ class ChamberValidator {
   }
 
   /**
+   * Whether a button or switch on a tile links an element, by its id or
+   * through a group.
+   * @param tile - The tile
+   * @param id - The element's id
+   * @returns True when one on the tile does
+   */
+  private isLinkedFrom(tile: PositionData, id: number): boolean {
+    const triggers = [
+      ...(this.chamber.buttons ?? []),
+      ...(this.chamber.switches ?? []),
+    ]
+
+    return triggers.some((trigger) => (trigger.x === tile.x) && (trigger.y === tile.y) &&
+      trigger.links.some((link) => (link === id) || (this.targets.get(link)?.links.includes(id) ?? false)))
+  }
+
+  /**
+   * Checks an antline's corners, reporting the first that is outside the
+   * chamber, repeats the corner before it or shares neither its row nor its
+   * column.
+   * @param path - The corners
+   * @param field - Where in the file the antline is listed
+   * @returns True when every corner is right
+   */
+  private checkAntlinePath(path: readonly PositionData[], field: string): boolean {
+    let previous: PositionData | null = null
+
+    for (const corner of path) {
+      const tile = {
+        x: corner.x,
+        y: corner.y,
+      }
+
+      if (!this.isInside(corner.x, corner.y)) {
+        this.problems.push(chamberError(field, tile, 'is outside the chamber'))
+
+        return false
+      }
+
+      if ((previous !== null) && (previous.x === corner.x) && (previous.y === corner.y)) {
+        this.problems.push(chamberError(field, tile, 'repeats the corner before it'))
+
+        return false
+      }
+
+      if ((previous !== null) && (previous.x !== corner.x) && (previous.y !== corner.y)) {
+        this.problems.push(chamberError(field, tile, 'shares neither a row nor a column with the corner before it'))
+
+        return false
+      }
+
+      previous = corner
+    }
+
+    return true
+  }
+
+  /**
+   * Checks one antline: it leads to an element, not a group; its corners are
+   * right; it starts on a button or switch that links the element, by its id
+   * or through a group, and ends on the element's tile.
+   * @param antline - The antline
+   * @param field - Where in the file it is listed
+   */
+  private checkAntline(antline: AntlineData, field: string): void {
+    const id = antline.link
+    const target = this.targets.get(id)
+
+    if (target === undefined) {
+      this.problems.push(chamberError(field, null, `links id ${id}, which nothing has`))
+
+      return
+    }
+
+    if ((target.kind === 'group') || (target.tile === null)) {
+      this.problems.push(chamberError(field, null, `links group ${target.field}; an antline leads to one element`))
+
+      return
+    }
+
+    const start = antline.path.at(0)
+    const end = antline.path.at(-1)
+
+    // The parser keeps no path with fewer than two corners
+    if ((start === undefined) || (end === undefined) || (!this.checkAntlinePath(antline.path, field))) {
+      return
+    }
+
+    if (!this.isLinkedFrom(start, id)) {
+      this.problems.push(chamberError(field, {
+        x: start.x,
+        y: start.y,
+      }, `starts on no button or switch that links id ${id}`))
+    }
+
+    if ((end.x !== target.tile.x) || (end.y !== target.tile.y)) {
+      this.problems.push(chamberError(field, {
+        x: end.x,
+        y: end.y,
+      }, `ends away from id ${id}, which is at (${target.tile.x}, ${target.tile.y})`))
+    }
+  }
+
+  /**
    * Checks that every tile of the chamber's edge holds a wall, a blocked
    * wall, a door or the exit.
    */
@@ -440,6 +545,7 @@ class ChamberValidator {
     this.checkOverlaps()
     this.collectTargets()
     this.checkLinks()
+    this.chamber.antlines?.forEach((antline, index) => this.checkAntline(antline, `antlines[${index}]`))
     this.checkEdge()
   }
 }

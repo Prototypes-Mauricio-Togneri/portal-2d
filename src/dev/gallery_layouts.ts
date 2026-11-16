@@ -3,9 +3,9 @@ import {Action} from '@/game/rules/action'
 
 // Development only: the layouts the sprite gallery (sprite_gallery.ts)
 // draws besides the real chambers. The specimen is one small chamber with
-// every element, loaded with the layout checks, once with everything on and
-// once with everything off; the join board is every way walls, or open
-// ditches, can meet, read without the layout checks
+// every element and an antline, loaded with the layout checks, once with
+// everything on and once with everything off; the join board is every way
+// walls, or open ditches, can meet, read without the layout checks
 
 /**
  * A specimen's actions after its settled start, and what they leave: the
@@ -96,8 +96,10 @@ function beam(x: number, y: number, direction: 'H' | 'V', on: boolean): BeamData
  * a blocked wall that refuses them only while on in the inner wall, and two
  * light barriers in the bottom right corner;
  * arrows point all four ways, two lasers cross, one box lies on a button and
- * another on the floor, and the subject stands on a third. Column 4 and
- * row 3 stay clear, so the subject's shots reach the walls.
+ * another on the floor, and the subject stands on a third. The switch links
+ * the fizzler, never used, so an antline runs between them, unlit while the
+ * fizzler is on and lit while it is off. Column 4 and row 3 stay clear, so
+ * the subject's shots reach the walls.
  * @param on - Whether every element that can be blocked is: the inner blocked wall refusing portals, the light barriers on, ditches open, doors and the exit closed, the fizzler and lasers on
  * @returns The chamber
  */
@@ -162,7 +164,12 @@ function specimenData(on: boolean): ChamberData {
       blockable(3, 0, on),
       blockable(6, 2, on),
     ],
-    fizzlers: [blockable(6, 5, on)],
+    fizzlers: [
+      {
+        ...blockable(6, 5, on),
+        id: 1,
+      },
+    ],
     lightBarriers: [
       beam(7, 1, 'H', on),
       beam(8, 1, 'H', on),
@@ -216,7 +223,17 @@ function specimenData(on: boolean): ChamberData {
       {
         x: 5,
         y: 6,
-        links: [],
+        links: [1],
+      },
+    ],
+    antlines: [
+      {
+        link: 1,
+        path: [
+          at(5, 6),
+          at(5, 5),
+          at(6, 5),
+        ],
       },
     ],
     boxes: [

@@ -83,6 +83,7 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 - A button stays pressed only while the subject or a box is on it, so a box left on it keeps a door open while the subject walks away.
 - A switch only opens. Using it again repeats that (sending a linked box back each time); it never closes anything. It can't be used while carrying a box, so a box can't be put down on a switch.
 - Each element starts open or closed as the chamber sets it, before any button or switch acts on it.
+- Some links are shown by a dotted line on the floor, from the button or switch to the element, as in the original game, mostly in the tutorial and early chambers. It is cyan, and turns amber while the element is open in the sense above (a line to a box never does). It runs under walls and anything else on its way, and changes nothing in play.
 
 ## Fizzlers in detail
 

@@ -46,6 +46,46 @@
             "direction": "D"
         }
     ],
+    "antlines": [
+        {
+            "link": 0,
+            "path": [
+                {
+                    "x": 1,
+                    "y": 1
+                },
+                {
+                    "x": 2,
+                    "y": 1
+                }
+            ]
+        },
+        {
+            "link": 3
+        },
+        {
+            "link": 4,
+            "path": [
+                {
+                    "x": 1,
+                    "y": 1
+                }
+            ]
+        },
+        {
+            "link": 5,
+            "path": [
+                {
+                    "x": 1
+                },
+                {
+                    "x": 2,
+                    "y": 1
+                }
+            ],
+            "colour": "red"
+        }
+    ],
     "colour": "blue",
     "par": {
         "moves": -1

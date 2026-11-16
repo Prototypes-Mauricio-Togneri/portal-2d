@@ -1,4 +1,4 @@
-import type {ArrowData, BeamData, BlockableData, BlockedWallData, BoxData, ChamberData, LinkGroupData, ParData, SubjectData, TriggerData, WallData, WallRangeData} from '@/game/chamber_data'
+import type {AntlineData, ArrowData, BeamData, BlockableData, BlockedWallData, BoxData, ChamberData, LinkGroupData, ParData, PositionData, SubjectData, TriggerData, WallData, WallRangeData} from '@/game/chamber_data'
 import {type ChamberProblem, chamberError} from '@/game/rules/chamber_problem'
 import {isJsonObject, type JsonObject} from '@/game/rules/json_object'
 
@@ -31,6 +31,7 @@ export const CHAMBER_FIELDS = [
   'switches',
   'lasers',
   'groups',
+  'antlines',
   'par',
 ]
 
@@ -125,6 +126,15 @@ const GROUP_FIELDS = [
   'id',
   'links',
 ]
+
+/** The fields of an antline, all required */
+const ANTLINE_FIELDS = [
+  'link',
+  'path',
+]
+
+/** The fewest corners an antline's path has: the button's or switch's tile and the element's */
+const ANTLINE_MIN_CORNERS = 2
 
 /** The fields the par block may have, none required */
 const PAR_FIELDS = [
@@ -520,6 +530,28 @@ class ChamberParser {
   }
 
   /**
+   * Reads one tile, which has x and y and nothing else.
+   * @param value - The value
+   * @param field - Its path
+   * @returns The tile, or null when it is wrong
+   */
+  private readPosition(value: unknown, field: string): PositionData | null {
+    const entry = this.readObject(value, field, POSITION_FIELDS, POSITION_FIELDS)
+
+    if (entry === null) {
+      return null
+    }
+
+    const x = this.readInteger(entry.x, fieldPath(field, 'x'), null)
+    const y = this.readInteger(entry.y, fieldPath(field, 'y'), null)
+
+    return ((x === null) || (y === null)) ? null : {
+      x: x,
+      y: y,
+    }
+  }
+
+  /**
    * Reads a wall entry: one tile when it has x or y, otherwise a rectangle.
    * @param value - The value
    * @param field - Its path
@@ -527,19 +559,7 @@ class ChamberParser {
    */
   readWall(value: unknown, field: string): WallData | null {
     if (isJsonObject(value) && (('x' in value) || ('y' in value))) {
-      const entry = this.readObject(value, field, POSITION_FIELDS, POSITION_FIELDS)
-
-      if (entry === null) {
-        return null
-      }
-
-      const x = this.readInteger(entry.x, fieldPath(field, 'x'), null)
-      const y = this.readInteger(entry.y, fieldPath(field, 'y'), null)
-
-      return ((x === null) || (y === null)) ? null : {
-        x: x,
-        y: y,
-      }
+      return this.readPosition(value, field)
     }
 
     const entry = this.readObject(value, field, WALL_CORNER_FIELDS, WALL_CORNER_FIELDS)
@@ -613,6 +633,40 @@ class ChamberParser {
   }
 
   /**
+   * Reads an antline: the element it leads to and its path, a list of at
+   * least two corner tiles. How the path fits the chamber is checked later.
+   * @param value - The value
+   * @param field - Its path
+   * @returns The antline, or null when it is wrong
+   */
+  readAntline(value: unknown, field: string): AntlineData | null {
+    const entry = this.readObject(value, field, ANTLINE_FIELDS, ANTLINE_FIELDS)
+
+    if (entry === null) {
+      return null
+    }
+
+    const link = this.readInteger(entry.link, fieldPath(field, 'link'), 1)
+    const pathField = fieldPath(field, 'path')
+    const path = this.readList(entry.path, pathField, (corner, cornerField) => this.readPosition(corner, cornerField))
+
+    // A wrong corner was reported and left out of the list, so the path is
+    // only kept when every corner was read
+    if ((link === null) || (path === undefined) || (path === null) || (Array.isArray(entry.path) && (path.length !== entry.path.length))) {
+      return null
+    }
+
+    if (path.length < ANTLINE_MIN_CORNERS) {
+      return this.fail(pathField, `needs at least ${ANTLINE_MIN_CORNERS} corners`)
+    }
+
+    return {
+      link: link,
+      path: path,
+    }
+  }
+
+  /**
    * Reads the par block, whose fields are all optional.
    * @param value - The value, undefined when absent
    * @param field - Its path
@@ -666,6 +720,7 @@ class ChamberParser {
     const switches = this.readList(file.switches, 'switches', (entry, field) => this.readTrigger(entry, field))
     const lasers = this.readList(file.lasers, 'lasers', (entry, field) => this.readBeam(entry, field))
     const groups = this.readList(file.groups, 'groups', (entry, field) => this.readGroup(entry, field))
+    const antlines = this.readList(file.antlines, 'antlines', (entry, field) => this.readAntline(entry, field))
     const par = this.readPar(file.par, 'par')
 
     // Every wrong entry was reported and left out of its list, so the chamber
@@ -673,7 +728,7 @@ class ChamberParser {
     if ((this.problems.length > 0) || (version === null) || (size === null) || (subject === null) || (exit === null) ||
       (walls === null) || (blockedWalls === null) || (lightBarriers === null) || (ditches === null) || (boxes === null) ||
       (buttons === null) || (arrows === null) || (fizzlers === null) || (doors === null) || (switches === null) ||
-      (lasers === null) || (groups === null) || (par === null)) {
+      (lasers === null) || (groups === null) || (antlines === null) || (par === null)) {
       return null
     }
 
@@ -694,6 +749,7 @@ class ChamberParser {
       switches: switches,
       lasers: lasers,
       groups: groups,
+      antlines: antlines,
       par: par,
     }
   }

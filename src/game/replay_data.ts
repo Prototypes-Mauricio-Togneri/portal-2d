@@ -25,7 +25,7 @@ export type ReplayStep = Action | HistoryKey
  * action ("up", "turnLeft", "blue", "interact") or as "undo" or "redo".
  */
 export type ReplayData = {
-  readonly chamberHash: string // Hash of the chamber the run was recorded on, as read; editing the chamber changes it
+  readonly chamberHash: string // Hash of the chamber the run was recorded on, as read; editing the chamber changes it, but for its antlines
   readonly actions: readonly ReplayStep[] // The presses, in order
   readonly expected: ReplayExpectation // What replaying the presses gives
 }
@@ -55,10 +55,16 @@ export function parseReplayStep(text: string): ReplayStep {
 
 /**
  * The hash that ties a replay to the chamber it was recorded on, taken from
- * the chamber as read, so the browser and Node agree on it.
+ * the chamber as read, so the browser and Node agree on it. It leaves out
+ * the antlines, which are only drawn, so adding or moving one never asks for
+ * the chamber's solution to be recorded again.
  * @param chamber - The chamber, as read
  * @returns Eight hexadecimal digits
  */
 export function getChamberHash(chamber: ChamberData): string {
-  return formatHash(hashText(JSON.stringify(chamber)))
+  // A field set to undefined is left out of the JSON, as if never there
+  return formatHash(hashText(JSON.stringify({
+    ...chamber,
+    antlines: undefined,
+  })))
 }

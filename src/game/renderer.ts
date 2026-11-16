@@ -1,3 +1,4 @@
+import {antlinesLitKey, drawAntlines} from '@/game/antline_drawing'
 import {drawLaserGlows, ELEMENT_DRAWINGS, glowStrength} from '@/game/element_drawings'
 import type {BlockedShares, ElementTransitions} from '@/game/element_transitions'
 import type {FizzleParticles} from '@/game/fizzle_particles'
@@ -21,6 +22,8 @@ type Backdrop = {
   readonly chamber: CompiledChamber // The chamber it was drawn for
   readonly tileSize: number // The tile size it was drawn at, in pixels
   readonly layer: TilePainter // The backdrop, on a canvas of its own
+  readonly cover: TilePainter | null // What the backdrop lays over its antlines (floor marks, then walls over their shadow), kept apart to draw it again when one changes, or null when the chamber has none
+  readonly litKey: string // Which antlines the backdrop shows lit, from antlinesLitKey()
 }
 
 /** Each portal's sprite */
@@ -38,7 +41,7 @@ const PORTAL_GLOWS: Readonly<Record<PortalColor, SpriteName>> = {
 /** How far ahead of the subject's middle a carried box is drawn, the way the subject faces, in tiles */
 export const CARRIED_BOX_AHEAD = 0.25
 
-/** The bottom layers, which never change while a chamber is played: drawn once as its backdrop, never each frame */
+/** The bottom layers, which never change while a chamber is played: drawn as its backdrop with the antlines, never each frame */
 const BACKDROP_LAYERS: ReadonlySet<DrawLayer> = new Set<DrawLayer>([
   'floor',
   'floorMarks',
@@ -61,14 +64,11 @@ function drawElementsOn(painter: TilePainter, state: RulesState, layer: DrawLaye
 }
 
 /**
- * Draws a chamber's backdrop, the layers that never change while it is
- * played: the background, the floor of every tile and the floor marks, then
- * the walls, painted apart and laid down over the shared drop shadow of
- * their whole mass.
+ * Draws the background and the floor of every tile.
  * @param painter - Paints on the canvas, already sized for the chamber
- * @param state - A state of the chamber; the backdrop is the same for every one
+ * @param state - A state of the chamber
  */
-export function drawBackdrop(painter: TilePainter, state: RulesState): void {
+function drawFloor(painter: TilePainter, state: RulesState): void {
   painter.clear()
 
   for (let x = 0; x < state.chamber.width; x++) {
@@ -76,13 +76,49 @@ export function drawBackdrop(painter: TilePainter, state: RulesState): void {
       painter.drawSprite('floor', x, y)
     }
   }
+}
 
+/**
+ * Draws what the backdrop lays over the antlines: the floor marks, then the
+ * walls, painted apart and laid down over the shared drop shadow of their
+ * whole mass.
+ * @param painter - Paints on the canvas, already sized for the chamber
+ * @param state - A state of the chamber
+ */
+function drawBackdropCover(painter: TilePainter, state: RulesState): void {
   drawElementsOn(painter, state, 'floorMarks')
 
   const structure = painter.createLayer()
 
   drawElementsOn(structure, state, 'structure')
   painter.drawLayer(structure, true)
+}
+
+/**
+ * Draws a chamber's backdrop, the layers that change only when an antline
+ * lights up or goes dark while it is played: the background, the floor of
+ * every tile, the antlines and the floor marks, then the walls, painted
+ * apart and laid down over the shared drop shadow of their whole mass.
+ * @param painter - Paints on the canvas, already sized for the chamber
+ * @param state - The state whose antlines are drawn; the rest is the same for every state of the chamber
+ */
+export function drawBackdrop(painter: TilePainter, state: RulesState): void {
+  drawFloor(painter, state)
+  drawAntlines(painter, state)
+  drawBackdropCover(painter, state)
+}
+
+/**
+ * Draws a backdrop from its parts: the floor, a state's antlines, then the
+ * cover laid over them.
+ * @param layer - The backdrop's layer, drawn over in full
+ * @param cover - The floor marks and the walls over their shadow, from drawBackdropCover()
+ * @param state - The state whose antlines are drawn
+ */
+function composeBackdrop(layer: TilePainter, cover: TilePainter, state: RulesState): void {
+  drawFloor(layer, state)
+  drawAntlines(layer, state)
+  layer.drawLayer(cover, false)
 }
 
 /**
@@ -108,8 +144,9 @@ export function hasAmbientLife(state: RulesState): boolean {
 
 /**
  * Draws a state of the rules onto a canvas from the chamber sprites
- * (docs/sprites.md): the chamber's backdrop (floor, floor marks and walls),
- * drawn once per chamber and tile size and copied every frame, then each
+ * (docs/sprites.md): the chamber's backdrop (floor, antlines, floor marks
+ * and walls), drawn once per chamber and tile size, and again when an
+ * antline lights up or goes dark, and copied every frame, then each
  * other draw layer back to front. The core step's layers (floor, portals,
  * subject) are drawn here; every other layer draws its element types in
  * registry order, each by its drawing in ELEMENT_DRAWINGS. Tiles are square,
@@ -161,25 +198,48 @@ export class Renderer {
   /**
    * The backdrop of a state's chamber at the current tile size, drawn the
    * first time it is asked for and kept until the chamber or the tile size
-   * changes.
+   * changes. When an antline lights up or goes dark, the backdrop is drawn
+   * again from its floor, the antlines and its cover, kept apart, so the
+   * walls' shadow isn't made again.
    * @param state - The state drawn
    * @returns The backdrop's layer
    */
   private backdropOf(state: RulesState): TilePainter {
     const tileSize = this.painter.blockSize
+    const litKey = antlinesLitKey(state)
+    const backdrop = this.backdrop
 
-    if ((this.backdrop === null) || (this.backdrop.chamber !== state.chamber) || (this.backdrop.tileSize !== tileSize)) {
+    if ((backdrop === null) || (backdrop.chamber !== state.chamber) || (backdrop.tileSize !== tileSize)) {
       const layer = this.painter.createLayer()
+      const cover = (state.chamber.antlines.length > 0) ? this.painter.createLayer() : null
 
-      drawBackdrop(layer, state)
+      if (cover === null) {
+        drawBackdrop(layer, state)
+      } else {
+        drawBackdropCover(cover, state)
+        composeBackdrop(layer, cover, state)
+      }
+
       this.backdrop = {
         chamber: state.chamber,
         tileSize: tileSize,
         layer: layer,
+        cover: cover,
+        litKey: litKey,
+      }
+
+      return layer
+    }
+
+    if ((backdrop.cover !== null) && (backdrop.litKey !== litKey)) {
+      composeBackdrop(backdrop.layer, backdrop.cover, state)
+      this.backdrop = {
+        ...backdrop,
+        litKey: litKey,
       }
     }
 
-    return this.backdrop.layer
+    return backdrop.layer
   }
 
   /**

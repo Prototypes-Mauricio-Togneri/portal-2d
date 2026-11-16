@@ -24,7 +24,7 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 - **Light:** from directly overhead, so every side of an object is shaded the same: no highlight on one side, no shadow on the other.
 - **Shadows:** don't draw a shadow falling outside the object. The game adds one shared drop shadow, made from each sprite's shape, under what stands raised (walls, blocked walls, closed doors, the closed exit, switches, boxes, the subject): a soft dark rim all round, with no offset, since the light is overhead. Walls cast theirs as one mass, so a run of walls has one shadow along its open sides.
 - **Readable small:** every sprite must still read at 40 px. On and off must differ at a glance, and the subject's facing must show from its shape alone.
-- **Colours:** the ones that carry a meaning are listed here and copied by hand into the CSS tokens (`src/assets/styles.css`), since the menus use the same colours (crimson and teal, which they don't use, have no token). Keep blue and orange off every other sprite, so nothing is mistaken for a portal; the exceptions are the fizzler's see-through cobalt (30, 80, 210 at 62 %), deeper than the blue portal and with no edge lines, and the subject's orange jumpsuit and blue-lit portal gun (see [the subject](#the-subject)). Changing one of these means redrawing the sprites that use it, along with its CSS token.
+- **Colours:** the ones that carry a meaning are listed here and copied by hand into the CSS tokens (`src/assets/styles.css`), since the menus use the same colours (crimson, teal, cyan and amber, which they don't use, have no token). Keep blue and orange off every other sprite, so nothing is mistaken for a portal; the exceptions are the fizzler's see-through cobalt (30, 80, 210 at 62 %), deeper than the blue portal and with no edge lines, and the subject's orange jumpsuit and blue-lit portal gun (see [the subject](#the-subject)). The antlines, drawn in code, keep off them too: their cyan is clear of the blue portal and of the light barrier's teal, and their amber yellower than the orange portal. Changing one of these means redrawing the sprites that use it, along with its CSS token.
 
 | # | Colour | RGB | Used for |
 |---|--------|-----|----------|
@@ -34,6 +34,8 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 | 4 | Green | 40, 200, 130 | A completed chamber's test-subject figure in the home menu; the subject's own sprite is painted in its own colours (see [the subject](#the-subject)) |
 | 5 | Crimson | 235, 30, 55 | Lasers, and the lit slot of their end plates |
 | 6 | Teal | 96, 222, 186 | The light barrier's band, and the lit slots of its connectors |
+| 7 | Cyan | 72, 176, 185 | An unlit antline's dots, drawn by the game in code, each with a border 30 % darker (50, 123, 130) (see [antlines](#antlines)) |
+| 8 | Amber | 250, 194, 44 | A lit antline's dots, each with a border 30 % darker (175, 136, 31) |
 
 ## Turning
 
@@ -115,17 +117,18 @@ The game draws from the bottom up, each later row over the earlier ones:
 | # | Drawn | Sprites |
 |---|-------|---------|
 | 1 | Floor | `floor` |
-| 2 | Floor marks | `arrow` |
-| 3 | Structure | `wall`, `blocked_wall` for the blocked walls no link reaches |
-| 4 | Blockers | `blocked_wall` over the blocked walls a link reaches while blocked, `light_barrier_on`, then `light_barrier_end_*` over the bands, `ditch`, `ditch_bridged`, `laser_on`, then `laser_end_*` over the beams, `door_closed`, `exit_closed` |
-| 5 | Portals | `portal_*` |
-| 6 | Fixtures | `button_*`, `switch` |
-| 7 | Items | `box` |
-| 8 | Subject | `subject`, and a carried `box` at half size |
-| 9 | Fields | `fizzler_on`, whole or in pieces (see [fizzle](#fizzle)) |
-| 10 | Glow | `laser_glow`, `portal_*_glow` |
-| 11 | Fizzle | `portal_*`, `box`, in pieces (see [fizzle](#fizzle)) |
-| 12 | Miss | None: a missed shot's ripple, drawn in code (see [miss](#miss)) |
+| 2 | Antlines | None: dotted lines, drawn in code (see [antlines](#antlines)) |
+| 3 | Floor marks | `arrow` |
+| 4 | Structure | `wall`, `blocked_wall` for the blocked walls no link reaches |
+| 5 | Blockers | `blocked_wall` over the blocked walls a link reaches while blocked, `light_barrier_on`, then `light_barrier_end_*` over the bands, `ditch`, `ditch_bridged`, `laser_on`, then `laser_end_*` over the beams, `door_closed`, `exit_closed` |
+| 6 | Portals | `portal_*` |
+| 7 | Fixtures | `button_*`, `switch` |
+| 8 | Items | `box` |
+| 9 | Subject | `subject`, and a carried `box` at half size |
+| 10 | Fields | `fizzler_on`, whole or in pieces (see [fizzle](#fizzle)) |
+| 11 | Glow | `laser_glow`, `portal_*_glow` |
+| 12 | Fizzle | `portal_*`, `box`, in pieces (see [fizzle](#fizzle)) |
+| 13 | Miss | None: a missed shot's ripple, drawn in code (see [miss](#miss)) |
 
 ## Glow
 
@@ -138,6 +141,10 @@ When the subject fizzles (it walks or crosses into a fizzler that is on, or one 
 ## Miss
 
 When a portal shot misses, the game draws a ripple in the shot's colour where it stopped, over everything, from no sprite: the face the shot met lights up as a line 0.84 of a tile long and 0.05 wide across the shot, fading in about 0.28 s, and two thin half rings, 90 ms apart, spread back towards the subject, from 0.2 to 0.8 of a tile along the face and up to 0.28 of a tile back, thinning and fading in about 0.42 s each, so all of it stays within the tile's width and is gone in about 0.52 s. It sits where a portal would have opened on a wall, 0.125 of a tile in; on the near edge of a door, the exit or a fizzler; on the near face of a light barrier's band when the band runs across the shot, or at its end on the tile's edge when it runs along it; and, for a shot that left the chamber through an open door or exit in its edge, just inside the doorway. A shot from inside a fizzler that is on does nothing, so draws nothing. With reduced motion, and in the home menu's map and the gallery, nothing ripples.
+
+## Antlines
+
+An antline is a dotted line on the floor from a button or switch to one element it links, as in the original game, drawn by the game in code from no sprite along the corners the chamber file gives (see `docs/elements.md`). Its dots, 3 per tile, one on each tile's middle, so each corner gets one, are 0.15 of a tile wide, each with a border 0.025 of a tile wide (never thinner than a pixel) drawn inside its edge, in its colour 30 % darker. It runs from the middle of the button's or switch's tile, whose sprite hides its start, to the edge of the element's tile, its last dot 1/6 of a tile before it, the same whether the element is drawn or not. It lies over the floor and under everything else, so the floor marks, the walls with their shadow and every element hide it where it runs under them, and it shows again beyond. It is cyan while unlit, and amber, lit, while the element it leads to is unblocked: a door or the exit open, a laser, a light barrier or a fizzler off, a ditch bridged, a blocked wall taking portals; a line to a box never lights. Unlit lines are drawn first, lit ones over them. The colour changes at once with the step, with no fade, so reduced motion changes nothing; the home menu's map and the gallery show them too.
 
 ## Sliding
 
@@ -171,7 +178,7 @@ convert art/sprites/subject.png -channel A -level 3%,98% +channel -background no
 Drop the file into the folder, and `npm run dev` picks it up. The sprite gallery, at `/src/dev/sprite_gallery.html` in `npm run dev`, reloads by itself when a file lands and shows:
 
 - each sprite as the game has it, at full size on a checkerboard, with its size and whether its file is in use, missing, not downloaded or refused (and why); one without a usable file shows as an empty frame, since the game draws nothing for it;
-- a small chamber with every element, drawn by the game with everything on and with everything off, the subject carrying a box and both portals open;
+- a small chamber with every element and an antline, drawn by the game with everything on and with everything off (the antline unlit, then lit), the subject carrying a box and both portals open;
 - every way walls and open ditches meet;
 - each chamber at its start.
 

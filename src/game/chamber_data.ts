@@ -99,6 +99,17 @@ export type LinkGroupData = {
 }
 
 /**
+ * An antline: a dotted line on the floor from a button or switch to one
+ * element it links, drawn only, lit while that element is unblocked. Its path
+ * runs straight along rows and columns from corner to corner, from the
+ * button's or switch's tile to the element's.
+ */
+export type AntlineData = {
+  readonly link: number // Id of the element it leads to, never a group's
+  readonly path: readonly PositionData[] // Its corner tiles, from the button or switch to the element, at least two
+}
+
+/**
  * How well a chamber can be solved, for medals. Reserved: nothing writes it
  * yet (docs/solver.md), and having it already means filling it later needs
  * no new format version.
@@ -110,10 +121,10 @@ export type ParData = {
 
 /**
  * Shape of a chamber file: the version, the size, the subject, the link
- * groups and the par block, then one field per element type in the registry
- * (the exit, and a list for each other type). A list that is left out means
- * the chamber has none of that element. Never mutated by the game, so one
- * object can be loaded again to reset the chamber.
+ * groups, the antlines and the par block, then one field per element type in
+ * the registry (the exit, and a list for each other type). A list that is
+ * left out means the chamber has none of that element. Never mutated by the
+ * game, so one object can be loaded again to reset the chamber.
  */
 export type ChamberData = {
   readonly version: number // The format's version, 2
@@ -123,5 +134,6 @@ export type ChamberData = {
   }
   readonly subject: SubjectData // Where the subject starts and which way it faces
   readonly groups?: readonly LinkGroupData[] // Link groups
+  readonly antlines?: readonly AntlineData[] // Drawn only: dotted lines from buttons and switches to elements they link
   readonly par?: ParData // How well the chamber can be solved
 } & ChamberElementFields

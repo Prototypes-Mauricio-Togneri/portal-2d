@@ -2,6 +2,7 @@
 
 ## TODO
 
+- pick up box if next to it (in addition to on top)?
 - reduce size of buttons and make corner brackets lighter
 - implement antlines
 - split plan 04 into two:

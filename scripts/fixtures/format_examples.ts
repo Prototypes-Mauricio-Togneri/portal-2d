@@ -1,4 +1,5 @@
 import type {ChamberData} from '@/game/chamber_data'
+import brokenAntlines from '@scripts/fixtures/broken_antlines.json'
 import brokenChamberFields from '@scripts/fixtures/broken_chamber_fields.json'
 import brokenChamberLayout from '@scripts/fixtures/broken_chamber_layout.json'
 import formatV2Example from '@scripts/fixtures/format_v2_example.json'
@@ -11,7 +12,7 @@ import lightBarrierSharedTile from '@scripts/fixtures/light_barrier_shared_tile.
 // fails when it doesn't fit the format, and cases that pin exactly what
 // loading a file reports, broken ones included
 
-/** A format 2 chamber using every addition (blocked walls, one tile of them linked, a link group named by a button and a switch, an empty par) and leaving out every list it doesn't need */
+/** A format 2 chamber using every addition (blocked walls, one tile of them linked, a link group named by a button and a switch, an antline to an element the group stands for and one to an element named directly, an empty par) and leaving out every list it doesn't need */
 export const FORMAT_V2_EXAMPLE: ChamberData = formatV2Example
 
 /**
@@ -58,6 +59,11 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
       'error buttons[0].links[0]: is less than 1',
       'error doors[0].y: is not a whole number',
       'error lasers[0].direction: is not one of H, V',
+      'error antlines[0].link: is less than 1',
+      'error antlines[1].path: is missing',
+      'error antlines[2].path: needs at least 2 corners',
+      'error antlines[3].colour: is not a field of a chamber file here (misspelled?)',
+      'error antlines[3].path[0].y: is missing',
       'error par.moves: is less than 0',
     ],
   },
@@ -98,6 +104,21 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
     problems: [
       'error lightBarriers[0].direction: is missing',
       'error lightBarriers[1].direction: is not one of H, V',
+    ],
+  },
+  {
+    name: 'broken_antlines',
+    // Each antline but the last has one problem; the last starts on a switch that links its door through a group, which is right
+    data: brokenAntlines,
+    problems: [
+      'error antlines[0]: links id 9, which nothing has',
+      'error antlines[1]: links group groups[0]; an antline leads to one element',
+      'error antlines[2] at (6, 1): is outside the chamber',
+      'error antlines[3] at (2, 2): shares neither a row nor a column with the corner before it',
+      'error antlines[4] at (1, 1): repeats the corner before it',
+      'error antlines[5] at (2, 1): starts on no button or switch that links id 1',
+      'error antlines[6] at (1, 1): starts on no button or switch that links id 2',
+      'error antlines[7] at (4, 1): ends away from id 1, which is at (5, 2)',
     ],
   },
 ]
