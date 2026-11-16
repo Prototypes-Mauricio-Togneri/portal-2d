@@ -83,6 +83,7 @@ export class Level {
     [GameEvent.ORANGE_PORTAL_OPENED]: Sound.PORTAL_ORANGE,
     [GameEvent.REFUSED]: Sound.ERROR,
     [GameEvent.BOX_PICKED_UP]: Sound.BOX,
+    [GameEvent.BOX_PUT_DOWN]: Sound.BOX,
     [GameEvent.BOX_DESTROYED]: null,
     [GameEvent.FIZZLED]: Sound.FIZZLER,
     [GameEvent.PORTAL_FIZZLED]: null,

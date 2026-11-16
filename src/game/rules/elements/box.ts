@@ -66,6 +66,7 @@ export const BOX_ELEMENT = defineElement<BoxData>()({
   reactsToSubject: false,
   events: [
     GameEvent.BOX_PICKED_UP,
+    GameEvent.BOX_PUT_DOWN,
     GameEvent.BOX_DESTROYED,
   ],
   hooks: {

@@ -490,6 +490,7 @@ function interact(draft: StateDraft): void {
     // A tile holds at most one box, so the carried one can't join another
     if (draft.restingBoxAt(x, y) === NO_BOX) {
       draft.dropBox()
+      draft.emit(GameEvent.BOX_PUT_DOWN)
     } else {
       draft.emit(GameEvent.REFUSED)
     }

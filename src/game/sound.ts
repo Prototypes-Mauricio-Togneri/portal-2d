@@ -26,7 +26,7 @@ export class Sound {
   static readonly SHOOT = new Sound(shootUrl, 0.25) // Portal shot missed: nothing there takes a portal
   static readonly BUTTON_ON = new Sound(buttonOnUrl, 0.27) // Button pressed down
   static readonly BUTTON_OFF = new Sound(buttonOffUrl, 0.56) // Button released
-  static readonly BOX = new Sound(boxUrl, 0.05) // Box picked up
+  static readonly BOX = new Sound(boxUrl, 0.05) // Box picked up or put down
   static readonly FIZZLER = new Sound(fizzlerUrl, 0.27) // Subject entered an active fizzler
   static readonly CROSS = new Sound(crossUrl, 0.35) // Subject went through a portal
   static readonly DOOR_OPEN = new Sound(doorOpenUrl, 0.15) // Door or exit opened
