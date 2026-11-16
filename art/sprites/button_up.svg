@@ -1,23 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 140 140">
   <!--
     The floor button, released (docs/sprites.md): a white plate with a dark
-    rim filling the tile, a dark red dome in its middle, and four slate
-    clamps holding it down at the corners. Pressed (button_pressed.svg),
-    only the dome changes, to the lighter caution red. Drawn on a 140-unit
-    grid, lit from overhead, so it is the same on every side.
+    rim, a dark red dome in its middle, and four slate clamps holding it down
+    at the corners, the whole button scaled to 85 % round the tile's middle,
+    so the floor shows around it. Pressed (button_pressed.svg), only the
+    dome changes, to the lighter caution red. Drawn on a 140-unit grid, lit
+    from overhead, so it is the same on every side.
   -->
 
-  <!-- The plate -->
-  <circle cx="70" cy="70" r="68.2" fill="rgb(250, 250, 250)" stroke="rgb(60, 60, 60)" stroke-width="3.6"/>
+  <!-- The whole button, scaled to 85 % round the tile's middle -->
+  <g transform="translate(70 70) scale(0.85) translate(-70 -70)">
+    <!-- The plate -->
+    <circle cx="70" cy="70" r="68.2" fill="rgb(250, 250, 250)" stroke="rgb(60, 60, 60)" stroke-width="3.6"/>
 
-  <!-- The dome, darker than the pressed one -->
-  <circle cx="70" cy="70" r="46.084" fill="rgb(150, 40, 34)" stroke="rgb(84, 18, 14)" stroke-width="4.2"/>
+    <!-- The dome, darker than the pressed one -->
+    <circle cx="70" cy="70" r="46.084" fill="rgb(150, 40, 34)" stroke="rgb(84, 18, 14)" stroke-width="4.2"/>
 
-  <!-- The four corner clamps, each pointing at the dome -->
-  <g fill="rgb(56, 80, 78)" stroke="rgb(34, 49, 58)" stroke-width="2.05">
-    <polygon points="20.589,41.55 42.889,18.359 15.869,1.439 1.449,15.288"/>
-    <polygon points="119.26,41.24 96.96,18.038 123.98,1.118 138.4,14.968"/>
-    <polygon points="119.35,98.68 97.05,121.88 124.07,138.8 138.49,124.95"/>
-    <polygon points="20.482,98.57 42.787,121.77 15.768,138.69 1.347,124.84"/>
+    <!-- The four corner clamps, each pointing at the dome -->
+    <g fill="rgb(64, 88, 86)" stroke="rgb(41, 57, 66)" stroke-width="2.05">
+      <polygon points="20.589,41.55 42.889,18.359 15.869,1.439 1.449,15.288"/>
+      <polygon points="119.26,41.24 96.96,18.038 123.98,1.118 138.4,14.968"/>
+      <polygon points="119.35,98.68 97.05,121.88 124.07,138.8 138.49,124.95"/>
+      <polygon points="20.482,98.57 42.787,121.77 15.768,138.69 1.347,124.84"/>
+    </g>
   </g>
 </svg>
