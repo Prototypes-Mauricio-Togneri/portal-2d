@@ -12,8 +12,6 @@
 
 ## Mechanics
 
-Antlines (Indicator Lights): The glowing dotted lines built into the floor and walls that show exactly which button connects to which door or mechanic. They light up blue (unpowered) or yellow (powered).
-
 Discouragement Redirection Cube: A specialized cube with built-in glass lenses used exclusively to reflect Thermal Discouragement Beams (lasers).
 
 Light beams: the player can pass through. they can be deflected. they can "turn on" some special switches
