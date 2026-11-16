@@ -1,3 +1,4 @@
+import {findDestroyedBoxes} from '@/game/destroyed_boxes'
 import {DELTAS, type Direction} from '@/game/direction'
 import {GameEvent} from '@/game/game_event'
 import {pieceNumber} from '@/game/piece_number'
@@ -81,8 +82,9 @@ function placePiece(burst: Burst, progress: number, offsetX: number, offsetY: nu
 
 /**
  * What the latest fizzle took, drawn breaking up over a short time: each
- * portal it closed and a box it destroyed come apart in pieces of their own
- * sprites, which round off into dots as they drift a short way out, shrink
+ * portal it closed and a box it destroyed, and each box a door, a laser, a
+ * light barrier or a fizzler destroyed by closing or switching on where it
+ * lay, come apart in pieces of their own sprites, which round off into dots as they drift a short way out, shrink
  * and fade. Purely visual: the rules have already settled the step, and
  * nothing waits for the pieces.
  */
@@ -98,8 +100,9 @@ export class FizzleParticles {
    * was carried at the step's end. Otherwise only each portal a fizzler
    * closed by switching on: one closed in the step whose wall side faced a
    * fizzler that is on after it, so a portal a blocked wall closed in the
-   * same step still just vanishes. Replaces anything still breaking up,
-   * unless the step took nothing.
+   * same step still just vanishes. And each box destroyed where it lay or
+   * was put down (boxDestroyed), but one that fell into a ditch. Replaces
+   * anything still breaking up, unless the step took nothing.
    * @param before - The state before the step
    * @param after - The state after the step
    * @param events - What happened in the step
@@ -142,6 +145,19 @@ export class FizzleParticles {
         way: after.facing,
         seed: this.burstCount++,
       })
+    }
+
+    for (const box of findDestroyedBoxes(before, after, events)) {
+      if (!box.fell) {
+        bursts.push({
+          sprite: 'box',
+          x: box.x,
+          y: box.y,
+          size: box.size,
+          way: box.way,
+          seed: this.burstCount++,
+        })
+      }
     }
 
     if (bursts.length > 0) {

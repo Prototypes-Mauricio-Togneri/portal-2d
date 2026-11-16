@@ -7,6 +7,7 @@ export type GameEvent =
   | 'orangePortalOpened'
   | 'refused'
   | 'boxPickedUp'
+  | 'boxDestroyed'
   | 'fizzled'
   | 'portalFizzled'
   | 'crossed'
@@ -26,6 +27,7 @@ export const GameEvent = {
   ORANGE_PORTAL_OPENED: 'orangePortalOpened', // An orange portal opened on a wall
   REFUSED: 'refused', // A shot missed or was tried while carrying a box, a portal crossing was refused, a switch was used while carrying one, or a box was put down where another rests
   BOX_PICKED_UP: 'boxPickedUp', // The subject picked up a box
+  BOX_DESTROYED: 'boxDestroyed', // A box lying where a door closed, a ditch opened, or a laser, a light barrier or a fizzler switched on went back to its start
   FIZZLED: 'fizzled', // The subject entered an active fizzler, closing both portals
   PORTAL_FIZZLED: 'portalFizzled', // A fizzler turning on closed a portal on a wall side facing it
   CROSSED: 'crossed', // The subject came out of a portal

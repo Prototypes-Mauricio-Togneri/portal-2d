@@ -121,14 +121,15 @@ The game draws from the bottom up, each later row over the earlier ones:
 | 3 | Floor marks | `arrow` |
 | 4 | Structure | `wall`, `blocked_wall` for the blocked walls no link reaches |
 | 5 | Blockers | `blocked_wall` over the blocked walls a link reaches while blocked, `light_barrier_on`, then `light_barrier_end_*` over the bands, `ditch`, `ditch_bridged`, `laser_on`, then `laser_end_*` over the beams, `door_closed`, `exit_closed` |
-| 6 | Portals | `portal_*` |
-| 7 | Fixtures | `button_*`, `switch` |
-| 8 | Items | `box` |
-| 9 | Subject | `subject`, and a carried `box` at half size |
-| 10 | Fields | `fizzler_on`, whole or in pieces (see [fizzle](#fizzle)) |
-| 11 | Glow | `laser_glow`, `portal_*_glow` |
-| 12 | Fizzle | `portal_*`, `box`, in pieces (see [fizzle](#fizzle)) |
-| 13 | Miss | None: a missed shot's ripple, drawn in code (see [miss](#miss)) |
+| 6 | Fall | `box`, falling into an open ditch (see [fall](#fall)) |
+| 7 | Portals | `portal_*` |
+| 8 | Fixtures | `button_*`, `switch` |
+| 9 | Items | `box` |
+| 10 | Subject | `subject`, and a carried `box` at half size |
+| 11 | Fields | `fizzler_on`, whole or in pieces (see [fizzle](#fizzle)) |
+| 12 | Glow | `laser_glow`, `portal_*_glow` |
+| 13 | Fizzle | `portal_*`, `box`, in pieces (see [fizzle](#fizzle)) |
+| 14 | Miss | None: a missed shot's ripple, drawn in code (see [miss](#miss)) |
 
 ## Glow
 
@@ -136,7 +137,11 @@ The three glows are drawn over everything but a fizzle's pieces and a missed sho
 
 ## Fizzle
 
-When the subject fizzles (it walks or crosses into a fizzler that is on, or one turns on under it), each portal it loses and a box it carries break up, and so does a portal on a wall side facing a fizzler that switches on: the game cuts the sprite, as last drawn, into small square pieces, 9 across a tile, which round off into dots as they drift a short way out from its middle (0.15 of the sprite's side on average, 0.2 at most), shrink and fade in about 0.6 s, over everything but a missed shot's ripple. When a fizzler switches off, its field crumbles the same way in about 0.4 s, but in place, in its own layer: `fizzler_on` is cut into square pieces, 7 across, each rounding off into a circle as it starts to go, which shrink and fade where they are, one after another, leaving nothing; when it switches back on, they grow back in reverse, and one switched back part way turns back from where it is. There is nothing extra to draw, but the pieces show the sprite's own pixels, so a portal or box drawn as a thin outline breaks into very few. With reduced motion, and in the home menu's map and the gallery, nothing breaks up or forms.
+When the subject fizzles (it walks or crosses into a fizzler that is on, or one turns on under it), each portal it loses and a box it carries break up, and so does a portal on a wall side facing a fizzler that switches on, and a box lying where a door closes or a laser, a light barrier or a fizzler switches on (whole, where it lay; one the subject puts down there breaks up from its hands, at half size): the game cuts the sprite, as last drawn, into small square pieces, 9 across a tile, which round off into dots as they drift a short way out from its middle (0.15 of the sprite's side on average, 0.2 at most), shrink and fade in about 0.6 s, over everything but a missed shot's ripple. When a fizzler switches off, its field crumbles the same way in about 0.4 s, but in place, in its own layer: `fizzler_on` is cut into square pieces, 7 across, each rounding off into a circle as it starts to go, which shrink and fade where they are, one after another, leaving nothing; when it switches back on, they grow back in reverse, and one switched back part way turns back from where it is. There is nothing extra to draw, but the pieces show the sprite's own pixels, so a portal or box drawn as a thin outline breaks into very few. With reduced motion, and in the home menu's map and the gallery, nothing breaks up or forms.
+
+## Fall
+
+When a ditch opens under a box lying on it, or the subject puts a box down on an open ditch, the game draws the box falling into the pit, from its own sprite, so there is nothing extra to draw. It hangs where it was for a moment while the grate starts to slide away, then drops ever faster, shrinking towards the middle of the pit to a quarter of its size and fading into the dark, in about 0.45 s, without a shadow and inside its tile: over the ditch and its sliding grate, under everything standing on the floor. The box is drawn back at its start at once. With reduced motion, and in the home menu's map and the gallery, nothing falls.
 
 ## Miss
 

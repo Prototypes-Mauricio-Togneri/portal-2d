@@ -62,9 +62,10 @@ export function foldSubject(codec: StateKeyCodec, graph: WalkGraph, state: Rules
 /**
  * Turns a route of macro actions back into actions, played through the
  * rules' step from the chamber's start: before each macro action, the
- * fewest moves to its tile; before a shot, a turn when the subject faces
- * another way; then the action. After each macro action the state must be
- * the one the search stored, or the walk graph disagrees with the rules.
+ * fewest moves to its tile; before a shot or an interact, a turn when the
+ * subject faces another way; then the action. After each macro action the
+ * state must be the one the search stored, or the walk graph disagrees with
+ * the rules.
  * @param codec - The chamber's state key
  * @param graph - The chamber's walk graph
  * @param route - The macro actions, in order, each with the state it leads to
@@ -106,7 +107,7 @@ export function expandRoute(codec: StateKeyCodec, graph: WalkGraph, route: reado
       play(MOVE_ACTIONS[moveDirection] ?? Action.UP)
     }
 
-    if (((action === Action.BLUE) || (action === Action.ORANGE)) && (state.facing !== DIRECTIONS[directionIndex])) {
+    if (((action === Action.BLUE) || (action === Action.ORANGE) || (action === Action.INTERACT)) && (state.facing !== DIRECTIONS[directionIndex])) {
       play(TURN_ACTIONS[directionIndex] ?? Action.TURN_UP)
     }
 

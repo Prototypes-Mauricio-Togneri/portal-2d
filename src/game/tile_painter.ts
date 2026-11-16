@@ -450,6 +450,44 @@ export class TilePainter {
   }
 
   /**
+   * Draws a sprite shrunk about its middle and see-through, its overhang
+   * too, without its shadow: something sinking out of sight. Nothing is
+   * drawn while only shadows are painted.
+   * @param name - The sprite
+   * @param x - Column of the sprite's middle, in tiles: a tile's middle is its column plus a half
+   * @param y - Row of the sprite's middle, in tiles: a tile's middle is its row plus a half
+   * @param size - The sprite's side before it shrinks, as a share of a tile: 1 for a whole tile, 0.5 for half
+   * @param way - The way it is turned to face, from facing up as drawn
+   * @param scale - How far it has shrunk, as a share of that side
+   * @param opacity - How opaque it is drawn, from 0 (not at all) to 1
+   */
+  drawSpriteShrunk(name: SpriteName, x: number, y: number, size: number, way: Direction, scale: number, opacity: number): void {
+    if ((this.pass === 'shadows') || (scale <= 0) || (opacity <= 0)) {
+      return
+    }
+
+    const side = Math.round(this.tileSize * size)
+    const sprite = scaledSprite(name, side)
+
+    if (sprite === null) {
+      return
+    }
+
+    const turn = TURNS[way]
+
+    this.context.save()
+
+    try {
+      this.context.globalAlpha = Math.min(opacity, 1)
+      this.context.translate(x * this.tileSize, this.canvas.height - (y * this.tileSize))
+      this.context.transform(turn.cos * scale, turn.sin * scale, -turn.sin * scale, turn.cos * scale, 0, 0)
+      this.context.drawImage(sprite.image, -(side / 2) - sprite.margin, -(side / 2) - sprite.margin)
+    } finally {
+      this.context.restore()
+    }
+  }
+
+  /**
    * Draws a sprite broken into square pieces, its overhang too, each placed
    * on its own, and rounded off as far as its placement says: a sprite
    * coming apart. Each square piece left where it was redraws the sprite

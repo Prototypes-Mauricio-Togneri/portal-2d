@@ -5,6 +5,7 @@ import {Action, MOVEMENTS, type Movement} from '@/game/rules/action'
 import {type CompiledChamber, NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
 import type {ElementDefinition, ElementHooks} from '@/game/rules/element_definition'
 import {type BlockableKind, ELEMENT_REGISTRY, isBlockableElement, type RegisteredElement} from '@/game/rules/element_registry'
+import {destroyBoxesOnBlockedTiles} from '@/game/rules/elements/box'
 import {PORTAL_COLORS, PortalColor} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
 import {StateDraft} from '@/game/rules/state_draft'
@@ -402,17 +403,40 @@ function shoot(draft: StateDraft, color: PortalColor): void {
 }
 
 /**
- * Whether the interact key may do anything on a tile: an element there takes
- * it (a switch), or a box is carried, or a box lies there. True doesn't
- * promise a change: a switch refuses while a box is carried, and a carried
- * box can't be put down where another rests. Exported for the solver, like
- * allowsWay, so it skips interacts that can't change anything.
+ * The box the subject can reach on the tile it faces: one resting there,
+ * when a move that way could step onto that tile now, and no fizzler there
+ * is on. Picked up inside a field that is on, a box is destroyed, so reaching
+ * in from outside mustn't rescue it.
  * @param draft - The state, a step's draft or a settled state
  * @param x - Column of the subject's tile
  * @param y - Row of the subject's tile
- * @returns False when it can't change anything
+ * @param facing - The way the subject faces
+ * @returns The box's index, or NO_BOX when it can reach none
  */
-export function canInteract(draft: StateReader, x: number, y: number): boolean {
+function boxInReach(draft: StateReader, x: number, y: number, facing: Direction): number {
+  const targetX = x + DELTAS[facing].dx
+  const targetY = y + DELTAS[facing].dy
+  const box = draft.restingBoxAt(targetX, targetY)
+
+  if ((box === NO_BOX) || (!allowsWay(draft, x, y, facing)) || (!canEnter(draft, targetX, targetY, facing)) || draft.isBlockedAt('fizzler', targetX, targetY)) {
+    return NO_BOX
+  }
+
+  return box
+}
+
+/**
+ * Whether something on a tile takes the interact key, whatever way the
+ * subject faces: an element there (a switch), or a box carried, or a box
+ * lying there. Then the key acts there and never on the tile faced. Exported
+ * for the solver, like allowsWay, which takes such an interact once rather
+ * than once per way.
+ * @param draft - The state, a step's draft or a settled state
+ * @param x - Column of the subject's tile
+ * @param y - Row of the subject's tile
+ * @returns True when something there takes it
+ */
+export function canInteractInPlace(draft: StateReader, x: number, y: number): boolean {
   for (const interactHook of INTERACT_HOOKS) {
     if (draft.chamber.elementAt(interactHook.kind, x, y) !== NO_ELEMENT) {
       return true
@@ -423,17 +447,34 @@ export function canInteract(draft: StateReader, x: number, y: number): boolean {
 }
 
 /**
+ * Whether the interact key may do anything on a tile, facing a way:
+ * something there takes it (canInteractInPlace), or a box lies in reach on
+ * the tile faced (boxInReach). True doesn't promise a change: a switch
+ * refuses while a box is carried, and a carried box can't be put down where
+ * another rests. Exported for the solver, like allowsWay, so it skips
+ * interacts that can't change anything.
+ * @param draft - The state, a step's draft or a settled state
+ * @param x - Column of the subject's tile
+ * @param y - Row of the subject's tile
+ * @param facing - The way the subject faces
+ * @returns False when it can't change anything
+ */
+export function canInteract(draft: StateReader, x: number, y: number, facing: Direction): boolean {
+  return canInteractInPlace(draft, x, y) || (boxInReach(draft, x, y, facing) !== NO_BOX)
+}
+
+/**
  * The interact key, when it can do anything (canInteract): an element on
  * the subject's tile that takes it (a switch) does; otherwise a carried box
  * is put down, unless another box rests there (refused), or else the box on
- * the tile is picked up.
+ * the tile is picked up, or else the box in reach on the tile faced.
  * @param draft - The step's state
  */
 function interact(draft: StateDraft): void {
   const x = draft.subjectX
   const y = draft.subjectY
 
-  if (!canInteract(draft, x, y)) {
+  if (!canInteract(draft, x, y, draft.facing)) {
     return
   }
 
@@ -456,7 +497,9 @@ function interact(draft: StateDraft): void {
     return
   }
 
-  const box = draft.firstBoxAt(x, y)
+  // The box underfoot comes before the one in reach
+  const underfoot = draft.firstBoxAt(x, y)
+  const box = (underfoot === NO_BOX) ? boxInReach(draft, x, y, draft.facing) : underfoot
 
   if (box !== NO_BOX) {
     draft.carryBox(box)
@@ -496,7 +539,8 @@ function runAction(draft: StateDraft, action: Action): void {
 /**
  * One pass of the repeat loop: the hooks of the elements on the subject's
  * tile (the fizzler rule), then every element's pass hook, type by type in
- * registry order and each type in list order (the buttons).
+ * registry order and each type in list order (the buttons), then the boxes
+ * lying where an element is blocked.
  * @param draft - The step's state
  */
 function runPass(draft: StateDraft): void {
@@ -516,6 +560,8 @@ function runPass(draft: StateDraft): void {
       passHook.hook(draft, index)
     }
   }
+
+  destroyBoxesOnBlockedTiles(draft)
 }
 
 /**
@@ -588,8 +634,12 @@ export function step(chamber: CompiledChamber, state: RulesState, action: Action
   draft.carryBoxAlong()
   settle(draft)
 
+  const next = (draft.changes === 0) ? state : draft.toState()
+
   return {
-    state: (draft.changes === 0) ? state : draft.toState(),
+    // Changes can cancel out: a box picked up from the next tile while the
+    // subject stands in a fizzler that is on goes straight back to its start
+    state: ((next !== state) && (next.key === state.key)) ? state : next,
     events: draft.events,
   }
 }

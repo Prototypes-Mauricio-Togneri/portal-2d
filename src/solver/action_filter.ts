@@ -5,7 +5,7 @@ import {ELEMENT_REGISTRY} from '@/game/rules/element_registry'
 import {PORTAL_COLORS} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
 import {DIRECTIONS} from '@/game/rules/state_layout'
-import {allowsWay, canEnter, canInteract, portalEntrance} from '@/game/rules/step'
+import {allowsWay, canEnter, canInteract, canInteractInPlace, portalEntrance} from '@/game/rules/step'
 import {type ChamberIndex, NO_NUMBER} from '@/solver/chamber_index'
 import {isPlacedKind, NO_WALK} from '@/solver/walk_graph'
 
@@ -47,13 +47,13 @@ const DROP_NEXT_TO_KINDS = [
  * before coming out on such a tile). That is a guess that can, in an
  * unusual layout, miss every route or the cheapest one, so only the search
  * for any route uses it. Every other answer comes from the rules' own
- * checks: canInteract for the interact key, and for a move allowsWay and
- * canEnter (built once per set of blocked flags) and portalEntrance for a
- * wall ahead. In one expansion only the subject's tile changes, and a
- * carried box goes with it, so the expanded state answers for every tile
- * its walk reaches. The solver check compares every interact and move
- * skipped without limited drops with the rules' step; the drops limited
- * drops leave out are not checked.
+ * checks: canInteractInPlace and canInteract, each way, for the interact
+ * key, and for a move allowsWay and canEnter (built once per set of blocked
+ * flags) and portalEntrance for a wall ahead. In one expansion only the
+ * subject's tile and facing change, and a carried box goes with it, so the
+ * expanded state answers for every tile its walk reaches. The solver check
+ * compares every interact and move skipped without limited drops with the
+ * rules' step; the drops limited drops leave out are not checked.
  */
 export class ActionFilter {
   private readonly index: ChamberIndex // The chamber's tile numbers
@@ -63,7 +63,7 @@ export class ActionFilter {
   private readonly stepsByFlags = new Map<number, Int32Array>() // The tiles a move reaches, by the blocked flags they were found for
   private steps: Int32Array = new Int32Array(0) // The current flags' moves, four per tile in DIRECTIONS order: the tile stepped onto, or NO_WALK
   private state: RulesState | null = null // The state expanded
-  private skippedInteractCount = 0 // Interacts skipped so far
+  private skippedInteractCount = 0 // Tiles where no interact could change anything, skipped so far
   private skippedMoveCount = 0 // Moves skipped so far
   private skippedDropCount = 0 // Box drops skipped so far, with limited drops
   private serial = 0 // The current expansion's number
@@ -95,7 +95,7 @@ export class ActionFilter {
   }
 
   /**
-   * Interacts skipped so far.
+   * Tiles where no interact could change anything, skipped so far.
    * @returns The count
    */
   get skippedInteracts(): number {
@@ -136,29 +136,46 @@ export class ActionFilter {
   }
 
   /**
-   * Whether the interact key can change anything on a tile the walk reached.
-   * Counts the interacts it rules out.
+   * The ways the subject may face on a tile the walk reached for the
+   * interact key to change anything, as bits by index in DIRECTIONS. When
+   * something on the tile takes the key (canInteractInPlace), the way
+   * doesn't matter, so only the tile's canonical way is given; otherwise
+   * each way that faces a box in reach (canInteract). Counts the tiles where
+   * it rules every way out.
    * @param tile - The tile's number
-   * @returns True when the rules' step has to tell
+   * @param canonicalIndex - The tile's canonical facing, as an index in DIRECTIONS
+   * @returns The ways for which the rules' step has to tell, as bits; 0 for none
    * @throws Error before begin
    */
-  mayInteract(tile: number): boolean {
+  interactWays(tile: number, canonicalIndex: number): number {
     const state = this.expanded
+    const x = this.index.tileX(tile)
+    const y = this.index.tileY(tile)
 
-    if (!canInteract(state, this.index.tileX(tile), this.index.tileY(tile))) {
+    if (canInteractInPlace(state, x, y)) {
+      // While carrying, interact puts the box down (or a switch refuses)
+      if (this.limitDrops && state.isCarrying && (this.dropSpots[tile] !== 1) && (this.dropSerials[tile] !== this.serial)) {
+        this.skippedDropCount++
+
+        return 0
+      }
+
+      return 1 << canonicalIndex
+    }
+
+    let ways = 0
+
+    DIRECTIONS.forEach((direction, directionIndex) => {
+      if (canInteract(state, x, y, direction)) {
+        ways |= 1 << directionIndex
+      }
+    })
+
+    if (ways === 0) {
       this.skippedInteractCount++
-
-      return false
     }
 
-    // While carrying, interact puts the box down (or a switch refuses)
-    if (this.limitDrops && state.isCarrying && (this.dropSpots[tile] !== 1) && (this.dropSerials[tile] !== this.serial)) {
-      this.skippedDropCount++
-
-      return false
-    }
-
-    return true
+    return ways
   }
 
   /**

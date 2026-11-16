@@ -1,5 +1,5 @@
 import {readFileSync} from 'node:fs'
-import {DELTAS} from '@/game/direction'
+import {DELTAS, type Direction} from '@/game/direction'
 import {Action, ACTIONS} from '@/game/rules/action'
 import {CompiledChamber} from '@/game/rules/compiled_chamber'
 import {loadChamber} from '@/game/rules/load_chamber'
@@ -33,9 +33,11 @@ import {SOLVER_FIXTURES, type SolverFixture, type SolverRoute} from '@scripts/so
 // turning gives the state the solver builds for that facing; each shot from
 // each tile a walk reaches, each way and colour, gives through the rules'
 // step the state the solver builds from the shot it shares with its line;
-// each interact and move the solver skips as changing nothing (not the box
-// drops the any-route search leaves out, a guess this doesn't check) changes
-// nothing through the rules' step but where the subject faces; and a tile a walk reaches shares the
+// each move the solver skips as changing nothing changes nothing through the
+// rules' step but where the subject faces, and so does each interact it
+// skips, each way the subject may face, unless it gives what an interact the
+// solver takes there gives (not the box drops the any-route search leaves
+// out, a guess this doesn't check); and a tile a walk reaches shares the
 // start's region exactly when a walk from it gets back to the start. The
 // searches:
 // on every solver fixture (scripts/solver_fixtures/), the reference search
@@ -56,6 +58,14 @@ const MAX_SEARCH_STATES = 1_000_000
 
 /** The longest the macro search runs on a solver fixture, in milliseconds */
 const MAX_MACRO_MILLIS = 60_000
+
+/**
+ * An interact the solver doesn't take on a tile, with the state it gives.
+ */
+type SkippedInteract = {
+  readonly direction: Direction // The way the subject faces
+  readonly outcome: string // The state it gives, as the search stores it: its key's two words
+}
 
 /**
  * Loads a chamber file, with the layout checks, and compiles it.
@@ -283,8 +293,11 @@ function checkShots(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
 /**
  * Checks the interacts and moves the solver skips (ActionFilter) against
  * the rules' step from each of a list of states: from every tile a walk
- * reaches, each interact and each move it rules out gives through the rules'
- * step the state the subject stood in, but for where it faces.
+ * reaches, each move it rules out gives through the rules' step the state
+ * the subject stood in, but for where it faces, and an interact each way
+ * the subject may face there that it doesn't take gives that state too, or
+ * the state an interact it takes there gives (one taken once, whatever the
+ * way, as the box underfoot).
  * @param codec - The chamber's state key
  * @param graph - The chamber's walk graph
  * @param states - The states to walk from
@@ -318,11 +331,44 @@ function checkSkips(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
       // checkWalks proves this is the state walking there gives
       const standing = codec.decode(words, 0)
 
-      if (!filter.mayInteract(tile)) {
+      const ways = filter.interactWays(tile, graph.facingOf(tile))
+      // The states the interacts it takes there give, and the state it stood in
+      const reached = [`${standingLow},${high}`]
+      const skipped: SkippedInteract[] = []
+
+      DIRECTIONS.forEach((direction, directionIndex) => {
+        const taken = ((ways >> directionIndex) & 1) === 1
+
+        if (!graph.allowsWayFrom(tile, directionIndex)) {
+          if (taken) {
+            throw new Error(`the solver interacts facing ${direction} on tile ${tile}, a way the subject can't face there (state ${state.hash})`)
+          }
+
+          return
+        }
+
+        const turned = (standing.facing === direction) ? standing : step(chamber, standing, TURN_ACTIONS[directionIndex] ?? Action.TURN_UP).state
+
+        encodeCanonical(codec, graph, step(chamber, turned, Action.INTERACT).state, words)
+
+        const outcome = `${words[0] ?? 0},${words[1] ?? 0}`
+
+        if (taken) {
+          reached.push(outcome)
+        } else {
+          skipped.push({
+            direction: direction,
+            outcome: outcome,
+          })
+        }
+      })
+
+      // An interact it doesn't take changes nothing, or gives what one it takes gives
+      for (const interact of skipped) {
         checked++
 
-        if (step(chamber, standing, Action.INTERACT).state.key !== standing.key) {
-          throw new Error(`interact on tile ${tile} changes the state, but the solver skips it (state ${state.hash})`)
+        if (!reached.includes(interact.outcome)) {
+          throw new Error(`interact facing ${interact.direction} on tile ${tile} gives a state the solver doesn't take there (state ${state.hash})`)
         }
       }
 

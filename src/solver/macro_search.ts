@@ -68,7 +68,8 @@ export const PROGRESS_INTERVAL = 4096
  * facing, since turning is free. From each state it walks, without the
  * rules' step, to every tile walk edges reach (WalkGraph), then tries there
  * each action whose effect a walk can't have, through the rules' step:
- * interact, both shots each way the subject may face, and each move a walk
+ * interact (once, or each way that faces a box in reach), both shots each
+ * way the subject may face, and each move a walk
  * doesn't cover (onto or off an event tile, into a wall, which crosses a
  * portal there), but no interact or move that can't change anything
  * (ActionFilter). Each shot line takes its shots through the rules' step once
@@ -283,7 +284,8 @@ export class MacroSearch {
       const tile = this.graph.reachedTile(position)
       const distance = this.graph.distanceTo(tile)
       const standingLow = this.placeStored(low, tile, regions)
-      const interacting = this.filter.mayInteract(tile)
+      const canonicalIndex = this.graph.facingOf(tile)
+      const interacting = this.filter.interactWays(tile, canonicalIndex)
       let moving = 0
 
       for (let directionIndex = 0; directionIndex < DIRECTIONS.length; directionIndex++) {
@@ -294,18 +296,23 @@ export class MacroSearch {
       }
 
       // The state standing on the tile is unpacked only when an action there needs the rules' step
-      if (interacting || (moving !== 0)) {
-        const standing = (tile === from) ? state : this.decodeKey(this.codec.placeSubject(low, tile, this.graph.facingOf(tile)), high)
+      if ((interacting !== 0) || (moving !== 0)) {
+        const standing = (tile === from) ? state : this.decodeKey(this.codec.placeSubject(low, tile, canonicalIndex), high)
 
-        if (interacting) {
-          this.interacts++
-          this.tryAction(entry, standing, standingLow, high, Action.INTERACT, tile, distance)
+        for (let directionIndex = 0; directionIndex < DIRECTIONS.length; directionIndex++) {
+          if (((interacting >> directionIndex) & 1) === 1) {
+            // Facing a box in reach another way than the canonical one
+            const facing = (directionIndex === canonicalIndex) ? standing : this.decodeKey(this.codec.placeSubject(low, tile, directionIndex), high)
+
+            this.interacts++
+            this.tryAction(entry, facing, standingLow, high, Action.INTERACT, tile, directionIndex, distance)
+          }
         }
 
         for (let directionIndex = 0; directionIndex < DIRECTIONS.length; directionIndex++) {
           if (((moving >> directionIndex) & 1) === 1) {
             this.moveTries++
-            this.tryAction(entry, standing, standingLow, high, MOVE_ACTIONS[directionIndex] ?? Action.UP, tile, distance)
+            this.tryAction(entry, standing, standingLow, high, MOVE_ACTIONS[directionIndex] ?? Action.UP, tile, 0, distance)
           }
         }
       }
@@ -329,14 +336,15 @@ export class MacroSearch {
    * to, unless nothing changed but where the subject faces, or in the
    * solvable mode where it stands inside its region.
    * @param parent - The entry of the state the macro action starts from
-   * @param from - The state the action is taken in: the subject on the tile walked to
-   * @param standingLow - The low word of that state's key as the search stores it
+   * @param from - The state the action is taken in: the subject on the tile walked to, facing the way an interact needs
+   * @param standingLow - The low word of the key of the subject on that tile, as the search stores it
    * @param high - The high word of that key
    * @param action - The action
    * @param tile - The tile walked to
+   * @param directionIndex - The way faced before an interact, as an index in DIRECTIONS; 0 for a move
    * @param distance - The moves walked to the tile
    */
-  private tryAction(parent: number, from: RulesState, standingLow: number, high: number, action: Action, tile: number, distance: number): void {
+  private tryAction(parent: number, from: RulesState, standingLow: number, high: number, action: Action, tile: number, directionIndex: number, distance: number): void {
     if ((this.solvedEntry !== NO_ENTRY) || (this.gaveUp !== null)) {
       return
     }
@@ -358,7 +366,7 @@ export class MacroSearch {
       return
     }
 
-    this.keep(parent, childLow, childHigh, distance + (countsAsMove(from, result.state) ? 1 : 0), countPortalsOpened(result.events), packMacro(tile, 0, action), result.state.completed)
+    this.keep(parent, childLow, childHigh, distance + (countsAsMove(from, result.state) ? 1 : 0), countPortalsOpened(result.events), packMacro(tile, directionIndex, action), result.state.completed)
   }
 
   /**

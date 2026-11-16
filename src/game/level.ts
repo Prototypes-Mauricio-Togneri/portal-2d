@@ -1,3 +1,4 @@
+import {BoxFall} from '@/game/box_fall'
 import type {ChamberData} from '@/game/chamber_data'
 import {Direction} from '@/game/direction'
 import {ElementTransitions} from '@/game/element_transitions'
@@ -28,12 +29,14 @@ import {StepAnimation} from '@/game/step_animation'
  * the state changed. A step that changes the state is then drawn over a few
  * frames, redrawn every frame until it ends, paused or not; the next press
  * ends it at once. When a step fizzles, what it took breaks up over a few
- * frames, a blocked wall a step switches slides its steel apart or shut, a
+ * frames, and so does a box a door, a laser, a light barrier or a fizzler
+ * destroys where it lies, while one on a ditch that opens falls out of sight;
+ * a blocked wall a step switches slides its steel apart or shut, a
  * ditch a step switches slides its grate in or out, a door or the exit a step
  * opens or closes slides open or shut, a fizzler a step switches crumbles
  * away or forms, a laser or a light barrier a step switches fades out or in, and a portal shot that misses
  * ripples where it stopped; no press waits for them nor cuts them short. While
- * anything glows, breaks up, changes or ripples, every frame is drawn too. Nothing is drawn over time when the player asks for reduced
+ * anything glows, breaks up, falls, changes or ripples, every frame is drawn too. Nothing is drawn over time when the player asks for reduced
  * motion: the glows hold steady. Undo and redo bring back
  * earlier states from the run's history, silently and at once. Every press it acts on is logged, so the run
  * since the last load can be replayed without a browser. When a mouse button
@@ -80,6 +83,7 @@ export class Level {
     [GameEvent.ORANGE_PORTAL_OPENED]: Sound.PORTAL_ORANGE,
     [GameEvent.REFUSED]: Sound.ERROR,
     [GameEvent.BOX_PICKED_UP]: Sound.BOX,
+    [GameEvent.BOX_DESTROYED]: null,
     [GameEvent.FIZZLED]: Sound.FIZZLER,
     [GameEvent.PORTAL_FIZZLED]: null,
     [GameEvent.CROSSED]: Sound.CROSS,
@@ -113,6 +117,7 @@ export class Level {
   private readonly fizzle = new FizzleParticles() // What the latest fizzle took, breaking up over a few frames, if anything
   private readonly changes = new ElementTransitions() // The blocked walls, the ditches, the doors, the exit, the fizzlers, the lasers and the light barriers changing over a few frames after a step switched them, if any
   private readonly ripple = new MissRipple() // Where the latest missed portal shot stopped, rippling over a few frames, if anywhere
+  private readonly fall = new BoxFall() // The boxes the latest step dropped into ditches, falling over a few frames, if any
   private frameTime = 0 // The latest frame's time, in milliseconds on the frame clock; redraws outside a frame use it, so a step being drawn never goes back
   private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time something could be drawn over time
   private ambientDrawn = false // Whether the latest frame was drawn for what moves with time alone, so the frame after it ends draws it still
@@ -173,6 +178,7 @@ export class Level {
     this.fizzle.clear()
     this.changes.clear()
     this.ripple.clear()
+    this.fall.clear()
 
     this.playEvents(start.events)
 
@@ -318,7 +324,7 @@ export class Level {
 
   /**
    * Draws the current state, part way through the step being drawn, if any,
-   * with what moves with time alone at this time, what breaks up, a missed
+   * with what moves with time alone at this time, what breaks up or falls, a missed
    * shot's ripple and the doors, the exit, the fizzlers, the lasers and the
    * light barriers changing included, or held still when the player asks for
    * reduced motion.
@@ -329,7 +335,7 @@ export class Level {
       const frameStats = this.frameStats
       const drawStart = (frameStats === null) ? 0 : performance.now()
 
-      this.renderer.render(this.state, this.animation.transitionAt(time), this.reducedMotion.matches ? null : time, this.fizzle, this.changes, this.ripple)
+      this.renderer.render(this.state, this.animation.transitionAt(time), this.reducedMotion.matches ? null : time, this.fizzle, this.changes, this.ripple, this.fall)
       frameStats?.recordDraw(performance.now() - drawStart)
     }
   }
@@ -538,7 +544,7 @@ export class Level {
    * Takes a step of the rules: records it in the history and the log,
    * counts the move, starts drawing the step when it changed the state, with
    * each blocked wall, ditch, door, exit, fizzler, laser and light barrier it switched changing, what it took
-   * breaking up when it fizzled and a ripple where a portal shot it refused
+   * breaking up when it fizzled, each box it destroyed breaking up or falling, and a ripple where a portal shot it refused
    * stopped, and plays the sounds of what happened, a missed portal shot's own.
    * @param state - The state before the step
    * @param action - The action stepped
@@ -567,9 +573,14 @@ export class Level {
       this.changes.start(state, next, time)
     }
 
-    // A fizzler breaks up what it takes: both portals and a carried box when the subject is caught in it, a portal facing it when it turns on
-    if ((result.events.includes(GameEvent.FIZZLED) || result.events.includes(GameEvent.PORTAL_FIZZLED)) && !this.reducedMotion.matches) {
+    // A fizzler breaks up what it takes: both portals and a carried box when the subject is caught in it, a portal facing it when it turns on; and a box lying where something closes or switches on breaks up too
+    if ((result.events.includes(GameEvent.FIZZLED) || result.events.includes(GameEvent.PORTAL_FIZZLED) || result.events.includes(GameEvent.BOX_DESTROYED)) && !this.reducedMotion.matches) {
       this.fizzle.start(state, next, result.events, time)
+    }
+
+    // Unless it lay on a ditch that opened, into which it falls
+    if (result.events.includes(GameEvent.BOX_DESTROYED) && !this.reducedMotion.matches) {
+      this.fall.start(state, next, result.events, time)
     }
 
     // Only a shot's refusal ripples: a refused crossing or interact shows nothing
@@ -588,7 +599,7 @@ export class Level {
 
   /**
    * Undoes or redoes a step, silently and at once, ending anything breaking
-   * up, any element changing and any ripple, and logs the press. Nothing can be undone once the
+   * up or falling, any element changing and any ripple, and logs the press. Nothing can be undone once the
    * chamber is completed.
    * @param state - The state now
    * @param key - Undo or redo
@@ -613,6 +624,7 @@ export class Level {
     this.fizzle.clear()
     this.changes.clear()
     this.ripple.clear()
+    this.fall.clear()
 
     if (key === GameKey.UNDO) {
       this.undoCount++
@@ -670,9 +682,9 @@ export class Level {
       stateUpdated = this.update(delta, this.input, time)
     }
 
-    // So does anything that glows, breaks up, changes or ripples, paused or
-    // not, and the first frame after it stops, which draws it still
-    const ambient = (this.state !== null) && !this.reducedMotion.matches && (hasAmbientLife(this.state) || this.fizzle.isRunningAt(time) || this.changes.isRunningAt(time) || this.ripple.isRunningAt(time))
+    // So does anything that glows, breaks up, falls, changes or ripples,
+    // paused or not, and the first frame after it stops, which draws it still
+    const ambient = (this.state !== null) && !this.reducedMotion.matches && (hasAmbientLife(this.state) || this.fizzle.isRunningAt(time) || this.fall.isRunningAt(time) || this.changes.isRunningAt(time) || this.ripple.isRunningAt(time))
 
     if (stateUpdated || wasAnimating || ambient || this.ambientDrawn) {
       this.render(time)

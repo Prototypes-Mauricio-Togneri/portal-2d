@@ -40,9 +40,9 @@ export const TURN_ACTIONS: readonly Action[] = actionsByDirection(true)
 
 /**
  * Packs a macro action of the solver into one number: walk to a tile, face
- * a way (only for a shot), then take an action.
+ * a way (only for a shot or an interact), then take an action.
  * @param tile - The tile walked to, by its number
- * @param directionIndex - The way faced before a shot, as an index in DIRECTIONS; 0 for other actions
+ * @param directionIndex - The way faced before a shot or an interact, as an index in DIRECTIONS; 0 for a move
  * @param action - The action taken there
  * @returns The packed macro action
  * @throws Error when the action isn't in ACTIONS or the tile is past MAX_MACRO_TILES
@@ -67,7 +67,7 @@ export function macroTile(macro: number): number {
 }
 
 /**
- * The way a packed macro action faces before a shot.
+ * The way a packed macro action faces before a shot or an interact.
  * @param macro - The packed macro action
  * @returns The way, as an index in DIRECTIONS
  */

@@ -69,7 +69,8 @@ The player gives one action per step: move or turn (up, down, left or right), sh
 2. A carried box moves onto the subject's tile.
 3. Then, repeated until a pass changes nothing:
    1. the [fizzler rule](#the-fizzler-rule);
-   2. every [button](#buttons), in the chamber's list order, with its links.
+   2. every [button](#buttons), in the chamber's list order, with its links;
+   3. every [box lying where something blocks](#a-box-where-something-blocks), in the chamber's list order.
 
    It always ends, because a pass moves nothing but boxes, and only ever to their start tiles. A cap of 32 passes still guards against a mistake: a 32nd pass that still changes something is an error.
 4. The [exit check](#the-exit).
@@ -111,15 +112,22 @@ A hit opens the portal of that colour there, closing it wherever it was before: 
 - On a switch: while carrying a box, `refused`. Otherwise the switch is used: `switchUsed`, then it unblocks its links. It can be used any number of times, and each use unblocks its links again (so a linked box is sent back each time).
 - Otherwise, while carrying a box: if another box rests on the subject's tile, `refused`, since a tile holds [one box](#one-box-per-tile). Otherwise the box is put down there, without a sound.
 - Otherwise, on a tile with a box: the subject picks it up: `boxPickedUp`.
+- Otherwise, facing a tile where a box rests: the subject picks it up from where it stands, `boxPickedUp`, if a move that way could step onto that tile now (see [Move or turn](#move-or-turn): an arrow there must point that way, and nothing there may block walking) and no fizzler there is on. A box in a field that is on stays out of reach, since picked up inside the field it would be destroyed. The carried box then sits on the subject's tile, so a button the box held is released in the same step.
 - Otherwise nothing happens.
+
+A box picked up while the subject stands in a fizzler that is on, from its own tile or the next, is destroyed in the same step (see [the fizzler rule](#the-fizzler-rule)).
 
 ### The fizzler rule
 
 If the subject stands in a fizzler that is on, both portals close and a carried box is destroyed: it goes back to its start tile (see [one box per tile](#one-box-per-tile)) and is no longer carried. `fizzled` is reported at most once per step, and only if the subject wasn't standing in a fizzler that was on when the step began: it walked or crossed into the field, or the field turned on under it. Nothing remembers having been inside a field.
 
+### A box where something blocks
+
+A box lying on a tile where a door is closed, a ditch is open, or a laser, a light barrier or a fizzler is on is destroyed: it goes back to its start tile (see [one box per tile](#one-box-per-tile)), `boxDestroyed`. That happens when the element closes or switches on under it, and when the subject puts a box down where one already has under the subject (see [something blocking under the subject](#something-blocking-under-the-subject)). A carried box is left to the [fizzler rule](#the-fizzler-rule). The exit is left out, since no box can lie on it: the subject reaching it completes the chamber. A box's start is plain floor or a button, so each box is destroyed at most once in a step. The game shows a box falling into a ditch, and breaking up anywhere else as a fizzle breaks up a carried box, both without a sound.
+
 ### One box per tile
 
-A tile holds at most one box. The carried box, which sits on the subject's tile, doesn't count, so the subject can carry a box over a tile where another rests, but can't put it down there (see [Interact](#interact)). A box sent back to its start tile, destroyed by a fizzler or sent back by a link, sends the box resting there, if any, back to its own start the same way, and so on. Each box moves at most once, so the chain ends. Nothing reports it.
+A tile holds at most one box. The carried box, which sits on the subject's tile, doesn't count, so the subject can carry a box over a tile where another rests, but can't put it down there (see [Interact](#interact)). A box sent back to its start tile, destroyed by a fizzler or where something blocks, or sent back by a link, sends the box resting there, if any, back to its own start the same way, and so on. Each box moves at most once, so the chain ends. Nothing reports it.
 
 ### Buttons
 
@@ -150,7 +158,7 @@ A step that ends with the subject on the exit completes the chamber. The subject
 
 ### Something blocking under the subject
 
-A door or the exit closing, a ditch opening, or a light barrier or a laser turning on under the subject does nothing to it: it can still turn, shoot, interact and walk off. A box on such a tile stays there. A fizzler turning on under the subject runs the fizzler rule in that same step.
+A door or the exit closing, a ditch opening, or a light barrier or a laser turning on under the subject does nothing to it: it can still turn, shoot, interact and walk off. A box it carries is kept, but a box lying there is destroyed, and so is one it puts down there (see [a box where something blocks](#a-box-where-something-blocks)). A fizzler turning on under the subject runs the fizzler rule in that same step. Chambers avoid this state (`docs/level-design.md`).
 
 ### Outside the chamber
 
@@ -188,12 +196,14 @@ Every way these rules differ from the original game's, which this game played un
 13. **`no_portal_beside_door`** — A wall side facing a door or the exit never takes a portal, open or closed: a shot there misses. The original rules let one open there whenever a shot reached it, past the open door or exit or from inside it, and kept it when the door or exit closed, so a portal could bring the subject into a doorway or onto the exit. No recorded solution used one. Fixture: `no_portal_beside_door_or_exit`.
 14. **`fizzler_closes_facing_portal`** — A fizzler switching on closes a portal on a wall side facing its tile: `portalFizzled`. The original rules kept it, so the subject could come out of it into the field that is on; now that happens only when the crossing itself switches the field on, such as by leaving the button that held it off. No recorded solution had a portal facing a fizzler. Fixture: `fizzler_on_closes_portal_facing_it`.
 15. **`no_portal_behind_end_plate`** — The wall at the end of a run of lasers or light barriers, behind its end plate, never takes a portal, on or off: a shot there misses. A wall alongside the run still takes one. The original rules let one open there whenever a shot reached it (at any time for a laser, which lets shots through, and while it was off for a light barrier), drawn over the plate. No recorded solution used one; chambers 1 and 3 lost 18 and 8 such wall sides. Fixture: `no_portal_behind_end_plate`.
+16. **`box_in_reach`** — Interact also picks up a box on the tile the subject faces, when it has nothing in its hands or underfoot and no switch underfoot, if a move that way could step onto that tile and no fizzler there is on; otherwise nothing happens, silently. The box underfoot still comes first. The original rules picked up only a box on the subject's own tile. No recorded solution pressed interact facing a box with none underfoot, so none changed; two solver fixtures' fewest moves dropped, carrying a box through a portal from 9 to 7 and holding a box on a button from 13 to 11. Fixtures: `box_picked_up_from_faced_tile`, `box_underfoot_picked_up_first`, `box_out_of_reach`, `box_reached_from_fizzler_destroyed`.
+17. **`box_destroyed_where_blocked`** — A box lying where a door closes, a ditch opens, or a laser, a light barrier or a fizzler switches on goes back to its start tile, `boxDestroyed`, and so does one put down where one of them already blocks. The original rules left it there, inside the closed door, over the open pit or in the beam, out of reach until the element opened again. No recorded solution ever left a box on such a tile. Fixtures: `box_breaks_up_in_closing_door`, `box_falls_into_opening_ditch`, `box_breaks_up_in_laser_turning_on`, `box_breaks_up_in_light_barrier_turning_on`, `box_breaks_up_in_fizzler_turning_on`, `box_put_down_on_open_ditch_falls`.
 
 ## Adding an element
 
 Element types are described by data in `src/game/rules/`, but a new one still touches several files, because the chamber file reader, the validator, the walls' portal taking and the switching animation list elements by hand:
 
-1. **Definition:** a file in `src/game/rules/elements/` that calls `defineElement` with its entry type. It gives the fixed properties (its name, its field in a chamber file, one entry or a list, the tiles it sits on, its draw layer, whether links reach it, its blocked flag's default or none, when it blocks walking, shots and shooting from its tile, when it takes portals, whether it reacts to the subject entering or leaving, its events) and hooks for the rest (`interact`, `subjectInside`, `everyPass`, `linkUnblocked`, `linkBlocked`). Nothing reads when it takes portals (`takesPortals`): which tiles are walls and can take portals, and which of their sides (none facing a door or the exit, or a laser or a light barrier running towards the wall), is written out in `src/game/rules/compiled_chamber.ts`, and whether a wall takes a portal now in `takesPortalsNow` (`step.ts`), so an element that sits on a wall, takes portals or keeps them off the walls beside it also touches both.
+1. **Definition:** a file in `src/game/rules/elements/` that calls `defineElement` with its entry type. It gives the fixed properties (its name, its field in a chamber file, one entry or a list, the tiles it sits on, its draw layer, whether links reach it, its blocked flag's default or none, when it blocks walking, shots and shooting from its tile, when it takes portals, whether it reacts to the subject entering or leaving, its events) and hooks for the rest (`interact`, `subjectInside`, `everyPass`, `linkUnblocked`, `linkBlocked`). Nothing reads when it takes portals (`takesPortals`): which tiles are walls and can take portals, and which of their sides (none facing a door or the exit, or a laser or a light barrier running towards the wall), is written out in `src/game/rules/compiled_chamber.ts`, and whether a wall takes a portal now in `takesPortalsNow` (`step.ts`), so an element that sits on a wall, takes portals or keeps them off the walls beside it also touches both. An element that destroys a box lying on it while blocked goes in `BOX_DESTROYING_KINDS` (`elements/box.ts`); the game draws such a box breaking up, but on a ditch, where it falls (`src/game/destroyed_boxes.ts`).
 2. **Registry:** its line in `ELEMENT_REGISTRY` (`element_registry.ts`), whose order is the drawing order within a layer. The element fields of `ChamberData`, the compiled chamber's lookups and the state's blocked flags follow from it.
 3. **Entry type:** a new one in `src/game/chamber_data.ts`, when none of the existing ones fits.
 4. **Reader:** its field in `CHAMBER_FIELDS` and its list read in `chamber_parser.ts`.

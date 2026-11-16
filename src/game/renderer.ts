@@ -1,4 +1,5 @@
 import {antlinesLitKey, drawAntlines} from '@/game/antline_drawing'
+import type {BoxFall} from '@/game/box_fall'
 import {drawLaserGlows, ELEMENT_DRAWINGS, glowStrength} from '@/game/element_drawings'
 import type {BlockedShares, ElementTransitions} from '@/game/element_transitions'
 import type {FizzleParticles} from '@/game/fizzle_particles'
@@ -321,15 +322,17 @@ export class Renderer {
 
   /**
    * Draws a whole frame, back to front: the backdrop, every layer above it,
-   * then the glows, the pieces of what a fizzle took and a missed shot's ripple.
+   * with the boxes falling into ditches over the ditches, then the glows,
+   * the pieces of what a fizzle took and a missed shot's ripple.
    * @param state - The state to draw
    * @param transition - The step being drawn, ending on the state drawn, or null (the default) to draw the state as it is
    * @param time - Now, in milliseconds on the frame clock, for what moves with time alone, or null (the default) to hold it still
    * @param fizzle - What a fizzle took, breaking up, or null (the default) when nothing can
    * @param changes - The blocked walls, the ditches, the doors, the exit, the fizzlers, the lasers and the light barriers changing over time, or null (the default) when none can
    * @param ripple - Where the latest missed shot stopped, rippling, or null (the default) when none can
+   * @param fall - The boxes falling into ditches, or null (the default) when none can
    */
-  render(state: RulesState, transition: StepTransition | null = null, time: number | null = null, fizzle: FizzleParticles | null = null, changes: ElementTransitions | null = null, ripple: MissRipple | null = null): void {
+  render(state: RulesState, transition: StepTransition | null = null, time: number | null = null, fizzle: FizzleParticles | null = null, changes: ElementTransitions | null = null, ripple: MissRipple | null = null, fall: BoxFall | null = null): void {
     // A canvas not yet sized for a chamber has nothing to draw
     if (this.painter.blockSize <= 0) {
       return
@@ -342,6 +345,11 @@ export class Renderer {
     for (const layer of DRAW_LAYERS) {
       if (!BACKDROP_LAYERS.has(layer)) {
         this.drawLayer(state, layer, transition, shares)
+      }
+
+      // Down in the pit, over the grate sliding away and under everything standing on the floor
+      if ((layer === 'blockers') && (time !== null) && (fall !== null)) {
+        fall.draw(this.painter, time)
       }
     }
 
