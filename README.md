@@ -2,6 +2,7 @@
 
 ## TODO
 
+- fix chamber recordings
 - split plan 04 into two:
   - new mechanics (add to the plan the info from this file)
   - new levels
