@@ -1,23 +1,21 @@
 /**
- * The player's controls: one of two fixed layouts, Arrow keys (the default)
- * and WASD and mouse, or their own Custom keys, kept apart so picking a layout
- * never loses them. Stored in localStorage and handed to the game when a
- * chamber opens. One key or mouse button per game key, never shared; whatever
- * can't be read falls back to Arrow keys.
+ * The player's controls: the fixed Default layout (stored as Arrow keys), or
+ * their own Custom keys, kept apart so picking Default never loses them.
+ * Stored in localStorage and handed to the game when a chamber opens. One key
+ * per game key, never shared; whatever can't be read falls back to Default.
  */
 import {computed, shallowRef} from 'vue'
 import {GameKey} from '@/game/game_key'
-import {ARROW_KEY_BINDINGS, type BoundKey, isBindableKey, type KeyBindings, WASD_MOUSE_BINDINGS} from '@/game/key_bindings'
+import {ARROW_KEY_BINDINGS, type BoundKey, isBindableKey, type KeyBindings} from '@/game/key_bindings'
 
-/** A set of controls the player can pick. */
-export type ControlLayout = 'arrow-keys' | 'wasd-mouse' | 'custom'
+/** A set of controls the player can pick: Arrow keys is the one shown as Default. */
+export type ControlLayout = 'arrow-keys' | 'custom'
 
 /**
  * Named values of ControlLayout.
  */
 export const ControlLayout = {
   ARROW_KEYS: 'arrow-keys',
-  WASD_MOUSE: 'wasd-mouse',
   CUSTOM: 'custom',
 } as const
 
@@ -35,7 +33,6 @@ const GAME_KEYS: readonly GameKey[] = Object.values(GameKey)
 /** The keys of each fixed layout */
 const FIXED_LAYOUTS: Readonly<Record<Exclude<ControlLayout, typeof ControlLayout.CUSTOM>, KeyBindings>> = {
   [ControlLayout.ARROW_KEYS]: ARROW_KEY_BINDINGS,
-  [ControlLayout.WASD_MOUSE]: WASD_MOUSE_BINDINGS,
 }
 
 /** Every layout, for reading a stored one */
@@ -68,8 +65,8 @@ function isControlLayout(value: unknown): value is ControlLayout {
 /**
  * Reads stored Custom keys, keeping what is well formed. Game keys are checked
  * in order: a stored key is kept when it can be bound and no earlier game key
- * holds it; otherwise the game key gets its Arrow keys key. When that key is
- * then already taken, every game key goes back to Arrow keys.
+ * holds it; otherwise the game key gets its Default key. When that key is
+ * then already taken, every game key goes back to Default.
  * @param value - The parsed stored value
  * @returns Bindings with one key per game key, none shared
  */
@@ -105,7 +102,7 @@ function readBindings(value: unknown): KeyBindings {
 
 /**
  * Reads the stored controls. A layout that isn't one, or Custom with no keys
- * stored, falls back to Arrow keys.
+ * stored, falls back to Default.
  * @param value - The parsed stored value
  * @returns The controls
  */
@@ -123,7 +120,7 @@ function readControls(value: unknown): StoredControls {
 
 /**
  * Loads the stored controls.
- * @returns The controls, or Arrow keys when nothing usable is stored
+ * @returns The controls, or Default when nothing usable is stored
  */
 function loadControls(): StoredControls {
   try {
@@ -193,11 +190,11 @@ export function chooseControlLayout(layout: ControlLayout): void {
 }
 
 /**
- * Binds a key or mouse button to a game key in the Custom keys, and puts
+ * Binds a key to a game key in the Custom keys, and puts
  * Custom in use. A key already bound to another game key is swapped: that
  * game key takes this one's previous key.
  * @param gameKey - The game key to rebind
- * @param key - The key or mouse button to bind it to, which must be bindable
+ * @param key - The key to bind it to, which must be bindable
  */
 export function bindKey(gameKey: GameKey, key: BoundKey): void {
   const current = controls.value

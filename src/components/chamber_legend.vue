@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * The controls legend shown beside the chamber: moving, both portals and
- * interacting, each on the key the player has bound to it, and Escape for
- * the pause dialog, each with what it does. The keys show what the player's
- * keyboard prints on them, and arrow keys a small triangle pointing their
- * way, and a mouse button a small mouse with that button filled in.
+ * The controls legend shown beside the chamber: moving, turning in place,
+ * both portals and interacting, each on the key the player has bound to it,
+ * and Escape for the pause dialog, each with what it does. The keys show what
+ * the player's keyboard prints on them, and arrow keys a small triangle
+ * pointing their way.
  */
 import {computed, onMounted} from 'vue'
 import KeyCap from '@/components/key_cap.vue'
@@ -39,6 +39,7 @@ const keys = computed(() => ({
   [GameKey.DOWN]: legendKey(GameKey.DOWN),
   [GameKey.LEFT]: legendKey(GameKey.LEFT),
   [GameKey.RIGHT]: legendKey(GameKey.RIGHT),
+  [GameKey.TURN]: legendKey(GameKey.TURN),
   [GameKey.BLUE]: legendKey(GameKey.BLUE),
   [GameKey.ORANGE]: legendKey(GameKey.ORANGE),
   [GameKey.INTERACT]: legendKey(GameKey.INTERACT),
@@ -68,10 +69,24 @@ onMounted(refreshKeyLabels)
         <dt>
           <KeyCap
             :class="{
+              'keycap-wide': keys.turn.wide,
+            }"
+            :bound-key="keys.turn.key"
+            :aria-label="keys.turn.name"
+          />
+        </dt>
+        <dd class="legend-action">
+          <span class="action-name">Turn in place</span>
+          <span class="action-detail">Hold it, then a move key, to face that way</span>
+        </dd>
+      </div>
+      <div class="legend-row">
+        <dt>
+          <KeyCap
+            :class="{
               'keycap-wide': keys.blue.wide,
             }"
             :bound-key="keys.blue.key"
-            portal="blue"
             :aria-label="keys.blue.name"
           />
         </dt>
@@ -87,7 +102,6 @@ onMounted(refreshKeyLabels)
               'keycap-wide': keys.orange.wide,
             }"
             :bound-key="keys.orange.key"
-            portal="orange"
             :aria-label="keys.orange.name"
           />
         </dt>
@@ -229,11 +243,6 @@ onMounted(refreshKeyLabels)
 .arrow-keys .keycap {
   min-width: 0;
   padding: 0 0.5rem;
-}
-
-/* A mouse button bound to a move keeps its own size, in the middle of its key's place */
-.arrow-keys .mouse-glyph {
-  justify-self: center;
 }
 
 .arrow-up {

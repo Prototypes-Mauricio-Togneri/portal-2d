@@ -3,16 +3,15 @@
  * The Custom controls, opened by picking Custom under Settings' Controls: a
  * row per game key, then Done. Picking a row (Enter, Space or a click) waits
  * for its new key, which takes the whole keyboard until a key is bound or
- * Escape cancels; a left or right click on that row binds that mouse button
- * instead, and a click anywhere else cancels. A key or button bound to another
- * game key is swapped. Escape with nothing waiting is left to the screen,
- * which closes the dialog.
+ * Escape cancels; a click anywhere cancels too. A key bound to another game
+ * key is swapped. Escape with nothing waiting is left to the screen, which
+ * closes the dialog.
  */
 import {onBeforeUnmount, onMounted, ref} from 'vue'
 import ControlRow from '@/components/control_row.vue'
 import DialogFrame from '@/components/dialog_frame.vue'
 import {GameKey} from '@/game/game_key'
-import {type BoundKey, getBoundKey, getMouseBoundKey} from '@/game/key_bindings'
+import {type BoundKey, getBoundKey} from '@/game/key_bindings'
 import {Sound} from '@/game/sound'
 import {bindKey, keyBindings} from '@/services/key_bindings'
 import {getKeyLabel, refreshKeyLabels} from '@/services/key_labels'
@@ -51,6 +50,11 @@ const CONTROLS: ControlEntry[] = [
     portal: null,
   },
   {
+    gameKey: GameKey.TURN,
+    label: 'Turn in place',
+    portal: null,
+  },
+  {
     gameKey: GameKey.BLUE,
     label: 'Blue portal',
     portal: 'blue',
@@ -73,13 +77,13 @@ const refusedKey = ref<string | null>(null) // The key last refused while waitin
 const controlStatus = ref('') // What the dialog last did, read aloud by screen readers
 
 let capturedCode: string | null = null // The key last taken while waiting, whose keyup must not press the focused row again
-let swallowClick = false // Whether the click that ends a left button just bound must not press its row again
+let swallowClick = false // Whether the click that ends a press cancelling its own row's wait must not start the wait again
 
 /**
  * Waits for a new key for a row picked with Enter, Space or a click; the
- * dialog clicks for the press. The click that ends a left button just bound
- * on the row is kept from the dialog instead, so it neither waits again nor
- * clicks twice; a press of Enter or Space (a click with no pointer) never is.
+ * dialog clicks for the press. The click that ends a press cancelling this
+ * row's wait is kept from the dialog instead, so it neither waits again nor
+ * clicks; a press of Enter or Space (a click with no pointer) never is.
  * @param control - The row's game key
  * @param event - The click
  */
@@ -91,7 +95,7 @@ function chooseControl(control: ControlEntry, event: MouseEvent): void {
   }
   waitingControl.value = control.gameKey
   refusedKey.value = null
-  controlStatus.value = `Press a key for ${control.label}, or click its row with a mouse button. Escape cancels`
+  controlStatus.value = `Press a key for ${control.label}. Escape cancels`
 }
 
 /**
@@ -107,10 +111,10 @@ function cancelWaiting(): void {
 }
 
 /**
- * Binds a key or mouse button to the game key waiting for one, with a click,
- * and says so (a key bound to another game key is swapped).
+ * Binds a key to the game key waiting for one, with a click, and says so (a
+ * key bound to another game key is swapped).
  * @param gameKey - The game key waiting for a key
- * @param key - The key or mouse button
+ * @param key - The key
  */
 function bind(gameKey: GameKey, key: BoundKey): void {
   const control = CONTROLS.find((entry) => entry.gameKey === gameKey)
@@ -169,8 +173,8 @@ function handleKeyup(event: KeyboardEvent): void {
 }
 
 /**
- * While a row waits, binds the left or right mouse button pressed on that
- * row, and cancels the wait for a press anywhere else.
+ * While a row waits, cancels the wait for a mouse button pressed anywhere,
+ * the waiting row included.
  * @param event - Mouse event
  */
 function handleMousedown(event: MouseEvent): void {
@@ -179,20 +183,8 @@ function handleMousedown(event: MouseEvent): void {
   if (gameKey === null) {
     return
   }
-  const onRow = event.target instanceof Element && event.target.closest(`[data-game-key="${gameKey}"]`) !== null
-  if (!onRow) {
-    cancelWaiting()
-    return
-  }
-  const key = getMouseBoundKey(event.button)
-  if (key === null) {
-    return
-  }
-  // Keeps the keyboard on the row
-  event.preventDefault()
-  // Only the left button ends in a click on the row
-  swallowClick = event.button === 0
-  bind(gameKey, key)
+  swallowClick = event.target instanceof Element && event.target.closest(`[data-game-key="${gameKey}"]`) !== null
+  cancelWaiting()
 }
 
 onMounted(() => {
@@ -213,7 +205,7 @@ onBeforeUnmount(() => {
 
 <template>
   <DialogFrame title="Custom controls" tone="interaction" layout="stack">
-    <p>Pick an action, then press its new key, or click its row with a mouse button.</p>
+    <p>Pick an action, then press its new key.</p>
     <!-- Read aloud as a row waits for, takes or refuses a key -->
     <p class="visually-hidden" role="status">{{ controlStatus }}</p>
     <template #actions>
@@ -233,7 +225,6 @@ onBeforeUnmount(() => {
             @click="chooseControl(control, $event)"
             @focus="focusedControl = control.gameKey"
             @blur="focusedControl = null"
-            @contextmenu.prevent
           />
         </li>
       </ul>
@@ -243,7 +234,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* The rows as in the home menu, closer together, so all seven fit a short window */
+/* The rows as in the home menu, closer together, so all eight fit a short window */
 .controls-dialog-list {
   display: flex;
   flex-direction: column;

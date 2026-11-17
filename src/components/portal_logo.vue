@@ -2,13 +2,12 @@
 /**
  * The "Portal 2D" logo: the name between a blue and an orange portal's sweep.
  * Large on the loading screen, medium on the home screen and the desktop-only
- * notice, small beside a chamber. The large and medium sizes fade in once when
- * they first appear.
+ * notice. Both sizes fade in once when they first appear.
  */
 import logoUrl from '@/assets/images/portal_2d_logo.webp'
 
 export interface PortalLogoProps {
-  size?: 'large' | 'medium' | 'small'
+  size?: 'large' | 'medium'
 }
 
 withDefaults(defineProps<PortalLogoProps>(), {
@@ -46,11 +45,7 @@ withDefaults(defineProps<PortalLogoProps>(), {
   width: 20.5rem;
 }
 
-.portal-logo-small {
-  width: 10rem;
-}
-
-/* The large and medium logos fade in once */
+/* Both sizes fade in once */
 .portal-logo-large,
 .portal-logo-medium {
   animation: logo-arrive 520ms var(--ease-out) both;

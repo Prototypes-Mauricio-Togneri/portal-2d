@@ -9,8 +9,8 @@
  * or a click on Play starts the tutorial instead, and only Right opens its
  * list. The third column follows the highlight there: Play shows the
  * chamber's map, About shows a list of pages or the changelog, and Settings'
- * Controls row the layouts of controls, Arrow keys, WASD and mouse and
- * Custom, level with it, the one in use lit.
+ * Controls row the layouts of controls, Default and Custom, level with it,
+ * the one in use lit.
  * Right, Enter or a click steps from an About row into its pages or changelog,
  * or from Controls into its layouts. Up and Down move the highlight (or scroll
  * the changelog) in the column that has the keyboard, Left, Escape and
@@ -191,11 +191,7 @@ const RESET_PROGRESS_INDEX = settings.length + 1 // Reset progress comes last
 const LAYOUTS: LayoutEntry[] = [
   {
     layout: ControlLayout.ARROW_KEYS,
-    label: 'Arrow keys',
-  },
-  {
-    layout: ControlLayout.WASD_MOUSE,
-    label: 'WASD and mouse',
+    label: 'Default',
   },
   {
     layout: ControlLayout.CUSTOM,

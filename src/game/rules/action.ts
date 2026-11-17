@@ -99,8 +99,8 @@ export const MOVEMENTS: Readonly<Record<Action, Movement | null>> = {
 }
 
 /**
- * The action a key press stands for: an arrow key moves. No key stands for a
- * turn action; the game takes one only to face the subject to the pointer.
+ * The action a key press stands for: an arrow key moves, or turns while the
+ * turn key is held; the turn key changes nothing for the other keys.
  * @param input - A press, as the game's input queues it
  * @returns The action, or null when the press doesn't hold exactly one key
  */
@@ -113,16 +113,16 @@ export function actionOfPress(input: FrameInput): Action | null {
 
   switch (key) {
     case GameKey.UP:
-      return Action.UP
+      return input.turnHeld ? Action.TURN_UP : Action.UP
 
     case GameKey.DOWN:
-      return Action.DOWN
+      return input.turnHeld ? Action.TURN_DOWN : Action.DOWN
 
     case GameKey.LEFT:
-      return Action.LEFT
+      return input.turnHeld ? Action.TURN_LEFT : Action.LEFT
 
     case GameKey.RIGHT:
-      return Action.RIGHT
+      return input.turnHeld ? Action.TURN_RIGHT : Action.RIGHT
 
     case GameKey.BLUE:
       return Action.BLUE

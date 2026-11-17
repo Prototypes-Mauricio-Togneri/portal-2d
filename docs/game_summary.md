@@ -6,12 +6,12 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 
 - Seen from straight above, with no perspective: the chamber is a grid of square tiles. Walls and other raised things cast a soft shadow.
 - The camera never moves: the whole chamber is always on screen, scaled to fit and centred, but its tiles never grow larger than a chamber 16 tiles each way would get, so a small chamber leaves more of the room around it. There is no scrolling and nothing outside the chamber to explore.
-- Beside the chamber, a side panel shows the logo, the chamber's number, a timer and the controls, drawn as the player's own keys.
+- Beside the chamber, a side panel shows the chamber's number, a timer and the controls, drawn as the player's own keys.
 
 ## Turn by turn
 
 - Nothing moves on its own. The game advances one action at a time, and only when the player acts.
-- The actions: move (up, down, left or right), turn without moving (only to face the mouse pointer, when a mouse button is bound), shoot a blue portal, shoot an orange portal, and interact (use a switch, pick up a box or put it down).
+- The actions: move (up, down, left or right), turn without moving (a move key pressed while holding the turn key, Shift by default), shoot a blue portal, shoot an orange portal, and interact (use a switch, pick up a box or put it down).
 - Each action and everything it causes (a button pressed, a door opening, a fizzler firing) happens at once, before the next action.
 
 ## The subject
@@ -109,6 +109,6 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 ## Screens
 
 - **Loading screen:** the first screen of every visit; it loads the sounds and images, then waits for Start.
-- **Home screen:** a menu on the wall of a test-room photo: Play (the chambers, each with its best time, a figure that turns green once completed, and a map preview of the chamber), Settings (sound effects, music, controls and reset progress; the controls are Arrow keys, WASD and mouse, or Custom keys set one by one) and About (links, the changelog and feedback).
+- **Home screen:** a menu on the wall of a test-room photo: Play (the chambers, each with its best time, a figure that turns green once completed, and a map preview of the chamber), Settings (sound effects, music, controls and reset progress; the controls are Default, the arrows with A, D, Space and Shift, or Custom keys set one by one; the mouse plays no part in the game) and About (links, the changelog and feedback).
 - **Chamber screen:** the chamber over a blurred test-room photo, with the side panel beside it.
 - Desktop only: phones and tablets get a notice instead of the game.

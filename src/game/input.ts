@@ -1,32 +1,22 @@
-import type {FrameInput} from '@/game/frame_input'
+import type {FrameInput, FrameKey} from '@/game/frame_input'
 import {GameKey} from '@/game/game_key'
-import {type BoundKey, getBoundKey, getKeyMouseButton, getMouseBoundKey, type KeyBindings} from '@/game/key_bindings'
+import {type BoundKey, getBoundKey, type KeyBindings} from '@/game/key_bindings'
 
 /**
- * A press waiting for the level.
+ * A press waiting for the level, with whether the turn key was held as it
+ * went down.
  */
 type KeyPress = {
-  readonly key: GameKey // The game key pressed
+  readonly key: FrameKey // The game key pressed
+  readonly turnHeld: boolean // Whether the turn key was held down at that moment
 }
 
 /**
- * Where the mouse pointer is in the window, in CSS pixels from its top left
- * corner, as MouseEvent.clientX and clientY give it.
- */
-export type PointerPosition = {
-  readonly x: number // Distance from the window's left edge
-  readonly y: number // Distance from the window's top edge
-}
-
-/**
- * Keyboard and mouse state for the game, fed by keydown, keyup, mousedown,
- * mouseup and mousemove on the window. Keys are read by physical position
- * (KeyboardEvent.code) through the player's bindings, so they stay in place on
- * every layout; a bound mouse button, left or right, counts as a key wherever
- * it is clicked. Every other key and button is ignored. Presses wait in
- * arrival order until the level takes them, one at a time. When a mouse
- * button is bound, it also follows the pointer, for the level to aim the
- * subject with.
+ * Keyboard state for the game, fed by keydown and keyup on the window. Keys
+ * are read by physical position (KeyboardEvent.code) through the player's
+ * bindings, so they stay in place on every layout. Every other key is
+ * ignored. Presses wait in arrival order until the level takes them, one at a
+ * time; the turn key is only ever read as held.
  */
 export class Input {
   /**
@@ -58,19 +48,14 @@ export class Input {
     '\'',
   ])
 
-  private static readonly RIGHT_MOUSE_BUTTON = 2 // MouseEvent.button of the right button, which opens the context menu
-
-  enabled = true // When false, keydown and mousedown are ignored entirely and the context menu opens; keyup, mouseup and the pointer are still tracked
-  readonly aimsWithPointer: boolean // Whether a mouse button is bound, so the pointer aims the subject
+  enabled = true // When false, keydown is ignored entirely; keyup is still tracked
   private readonly gameKeys: ReadonlyMap<BoundKey, GameKey> // The game key each bound key stands for
   private readonly holding = new Set<GameKey>() // Game keys held down
   private readonly pressed = new Set<GameKey>() // Game keys pressed since the last clear(), auto-repeat included
   private readonly presses: KeyPress[] = [] // Presses not yet taken, oldest first
-  private pointerPosition: PointerPosition | null = null // Where the pointer last moved to or clicked, null until then while a mouse button is bound
-  private pointerMoved = false // Whether the pointer moved since the last takePointerMoved()
 
   /**
-   * Starts listening to the keyboard and the mouse on the window.
+   * Starts listening to the keyboard on the window.
    * @param bindings - The key bound to each game key, which is only read
    */
   constructor(bindings: KeyBindings) {
@@ -78,42 +63,10 @@ export class Input {
       bindings[gameKey],
       gameKey,
     ]))
-    this.aimsWithPointer = Object.values(bindings).some((key) => getKeyMouseButton(key) !== null)
 
     window.addEventListener('keyup', this.onKeyup, false)
     window.addEventListener('keydown', this.onKeydown, false)
-    window.addEventListener('mousedown', this.onMousedown, false)
-    window.addEventListener('mouseup', this.onMouseup, false)
-    window.addEventListener('mousemove', this.onMousemove, false)
-    window.addEventListener('contextmenu', this.onContextmenu, false)
-  }
-
-  /**
-   * Where the pointer last moved to or clicked, or null before either while
-   * a mouse button is bound.
-   */
-  get pointer(): PointerPosition | null {
-    return this.pointerPosition
-  }
-
-  /**
-   * The game key of the oldest waiting press, which stays waiting, or null
-   * when no press is waiting.
-   */
-  get nextKey(): GameKey | null {
-    return this.presses[0]?.key ?? null
-  }
-
-  /**
-   * Whether the pointer moved since the last call, forgetting it.
-   * @returns True when it moved
-   */
-  takePointerMoved(): boolean {
-    const moved = this.pointerMoved
-
-    this.pointerMoved = false
-
-    return moved
+    window.addEventListener('blur', this.onBlur, false)
   }
 
   /**
@@ -135,8 +88,8 @@ export class Input {
 
   /**
    * Takes the oldest waiting press.
-   * @returns What the rules read for it (its key), or null when no press is
-   * waiting
+   * @returns What the rules read for it (its key, and whether the turn key
+   * was held as it went down), or null when no press is waiting
    */
   takePress(): FrameInput | null {
     const press = this.presses.shift()
@@ -147,6 +100,7 @@ export class Input {
 
     return {
       keys: [press.key],
+      turnHeld: press.turnHeld,
     }
   }
 
@@ -160,30 +114,19 @@ export class Input {
   }
 
   /**
-   * Whether a game key is held down.
-   * @param key - The game key
-   * @returns True when it is held
-   */
-  isHolding(key: GameKey): boolean {
-    return this.holding.has(key)
-  }
-
-  /**
-   * Stops listening to the keyboard and the mouse.
+   * Stops listening to the keyboard.
    */
   dispose(): void {
     window.removeEventListener('keyup', this.onKeyup, false)
     window.removeEventListener('keydown', this.onKeydown, false)
-    window.removeEventListener('mousedown', this.onMousedown, false)
-    window.removeEventListener('mouseup', this.onMouseup, false)
-    window.removeEventListener('mousemove', this.onMousemove, false)
-    window.removeEventListener('contextmenu', this.onContextmenu, false)
+    window.removeEventListener('blur', this.onBlur, false)
   }
 
   /**
    * Records a key going down, unless disabled. A press waits for the level,
-   * except a held key's repeat while its earlier press is still waiting, and
-   * a press with Alt or Meta held, which is only recorded as held.
+   * except the turn key, which is only recorded as held, a held key's repeat
+   * while its earlier press is still waiting, and a press with Alt or Meta
+   * held, which is only recorded as held.
    * @param event - The keydown event
    */
   readonly onKeydown = (event: KeyboardEvent): void => {
@@ -207,9 +150,10 @@ export class Input {
 
     this.pressed.add(gameKey)
 
-    if (!(event.repeat && this.presses.some((press) => press.key === gameKey))) {
+    if ((gameKey !== GameKey.TURN) && !(event.repeat && this.presses.some((press) => press.key === gameKey))) {
       this.presses.push({
         key: gameKey,
+        turnHeld: this.holding.has(GameKey.TURN),
       })
     }
 
@@ -235,86 +179,16 @@ export class Input {
   }
 
   /**
-   * Records a bound mouse button going down anywhere in the window, unless
-   * disabled, as a key going down: its press waits for the level, once
-   * however long it is held. A click with Alt or Meta held is left to the
-   * browser and only recorded as held. When a mouse button is bound, any
-   * click also tells where the pointer is, even before it has moved.
-   * @param event - The mousedown event
+   * Forgets the keys held down when the window loses focus, since their
+   * keyup goes elsewhere: a turn key left held would turn every later move.
    */
-  readonly onMousedown = (event: MouseEvent): void => {
-    if (this.aimsWithPointer) {
-      this.pointerPosition = {
-        x: event.clientX,
-        y: event.clientY,
-      }
-    }
-
-    if (!this.enabled) {
-      return
-    }
-
-    const gameKey = this.getGameKey(getMouseBoundKey(event.button))
-
-    if (gameKey === null) {
-      return
-    }
-
-    this.holding.add(gameKey)
-
-    if (event.altKey || event.metaKey) {
-      return
-    }
-
-    this.pressed.add(gameKey)
-    this.presses.push({
-      key: gameKey,
-    })
+  readonly onBlur = (): void => {
+    this.holding.clear()
   }
 
   /**
-   * Records a bound mouse button going up, even while disabled.
-   * @param event - The mouseup event
-   */
-  readonly onMouseup = (event: MouseEvent): void => {
-    const gameKey = this.getGameKey(getMouseBoundKey(event.button))
-
-    if (gameKey !== null) {
-      this.holding.delete(gameKey)
-    }
-  }
-
-  /**
-   * Follows the pointer when a mouse button is bound, even while disabled,
-   * so the subject faces it as soon as play resumes.
-   * @param event - The mousemove event
-   */
-  readonly onMousemove = (event: MouseEvent): void => {
-    if (!this.aimsWithPointer) {
-      return
-    }
-
-    this.pointerPosition = {
-      x: event.clientX,
-      y: event.clientY,
-    }
-    this.pointerMoved = true
-  }
-
-  /**
-   * Keeps the browser's context menu closed while enabled and the right mouse
-   * button is bound, since it plays, unless Alt or Meta is held.
-   * @param event - The contextmenu event
-   */
-  readonly onContextmenu = (event: MouseEvent): void => {
-    if (this.enabled && !event.altKey && !event.metaKey && (this.getGameKey(getMouseBoundKey(Input.RIGHT_MOUSE_BUTTON)) !== null)) {
-      event.preventDefault()
-    }
-  }
-
-  /**
-   * The game key a key or mouse button is bound to.
-   * @param key - The key or mouse button, as the game binds it, or null for one that can't be bound
+   * The game key a key is bound to.
+   * @param key - The key, as the game binds it, or null for one that can't be bound
    * @returns The game key, or null when it is not bound
    */
   private getGameKey(key: BoundKey | null): GameKey | null {

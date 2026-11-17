@@ -1,13 +1,12 @@
 import {BoxFall} from '@/game/box_fall'
 import type {ChamberData} from '@/game/chamber_data'
-import {Direction} from '@/game/direction'
 import {ElementTransitions} from '@/game/element_transitions'
 import {FizzleParticles} from '@/game/fizzle_particles'
 import {GameEvent} from '@/game/game_event'
 import {GameKey} from '@/game/game_key'
 import type {FrameInput} from '@/game/frame_input'
 import type {FrameStats} from '@/game/frame_stats'
-import {Input, type PointerPosition} from '@/game/input'
+import {Input} from '@/game/input'
 import type {KeyBindings} from '@/game/key_bindings'
 import {MissRipple} from '@/game/miss_ripple'
 import {getChamberHash, type ReplayData} from '@/game/replay_data'
@@ -37,9 +36,7 @@ import {StepAnimation} from '@/game/step_animation'
  * ripples where it stopped; no press waits for them nor cuts them short. While
  * anything glows, breaks up, falls, changes or ripples, every frame is drawn too. Nothing is drawn over time when the player asks for reduced
  * motion: the glows hold steady. Every press it acts on is logged, so the run
- * since the last load can be replayed without a browser. When a mouse button
- * is bound, a frame may instead turn the subject to face the pointer, as a
- * turn action logged like a pressed one.
+ * since the last load can be replayed without a browser.
  */
 export class Level {
   /** Keys that start the clock: moving, both portals and interacting */
@@ -53,30 +50,8 @@ export class Level {
     GameKey.INTERACT,
   ]
 
-  /** Keys whose action goes the way the subject faces, so the subject turns to the pointer before a press of one is taken: both portals */
-  private static readonly AIMED_KEYS: readonly GameKey[] = [
-    GameKey.BLUE,
-    GameKey.ORANGE,
-  ]
-
-  /** The move keys, while any of which is held the subject keeps the way it walks instead of turning back to the pointer */
-  private static readonly MOVE_KEYS: readonly GameKey[] = [
-    GameKey.LEFT,
-    GameKey.UP,
-    GameKey.RIGHT,
-    GameKey.DOWN,
-  ]
-
   /** Fewest tiles the chamber is sized for each way, so a small chamber's tiles are no larger than a chamber this size would get */
   private static readonly MINIMUM_TILES = 16
-
-  /** The turn action that faces each direction */
-  private static readonly TURNS: Readonly<Record<Direction, Action>> = {
-    [Direction.UP]: Action.TURN_UP,
-    [Direction.DOWN]: Action.TURN_DOWN,
-    [Direction.LEFT]: Action.TURN_LEFT,
-    [Direction.RIGHT]: Action.TURN_RIGHT,
-  }
 
   /** The sound each event of the rules plays, or null for one shown but not heard */
   private static readonly SOUNDS: Readonly<Record<GameEvent, Sound | null>> = {
@@ -110,8 +85,6 @@ export class Level {
   private elapsedSeconds = 0 // Play time since the clock started; only grows while unpaused
   private stepCount = 0 // Tiles the subject has stepped onto since the last load
   private portalCount = 0 // Portals opened on a wall since the last load, misses not counted
-  private aimPending = false // Whether the pointer moved or an action was taken since the subject last turned, or tried to turn, to face the pointer
-  private readonly canvas: HTMLCanvasElement // The canvas drawn on, where the pointer is measured from
   private readonly renderer: Renderer // Draws the state
   private readonly animation = new StepAnimation() // The step being drawn over a few frames, if any
   private readonly fizzle = new FizzleParticles() // What the latest fizzle took, breaking up over a few frames, if anything
@@ -121,9 +94,9 @@ export class Level {
   private frameTime = 0 // The latest frame's time, in milliseconds on the frame clock; redraws outside a frame use it, so a step being drawn never goes back
   private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time something could be drawn over time
   private ambientDrawn = false // Whether the latest frame was drawn for what moves with time alone, so the frame after it ends draws it still
-  private readonly input: Input // The keyboard and mouse, listening from construction until dispose()
+  private readonly input: Input // The keyboard, listening from construction until dispose()
   private initialized = false // Whether the frame loop has started
-  private isPaused = false // Whether the loop skips updates and the input ignores keydown and mousedown
+  private isPaused = false // Whether the loop skips updates and the input ignores keydown
   private disposed = false // Whether dispose() has run
   private frameId: number | null = null // The pending animation frame request
   private startTime = 0 // When the previous frame ran, in milliseconds since the epoch
@@ -136,7 +109,6 @@ export class Level {
    * @param screenHeight - Height available to the chamber, in canvas pixels
    */
   constructor(canvas: HTMLCanvasElement, bindings: KeyBindings, screenWidth: number, screenHeight: number) {
-    this.canvas = canvas
     this.renderer = new Renderer(canvas, screenWidth, screenHeight, Level.MINIMUM_TILES)
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     this.input = new Input(bindings)
@@ -170,8 +142,6 @@ export class Level {
     this.elapsedSeconds = 0
     this.stepCount = 0
     this.portalCount = 0
-    this.aimPending = false
-    this.input.takePointerMoved()
     this.animation.finish()
     this.fizzle.clear()
     this.changes.clear()
@@ -196,8 +166,8 @@ export class Level {
   }
 
   /**
-   * Pauses or resumes. While paused the state does not update and keydown and
-   * mousedown are ignored, but a step being drawn still runs to its end.
+   * Pauses or resumes. While paused the state does not update and keydown is
+   * ignored, but a step being drawn still runs to its end.
    * Resuming forgets every key, pressed and held, first.
    */
   set paused(value: boolean) {
@@ -368,12 +338,11 @@ export class Level {
   }
 
   /**
-   * Runs one frame: turns the subject to face the pointer, when it should,
-   * or else takes the oldest waiting press, if any, ends the step being
-   * drawn and runs the rules' step for it. Then forgets which keys went down
-   * during the frame, for the clock.
+   * Runs one frame: takes the oldest waiting press, if any, ends the step
+   * being drawn and runs the rules' step for it. Then forgets which keys went
+   * down during the frame, for the clock.
    * @param delta - Seconds since the previous frame
-   * @param input - The keyboard and mouse
+   * @param input - The keyboard
    * @param time - The frame's time, in milliseconds on the frame clock
    * @returns Whether the state changed
    */
@@ -388,23 +357,13 @@ export class Level {
     }
 
     if ((this.chamber !== null) && (this.state !== null)) {
-      if (input.takePointerMoved()) {
-        this.aimPending = true
-      }
+      const press = input.takePress()
 
-      // Turning to face the pointer takes the frame's step, so a waiting
-      // press is taken on the next frame
-      if (this.aimAtPointer(this.chamber, this.state, input, time)) {
-        updated = true
-      } else {
-        const press = input.takePress()
-
-        // A press never waits for the step being drawn: it ends it at once,
-        // even when the press itself changes nothing
-        if (press !== null) {
-          this.animation.finish()
-          updated = this.updateRules(this.chamber, this.state, press, time)
-        }
+      // A press never waits for the step being drawn: it ends it at once,
+      // even when the press itself changes nothing
+      if (press !== null) {
+        this.animation.finish()
+        updated = this.updateRules(this.chamber, this.state, press, time)
       }
     }
 
@@ -414,100 +373,11 @@ export class Level {
   }
 
   /**
-   * Turns the subject to face the pointer, when a mouse button is bound and
-   * it faces another way: before a waiting portal press is taken, so the
-   * shot goes where the pointer is, or, with no press waiting, no move key
-   * held and the subject not on its way to another tile, once the pointer
-   * has moved or an action was taken. A load keeps the facing it brings back
-   * until then. The turn goes through the rules' step and is
-   * logged like a pressed one, but one the rules refuse (an arrow tile
-   * allows no other way) is dropped unlogged. Nothing turns once the chamber
-   * is completed.
-   * @param chamber - The chamber being played
-   * @param state - The state now
-   * @param input - The keyboard and mouse
-   * @param time - The frame's time, in milliseconds on the frame clock
-   * @returns Whether the subject turned
-   */
-  private aimAtPointer(chamber: CompiledChamber, state: RulesState, input: Input, time: number): boolean {
-    if (!input.aimsWithPointer || state.completed) {
-      return false
-    }
-
-    const nextKey = input.nextKey
-    const beforeAimedPress = (nextKey !== null) && Level.AIMED_KEYS.includes(nextKey)
-
-    if (!beforeAimedPress) {
-      // A move gliding to its tile is never cut short, nor a walk with a
-      // held move key (whose repeats would each turn the subject back and
-      // forth), and any other press goes first
-      if ((nextKey !== null) || !this.aimPending || this.animation.movingSubject || Level.MOVE_KEYS.some((key) => input.isHolding(key))) {
-        return false
-      }
-
-      this.aimPending = false
-    }
-
-    const direction = this.pointerDirection(chamber, state, input.pointer)
-
-    // A turn towards the way the subject already faces would walk it
-    if ((direction === null) || (direction === state.facing)) {
-      return false
-    }
-
-    const action = Level.TURNS[direction]
-    const result = this.runStep(chamber, state, action)
-
-    if (result.state === state) {
-      return false
-    }
-
-    return this.applyStep(state, action, result, time)
-  }
-
-  /**
-   * Which way the pointer lies from the centre of the subject's tile: along
-   * the axis it is further along, up or down, left or right.
-   * @param chamber - The chamber being played
-   * @param state - The state now
-   * @param pointer - Where the pointer is in the window, or null before it moved
-   * @returns The direction, or null when the pointer hasn't moved yet, is over
-   * the subject's tile or lies exactly on a diagonal from it, or the canvas
-   * isn't shown
-   */
-  private pointerDirection(chamber: CompiledChamber, state: RulesState, pointer: PointerPosition | null): Direction | null {
-    const canvas = this.canvas
-
-    if ((pointer === null) || (canvas.clientWidth === 0) || (canvas.clientHeight === 0)) {
-      return null
-    }
-
-    // The pointer in tiles from the chamber's bottom left corner, the inside
-    // of the canvas's border, with rows counted upwards as the rules count them
-    const bounds = canvas.getBoundingClientRect()
-    const x = (pointer.x - bounds.left - canvas.clientLeft) * chamber.width / canvas.clientWidth
-    const y = chamber.height - ((pointer.y - bounds.top - canvas.clientTop) * chamber.height / canvas.clientHeight)
-    const dx = x - (state.subjectX + 0.5)
-    const dy = y - (state.subjectY + 0.5)
-
-    if (((Math.abs(dx) <= 0.5) && (Math.abs(dy) <= 0.5)) || (Math.abs(dx) === Math.abs(dy))) {
-      return null
-    }
-
-    if (Math.abs(dx) > Math.abs(dy)) {
-      return (dx > 0) ? Direction.RIGHT : Direction.LEFT
-    }
-
-    return (dy > 0) ? Direction.UP : Direction.DOWN
-  }
-
-  /**
    * Runs one step of the rules for a press. Nothing runs once the chamber is
-   * completed. The subject turns to face the pointer again afterwards, once
-   * it is on its tile.
+   * completed.
    * @param chamber - The chamber being played
    * @param state - The state before the step
-   * @param press - The press, one key
+   * @param press - The press, one key and whether the turn key was held
    * @param time - The frame's time, in milliseconds on the frame clock
    * @returns Whether the state changed
    */
@@ -517,8 +387,6 @@ export class Level {
     if ((action === null) || state.completed) {
       return false
     }
-
-    this.aimPending = true
 
     return this.applyStep(state, action, this.runStep(chamber, state, action), time)
   }

@@ -14,7 +14,6 @@ import CompletionDialog from '@/components/completion_dialog.vue'
 import ConfirmDialog from '@/components/confirm_dialog.vue'
 import PauseDialog from '@/components/pause_dialog.vue'
 import type {PerformanceViewHandle} from '@/components/performance_view.vue'
-import PortalLogo from '@/components/portal_logo.vue'
 import {FrameStats} from '@/game/frame_stats'
 import {Level} from '@/game/level'
 import type {ReplayData} from '@/game/replay_data'
@@ -473,7 +472,6 @@ onBeforeUnmount(() => {
 <template>
   <main class="chamber-screen">
     <aside class="chamber-rail">
-      <PortalLogo size="small" />
       <div class="chamber-sign">
         <h1 class="sign-title">
           <span class="sign-label ruled-label">{{ signLabel }}</span>
@@ -560,7 +558,8 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
-/* Side rail: logo, chamber sign and controls on a light panel, casting a soft shadow on the room */
+/* Side rail: chamber sign and controls on a light panel, casting a soft shadow on the room. It
+   never shows a scrollbar; a window too short for it still scrolls it with the wheel */
 .chamber-rail {
   position: relative;
   z-index: 1;
@@ -572,18 +571,19 @@ onBeforeUnmount(() => {
   background: var(--color-panel);
   box-shadow: 0.25rem 0 1.5rem rgba(var(--color-ink-rgb), 0.12);
   overflow-y: auto;
+  scrollbar-width: none;
 }
 
 /* Label and timer share the top row, the number runs below; the heading's own box is dropped so
-   its two spans can sit in the grid. Close under the logo, so the rail fits short windows; extra
-   room under the number sets the sign apart from the controls */
+   its two spans can sit in the grid. A little extra room under the number sets the sign apart
+   from the controls, kept small so the rail fits short windows */
 .chamber-sign {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
   column-gap: 1rem;
   row-gap: 1.25rem;
-  margin-bottom: 2.5rem;
+  margin-bottom: 1rem;
 }
 
 .sign-title {

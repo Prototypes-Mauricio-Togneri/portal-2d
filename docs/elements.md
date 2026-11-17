@@ -85,7 +85,7 @@ Events are reported in the order they happen. The rules keep no counters: the ga
 
 #### Move or turn
 
-On an arrow tile, the three directions other than the arrow's do nothing at all. Every other move or turn first faces the subject that way. A turn does only that, unless the subject already faced that way: then it moves like a move. No key turns in place: the game takes a turn only to face the subject to the mouse pointer, when a mouse button is bound. To move, it looks at the next tile in that direction:
+On an arrow tile, the three directions other than the arrow's do nothing at all. Every other move or turn first faces the subject that way. A turn does only that, unless the subject already faced that way: then it moves like a move. The game takes a turn for a move key pressed while the turn key (Shift by default) is held. To move, it looks at the next tile in that direction:
 
 - **Outside the chamber:** a [wall that takes no portals](#outside-the-chamber).
 - **A wall, blocked or not:** if both portals are open and this wall holds one of them on the side facing the subject, the subject [crosses](#crossing-a-portal) that portal. Otherwise nothing more happens.

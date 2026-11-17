@@ -5,7 +5,7 @@
  * row puts the layout in use.
  */
 export interface LayoutRowProps {
-  label: string // The layout's name, such as "Arrow keys"
+  label: string // The layout's name, such as "Default"
   chosen: boolean // Whether the layout is in use
 }
 

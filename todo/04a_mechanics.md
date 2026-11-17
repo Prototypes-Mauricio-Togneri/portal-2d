@@ -27,7 +27,7 @@ Stages 00, 01 and 03 are done: their parts below are what they delivered, though
 - Chamber format 2 with a version number, optional element lists and link groups (one button or switch driving a group). The upgrader from format 1 was removed (README decision 13).
 - Replays and recorded solutions, a local replay check, and sounds sent as events instead of played by the rules.
 - "Moves" is settled: the game counts one move for each step that puts the subject on another tile (README decision 8). A slide moves the subject several tiles on one key, in one step, so it counts as one move.
-- Input owning the game keys, remappable, in three layouts: Arrow keys, the default (the arrows, A and D for the portals, and Space), WASD and mouse (the mouse buttons shoot) and Custom. No key turns in place: the subject turns only to face the mouse pointer, when a mouse button is bound. This stage adds no keys.
+- Input owning the game keys, remappable, in two layouts: Default (the arrows, A and D for the portals, Space, and Shift, held to turn in place) and Custom. The mouse plays no part in the game. This stage adds no keys.
 
 **Stage 01 as built, 2026-11-07** (kept from its notes when its file was removed)
 
@@ -103,7 +103,7 @@ Decisions 1–19 were made while this stage and stage 04b were one stage (README
 | 1 | 2026-11-06 | Mechanics lean original: names, look and combinations are this game's own, not copies of another game's elements. Names here are working names, settled when this stage is revisited |
 | 2 | 2026-11-06 | Today's rules are deleted after stage 01 (README decision 3), so new mechanics only need to work in v2 |
 | 3 | 2026-11-06 | The rules stay discrete: everything happens inside one step, nothing depends on time |
-| 4 | 2026-11-06 | No new keys. Every mechanic works with the game keys there are: the moves, both portals and interact (by default the arrows, A, D and Space; Ctrl, which turned in place, has since gone) |
+| 4 | 2026-11-06 | No new keys. Every mechanic works with the game keys there are: the moves, both portals, interact and turning in place (by default the arrows, A, D, Space and Shift; the mouse, which aimed and shot, has since gone) |
 | 5 | 2026-11-06 | A mechanic the solver cannot judge within budget does not ship (stage 05 publishes only solver-checked chambers). Superseded by README decision 10: no solver judges chambers; a mechanic ships on its chambers' recorded solutions and its rule fixtures |
 | 6 | 2026-11-08 | A mechanic's chambers go into the campaign in this same stage: its teach chamber and the rest of its run, as the campaign plan sets (replaces "a teach and a proof chamber per mechanic; full wings are stage 04's job"). Since README decision 15, this stage builds each mechanic's teach and proof chamber (R7), and stage 04b the rest of its run |
 | 7 | 2026-11-06 | Chamber links (`/chamber/N`, by position) stay as they are until this stage picks the numbering scheme (README decision 4); stage 03 only made the count start at 0 for the tutorial. Settled by README decision 13: links stay by position, with no redirects |
@@ -179,7 +179,7 @@ Draft spec:
 - Entering a normal tile ends the slide on it. Entering the open exit ends the slide and completes the chamber.
 - Buttons, switches and beams react only to the tile where the subject stops: passing over a button does not press it, and sliding through a beam does not cut it (decision 20).
 - Loose boxes don't slide. A carried box travels with the subject.
-- Turning on a slide floor (to face the mouse pointer) doesn't move the subject. Shooting from a slide floor works as usual.
+- Turning in place on a slide floor (with the turn key) doesn't move the subject. Shooting from a slide floor works as usual.
 - If a slide would enter the same tile in the same direction twice (a loop through portals), the whole move is refused: the state stays as before the key and the existing `refused` event plays the error sound.
 - A slide counts as one move (README decision 8).
 - Chamber validation: a slide floor can't share a tile with a wall, ditch, door, exit, arrow or switch.
