@@ -2,7 +2,7 @@ import {findDestroyedBoxes} from '@/game/destroyed_boxes'
 import {DELTAS, type Direction} from '@/game/direction'
 import {GameEvent} from '@/game/game_event'
 import {pieceNumber} from '@/game/piece_number'
-import {CARRIED_BOX_AHEAD, PORTAL_SPRITES} from '@/game/renderer'
+import {CARRIED_BOX_AHEAD, CARRIED_BOX_SIZE, PORTAL_SPRITES} from '@/game/renderer'
 import {PORTAL_COLORS} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
 import {NO_BOX} from '@/game/rules/state_layout'
@@ -143,7 +143,7 @@ export class FizzleParticles {
         sprite: 'box',
         x: after.subjectX + 0.5 + (ahead.dx * CARRIED_BOX_AHEAD),
         y: after.subjectY + 0.5 + (ahead.dy * CARRIED_BOX_AHEAD),
-        size: 0.5,
+        size: CARRIED_BOX_SIZE,
         way: after.facing,
         seed: this.burstCount++,
       })

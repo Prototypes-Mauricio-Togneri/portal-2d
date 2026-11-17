@@ -66,7 +66,7 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 | 11  | Button           | A round red button on a white plate; its dome lights up while pressed                               |
 | 12  | Switch           | The button's twin in yellow; doesn't show whether it was used                                       |
 | 13  | Arrow            | A grey chevron pointing its way                                                                     |
-| 14  | Subject          | A painted test subject in an orange jumpsuit, portal gun pointing the way it faces; a carried box shows half-size in front of it |
+| 14  | Subject          | A painted test subject in an orange jumpsuit, portal gun pointing the way it faces; while carrying a box, it holds the box out in front instead |
 | 15  | Portal           | A glowing blue or orange oval on the wall's edge facing the floor                                   |
 
 - A step glides the subject one tile; a crossing slides it into one portal and out of the other. Turns happen at once.

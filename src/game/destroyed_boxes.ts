@@ -1,7 +1,7 @@
 import type {PositionData} from '@/game/chamber_data'
 import {DELTAS, Direction} from '@/game/direction'
 import {GameEvent} from '@/game/game_event'
-import {CARRIED_BOX_AHEAD} from '@/game/renderer'
+import {CARRIED_BOX_AHEAD, CARRIED_BOX_SIZE} from '@/game/renderer'
 import {NO_ELEMENT} from '@/game/rules/compiled_chamber'
 import {BOX_DESTROYING_KINDS} from '@/game/rules/elements/box'
 import type {RulesState} from '@/game/rules/rules_state'
@@ -61,7 +61,7 @@ export function findDestroyedBoxes(before: RulesState, after: RulesState, events
     destroyed.push({
       x: x + 0.5 + (DELTAS[way].dx * ahead),
       y: y + 0.5 + (DELTAS[way].dy * ahead),
-      size: carried ? 0.5 : 1,
+      size: carried ? CARRIED_BOX_SIZE : 1,
       way: way,
       tile: {
         x: x,

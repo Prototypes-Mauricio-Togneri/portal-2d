@@ -122,7 +122,7 @@ function scale(name: SpriteName, tileSize: number): ScaledSprite | null {
 /**
  * The blur of the shared drop shadow for something of a size: the canvas's
  * shadowBlur, with no offset, since the light is straight overhead.
- * @param size - Side of what casts it, in canvas pixels: a tile, or half of one
+ * @param size - Side of what casts it, in canvas pixels: a tile
  * @returns The blur, in canvas pixels
  */
 export function shadowBlur(size: number): number {

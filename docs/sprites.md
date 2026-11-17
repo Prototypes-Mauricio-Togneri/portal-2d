@@ -2,7 +2,7 @@
 
 The art the chamber is drawn from: one image file per sprite, which the game composes tile by tile, choosing each by its element's state and its neighbours. This is the spec to draw them to.
 
-The game draws the chamber and the home menu's map from these files. A sprite whose file is missing, can't be decoded or has the wrong size isn't drawn at all, so `npm run assets:check` (part of `npm run verify`, which every deploy runs) fails when a sprite has no file, more than one, or one of a size its shape doesn't allow. In `npm run dev`, a file in the folder that isn't a sprite's, or of the wrong size, is logged as an error in the browser's console.
+The game draws the chamber and the home menu's map from these files. A sprite whose file is missing, can't be decoded or has the wrong size isn't drawn at all, so `npm run assets:check` (part of `npm run verify`, which every deploy runs unless forced with `-f`) fails when a sprite has no file, more than one, or one of a size its shape doesn't allow. In `npm run dev`, a file in the folder that isn't a sprite's, or of the wrong size, is logged as an error in the browser's console.
 
 ## Files
 
@@ -31,7 +31,7 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 | 1 | Blue | 40, 140, 220 | The blue portal, and a missed blue shot's ripple, drawn by the game in code (see [miss](#miss)) |
 | 2 | Orange | 255, 160, 30 | The orange portal, and a missed orange shot's ripple |
 | 3 | Red | 220, 60, 50 | The floor button (caution) |
-| 4 | Green | 40, 200, 130 | A completed chamber's test-subject figure in the home menu; the subject's own sprite is painted in its own colours (see [the subject](#the-subject)) |
+| 4 | Green | 40, 200, 130 | A completed chamber's test-subject figure in the home menu; the subject's own sprites are painted in their own colours (see [the subject](#the-subject)) |
 | 5 | Crimson | 235, 30, 55 | Lasers, and the lit slot of their end plates |
 | 6 | Teal | 96, 222, 186 | The light barrier's band, and the lit slots of its connectors |
 | 7 | Cyan | 72, 176, 185 | An unlit antline's dots, drawn by the game in code, each with a border 30 % darker (50, 123, 130) (see [antlines](#antlines)) |
@@ -43,14 +43,13 @@ A sprite with a direction is drawn once, one way, and the game turns it in quart
 
 | # | Sprites | Drawn | Turned |
 |---|---------|-------|--------|
-| 1 | `subject` | Facing up, towards the top of the screen | To the way the subject faces |
+| 1 | `subject_holding_gun`, `subject_holding_box` | Facing up, towards the top of the screen | To the way the subject faces |
 | 2 | `arrow` | Pointing up: the one way the subject may enter its tile | To the arrow's way |
 | 3 | `portal_blue`, `portal_orange` and their glows | On the top edge of its wall tile, opening up onto the tile above: a flat oval lying on the wall's slope, from just inside the tile's edge to the slope's lit lip, short enough to stay clear of the diagonals where two slopes meet at a wall's end; the glow centred on it | To the side of the wall it opens on |
 | 4 | `laser_on`, `laser_glow` | A beam running left to right through the tile's middle, touching both side edges, so neighbouring laser tiles make one beam | A quarter turn for a vertical laser; two lasers crossing on a tile are both drawn |
 | 5 | `light_barrier_on` | A band running left to right through the tile's middle, touching both side edges, so neighbouring light barriers make one band | A quarter turn for a vertical light barrier |
 | 6 | `laser_end_on`, `laser_end_off`, `light_barrier_end_on`, `light_barrier_end_off` | At the left end of a beam or band running left to right: the plate on the tile's left edge, centred on it | To each end of each run of lasers, or of light barriers, on the run's end tile: as drawn at a left end, a half turn at a right end, a quarter turn at a top or bottom end |
 | 7 | `door_closed`, `exit_closed`, `fizzler_on` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when more of what lines the gap lies above and below it than left and right: walls (blocked or not), the chamber's edge, doors, the exit, fizzlers, light barriers and ditches |
-| 8 | `box`, while carried | As it lies on the floor | With the subject, to the way it faces |
 
 ## Joins
 
@@ -97,7 +96,7 @@ Every sprite is 256 px, or 384 px when it overhangs, except the three strips (12
 | 11 | `button_up` | A floor button, released |
 | 12 | `button_pressed` | A floor button, held down by the subject or a box. A box on a button is drawn as on the floor, over it |
 | 13 | `switch` | A switch, used with the interact key. It has no on or off |
-| 14 | `box` | A box. Carried, it is drawn at half size in front of the subject and turned with it, so there is no carrying pose to draw |
+| 14 | `box` | A box. Carried, it isn't drawn: the subject's `subject_holding_box` shows it in its hands |
 | 15 | `fizzler_on` | A fizzler that is on: the subject walks through it and loses its portals and any box it carries; it stops shots. Drawn over the subject and every other element, so keep it see-through. A fizzler that is off isn't drawn (see [fizzle](#fizzle)) |
 | 16 | `laser_on` | A laser beam that is on: stops walking, lets shots through. A beam that is off isn't drawn (its end plates are); switched, it fades out or in over about 0.25 s, its glow with it |
 | 17 | `laser_glow` | The beam's glow (see [glow](#glow)) |
@@ -108,7 +107,8 @@ Every sprite is 256 px, or 384 px when it overhangs, except the three strips (12
 | 22 | `portal_orange` | The orange portal |
 | 23 | `portal_blue_glow` | The blue portal's glow |
 | 24 | `portal_orange_glow` | The orange portal's glow |
-| 25 | `subject` | The test subject seen from above, facing up: an orange jumpsuit, holding the portal gun pointing the way it faces, which makes the facing unmistakable. Painted (see [the subject](#the-subject)) |
+| 25 | `subject_holding_gun` | The test subject seen from above, facing up: an orange jumpsuit, holding the portal gun pointing the way it faces, which makes the facing unmistakable. Drawn while its hands are free. Painted (see [the subject](#the-subject)) |
+| 26 | `subject_holding_box` | The same subject holding a box out in front of it in both hands, with no portal gun. Drawn while it carries a box. Painted (see [the subject](#the-subject)) |
 
 ## Order
 
@@ -125,7 +125,7 @@ The game draws from the bottom up, each later row over the earlier ones:
 | 7 | Portals | `portal_*` |
 | 8 | Fixtures | `button_*`, `switch` |
 | 9 | Items | `box` |
-| 10 | Subject | `subject`, and a carried `box` at half size |
+| 10 | Subject | `subject_holding_gun`, or `subject_holding_box` while it carries a box |
 | 11 | Fields | `fizzler_on`, whole or in pieces (see [fizzle](#fizzle)) |
 | 12 | Glow | `laser_glow`, `portal_*_glow` |
 | 13 | Fizzle | `portal_*`, `box`, in pieces (see [fizzle](#fizzle)) |
@@ -137,7 +137,7 @@ The three glows are drawn over everything but a fizzle's pieces and a missed sho
 
 ## Fizzle
 
-When the subject fizzles (it walks or crosses into a fizzler that is on, or one turns on under it), each portal it loses and a box it carries break up, and so does a portal on a wall side facing a fizzler that switches on, and a box lying where a door closes or a laser, a light barrier or a fizzler switches on (whole, where it lay; one the subject puts down there breaks up from its hands, at half size): the game cuts the sprite, as last drawn, into small square pieces, 9 across a tile, which round off into dots as they drift a short way out from its middle (0.15 of the sprite's side on average, 0.2 at most), shrink and fade in about 0.6 s, over everything but a missed shot's ripple. When a fizzler switches off, its field crumbles the same way in about 0.4 s, but in place, in its own layer: `fizzler_on` is cut into square pieces, 7 across, each rounding off into a circle as it starts to go, which shrink and fade where they are, one after another, leaving nothing; when it switches back on, they grow back in reverse, and one switched back part way turns back from where it is. There is nothing extra to draw, but the pieces show the sprite's own pixels, so a portal or box drawn as a thin outline breaks into very few. With reduced motion, and in the home menu's map and the gallery, nothing breaks up or forms.
+When the subject fizzles (it walks or crosses into a fizzler that is on, or one turns on under it), each portal it loses and a box it carries break up (the box as `box`, cut at the size and place of the box `subject_holding_box` shows in its hands), and so does a portal on a wall side facing a fizzler that switches on, and a box lying where a door closes or a laser, a light barrier or a fizzler switches on (whole, where it lay; one the subject puts down there breaks up from its hands, the same way): the game cuts the sprite, as last drawn, into small square pieces, 9 across a tile, which round off into dots as they drift a short way out from its middle (0.15 of the sprite's side on average, 0.2 at most), shrink and fade in about 0.6 s, over everything but a missed shot's ripple. When a fizzler switches off, its field crumbles the same way in about 0.4 s, but in place, in its own layer: `fizzler_on` is cut into square pieces, 7 across, each rounding off into a circle as it starts to go, which shrink and fade where they are, one after another, leaving nothing; when it switches back on, they grow back in reverse, and one switched back part way turns back from where it is. There is nothing extra to draw, but the pieces show the sprite's own pixels, so a portal or box drawn as a thin outline breaks into very few. With reduced motion, and in the home menu's map and the gallery, nothing breaks up or forms.
 
 ## Fall
 
@@ -163,14 +163,15 @@ There is nothing extra to draw. With reduced motion, and in the home menu's map 
 
 ## The subject
 
-The subject is the one sprite not drawn in code. It is a painted image that breaks this spec on purpose: its light is painted, not straight overhead; the subject wears orange and its portal gun glows blue, the portals' colours; and its source is the painted PNG `art/sprites/subject.png` (1526 × 1526 px), with no SVG.
+The subject's two sprites are the only ones not drawn in code. They are painted images that break this spec on purpose: their light is painted, not straight overhead; the subject wears orange and its portal gun glows blue, the portals' colours; and their sources are the painted PNGs `art/sprites/subject_holding_gun.png` and `art/sprites/subject_holding_box.png` (1526 × 1526 px each), with no SVG.
 
-It is one still image: the subject glides from tile to tile and through portals, with no walking frames.
+Each is one still image: the subject glides from tile to tile and through portals, with no walking frames. It holds its portal gun while its hands are free and a box, with no gun, while it carries one, the game swapping the sprite as it picks the box up or puts it down.
 
-It is exported centred as painted, padded to a 1648 px square so the figure stands 238 px tall in the 256 px tile, cleared of faint stray pixels (alpha under 3 %) and shrunk to the tile. The portal gun makes the painting top-heavy, so the subject turns about a point on its head, a little above the head's middle. To export it again, from the project's root:
+Both are exported the same way, so the figure keeps its size and its head stays in place when they swap: centred as painted, padded to a 1648 px square so the figure stands 238 px tall in the 256 px tile, cleared of faint stray pixels (alpha under 3 %) and shrunk to the tile. The portal gun, or the box held out, makes the painting top-heavy, so the subject turns about a point on its head, a little above the head's middle. The painted box sits 0.26 of a tile ahead of the tile's middle and is drawn as `box` at 0.7 of a tile (`CARRIED_BOX_AHEAD` and `CARRIED_BOX_SIZE` in `src/game/renderer.ts`) when it breaks up or falls from the subject's hands, so repaint it there or change those two. To export them again, from the project's root:
 
 ```sh
-convert art/sprites/subject.png -channel A -level 3%,98% +channel -background none -gravity center -extent 1648x1648 -resize 256x256 -quality 90 -define webp:alpha-quality=100 src/assets/images/chamber/subject.webp
+convert art/sprites/subject_holding_gun.png -channel A -level 3%,98% +channel -background none -gravity center -extent 1648x1648 -resize 256x256 -quality 90 -define webp:alpha-quality=100 src/assets/images/chamber/subject_holding_gun.webp
+convert art/sprites/subject_holding_box.png -channel A -level 3%,98% +channel -background none -gravity center -extent 1648x1648 -resize 256x256 -quality 90 -define webp:alpha-quality=100 src/assets/images/chamber/subject_holding_box.webp
 ```
 
 ## Not in the set yet

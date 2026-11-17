@@ -39,8 +39,11 @@ const PORTAL_GLOWS: Readonly<Record<PortalColor, SpriteName>> = {
   [PortalColor.ORANGE]: 'portal_orange_glow',
 }
 
-/** How far ahead of the subject's middle a carried box is drawn, the way the subject faces, in tiles */
-export const CARRIED_BOX_AHEAD = 0.25
+/** How far ahead of the subject's middle the box in the subject's box-holding sprite sits, the way the subject faces, in tiles */
+export const CARRIED_BOX_AHEAD = 0.26
+
+/** The side of the box sprite drawn where the subject's box-holding sprite shows its box, as a share of a tile, so the two boxes match */
+export const CARRIED_BOX_SIZE = 0.7
 
 /** The bottom layers, which never change while a chamber is played: drawn as its backdrop with the antlines, never each frame */
 const BACKDROP_LAYERS: ReadonlySet<DrawLayer> = new Set<DrawLayer>([
@@ -259,21 +262,18 @@ export class Renderer {
   }
 
   /**
-   * Draws the subject turned to the way it faces, and a box it carries at
-   * half size in front of it, at its pose: where it stands, or part way
+   * Draws the subject turned to the way it faces, holding a box it carries
+   * or else its portal gun, at its pose: where it stands, or part way
    * through the step being drawn.
    * @param state - The state drawn
    * @param transition - The step being drawn, ending on the state drawn, or null to draw the state as it is
    */
   private drawSubject(state: RulesState, transition: StepTransition | null): void {
     const pose = subjectPose(state, transition, this.painter.blockSize)
+    const sprite = (state.carriedBox === NO_BOX) ? 'subject_holding_gun' : 'subject_holding_box'
 
     this.painter.drawClippedToTile(pose.clip, () => {
-      this.painter.drawSprite('subject', pose.x, pose.y, pose.facing)
-
-      if (state.carriedBox !== NO_BOX) {
-        this.painter.drawHalfSprite('box', pose.x, pose.y, pose.facing, CARRIED_BOX_AHEAD)
-      }
+      this.painter.drawSprite(sprite, pose.x, pose.y, pose.facing)
     })
   }
 

@@ -364,24 +364,6 @@ export class TilePainter {
   }
 
   /**
-   * Draws a sprite at half a tile's size, in the middle of a tile or moved
-   * part of a tile ahead the way it faces, and a raised one over its shadow.
-   * @param name - The sprite
-   * @param x - Column, part way between two while something glides
-   * @param y - Row, part way between two while something glides
-   * @param way - The way it is turned to face, from facing up as drawn
-   * @param ahead - How far it is moved the way it faces, in tiles
-   */
-  drawHalfSprite(name: SpriteName, x: number, y: number, way: Direction, ahead: number): void {
-    const size = Math.round(this.tileSize / 2)
-    const delta = DELTAS[way]
-    const centerX = (x + 0.5 + (delta.dx * ahead)) * this.tileSize
-    const centerY = this.canvas.height - ((y + 0.5 + (delta.dy * ahead)) * this.tileSize)
-
-    this.drawSized(name, Math.round(centerX - (size / 2)), Math.round(centerY - (size / 2)), size, way)
-  }
-
-  /**
    * Draws a sprite cut down its middle, as drawn facing up, each half slid
    * out towards its own side and cut off at the tile's edge, as if sliding
    * into what lies beside the tile: a door's two leaves opening. A raised
@@ -460,7 +442,7 @@ export class TilePainter {
    * @param name - The sprite
    * @param x - Column of the sprite's middle, in tiles: a tile's middle is its column plus a half
    * @param y - Row of the sprite's middle, in tiles: a tile's middle is its row plus a half
-   * @param size - The sprite's side before it shrinks, as a share of a tile: 1 for a whole tile, 0.5 for half
+   * @param size - The sprite's side before it shrinks, as a share of a tile: 1 for a whole tile, less for a carried box
    * @param way - The way it is turned to face, from facing up as drawn
    * @param scale - How far it has shrunk, as a share of that side
    * @param opacity - How opaque it is drawn, from 0 (not at all) to 1
@@ -494,13 +476,13 @@ export class TilePainter {
   /**
    * Draws a sprite broken into square pieces, its overhang too, each placed
    * on its own, and rounded off as far as its placement says: a sprite
-   * coming apart. Each square piece left where it was redraws the sprite
-   * exactly as drawSprite() or drawHalfSprite() draw it, without its
+   * coming apart. At a whole tile, each square piece left where it was
+   * redraws the sprite exactly as drawSprite() draws it, without its
    * shadow, so nothing is drawn while only shadows are painted.
    * @param name - The sprite
    * @param x - Column of the sprite's middle, in tiles: a tile's middle is its column plus a half
    * @param y - Row of the sprite's middle, in tiles: a tile's middle is its row plus a half
-   * @param size - The sprite's side, as a share of a tile: 1 for a whole tile, 0.5 for half
+   * @param size - The sprite's side, as a share of a tile: 1 for a whole tile, less for a carried box
    * @param way - The way it is turned to face, from facing up as drawn
    * @param piecesAcross - Pieces across its tile; its overhang adds more
    * @param place - Where each piece is drawn
@@ -521,7 +503,7 @@ export class TilePainter {
     const columns = Math.max(1, Math.round(piecesAcross * image.width / side))
     const rows = Math.max(1, Math.round(piecesAcross * image.height / side))
     const turn = TURNS[way]
-    // The sprite's square, placed as drawSprite() and drawHalfSprite() place it
+    // The sprite's square, placed as drawSprite() places it
     const left = Math.round((x * this.tileSize) - (side / 2))
     const top = Math.round(this.canvas.height - (y * this.tileSize) - (side / 2))
 
