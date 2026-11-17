@@ -95,11 +95,12 @@ function beam(x: number, y: number, direction: 'H' | 'V', on: boolean): BeamData
  * a blocked wall that always refuses portals, the other door, the fizzler and
  * a blocked wall that refuses them only while on in the inner wall, and two
  * light barriers in the bottom right corner;
- * arrows point all four ways, two lasers cross, one box lies on a button and
- * another on the floor, and the subject stands on a third. The switch links
- * the fizzler, never used, so an antline runs between them, unlit while the
- * fizzler is on and lit while it is off. Column 4 and row 3 stay clear, so
- * the subject's shots reach the walls.
+ * arrows point all four ways, two lasers cross, one box lies on a button,
+ * another on the floor, and a third beside the subject, on its left. The
+ * switch links the fizzler, never used, so an antline runs between them,
+ * unlit while the fizzler is on and lit while it is off. Column 4 and row 3
+ * stay clear but for that third box, which lets shots through, so the
+ * subject's shots reach the walls.
  * @param on - Whether every element that can be blocked is: the inner blocked wall refusing portals, the light barriers on, ditches open, doors and the exit closed, the fizzler and lasers on
  * @returns The chamber
  */
@@ -237,7 +238,7 @@ function specimenData(on: boolean): ChamberData {
       },
     ],
     boxes: [
-      at(4, 3),
+      at(3, 3),
       at(5, 1),
       at(1, 5),
     ],
@@ -246,8 +247,9 @@ function specimenData(on: boolean): ChamberData {
 
 /**
  * The specimen with everything on: the subject opens blue on the wall below
- * it and orange on the wall to its left, then picks up the box it stands on
- * (shooting takes free hands), and is left facing left.
+ * it and orange on the wall to its left, its shot flying over the box beside
+ * it, then picks that box up (shooting takes free hands), and is left facing
+ * left.
  */
 export const SPECIMEN_ON: SpecimenRun = {
   data: specimenData(true),
@@ -263,8 +265,8 @@ export const SPECIMEN_ON: SpecimenRun = {
 /**
  * The specimen with everything off: the subject opens blue on the wall above
  * it and orange on the blocked wall in the inner wall to its right, which
- * takes portals while off, then picks up the box it stands on (shooting
- * takes free hands), and is left facing right.
+ * takes portals while off, then turns to the box beside it and picks it up
+ * (shooting takes free hands), and is left facing left.
  */
 export const SPECIMEN_OFF: SpecimenRun = {
   data: specimenData(false),
@@ -272,6 +274,7 @@ export const SPECIMEN_OFF: SpecimenRun = {
     Action.BLUE,
     Action.TURN_RIGHT,
     Action.ORANGE,
+    Action.TURN_LEFT,
     Action.INTERACT,
   ],
 }
