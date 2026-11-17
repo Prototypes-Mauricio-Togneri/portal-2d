@@ -1,6 +1,6 @@
 import type {FrameInput, FrameKey} from '@/game/frame_input'
 import {GameKey} from '@/game/game_key'
-import {type BoundKey, getBoundKey, type KeyBindings} from '@/game/key_bindings'
+import {ARROW_KEY_BINDINGS, type BoundKey, DEFAULT_EXTRA_TURN_KEY, getBoundKey, type KeyBindings} from '@/game/key_bindings'
 
 /**
  * A press waiting for the level, with whether the turn key was held as it
@@ -50,7 +50,7 @@ export class Input {
 
   enabled = true // When false, keydown is ignored entirely; keyup is still tracked
   private readonly gameKeys: ReadonlyMap<BoundKey, GameKey> // The game key each bound key stands for
-  private readonly holding = new Set<GameKey>() // Game keys held down
+  private readonly holding = new Set<BoundKey>() // Bound keys held down, so either of two turn keys can be let go while the other stays held
   private readonly pressed = new Set<GameKey>() // Game keys pressed since the last clear(), auto-repeat included
   private readonly presses: KeyPress[] = [] // Presses not yet taken, oldest first
 
@@ -59,10 +59,18 @@ export class Input {
    * @param bindings - The key bound to each game key, which is only read
    */
   constructor(bindings: KeyBindings) {
-    this.gameKeys = new Map(Object.values(GameKey).map((gameKey) => [
+    const gameKeys = new Map<BoundKey, GameKey>(Object.values(GameKey).map((gameKey) => [
       bindings[gameKey],
       gameKey,
     ]))
+    const usesDefaultKeys = Object.values(GameKey).every((gameKey) => bindings[gameKey] === ARROW_KEY_BINDINGS[gameKey])
+
+    // On trial, the Default keys also turn with Ctrl, which the game shows nowhere
+    if (usesDefaultKeys) {
+      gameKeys.set(DEFAULT_EXTRA_TURN_KEY, GameKey.TURN)
+    }
+
+    this.gameKeys = gameKeys
 
     window.addEventListener('keyup', this.onKeyup, false)
     window.addEventListener('keydown', this.onKeydown, false)
@@ -134,13 +142,14 @@ export class Input {
       return
     }
 
-    const gameKey = this.getGameKey(getBoundKey(event.code))
+    const key = getBoundKey(event.code)
+    const gameKey = this.getGameKey(key)
 
-    if (gameKey === null) {
+    if ((key === null) || (gameKey === null)) {
       return
     }
 
-    this.holding.add(gameKey)
+    this.holding.add(key)
 
     // With Alt or Meta held the key is a browser shortcut (Alt+Left goes
     // back), so it is left to the browser and doesn't play
@@ -153,7 +162,7 @@ export class Input {
     if ((gameKey !== GameKey.TURN) && !(event.repeat && this.presses.some((press) => press.key === gameKey))) {
       this.presses.push({
         key: gameKey,
-        turnHeld: this.holding.has(GameKey.TURN),
+        turnHeld: this.isTurnHeld,
       })
     }
 
@@ -165,13 +174,13 @@ export class Input {
    * @param event - The keyup event
    */
   readonly onKeyup = (event: KeyboardEvent): void => {
-    const gameKey = this.getGameKey(getBoundKey(event.code))
+    const key = getBoundKey(event.code)
 
-    if (gameKey === null) {
+    if ((key === null) || (this.getGameKey(key) === null)) {
       return
     }
 
-    this.holding.delete(gameKey)
+    this.holding.delete(key)
 
     if (this.enabled) {
       this.preventDefault(event)
@@ -187,6 +196,14 @@ export class Input {
   }
 
   /**
+   * Whether a key bound to the turn game key is held down.
+   * @returns True when the turn key is held
+   */
+  private get isTurnHeld(): boolean {
+    return [...this.holding].some((key) => this.gameKeys.get(key) === GameKey.TURN)
+  }
+
+  /**
    * The game key a key is bound to.
    * @param key - The key, as the game binds it, or null for one that can't be bound
    * @returns The game key, or null when it is not bound
@@ -196,12 +213,14 @@ export class Input {
   }
 
   /**
-   * Suppresses a bound key's browser default, such as scrolling, unless Alt
-   * or Meta is held, which leaves the combination to the browser.
+   * Suppresses a bound key's browser default, such as scrolling, or the
+   * browser shortcut it makes with Ctrl held (Ctrl+A selects the page, Ctrl+D
+   * bookmarks it), unless Alt or Meta is held, which leaves the combination
+   * to the browser.
    * @param event - The keyboard event of a bound key
    */
   private preventDefault(event: KeyboardEvent): void {
-    const hasDefault = Input.KEYS_WITH_DEFAULTS.has(event.code) || Input.QUICK_FIND_CHARACTERS.has(event.key)
+    const hasDefault = event.ctrlKey || Input.KEYS_WITH_DEFAULTS.has(event.code) || Input.QUICK_FIND_CHARACTERS.has(event.key)
 
     if (hasDefault && !event.altKey && !event.metaKey) {
       event.preventDefault()

@@ -24,6 +24,13 @@ export const ARROW_KEY_BINDINGS: KeyBindings = {
   [GameKey.TURN]: 'Shift',
 }
 
+/**
+ * A second turn key the Default layout takes on trial, either Ctrl, shown
+ * nowhere in the game (not in the legend, Settings or the custom controls
+ * dialog)
+ */
+export const DEFAULT_EXTRA_TURN_KEY: BoundKey = 'Control'
+
 /** The shared name of each left and right modifier key */
 const FOLDED_KEYS: Readonly<Record<string, BoundKey>> = {
   ControlLeft: 'Control',
