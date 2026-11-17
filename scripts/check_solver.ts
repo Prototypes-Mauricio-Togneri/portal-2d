@@ -29,8 +29,9 @@ import {SOLVER_FIXTURES, type SolverFixture, type SolverRoute} from '@scripts/so
 // chamber too large for the key is refused. The walk graph: from every state
 // along each recorded solution and every state the reference search finds on
 // the solver fixtures, each walk it allows gives through the rules' step the
-// state the solver builds, no move it leaves out walks onto a plain tile, and
-// turning gives the state the solver builds for that facing; each shot from
+// state the solver builds, no move it leaves out (onto a resting box among
+// them) walks onto a plain tile, and turning gives the state the solver
+// builds for that facing; each shot from
 // each tile a walk reaches, each way and colour, gives through the rules'
 // step the state the solver builds from the shot it shares with its line;
 // each move the solver skips as changing nothing changes nothing through the
@@ -131,9 +132,10 @@ function walkStates(chamber: CompiledChamber, visit: (state: RulesState) => void
 
 /**
  * Checks the walk graph and the canonical facing against the rules' step
- * from each of a list of states: walking each walk edge with the move action
- * gives the state the solver builds by rewriting the key; no move the graph
- * leaves out lands on the plain tile next to it; and turning each way gives
+ * from each of a list of states: walking each walk edge with the move action,
+ * but onto a resting box (walkTarget), gives the state the solver builds by
+ * rewriting the key; no move the graph leaves out, onto a resting box
+ * included, lands on the plain tile next to it; and turning each way gives
  * the state the solver builds for that facing, or changes nothing where the
  * subject may not move that way.
  * @param codec - The chamber's state key
@@ -155,7 +157,7 @@ function checkWalks(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
     const high = words[1] ?? 0
     const from = codec.subjectTileOf(low)
     const edges = graph.edgesFor(state, codec.flagsOf(low, high))
-    const reachedCount = graph.walk(edges, from)
+    const reachedCount = graph.walk(state, edges, from)
     const walkedTo = new Map<number, RulesState>()
 
     walkedTo.set(from, state)
@@ -170,7 +172,8 @@ function checkWalks(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
 
       DIRECTIONS.forEach((direction, directionIndex) => {
         const moved = step(chamber, standing, MOVE_ACTIONS[directionIndex] ?? Action.UP).state
-        const target = edges[(tile * DIRECTIONS.length) + directionIndex] ?? NO_WALK
+        // Read with the box skip, so a move onto a resting box must leave the subject where it was
+        const target = graph.walkTarget(state, edges, tile, directionIndex)
 
         checked++
 
@@ -240,7 +243,7 @@ function checkShots(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
     const low = words[0] ?? 0
     const high = words[1] ?? 0
     const flags = codec.flagsOf(low, high)
-    const reachedCount = graph.walk(graph.edgesFor(state, flags), codec.subjectTileOf(low))
+    const reachedCount = graph.walk(state, graph.edgesFor(state, flags), codec.subjectTileOf(low))
 
     lines.begin(state, flags)
 
@@ -297,7 +300,7 @@ function checkShots(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
  * the subject stood in, but for where it faces, and an interact each way
  * the subject may face there that it doesn't take gives that state too, or
  * the state an interact it takes there gives (one taken once, whatever the
- * way, as the box underfoot).
+ * way, as a switch).
  * @param codec - The chamber's state key
  * @param graph - The chamber's walk graph
  * @param states - The states to walk from
@@ -317,7 +320,7 @@ function checkSkips(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
     const low = words[0] ?? 0
     const high = words[1] ?? 0
     const flags = codec.flagsOf(low, high)
-    const reachedCount = graph.walk(graph.edgesFor(state, flags), codec.subjectTileOf(low))
+    const reachedCount = graph.walk(state, graph.edgesFor(state, flags), codec.subjectTileOf(low))
 
     filter.begin(state, flags)
 
@@ -391,7 +394,8 @@ function checkSkips(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
 }
 
 /**
- * Checks the regions against walks from each of a list of states: a tile
+ * Checks the regions, found for each state's blocked flags and resting
+ * boxes, against walks in that state from each of a list of states: a tile
  * the walk from the subject's tile reaches has the same region exactly when
  * a walk from it reaches the subject's tile back, and no tile of that region
  * is smaller than the region's own number.
@@ -413,7 +417,7 @@ function checkRegions(codec: StateKeyCodec, graph: WalkGraph, states: readonly R
     const edges = graph.edgesFor(state, flags)
     const regions = graph.regionsFor(state, flags)
     const from = codec.subjectTileOf(low)
-    const reachedCount = graph.walk(edges, from)
+    const reachedCount = graph.walk(state, edges, from)
     const reached: number[] = []
 
     for (let position = 0; position < reachedCount; position++) {
@@ -421,7 +425,7 @@ function checkRegions(codec: StateKeyCodec, graph: WalkGraph, states: readonly R
     }
 
     for (const tile of reached) {
-      graph.walk(edges, tile)
+      graph.walk(state, edges, tile)
 
       const walksBack = graph.distanceTo(from) !== UNREACHED
       const sameRegion = regions[tile] === regions[from]

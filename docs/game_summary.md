@@ -18,7 +18,7 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 
 - Stands on one tile and always faces one of the four directions. The way it faces matters, because portals are shot that way.
 - Moving in a direction first turns it that way, then steps onto the next tile if it can enter it. Walking into something it can't enter only turns it.
-- Can carry one box at a time. It picks up the box under it, or else the box on the tile it faces, if it could step onto that tile (not through an arrow pointing another way or something that blocks walking, and not from a fizzler that is on). It puts a box down on the tile it faces, if it could step onto that tile and no box, exit, switch or fizzler that is on is there, or else on its own tile. The box goes everywhere with it, through portals too. While carrying it, it can't shoot portals: trying plays the error sound.
+- Can carry one box at a time. It picks up the box on the tile it faces, if it could step onto that tile but for the box (not through an arrow pointing another way or something that blocks walking, and not from a fizzler that is on). It puts a box down only on the tile it faces, if it could step onto that tile and no box, exit, switch or fizzler that is on is there; otherwise the error sound plays. The box goes everywhere with it, through portals too. While carrying it, it can't shoot portals: trying plays the error sound.
 
 ## Portals
 
@@ -27,7 +27,7 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 - A hit plays its portal's opening sound. A shot misses (a shot sound, and a short ripple where it stopped) when a closed door, the closed exit, or a light barrier or a fizzler that is on is in the way, or when the wall can't take a portal there (a blocked wall refuses them while blocked, and the side of a wall facing a door or the exit never takes one, open or closed, nor does the wall at the end of a run of lasers or light barriers, behind its end plate, on or off).
 - A wall tile can't take a portal on a side that already holds one, or on the two sides next to it; only the opposite side is still free. Shots never go through portals.
 - Crossing: with both portals open, walking into a wall on the side that holds a portal takes the subject through. It comes out on the tile in front of the other portal, facing away from it.
-- A crossing is refused (error sound) when the subject couldn't walk onto that tile, for example an open ditch or a laser that is on. It then stays where it was. No portal ever faces a door or the exit, so a crossing never lands in a doorway.
+- A crossing is refused (error sound) when the subject couldn't walk onto that tile, for example an open ditch, a laser that is on or a box. It then stays where it was. No portal ever faces a door or the exit, so a crossing never lands in a doorway.
 
 ## Tiles
 
@@ -42,7 +42,7 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 | 7   | Exit          | Reaching it completes the chamber; closed or open                                                                                               | Only when open                                       | Only when open                                                  | Yes                               |
 | 8   | Fizzler       | When on, closes both portals and sends a carried box back to its start                                                                          | Yes                                                  | Only when off                                                   | Yes                               |
 | 9   | Laser         | Horizontal or vertical; two can cross on one tile                                                                                               | Only when off                                        | Yes                                                             | Yes                               |
-| 10  | Box           | Can be carried; holds a button down; one per tile                                                                                               | Yes                                                  | Yes                                                             | Yes (sent back to its start)      |
+| 10  | Box           | Can be carried; holds a button down; one per tile                                                                                               | No (it is picked up from beside it)                  | Yes                                                             | Yes (sent back to its start)      |
 | 11  | Button        | Held down while the subject or a box is on it; its linked elements change while it's held                                                       | Yes                                                  | Yes                                                             | No                                |
 | 12  | Switch        | Interact to use it (not while carrying a box); it changes its linked elements, and using it again repeats that                                  | Yes                                                  | Yes                                                             | No                                |
 | 13  | Arrow         | One-way: the subject can enter only in the arrow's direction, and can only move or turn that way while on it                                    | Only in its direction                                | Yes                                                             | No                                |
@@ -72,7 +72,7 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 - A step glides the subject one tile; a crossing slides it into one portal and out of the other. Turns happen at once.
 - When switched, doors, the exit and blocked walls slide open or shut, a ditch's grate slides in or out, a fizzler crumbles away or forms, and a laser or light barrier fades. A fizzle breaks the lost portals and a carried box into pieces, and so does a fizzler switching on with a portal facing it (silently), and a door closing or a laser, light barrier or fizzler switching on with a box lying there (silently); a box on a ditch that opens falls into the pit (silently), a missed shot ripples, and lasers and portals glow with a slow pulse.
 - With reduced motion, nothing animates: everything changes at once and the glows hold steady.
-- Each event has a sound: a portal opening (one per colour), a missed shot, a box picked up or put down (the same sound), a fizzle, a crossing, a door or the exit opening or closing, a button pressed or released, a switch used. Any refused action plays an error sound: a crossing, shooting or using a switch while carrying a box, or putting a box down on another when the tile faced can't take it either.
+- Each event has a sound: a portal opening (one per colour), a missed shot, a box picked up or put down (the same sound), a fizzle, a crossing, a door or the exit opening or closing, a button pressed or released, a switch used. Any refused action plays an error sound: a crossing, shooting or using a switch while carrying a box, or putting a box down facing a tile that can't take it.
 
 ## Buttons, switches and links
 
@@ -93,9 +93,9 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 
 ## Other details
 
-- Something closing under the subject (a door, the exit, a light barrier, a ditch, a laser) doesn't hurt it: it can still turn, shoot, interact and walk off. A box it carries is kept, but putting it down there, facing a tile that can't take it, destroys it.
+- Something closing under the subject (a door, the exit, a light barrier, a ditch, a laser) doesn't hurt it: it can still turn, shoot, interact and walk off. A box it carries is kept.
 - A box lying where a door closes, a ditch opens, or a laser, a light barrier or a fizzler switches on is destroyed: it goes back to its start, breaking up, or falling into the ditch.
-- Boxes never block the subject or shots. A tile holds one box: a box can't be put down where another lies, and a box sent back to its start sends one lying there back to its own start.
+- A box keeps the subject off its tile, but lets shots through. A tile holds one box: a box can't be put down where another lies, and a box sent back to its start sends one lying there back to its own start. A box sent back to its start while the subject stands there lands under it: the subject can walk off but not back on, and picks the box up from beside it.
 - Once the subject reaches the open exit, the chamber is complete and nothing more changes.
 
 ## Chambers and progress

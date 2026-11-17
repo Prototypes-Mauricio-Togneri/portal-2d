@@ -45,10 +45,11 @@ export function encodeCanonical(codec: StateKeyCodec, graph: WalkGraph, state: R
 /**
  * Puts the subject of a packed key on its region's tile, the smallest of
  * the tiles it can walk between both ways, facing that tile's canonical
- * way, as the search for any route stores states.
+ * way, as the search for any route stores states. The regions are the
+ * key's state's, whose blocked flags and resting boxes decide them.
  * @param codec - The chamber's state key
  * @param graph - The chamber's walk graph
- * @param state - A state with the key's blocked flags, to find the regions from
+ * @param state - The key's state, or one with its blocked flags and resting boxes, to find the regions from
  * @param words - The key, low word first, rewritten in place
  */
 export function foldSubject(codec: StateKeyCodec, graph: WalkGraph, state: RulesState, words: Uint32Array): void {
@@ -62,7 +63,8 @@ export function foldSubject(codec: StateKeyCodec, graph: WalkGraph, state: Rules
 /**
  * Turns a route of macro actions back into actions, played through the
  * rules' step from the chamber's start: before each macro action, the
- * fewest moves to its tile; before a shot or an interact, a turn when the
+ * fewest moves to its tile, never onto a resting box (WalkGraph's walk in
+ * the state reached); before a shot or an interact, a turn when the
  * subject faces another way; then the action. After each macro action the
  * state must be the one the search stored, or the walk graph disagrees with
  * the rules.
@@ -101,7 +103,8 @@ export function expandRoute(codec: StateKeyCodec, graph: WalkGraph, route: reado
     const action = macroAction(macroStep.macro)
 
     codec.encode(state, words, 0)
-    graph.walk(graph.edgesFor(state, codec.flagsOf(words[0] ?? 0, words[1] ?? 0)), codec.subjectTileOf(words[0] ?? 0))
+    // Walked in the state played so far, so the path never leads onto a resting box
+    graph.walk(state, graph.edgesFor(state, codec.flagsOf(words[0] ?? 0, words[1] ?? 0)), codec.subjectTileOf(words[0] ?? 0))
 
     for (const moveDirection of graph.pathTo(tile)) {
       play(MOVE_ACTIONS[moveDirection] ?? Action.UP)

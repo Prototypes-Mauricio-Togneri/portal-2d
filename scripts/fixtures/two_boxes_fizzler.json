@@ -5,9 +5,9 @@
         "height": 3
     },
     "subject": {
-        "x": 1,
+        "x": 3,
         "y": 1,
-        "direction": "RIGHT"
+        "direction": "LEFT"
     },
     "exit": {
         "x": 6,

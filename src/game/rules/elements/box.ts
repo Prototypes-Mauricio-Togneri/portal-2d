@@ -50,7 +50,7 @@ export function destroyBoxesOnBlockedTiles(draft: StateDraft): void {
   })
 }
 
-/** A box the subject can carry, mainly to hold buttons down, listed at its start tile; it blocks nothing, a link sends it back there, and so does a door closing, a ditch opening or a laser, a light barrier or a fizzler switching on where it lies */
+/** A box the subject can carry, mainly to hold buttons down, listed at its start tile; resting, it keeps the subject off its tile (checked by the core step, since boxes move) but lets shots through; a link sends it back there, and so does a door closing, a ditch opening or a laser, a light barrier or a fizzler switching on where it lies */
 export const BOX_ELEMENT = defineElement<BoxData>()({
   kind: 'box',
   fileKey: 'boxes',
@@ -59,7 +59,7 @@ export const BOX_ELEMENT = defineElement<BoxData>()({
   layer: 'items',
   linkable: true,
   defaultBlocked: null,
-  blocksWalking: 'never',
+  blocksWalking: 'always',
   blocksShots: 'never',
   stopsShootingFrom: 'never',
   takesPortals: 'never',

@@ -240,7 +240,8 @@ class ChamberValidator {
   /**
    * Checks what shares each tile: a wall holds nothing else; a floor tile
    * holds at most one fixed element, or two crossing lasers; a box and the
-   * subject start on plain floor or a button, with at most one box.
+   * subject start on plain floor or a button, with at most one box, and the
+   * subject never on a box, since a box keeps it off its tile.
    */
   private checkOverlaps(): void {
     for (const entry of this.occupants.values()) {
@@ -281,6 +282,10 @@ class ChamberValidator {
 
       if ((subject !== undefined) && startsBadly) {
         this.problems.push(chamberError(subject.field, tile, 'the subject can only start on plain floor or a button'))
+      }
+
+      if ((subject !== undefined) && (boxes.length > 0)) {
+        this.problems.push(chamberError(subject.field, tile, 'the subject can\'t start on a box'))
       }
     }
   }

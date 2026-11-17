@@ -5,9 +5,9 @@
         "height": 3
     },
     "subject": {
-        "x": 1,
+        "x": 3,
         "y": 1,
-        "direction": "RIGHT"
+        "direction": "LEFT"
     },
     "exit": {
         "x": 0,
@@ -80,7 +80,7 @@
     ],
     "buttons": [
         {
-            "x": 2,
+            "x": 1,
             "y": 1,
             "links": [1, 2, 3, 4, 5]
         }

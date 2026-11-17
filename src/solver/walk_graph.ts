@@ -3,7 +3,7 @@ import {NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
 import {ELEMENT_REGISTRY, type ElementKind} from '@/game/rules/element_registry'
 import type {RulesState} from '@/game/rules/rules_state'
 import {DIRECTIONS} from '@/game/rules/state_layout'
-import {allowsWay, canEnter} from '@/game/rules/step'
+import {allowsWay, boxBlocksEntry, canEnter} from '@/game/rules/step'
 import {type ChamberIndex, NO_NUMBER} from '@/solver/chamber_index'
 
 /** A walk edge's target where the subject can't simply walk that way */
@@ -37,9 +37,10 @@ const REACTING_KINDS: readonly PlacedKind[] = ELEMENT_REGISTRY
  * reaches in a row of bits, then each tile's region is the smallest tile
  * that reaches it and that it reaches. Walks start from every tile, event
  * tiles included, but no walk edge leads onto an event tile, so each event
- * tile is a region of its own. Built once per set of flags, so its cost,
- * tiles times walk edges, stays small.
- * @param edges - The walk edges, from WalkGraph's edgesFor
+ * tile is a region of its own, and none onto a tile where a box rests, so
+ * such a tile is one too. Built once per set of flags and of the resting
+ * boxes' tiles, at a cost of tiles times walk edges.
+ * @param edges - The walk edges, without those onto a tile where a box rests
  * @param tileCount - The chamber's tiles
  * @returns Each tile's region, as its smallest tile's number
  */
@@ -113,12 +114,17 @@ function findRegions(edges: Int32Array, tileCount: number): Int32Array {
  * leave its tile that way and step onto the next one (allowsWay and
  * canEnter, read from the rules, never copied), and the next tile is no
  * event tile: one holding an element that reacts to the subject entering or
- * leaving it. Walking along walk edges changes only the subject's tile, its
- * facing and a carried box's tile, so the solver can take a whole walk as one
- * move. Which edges exist depends only on the blocked flags, so the edges are
- * built once per set of flags, and so are the regions, the tiles the subject
- * can walk between both ways. Also numbers each tile's canonical facing: the
- * first way the subject may move there, which on an arrow is its own way.
+ * leaving it. Which edges exist depends only on the blocked flags, so they
+ * are built once per set of flags. A resting box also keeps the subject off
+ * its tile (the rules' boxBlocksEntry), but boxes move, so a walk skips an
+ * edge onto a box in the state it walks in (walkTarget) rather than leaving
+ * it out of the edges. Walking along walk edges changes only the subject's
+ * tile, its facing and a carried box's tile, so the solver can take a whole
+ * walk as one move. The regions, the tiles the subject can walk between both
+ * ways, depend on the resting boxes too, so they are built once per set of
+ * flags and of the resting boxes' tiles. Also numbers each tile's canonical
+ * facing: the first way the subject may move there, which on an arrow is its
+ * own way.
  */
 export class WalkGraph {
   readonly index: ChamberIndex // The chamber's tile numbers
@@ -126,7 +132,8 @@ export class WalkGraph {
   private readonly facings: Uint8Array // Each tile's canonical facing, as an index in DIRECTIONS
   private readonly allowedWays: Uint8Array // Each tile's ways the subject may move, one bit per index in DIRECTIONS
   private readonly edgesByFlags = new Map<number, Int32Array>() // The walk edges, by the blocked flags they were built for
-  private readonly regionsByFlags = new Map<number, Int32Array>() // Each tile's region, by the blocked flags it was found for
+  private readonly regionsByKey = new Map<string, Int32Array>() // Each tile's region, by the blocked flags and the resting boxes' tiles it was found for (regionsKey)
+  private readonly regionEdges: Int32Array // The walk edges but those onto a resting box, for finding regions; apart from the walk's buffers, so finding regions mid-expansion leaves the last walk intact
   private readonly reached: Int32Array // The tiles the last walk reached, in the order reached
   private readonly distances: Int32Array // Each tile's distance in the last walk, or UNREACHED
   private readonly arrivals: Int8Array // Each reached tile's last move in the last walk, as an index in DIRECTIONS
@@ -143,6 +150,7 @@ export class WalkGraph {
     this.eventTiles = new Uint8Array(index.tileCount)
     this.facings = new Uint8Array(index.tileCount)
     this.allowedWays = new Uint8Array(index.tileCount)
+    this.regionEdges = new Int32Array(index.tileCount * DIRECTIONS.length)
     this.reached = new Int32Array(index.tileCount)
     this.distances = new Int32Array(index.tileCount).fill(UNREACHED)
     this.arrivals = new Int8Array(index.tileCount)
@@ -199,7 +207,8 @@ export class WalkGraph {
 
   /**
    * The walk edges for a state's blocked flags: for each tile, four entries
-   * in DIRECTIONS order, each the tile a walk that way reaches, or NO_WALK.
+   * in DIRECTIONS order, each the tile a walk that way reaches, or NO_WALK,
+   * leaving boxes out (walkTarget skips a tile where one rests).
    * @param state - A state with these flags
    * @param flags - Its blocked flags, as one number, the cache key
    * @returns The edges
@@ -235,37 +244,97 @@ export class WalkGraph {
   }
 
   /**
-   * The regions for a state's blocked flags: for each tile, the smallest
-   * tile of its region, the tiles the subject can walk between both ways.
-   * States that differ only in where the subject stands inside one region
-   * can reach the same states, so the search for any route keeps one.
-   * @param state - A state with these flags
-   * @param flags - Its blocked flags, as one number, the cache key
+   * The regions for a state's blocked flags and resting boxes: for each
+   * tile, the smallest tile of its region, the tiles the subject can walk
+   * between both ways, never onto a tile where a box rests. States that
+   * differ only in where the subject stands inside one region can reach the
+   * same states, so the search for any route keeps one. A tile where a box
+   * rests is a region of its own: the subject stands there only when the box
+   * was sent back under it, and can walk off but not back on.
+   * @param state - A state with these flags, whose resting boxes count
+   * @param flags - Its blocked flags, as one number, part of the cache key
    * @returns Each tile's region, as its smallest tile's number
    */
   regionsFor(state: RulesState, flags: number): Int32Array {
-    const cached = this.regionsByFlags.get(flags)
+    const key = this.regionsKey(state, flags)
+    const cached = this.regionsByKey.get(key)
 
     if (cached !== undefined) {
       return cached
     }
 
-    const regions = findRegions(this.edgesFor(state, flags), this.index.tileCount)
+    const edges = this.edgesFor(state, flags)
 
-    this.regionsByFlags.set(flags, regions)
+    for (let tile = 0; tile < this.index.tileCount; tile++) {
+      for (let directionIndex = 0; directionIndex < DIRECTIONS.length; directionIndex++) {
+        this.regionEdges[(tile * DIRECTIONS.length) + directionIndex] = this.walkTarget(state, edges, tile, directionIndex)
+      }
+    }
+
+    const regions = findRegions(this.regionEdges, this.index.tileCount)
+
+    this.regionsByKey.set(key, regions)
 
     return regions
   }
 
   /**
+   * The regions' cache key for a state: its blocked flags, then each box's
+   * tile, in the chamber's box list, but the carried box's, which rests
+   * nowhere.
+   * @param state - The state
+   * @param flags - Its blocked flags, as one number
+   * @returns The key
+   */
+  private regionsKey(state: RulesState, flags: number): string {
+    let key = String(flags)
+
+    for (let box = 0; box < this.index.chamber.boxStarts.length; box++) {
+      key += (box === state.carriedBox) ? ':carried' : `:${this.index.tileNumber(state.boxX(box), state.boxY(box))}`
+    }
+
+    return key
+  }
+
+  /**
+   * Where a walk edge leads in a state: its target, unless a box rests
+   * there, which keeps the subject off (the rules' boxBlocksEntry).
+   * @param state - The state walked in
+   * @param edges - The walk edges for its flags, from edgesFor
+   * @param tile - The tile the edge leaves
+   * @param directionIndex - The way, as an index in DIRECTIONS
+   * @returns The tile it leads to, or NO_WALK
+   */
+  walkTarget(state: RulesState, edges: Int32Array, tile: number, directionIndex: number): number {
+    const target = edges[(tile * DIRECTIONS.length) + directionIndex] ?? NO_WALK
+
+    return ((target === NO_WALK) || this.boxRestsOn(state, target)) ? NO_WALK : target
+  }
+
+  /**
+   * Whether a box rests on a tile in a state, keeping the subject off it
+   * (the rules' boxBlocksEntry).
+   * @param state - The state
+   * @param tile - The tile's number
+   * @returns True when one rests there
+   */
+  private boxRestsOn(state: RulesState, tile: number): boolean {
+    return boxBlocksEntry(state, this.index.tileX(tile), this.index.tileY(tile))
+  }
+
+  /**
    * Walks from a tile along walk edges, breadth first, so each tile reached
-   * gets its fewest moves. From an event tile the walk reaches only that
+   * gets its fewest moves, never onto a tile where a box rests in the state
+   * (walkTarget). The start is reached from the outset, never asked about,
+   * so a walk leaves a tile where a box was sent back under the subject, but
+   * never comes back to it. From an event tile the walk reaches only that
    * tile, since leaving it can change the state.
-   * @param edges - The walk edges, from edgesFor
+   * @param state - The state walked in, whose resting boxes count
+   * @param edges - The walk edges for its flags, from edgesFor
    * @param from - The tile it starts on
    * @returns How many tiles it reached, the start included
    */
-  walk(edges: Int32Array, from: number): number {
+  walk(state: RulesState, edges: Int32Array, from: number): number {
     for (let i = 0; i < this.reachedCount; i++) {
       this.distances[this.reached[i] ?? 0] = UNREACHED
     }
@@ -286,7 +355,8 @@ export class WalkGraph {
       for (let directionIndex = 0; directionIndex < DIRECTIONS.length; directionIndex++) {
         const target = edges[(tile * DIRECTIONS.length) + directionIndex] ?? NO_WALK
 
-        if ((target !== NO_WALK) && (this.distances[target] === UNREACHED)) {
+        // A box is asked about only on a tile not reached yet, so never on the start
+        if ((target !== NO_WALK) && (this.distances[target] === UNREACHED) && (!this.boxRestsOn(state, target))) {
           this.distances[target] = distance
           this.arrivals[target] = directionIndex
           this.reached[this.reachedCount] = target

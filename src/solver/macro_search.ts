@@ -63,27 +63,28 @@ const CLOCK_INTERVAL = 64
 export const PROGRESS_INTERVAL = 4096
 
 /**
- * The solver's macro search (docs/solver.md). A state is a
- * settled state of the rules with the subject turned to its tile's canonical
- * facing, since turning is free. From each state it walks, without the
- * rules' step, to every tile walk edges reach (WalkGraph), then tries there
- * each action whose effect a walk can't have, through the rules' step:
- * interact (once, or each way that faces a box in reach), both shots each
- * way the subject may face, and each move a walk
- * doesn't cover (onto or off an event tile, into a wall, which crosses a
- * portal there), but no interact or move that can't change anything
- * (ActionFilter). Each shot line takes its shots through the rules' step once
- * per state, and its other tiles reuse them (ShotLines). A macro action
- * costs the walk's moves plus what the step counts. States are kept as
- * 64-bit keys in a StateSet, with their costs and macro actions in typed
- * arrays. In the solvable mode it stores the subject on its region's tile
- * (foldSubject), since states that differ only in where the subject stands
- * inside a region reach the same states, puts a carried box down only
- * where that can matter (ActionFilter), searches breadth first and stops
- * at the first completed state; the route's counts are then those of the
- * actions it expands to. In the moves and portals modes it keeps the
- * subject's tile and takes the cheapest state first (Dijkstra's algorithm),
- * so the first completed state taken off the queue ends an optimal route.
+ * The solver's macro search (docs/solver.md). A state is a settled state of
+ * the rules with the subject turned to its tile's canonical facing, since
+ * turning is free. From each state it walks, without the rules' step, to
+ * every tile walk edges reach, never onto a resting box (WalkGraph), then
+ * tries there each action whose effect a walk can't have, through the rules'
+ * step: interact (once, or each way that faces a box in reach), both shots
+ * each way the subject may face, and each move a walk doesn't cover (onto or
+ * off an event tile, into a resting box, into a wall, which crosses a portal
+ * there), but no interact or move that can't change anything (ActionFilter).
+ * Each shot line takes its shots through the rules' step once per state, and
+ * its other tiles reuse them (ShotLines). A macro action costs the walk's
+ * moves plus what the step counts. States are kept as 64-bit keys in a
+ * StateSet, with their costs and macro actions in typed arrays. In the
+ * solvable mode it stores the subject on its region's tile (foldSubject), the
+ * regions found for the state's blocked flags and resting boxes, since states
+ * that differ only in where the subject stands inside a region reach the same
+ * states, puts a carried box down only where that can matter (ActionFilter),
+ * searches breadth first and stops at the first completed state; the route's
+ * counts are then those of the actions it expands to. In the moves and
+ * portals modes it keeps the subject's tile and takes the cheapest state
+ * first (Dijkstra's algorithm), so the first completed state taken off the
+ * queue ends an optimal route.
  */
 export class MacroSearch {
   private readonly chamber: CompiledChamber // The chamber
@@ -231,7 +232,7 @@ export class MacroSearch {
    * the tile's region instead.
    * @param low - The key's low word
    * @param tile - The subject's tile
-   * @param regions - Each tile's region for the key's flags, or null outside the solvable mode
+   * @param regions - Each tile's region for the key's flags and resting boxes, or null outside the solvable mode
    * @returns The low word
    */
   private placeStored(low: number, tile: number, regions: Int32Array | null): number {
@@ -274,7 +275,7 @@ export class MacroSearch {
     const edges = this.graph.edgesFor(state, flags)
     const regions = this.folded ? this.graph.regionsFor(state, flags) : null
     const from = this.codec.subjectTileOf(low)
-    const reachedCount = this.graph.walk(edges, from)
+    const reachedCount = this.graph.walk(state, edges, from)
 
     this.expanded++
     this.lines.begin(state, flags)
@@ -289,8 +290,8 @@ export class MacroSearch {
       let moving = 0
 
       for (let directionIndex = 0; directionIndex < DIRECTIONS.length; directionIndex++) {
-        // A walk covers a walk edge, except off an event tile, where leaving can change the state
-        if ((this.graph.isEventTile(tile) || (edges[(tile * DIRECTIONS.length) + directionIndex] === NO_WALK)) && this.filter.mayMove(tile, directionIndex)) {
+        // A walk covers a walk edge, except off an event tile, where leaving can change the state, and onto a resting box, where the rules' step tells
+        if ((this.graph.isEventTile(tile) || (this.graph.walkTarget(state, edges, tile, directionIndex) === NO_WALK)) && this.filter.mayMove(tile, directionIndex)) {
           moving |= 1 << directionIndex
         }
       }
@@ -373,13 +374,14 @@ export class MacroSearch {
    * Takes one shot, through the rules' step once per line (ShotLines), and
    * keeps the state it leads to, unless nothing changed but where the
    * subject faces. In the solvable mode a line gives one state per region
-   * it crosses: a tile in the region of the tile that took the line's shot
-   * would give that tile's state again, so it is skipped.
+   * it crosses: a tile in the region of the tile that took the line's shot,
+   * with the expanded state's flags and resting boxes, which a shot doesn't
+   * change, would give that tile's state again, so it is skipped.
    * @param parent - The entry of the state the macro action starts from
    * @param low - The low word of that state's key
    * @param high - The high word of that key
    * @param standingLow - The low word of the key, as the search stores it, with the subject on the tile walked to
-   * @param regions - Each tile's region for the state's flags, or null outside the solvable mode
+   * @param regions - Each tile's region for the state's flags and resting boxes, or null outside the solvable mode
    * @param action - The shot, blue or orange
    * @param tile - The tile walked to
    * @param directionIndex - The way faced before the shot

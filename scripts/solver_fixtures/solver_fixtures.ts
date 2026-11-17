@@ -142,12 +142,12 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
   },
   // No wall takes portals and the button is far from the door, so the box
   // must be on the button when the subject steps into the doorway. The
-  // subject picks the box at (3,1) up from its tile, 4 moves away, or facing
-  // it from a tile next to it, (2,1) or (3,2), each 3 away, and puts it down
-  // on the button from its tile, or facing it from a tile next to it, (2,1)
-  // or (1,2). From the start to where it picks the box up, then to where it
-  // puts it down, then through (3,3) to the exit: from (2,1) for both, 3 +
-  // 0 + 6 = 9, and any other pair at least 11. So 9 moves with no portal
+  // subject picks the box at (3,1) up facing it from a tile next to it,
+  // (2,1) or (3,2), each 3 moves away, and puts it down on the button facing
+  // it from a tile next to it, (2,1) or (1,2). From the start to where it
+  // picks the box up, then to where it puts it down, then through (3,3) to
+  // the exit: from (2,1) for both, 3 + 0 + 6 = 9, and any other pair at
+  // least 11. So 9 moves with no portal
   {
     name: 'box_on_button',
     covers: 'A box left on a button holds open the door the subject must pass on its way to the exit.',
@@ -252,13 +252,16 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
   },
   // The box must reach the button at (4,1) without entering the fizzler at
   // (2,1), which sends a carried box back and takes no box put down. It is
-  // put down on the button from (5,1), facing it, or from (4,1) or (3,1),
-  // both reached only through (5,1); so it is carried from (1,1) to (5,1):
+  // put down on the button facing it, from (5,1) or from (3,1), reached
+  // without the fizzler only through (5,1); so it is carried to (5,1). The
+  // subject picks it up facing it from the start, with no move: (1,3), the
+  // only other tile next to it, is at least 12 moves away round the loop,
+  // since the box keeps the subject off (1,2). Carried from (1,1) to (5,1),
   // round the loop that is 10 moves, or 7 when crossing row 4 through the
   // portal faces (0,4) and (6,4); then 1 more onto the exit. So 8 moves with
   // both portals, and 11 moves with none (one portal crosses nothing). The
-  // box is put down for the shots, which take free hands, and that costs no
-  // move
+  // box is put down at (2,4) for the shots, which take free hands and fly
+  // over it, and picked up again, which costs no move
   {
     name: 'fizzler_box',
     covers: 'A fizzler sends a carried box back to its start, so the box goes round it, crossing the top corridor through a portal or walking the long way.',
@@ -269,11 +272,12 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
         'up',
         'up',
         'up',
-        'interact',
         'turnRight',
+        'interact',
         'orange',
         'turnLeft',
         'blue',
+        'turnRight',
         'interact',
         'left',
         'down',
@@ -373,9 +377,9 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
   // be crossed back, so the subject carries the box across. The switch at
   // (4,3), which opens the door at (7,2) to the button, refuses while the
   // subject carries the box, and the box is put down on the button only
-  // from (7,2), facing it, or from (7,1), reached through (7,2). So the
-  // subject walks from the start to the switch, at least 4 moves, then to
-  // (7,2), at least 4, then to the exit, at least 6: 14. The route takes
+  // from (7,2), facing it, the button's one neighbour that isn't wall. So
+  // the subject walks from the start to the switch, at least 4 moves, then
+  // to (7,2), at least 4, then to the exit, at least 6: 14. The route takes
   // each leg's shortest walk: it picks the box up facing it from the start,
   // puts it down facing (5,2) from (4,2), and from (5,3), after the switch,
   // picks it up again facing it. 14 moves, the same route for both pars
