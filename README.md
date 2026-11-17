@@ -10,14 +10,6 @@
   - how to shot portals
   - show a hint when standing on a button
 
-## Mechanics
-
-Light beam receptor: if a light beam touches them, they activate.
-
-## Level design
-
-https://steamcommunity.com/sharedfiles/filedetails/?id=157895158
-
 ## YouTube
 
 https://www.youtube.com/watch?v=99egKsmVyhI
