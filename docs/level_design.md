@@ -17,7 +17,7 @@ Only Restart chamber gets the player out (guideline 13).
 
 ### Something looks broken
 
-- **Standing in something that blocks:** the subject stands in a closed door, over an open ditch, or in a laser or a light barrier that is on, and can walk out the far side without holding the button (guidelines 1 and 2).
+- **Standing in something that blocks:** the subject stands in a closed door, over an open ditch, or in a laser or a light barrier that is on (guidelines 1 and 2).
 - **The exit closing as the chamber completes:** stepping from a button onto the exit it opens completes the chamber as the exit closes, so the button never needed its box (guideline 1).
 - **An element out of step with its buttons:** a door stays closed while a button linked to it is held down, or stands open before its button has been pressed (guideline 4).
 - **A box that jumps home unseen:** a box resting on another box's start tile is sent to its own start, without any sign, when that box is sent back; and a box picked up from inside a fizzler that is on goes back to its start with only the pickup sound (guideline 6).
