@@ -2,7 +2,7 @@
  * A key the game reads, named by what it does rather than where it is on the
  * keyboard. Input maps the physical keys to these names.
  */
-export type GameKey = 'up' | 'down' | 'left' | 'right' | 'blue' | 'orange' | 'interact' | 'undo' | 'redo'
+export type GameKey = 'up' | 'down' | 'left' | 'right' | 'blue' | 'orange' | 'interact'
 
 /**
  * Named values of GameKey.
@@ -15,12 +15,4 @@ export const GameKey = {
   BLUE: 'blue',
   ORANGE: 'orange',
   INTERACT: 'interact',
-  UNDO: 'undo',
-  REDO: 'redo',
 } as const
-
-/**
- * A key that steps through the run's history instead of playing: the level
- * handles it, and the rules never read it.
- */
-export type HistoryKey = typeof GameKey.UNDO | typeof GameKey.REDO

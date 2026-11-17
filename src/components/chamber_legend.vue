@@ -1,11 +1,10 @@
 <script setup lang="ts">
 /**
  * The controls legend shown beside the chamber: moving, both portals and
- * interacting, then undo and redo, each on the key the player has bound to
- * it, and Escape for the pause dialog, each with what it does. The keys show
- * what the player's keyboard prints on them, and arrow keys a small triangle
- * pointing their way, and a mouse button a small mouse with that button
- * filled in. Undo and redo are hidden for now; their keys still work.
+ * interacting, each on the key the player has bound to it, and Escape for
+ * the pause dialog, each with what it does. The keys show what the player's
+ * keyboard prints on them, and arrow keys a small triangle pointing their
+ * way, and a mouse button a small mouse with that button filled in.
  */
 import {computed, onMounted} from 'vue'
 import KeyCap from '@/components/key_cap.vue'
@@ -43,15 +42,7 @@ const keys = computed(() => ({
   [GameKey.BLUE]: legendKey(GameKey.BLUE),
   [GameKey.ORANGE]: legendKey(GameKey.ORANGE),
   [GameKey.INTERACT]: legendKey(GameKey.INTERACT),
-  [GameKey.UNDO]: legendKey(GameKey.UNDO),
-  [GameKey.REDO]: legendKey(GameKey.REDO),
 }))
-
-// Game keys whose rows are hidden for now, kept so they can be shown again; the keys still work
-const HIDDEN_KEYS: ReadonlySet<GameKey> = new Set([
-  GameKey.UNDO,
-  GameKey.REDO,
-])
 
 // The player may have switched keyboard layouts since the labels were read
 onMounted(refreshKeyLabels)
@@ -118,36 +109,6 @@ onMounted(refreshKeyLabels)
         <dd class="legend-action">
           <span class="action-name">Interact</span>
           <span class="action-detail">Use switches, pick up and drop boxes</span>
-        </dd>
-      </div>
-      <div v-if="!HIDDEN_KEYS.has(GameKey.UNDO)" class="legend-row">
-        <dt>
-          <KeyCap
-            :class="{
-              'keycap-wide': keys.undo.wide,
-            }"
-            :bound-key="keys.undo.key"
-            :aria-label="keys.undo.name"
-          />
-        </dt>
-        <dd class="legend-action">
-          <span class="action-name">Undo</span>
-          <span class="action-detail">Take back the last step</span>
-        </dd>
-      </div>
-      <div v-if="!HIDDEN_KEYS.has(GameKey.REDO)" class="legend-row">
-        <dt>
-          <KeyCap
-            :class="{
-              'keycap-wide': keys.redo.wide,
-            }"
-            :bound-key="keys.redo.key"
-            :aria-label="keys.redo.name"
-          />
-        </dt>
-        <dd class="legend-action">
-          <span class="action-name">Redo</span>
-          <span class="action-detail">Bring back a step you undid</span>
         </dd>
       </div>
       <div class="legend-row">

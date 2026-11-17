@@ -1,4 +1,5 @@
-import {parseReplayStep, type ReplayData, type ReplayExpectation, type ReplayStep} from '@/game/replay_data'
+import {parseReplayAction, type ReplayData, type ReplayExpectation} from '@/game/replay_data'
+import type {Action} from '@/game/rules/action'
 
 // Reads a recorded solution file (src/chambers/chamber_N.solution.json),
 // checking every field, for the scripts that replay solutions
@@ -85,14 +86,14 @@ export function parseSolutionData(value: unknown): ReplayData {
   }
 
   const actionValues: readonly unknown[] = value.actions
-  const actions: ReplayStep[] = []
+  const actions: Action[] = []
 
   for (const action of actionValues) {
     if (typeof action !== 'string') {
       throw new Error('actions holds something other than text')
     }
 
-    actions.push(parseReplayStep(action))
+    actions.push(parseReplayAction(action))
   }
 
   return {

@@ -4,8 +4,7 @@ import {GameKey} from '@/game/game_key'
 
 /**
  * One thing the player does in a step of the rules: a move or a turn
- * towards one of four directions, a portal shot, or interact. Undo and redo
- * are not actions: they bring back an earlier state, outside the rules.
+ * towards one of four directions, a portal shot, or interact.
  */
 export type Action =
   | 'up'

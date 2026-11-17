@@ -63,7 +63,7 @@ Blocked walls, light barriers, ditches, doors, the exit, fizzlers and lasers eac
 
 ### A step
 
-The player gives one action per step: move or turn (up, down, left or right), shoot blue, shoot orange, or interact. Undo and redo are not actions: they bring back an earlier state, outside the rules. A step carries out every consequence of its action before it ends; nothing waits for a later step.
+The player gives one action per step: move or turn (up, down, left or right), shoot blue, shoot orange, or interact. A step carries out every consequence of its action before it ends; nothing waits for a later step.
 
 1. The action runs (see [Actions](#actions)).
 2. A carried box moves onto the subject's tile.

@@ -4,20 +4,19 @@ import {Direction} from '@/game/direction'
 import {ElementTransitions} from '@/game/element_transitions'
 import {FizzleParticles} from '@/game/fizzle_particles'
 import {GameEvent} from '@/game/game_event'
-import {GameKey, type HistoryKey} from '@/game/game_key'
+import {GameKey} from '@/game/game_key'
 import type {FrameInput} from '@/game/frame_input'
 import type {FrameStats} from '@/game/frame_stats'
 import {Input, type PointerPosition} from '@/game/input'
 import type {KeyBindings} from '@/game/key_bindings'
 import {MissRipple} from '@/game/miss_ripple'
-import {getChamberHash, type ReplayData, type ReplayStep} from '@/game/replay_data'
+import {getChamberHash, type ReplayData} from '@/game/replay_data'
 import {hasAmbientLife, Renderer} from '@/game/renderer'
 import {Action, actionOfPress} from '@/game/rules/action'
 import {CompiledChamber} from '@/game/rules/compiled_chamber'
 import {loadChamber} from '@/game/rules/load_chamber'
 import {runRulesReplay} from '@/game/rules/replay_runner'
 import type {RulesState} from '@/game/rules/rules_state'
-import {StateHistory} from '@/game/rules/state_history'
 import {startChamber, step, type StepResult} from '@/game/rules/step'
 import {Sound} from '@/game/sound'
 import {StepAnimation} from '@/game/step_animation'
@@ -37,8 +36,7 @@ import {StepAnimation} from '@/game/step_animation'
  * away or forms, a laser or a light barrier a step switches fades out or in, and a portal shot that misses
  * ripples where it stopped; no press waits for them nor cuts them short. While
  * anything glows, breaks up, falls, changes or ripples, every frame is drawn too. Nothing is drawn over time when the player asks for reduced
- * motion: the glows hold steady. Undo and redo bring back
- * earlier states from the run's history, silently and at once. Every press it acts on is logged, so the run
+ * motion: the glows hold steady. Every press it acts on is logged, so the run
  * since the last load can be replayed without a browser. When a mouse button
  * is bound, a frame may instead turn the subject to face the pointer, as a
  * turn action logged like a pressed one.
@@ -106,14 +104,12 @@ export class Level {
   private chamber: CompiledChamber | null = null // The chamber being played, null before the first load
   private chamberHash = '' // Hash of the chamber being played, as replays name it
   private state: RulesState | null = null // The state now, null before the first load
-  private history = new StateHistory() // Undo and redo for the run since the last load
-  private replaySteps: ReplayStep[] = [] // Every press acted on since the last load, in order
+  private replaySteps: Action[] = [] // Every press acted on since the last load, in order
   private stepHashes: string[] = [] // Hash of the state right after each logged press
   private clockStarted = false // Whether a game key has been pressed since the last load
   private elapsedSeconds = 0 // Play time since the clock started; only grows while unpaused
   private stepCount = 0 // Tiles the subject has stepped onto since the last load
   private portalCount = 0 // Portals opened on a wall since the last load, misses not counted
-  private undoCount = 0 // Steps taken back with undo since the last load
   private aimPending = false // Whether the pointer moved or an action was taken since the subject last turned, or tried to turn, to face the pointer
   private readonly canvas: HTMLCanvasElement // The canvas drawn on, where the pointer is measured from
   private readonly renderer: Renderer // Draws the state
@@ -149,7 +145,7 @@ export class Level {
 
   /**
    * Loads the chamber, settles its start and draws it;
-   * loading again resets it, its clock, its counters and its undo history.
+   * loading again resets it, its clock and its counters.
    * The first load starts the frame loop, running its first frame at once.
    * @param chamberData - The chamber JSON, which is only read
    * @throws Error when the rules can't load the chamber
@@ -168,14 +164,12 @@ export class Level {
     this.chamber = chamber
     this.chamberHash = getChamberHash(loaded.chamber)
     this.state = start.state
-    this.history = new StateHistory()
     this.replaySteps = []
     this.stepHashes = []
     this.clockStarted = false
     this.elapsedSeconds = 0
     this.stepCount = 0
     this.portalCount = 0
-    this.undoCount = 0
     this.aimPending = false
     this.input.takePointerMoved()
     this.animation.finish()
@@ -237,7 +231,7 @@ export class Level {
   /**
    * Tiles the subject has stepped onto since the last load. Turning in place
    * and walking into something solid don't count; walking through a portal
-   * counts as one step. Undo takes none of them back.
+   * counts as one step.
    */
   get moves(): number {
     return this.stepCount
@@ -245,18 +239,10 @@ export class Level {
 
   /**
    * Portals opened on a wall since the last load; a shot that misses doesn't
-   * count, and moving a portal counts again. Undo takes none of them back.
+   * count, and moving a portal counts again.
    */
   get portalsPlaced(): number {
     return this.portalCount
-  }
-
-  /**
-   * Steps taken back with undo since the last load. An undo with nothing to
-   * take back doesn't count, and redo counts nothing.
-   */
-  get undos(): number {
-    return this.undoCount
   }
 
   /**
@@ -384,9 +370,8 @@ export class Level {
   /**
    * Runs one frame: turns the subject to face the pointer, when it should,
    * or else takes the oldest waiting press, if any, ends the step being
-   * drawn, and steps through the history for undo or redo, or runs the rules'
-   * step for any other key. Then forgets which keys went down during the
-   * frame, for the clock.
+   * drawn and runs the rules' step for it. Then forgets which keys went down
+   * during the frame, for the clock.
    * @param delta - Seconds since the previous frame
    * @param input - The keyboard and mouse
    * @param time - The frame's time, in milliseconds on the frame clock
@@ -418,11 +403,6 @@ export class Level {
         // even when the press itself changes nothing
         if (press !== null) {
           this.animation.finish()
-        }
-
-        if (typeof press === 'string') {
-          updated = this.updateHistory(this.state, press)
-        } else if (press !== null) {
           updated = this.updateRules(this.chamber, this.state, press, time)
         }
       }
@@ -438,8 +418,8 @@ export class Level {
    * it faces another way: before a waiting portal press is taken, so the
    * shot goes where the pointer is, or, with no press waiting, no move key
    * held and the subject not on its way to another tile, once the pointer
-   * has moved or an action was taken. Undo, redo and a load keep the facing
-   * they bring back until then. The turn goes through the rules' step and is
+   * has moved or an action was taken. A load keeps the facing it brings back
+   * until then. The turn goes through the rules' step and is
    * logged like a pressed one, but one the rules refuse (an arrow tile
    * allows no other way) is dropped unlogged. Nothing turns once the chamber
    * is completed.
@@ -460,8 +440,7 @@ export class Level {
     if (!beforeAimedPress) {
       // A move gliding to its tile is never cut short, nor a walk with a
       // held move key (whose repeats would each turn the subject back and
-      // forth), and any other press goes first, since it either faces its
-      // own way or brings a facing back
+      // forth), and any other press goes first
       if ((nextKey !== null) || !this.aimPending || this.animation.movingSubject || Level.MOVE_KEYS.some((key) => input.isHolding(key))) {
         return false
       }
@@ -545,7 +524,7 @@ export class Level {
   }
 
   /**
-   * Takes a step of the rules: records it in the history and the log,
+   * Takes a step of the rules: records it in the log,
    * counts the move, starts drawing the step when it changed the state, with
    * each blocked wall, ditch, door, exit, fizzler, laser and light barrier it switched changing, what it took
    * breaking up when it fizzled, each box it destroyed breaking up or falling, and a ripple where a portal shot it refused
@@ -562,7 +541,6 @@ export class Level {
     // error sound, with no ripple
     const shot = ((action === Action.BLUE) || (action === Action.ORANGE)) && !state.isCarrying
 
-    this.history.record(state, next)
     this.logStep(action, next)
 
     // Only moves change the subject's tile, so a new tile is one step
@@ -602,48 +580,12 @@ export class Level {
   }
 
   /**
-   * Undoes or redoes a step, silently and at once, ending anything breaking
-   * up or falling, any element changing and any ripple, and logs the press. Nothing can be undone once the
-   * chamber is completed.
-   * @param state - The state now
-   * @param key - Undo or redo
-   * @returns Whether a step was undone or redone
-   */
-  private updateHistory(state: RulesState, key: HistoryKey): boolean {
-    if (state.completed) {
-      return false
-    }
-
-    const restored = (key === GameKey.UNDO) ? this.history.undo(state) : this.history.redo(state)
-
-    // The facing brought back stays until the pointer moves or an action is taken
-    this.aimPending = false
-    this.logStep(key, restored ?? state)
-
-    if (restored === null) {
-      return false
-    }
-
-    this.state = restored
-    this.fizzle.clear()
-    this.changes.clear()
-    this.ripple.clear()
-    this.fall.clear()
-
-    if (key === GameKey.UNDO) {
-      this.undoCount++
-    }
-
-    return true
-  }
-
-  /**
    * Logs a press acted on and the state it led to.
-   * @param replayStep - The action, or the undo or redo
+   * @param action - The action
    * @param state - The state after it
    */
-  private logStep(replayStep: ReplayStep, state: RulesState): void {
-    this.replaySteps.push(replayStep)
+  private logStep(action: Action, state: RulesState): void {
+    this.replaySteps.push(action)
     this.stepHashes.push(state.hash)
   }
 

@@ -1,5 +1,4 @@
 import type {ChamberData} from '@/game/chamber_data'
-import {GameKey, type HistoryKey} from '@/game/game_key'
 import {type Action, ACTIONS} from '@/game/rules/action'
 import {formatHash, hashText} from '@/game/text_hash'
 
@@ -14,43 +13,30 @@ export type ReplayExpectation = {
 }
 
 /**
- * One press of a recorded run: an action of the rules, or an undo or redo,
- * which the level handles instead.
- */
-export type ReplayStep = Action | HistoryKey
-
-/**
  * A run recorded press by press, replayable without a browser, as a recorded
  * solution saved next to its chamber's file. Each press is written as its
- * action ("up", "turnLeft", "blue", "interact") or as "undo" or "redo".
+ * action ("up", "turnLeft", "blue", "interact").
  */
 export type ReplayData = {
   readonly chamberHash: string // Hash of the chamber the run was recorded on, as read; editing the chamber changes it, but for its antlines
-  readonly actions: readonly ReplayStep[] // The presses, in order
+  readonly actions: readonly Action[] // The presses, in order
   readonly expected: ReplayExpectation // What replaying the presses gives
 }
 
-/** Every press a recorded run can hold: the actions, then undo and redo */
-const REPLAY_STEPS: readonly ReplayStep[] = [
-  ...ACTIONS,
-  GameKey.UNDO,
-  GameKey.REDO,
-]
-
 /**
  * Reads a press of a recorded run.
- * @param text - The press as text, such as "up", "turnLeft" or "undo"
- * @returns The press
- * @throws Error when the text names no action, undo or redo
+ * @param text - The press as text, such as "up" or "turnLeft"
+ * @returns The action
+ * @throws Error when the text names no action
  */
-export function parseReplayStep(text: string): ReplayStep {
-  const replayStep = REPLAY_STEPS.find((candidate) => candidate === text)
+export function parseReplayAction(text: string): Action {
+  const action = ACTIONS.find((candidate) => candidate === text)
 
-  if (replayStep === undefined) {
+  if (action === undefined) {
     throw new Error(`Unknown replay action: "${text}"`)
   }
 
-  return replayStep
+  return action
 }
 
 /**

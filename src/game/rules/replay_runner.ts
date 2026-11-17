@@ -1,8 +1,6 @@
-import {GameKey} from '@/game/game_key'
-import type {ReplayStep} from '@/game/replay_data'
+import type {Action} from '@/game/rules/action'
 import type {CompiledChamber} from '@/game/rules/compiled_chamber'
 import type {RulesState} from '@/game/rules/rules_state'
-import {StateHistory} from '@/game/rules/state_history'
 import {startChamber, step} from '@/game/rules/step'
 import {countPortalsOpened, countsAsMove} from '@/game/rules/step_counts'
 
@@ -20,24 +18,22 @@ export type RulesReplayResult = {
 
 /**
  * Replays recorded presses on a chamber's settled start with the rules,
- * as the live game plays them: each action is one step of the rules, undo
- * and redo step through the run's history, and nothing runs once the
- * chamber is completed.
+ * as the live game plays them: each action is one step of the rules, and
+ * nothing runs once the chamber is completed.
  * @param chamber - The chamber, compiled for the rules
  * @param steps - The presses, in order
  * @returns What the replay gave
  * @throws Error when the rules throw
  */
-export function runRulesReplay(chamber: CompiledChamber, steps: readonly ReplayStep[]): RulesReplayResult {
+export function runRulesReplay(chamber: CompiledChamber, steps: readonly Action[]): RulesReplayResult {
   const start = startChamber(chamber)
-  const history = new StateHistory()
   const states: RulesState[] = [start.state]
   const stepHashes: string[] = []
   let state: RulesState = start.state
   let moves = 0
   let portals = countPortalsOpened(start.events)
 
-  for (const replayStep of steps) {
+  for (const action of steps) {
     // The live game takes no press once the chamber is completed
     if (state.completed) {
       states.push(state)
@@ -45,22 +41,14 @@ export function runRulesReplay(chamber: CompiledChamber, steps: readonly ReplayS
       continue
     }
 
-    if (replayStep === GameKey.UNDO) {
-      state = history.undo(state) ?? state
-    } else if (replayStep === GameKey.REDO) {
-      state = history.redo(state) ?? state
-    } else {
-      const result = step(chamber, state, replayStep)
+    const result = step(chamber, state, action)
 
-      history.record(state, result.state)
-
-      if (countsAsMove(state, result.state)) {
-        moves++
-      }
-
-      portals += countPortalsOpened(result.events)
-      state = result.state
+    if (countsAsMove(state, result.state)) {
+      moves++
     }
+
+    portals += countPortalsOpened(result.events)
+    state = result.state
 
     states.push(state)
     stepHashes.push(state.hash)

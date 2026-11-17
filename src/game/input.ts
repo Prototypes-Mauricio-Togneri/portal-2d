@@ -1,12 +1,12 @@
-import type {FrameInput, FrameKey} from '@/game/frame_input'
-import {GameKey, type HistoryKey} from '@/game/game_key'
+import type {FrameInput} from '@/game/frame_input'
+import {GameKey} from '@/game/game_key'
 import {type BoundKey, getBoundKey, getKeyMouseButton, getMouseBoundKey, type KeyBindings} from '@/game/key_bindings'
 
 /**
  * A press waiting for the level.
  */
 type KeyPress = {
-  readonly key: FrameKey | HistoryKey // The game key pressed
+  readonly key: GameKey // The game key pressed
 }
 
 /**
@@ -100,7 +100,7 @@ export class Input {
    * The game key of the oldest waiting press, which stays waiting, or null
    * when no press is waiting.
    */
-  get nextKey(): FrameKey | HistoryKey | null {
+  get nextKey(): GameKey | null {
     return this.presses[0]?.key ?? null
   }
 
@@ -135,18 +135,14 @@ export class Input {
 
   /**
    * Takes the oldest waiting press.
-   * @returns What the rules read for it (its key), the undo or redo pressed,
-   * or null when no press is waiting
+   * @returns What the rules read for it (its key), or null when no press is
+   * waiting
    */
-  takePress(): FrameInput | HistoryKey | null {
+  takePress(): FrameInput | null {
     const press = this.presses.shift()
 
     if (press === undefined) {
       return null
-    }
-
-    if ((press.key === GameKey.UNDO) || (press.key === GameKey.REDO)) {
-      return press.key
     }
 
     return {

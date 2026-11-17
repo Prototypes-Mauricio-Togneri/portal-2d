@@ -16,7 +16,7 @@ export type MouseButton = 'left' | 'right'
  */
 export type KeyBindings = Readonly<Record<GameKey, BoundKey>>
 
-/** The Arrow keys layout, the default: arrows, A, D, Space, Z and X */
+/** The Arrow keys layout, the default: arrows, A, D and Space */
 export const ARROW_KEY_BINDINGS: KeyBindings = {
   [GameKey.UP]: 'ArrowUp',
   [GameKey.DOWN]: 'ArrowDown',
@@ -25,8 +25,6 @@ export const ARROW_KEY_BINDINGS: KeyBindings = {
   [GameKey.BLUE]: 'KeyA',
   [GameKey.ORANGE]: 'KeyD',
   [GameKey.INTERACT]: 'Space',
-  [GameKey.UNDO]: 'KeyZ',
-  [GameKey.REDO]: 'KeyX',
 }
 
 /** The WASD and mouse layout: W, A, S and D move, the left and right mouse buttons shoot, the rest as in Arrow keys */
@@ -38,8 +36,6 @@ export const WASD_MOUSE_BINDINGS: KeyBindings = {
   [GameKey.BLUE]: 'MouseLeft',
   [GameKey.ORANGE]: 'MouseRight',
   [GameKey.INTERACT]: 'Space',
-  [GameKey.UNDO]: 'KeyZ',
-  [GameKey.REDO]: 'KeyX',
 }
 
 /** The bound key of each mouse button that can be bound, by MouseEvent.button */

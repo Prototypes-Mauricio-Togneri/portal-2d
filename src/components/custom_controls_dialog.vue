@@ -1,8 +1,7 @@
 <script setup lang="ts">
 /**
  * The Custom controls, opened by picking Custom under Settings' Controls: a
- * row per game key (undo and redo hidden for now, as in the chamber's
- * legend), then Done. Picking a row (Enter, Space or a click) waits
+ * row per game key, then Done. Picking a row (Enter, Space or a click) waits
  * for its new key, which takes the whole keyboard until a key is bound or
  * Escape cancels; a left or right click on that row binds that mouse button
  * instead, and a click anywhere else cancels. A key or button bound to another
@@ -29,8 +28,8 @@ const emit = defineEmits<{
   close: []
 }>()
 
-// Every game key, in the order its row would show
-const ALL_CONTROLS: ControlEntry[] = [
+// The rows of the dialog: every game key, in order
+const CONTROLS: ControlEntry[] = [
   {
     gameKey: GameKey.UP,
     label: 'Move up',
@@ -66,27 +65,7 @@ const ALL_CONTROLS: ControlEntry[] = [
     label: 'Interact',
     portal: null,
   },
-  {
-    gameKey: GameKey.UNDO,
-    label: 'Undo',
-    portal: null,
-  },
-  {
-    gameKey: GameKey.REDO,
-    label: 'Redo',
-    portal: null,
-  },
 ]
-
-// Game keys whose rows are hidden for now, as in the chamber's legend, kept so they can be shown
-// again; their keys still work
-const HIDDEN_CONTROLS: ReadonlySet<GameKey> = new Set([
-  GameKey.UNDO,
-  GameKey.REDO,
-])
-
-// The rows of the dialog
-const CONTROLS = ALL_CONTROLS.filter((control) => !HIDDEN_CONTROLS.has(control.gameKey))
 
 const focusedControl = ref<GameKey | null>(null) // The game key whose row has the keyboard, or null
 const waitingControl = ref<GameKey | null>(null) // The game key whose row waits for a new key, or null
@@ -136,7 +115,7 @@ function cancelWaiting(): void {
 function bind(gameKey: GameKey, key: BoundKey): void {
   const control = CONTROLS.find((entry) => entry.gameKey === gameKey)
   const previousKey = keyBindings.value[gameKey]
-  const swapped = ALL_CONTROLS.find((entry) => entry.gameKey !== gameKey && keyBindings.value[entry.gameKey] === key)
+  const swapped = CONTROLS.find((entry) => entry.gameKey !== gameKey && keyBindings.value[entry.gameKey] === key)
   bindKey(gameKey, key)
   waitingControl.value = null
   refusedKey.value = null

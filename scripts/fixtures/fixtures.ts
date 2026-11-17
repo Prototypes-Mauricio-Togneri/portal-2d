@@ -1,5 +1,6 @@
 import type {ChamberData} from '@/game/chamber_data'
-import type {ReplayExpectation, ReplayStep} from '@/game/replay_data'
+import type {ReplayExpectation} from '@/game/replay_data'
+import type {Action} from '@/game/rules/action'
 import blockedWall from '@scripts/fixtures/blocked_wall.json'
 import boxInReach from '@scripts/fixtures/box_in_reach.json'
 import boxLinkedButton from '@scripts/fixtures/box_linked_button.json'
@@ -24,9 +25,9 @@ import twoButtonsOneDoor from '@scripts/fixtures/two_buttons_one_door.json'
 // Short replays on tiny chambers (the JSON files next to this one): each pins
 // how the rules play a change from the original rules (docs/elements.md,
 // "Changes from the original rules") or an element the original game didn't
-// have (the light barrier, the blocked wall that a link switches), and a few
-// pin how undo and redo replay. The replay check runs them. The chambers are read without the
-// layout checks, so the one open at the edge still plays
+// have (the light barrier, the blocked wall that a link switches). The replay
+// check runs them. The chambers are read without the layout checks, so the one
+// open at the edge still plays
 
 /**
  * A replay pinning one behaviour of the rules.
@@ -35,7 +36,7 @@ export type Fixture = {
   readonly name: string // Short id, used in the replay check's report
   readonly behaviour: string // The behaviour it pins, in plain words
   readonly chamber: ChamberData // The tiny chamber it is played on
-  readonly actions: readonly ReplayStep[] // The presses, in order
+  readonly actions: readonly Action[] // The presses, in order
   readonly expected: ReplayExpectation // What replaying the presses gives
 }
 
@@ -382,87 +383,6 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 5,
       portals: 1,
       finalHash: 'f6c42292',
-    },
-  },
-  {
-    name: 'undo_back_to_start',
-    behaviour: 'Undo takes back every step, through a portal crossing and a box carried off a button, to the start (the hash of replaying no presses). One more undo changes nothing, and undone moves and portals still count.',
-    chamber: buttonBehindCarriedBox,
-    actions: [
-      'turnUp',
-      'blue',
-      'interact',
-      'right',
-      'turnDown',
-      'interact',
-      'orange',
-      'interact',
-      'down',
-      'undo',
-      'undo',
-      'undo',
-      'undo',
-      'undo',
-      'undo',
-      'undo',
-      'undo',
-      'undo',
-      'undo',
-    ],
-    expected: {
-      completed: false,
-      moves: 2,
-      portals: 2,
-      finalHash: 'df038ff1',
-    },
-  },
-  {
-    name: 'redo_until_a_new_step',
-    behaviour: 'Redo takes undone steps again until a new step, which forgets the rest: the run ends where the first five presses alone end, and redo then changes nothing. Redo counts no moves or portals.',
-    chamber: buttonBehindCarriedBox,
-    actions: [
-      'turnUp',
-      'blue',
-      'interact',
-      'right',
-      'turnDown',
-      'interact',
-      'orange',
-      'interact',
-      'down',
-      'undo',
-      'undo',
-      'undo',
-      'undo',
-      'undo',
-      'undo',
-      'undo',
-      'redo',
-      'redo',
-      'turnDown',
-      'redo',
-    ],
-    expected: {
-      completed: false,
-      moves: 2,
-      portals: 2,
-      finalHash: '984c90e5',
-    },
-  },
-  {
-    name: 'undo_after_carrying_a_box_off_a_button',
-    behaviour: 'Undo after carrying a box off a button brings back the state after the pick-up, the button pressed and its door open (the hash of replaying the first press alone).',
-    chamber: buttonBehindCarriedBox,
-    actions: [
-      'interact',
-      'right',
-      'undo',
-    ],
-    expected: {
-      completed: false,
-      moves: 1,
-      portals: 0,
-      finalHash: 'c71db24b',
     },
   },
   {

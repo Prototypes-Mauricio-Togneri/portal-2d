@@ -38,15 +38,10 @@ export const CHANGELOG: ChangelogRelease[] = [
     date: '2026-11-07',
     changes: [
       'Change the controls under Settings',
-      'Keys keep their place on every keyboard layout: on AZERTY, the blue portal is Q and undo is W',
+      'Keys keep their place on every keyboard layout: on AZERTY, the blue portal is Q',
       'Keys pressed together all count, in the order pressed',
       'Moving with the numpad now needs its keys bound under Settings',
     ],
-  },
-  {
-    version: '0.0.3',
-    date: '2026-11-06',
-    changes: ['Undo and redo every step (Z and X)'],
   },
   {
     version: '0.0.2',
