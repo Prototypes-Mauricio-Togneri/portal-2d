@@ -48,7 +48,7 @@ None of its own yet. The decisions made while this stage and stage 04a were one 
 **Teach → test → twist → combine.** Each mechanic, and each existing element the campaign teaches, gets a run of chambers:
 - *Teach*: the mechanic alone, with no way to fail at understanding it.
 - *Test*: the mechanic alone, but you must use it on purpose.
-- *Twist*: an unexpected consequence of the rules (a fizzler mid-slide, a beam blocking your own path).
+- *Twist*: an unexpected consequence of the rules (a fizzler mid-slide, a door that shuts as you step into its beam).
 - *Combine*: with earlier mechanics.
 
 A full run was planned at 10–12 chambers per mechanic (1–2 teach, about 3 test, about 3 twist, 3–4 combine). With 16 new chambers for the whole campaign (04a decision 10), that no longer fits, so the campaign takes three mechanics at about 4 chambers each (04a decision 16). Stage 04a builds the first two of each mechanic's run, a teach and a proof chamber. A combine chamber can serve two mechanics at once.
@@ -73,7 +73,7 @@ The existing elements need chambers too (portal basics, boxes and buttons, doors
 | 2 | Slide floors | Combine | Carry a box across slides and through a portal to a button you can only reach by sliding |
 | 3 | Rotating arrows | Test | An arrow held turned by a button you must put a box on |
 | 4 | Rotating arrows | Combine | Arrows that change where a slide ends |
-| 5 | Live lasers | Twist | Once routed, the beam blocks your own path, so you must route it, stand in it to switch the receiver off, or route it again after crossing |
+| 5 | Live lasers | Twist | The beam that holds the exit door open crosses the tile in front of the door, so stepping there cuts the beam and shuts the door in your face. You must route the beam so it crosses your path somewhere else (04a decision 20) |
 | 6 | Live lasers | Combine | Carry a mirror box through portals to bend a beam onto a receiver behind a fizzler (the box resets if you carry it through) |
 
 ### Phase 0 — Ready the stage

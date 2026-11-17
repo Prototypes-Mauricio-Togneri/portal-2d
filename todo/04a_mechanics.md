@@ -1,7 +1,7 @@
 # Stage 04a — Mechanics
 
 Status: Draft
-Last revised: 2026-11-16
+Last revised: 2026-11-17
 
 ## Goal
 
@@ -96,7 +96,7 @@ Stages 00, 01 and 03 are done: their parts below are what they delivered, though
 
 ## Decisions made
 
-Made while this stage and stage 04b were one stage (README decision 15), so "this stage" and "here" in them mean both; stage 04b cites them as "04a decision N".
+Decisions 1–19 were made while this stage and stage 04b were one stage (README decision 15), so "this stage" and "here" in them mean both. Stage 04b cites them, and later ones, as "04a decision N".
 
 | # | Date | Decision |
 |---|---|---|
@@ -119,6 +119,7 @@ Made while this stage and stage 04b were one stage (README decision 15), so "thi
 | 17 | 2026-11-15 | Medals dropped from the plan, with their phase, their open decisions (thresholds) and storing the best moves and portals: the time stays the only score (README open decision 1 settled) |
 | 18 | 2026-11-15 | The other open decisions settled as recommended: today's laser tiles stay their own element; unfinished chambers go straight into the catalogue while only the author plays, and into a development-only lab list once friends play; a beam stops at the subject, which it leaves unharmed; a mirror box's angle is fixed in the chamber file; and the solver check skips, and names, each chamber it can't handle. With every open decision settled, the section was removed; their options stay in git history |
 | 19 | 2026-11-15 | Loading chambers without a hand-kept list dropped: it would only save one import line per chamber, the play order stays a hand-typed list anyway, the engine scripts can't use Vite's loading and keep their own list, and TypeScript would stop checking each chamber file against the chamber type. Chambers stay imported by hand in `src/services/chamber_catalogue.ts`; the catalogue check stays |
+| 20 | 2026-11-17 | The subject can walk into, stand in and cross a beam. A beam blocks nothing; it stops at the subject and leaves it unharmed (decision 18), so standing in a beam switches its receiver off until the subject steps out. Today's laser tiles stay the light that blocks walking, and a beam is only a signal, so the two differ in what they do, not only in colour. This replaces the draft rule that a beam blocks walking like a lit laser field. That rule repeated the laser tiles, and it came bundled with decision 18's option without being weighed on its own |
 
 ## Steps
 
@@ -173,10 +174,10 @@ Filled in from the real results during the mechanic phases and Phase 4:
 Draft spec:
 - A floor tile with no state of its own; not linkable in this version.
 - When the subject enters a slide floor (by walking or by coming out of a portal), it keeps moving in its travel direction, one tile at a time, all inside the same step.
-- Each tile entered gets the full landing checks. An open ditch, a lit laser field or beam, a light barrier that is on, a closed door or a closed exit stops the slide on the current tile. An arrow stops it unless the travel matches the arrow's direction, in which case the subject enters the arrow and stops there (arrows are not slide floor). An active fizzler fires as the subject passes (portals cleared, carried box reset) and the slide goes on.
+- Each tile entered gets the full landing checks. An open ditch, a lit laser field, a light barrier that is on, a closed door or a closed exit stops the slide on the current tile; a beam doesn't (decision 20). An arrow stops it unless the travel matches the arrow's direction, in which case the subject enters the arrow and stops there (arrows are not slide floor). An active fizzler fires as the subject passes (portals cleared, carried box reset) and the slide goes on.
 - If the next tile is a wall holding a portal whose open side faces the subject, and the other portal is open, the subject comes out of the other portal facing away from it. It keeps sliding in that direction if the exit tile is a slide floor, and stops there otherwise.
 - Entering a normal tile ends the slide on it. Entering the open exit ends the slide and completes the chamber.
-- Buttons and switches react only to the tile where the subject stops; passing over a button does not press it.
+- Buttons, switches and beams react only to the tile where the subject stops: passing over a button does not press it, and sliding through a beam does not cut it (decision 20).
 - Loose boxes don't slide. A carried box travels with the subject.
 - Turning on a slide floor (to face the mouse pointer) doesn't move the subject. Shooting from a slide floor works as usual.
 - If a slide would enter the same tile in the same direction twice (a loop through portals), the whole move is refused: the state stays as before the key and the existing `refused` event plays the error sound.
@@ -223,7 +224,7 @@ Draft spec:
   - At a mirror box it turns 90° by the box's angle.
   - At a receiver's face it lights the receiver and stops.
   - If it would enter the same tile in the same direction twice, it stops (a beam loop through portals).
-- A tile a beam crosses blocks walking, like a lit laser field. Portal shots pass beams.
+- A beam blocks nothing (decision 20): the subject walks into, stands in and crosses it. The beam stops at the subject, so standing in it switches its receiver off until the subject steps out. Lit laser fields stay what blocks walking. Portal shots pass beams.
 - **Receiver**: sits on a wall tile and listens on one face. Lit, it acts as a pressed button (activates its links); unlit, as a released button (deactivates them). As with a button (settled in stage 01), deactivating a link to a box does nothing.
 - **Mirror box**: carried like a box (Space). It holds buttons down like a box, goes through portals with the subject, is reset by fizzlers like a box, and reflects beams by a fixed `/` or `\` (decision 18).
 - **Settling a step**: apply the action and the subject's movement; trace the beams; evaluate buttons (by position) and receivers (by beams) in chamber data order; apply their links; trace again; repeat until nothing changes. If a state repeats (a receiver opening a door that blocks its own beam), stop at the first repeat, keep that state, and report it in the local checks as an oscillation warning.
@@ -233,9 +234,9 @@ Chambers. Teach: one emitter and one receiver that opens the exit door, with a w
 - [ ] **R1 Spec.** Finalise the spec above, including the settling rule, and fill the rows for emitter, beam, receiver and mirror box.
 - [ ] **R2 Element and format.** Element files for emitter, receiver and mirror box; optional lists in format v2. Laser fields stay their own element (decision 18).
 - [ ] **R3 Drawing and sounds.** The beam as a thin line, coloured unlike a laser field; emitter and receiver as wall notches; the mirror box as a box with a diagonal. Receiver on/off events.
-- [ ] **R4 Fixtures.** A straight beam, a beam through portals, a beam loop, a beam blocked by the subject, a mirror bend, a mirror carried through a portal, a receiver opening and closing a door, an oscillation that settles deterministically, a fizzler resetting a carried mirror.
-- [ ] **R5 Solver check.** Each mirror box adds a tile to the key, like a box (8 bits on today's chamber sizes). Beams add no bits, being derived, but if the subject blocks them (decision 18), where it stands can change links, which the solver's walks and shared shots assume it can't. `npm run verify` passes with the laser chambers in (decision 18).
-- [ ] **R6 Docs.** All four entries in `docs/elements.md`, with the settling rule written out.
+- [ ] **R4 Fixtures.** A straight beam, a beam through portals, a beam loop, a beam blocked by the subject, the subject walking into a beam and out again (its receiver off, then lit again), a slide passing through a beam and one ending in it, stepping onto the tile in front of a door a beam holds open (the door closes), a mirror bend, a mirror carried through a portal, a receiver opening and closing a door, an oscillation that settles deterministically, a fizzler resetting a carried mirror.
+- [ ] **R5 Solver check.** Each mirror box adds a tile to the key, like a box (8 bits on today's chamber sizes). Beams add no bits, being derived. But the subject blocks them and can walk into them (decisions 18 and 20), so any walk into or out of a beam can change links, which the solver's walks and shared shots assume it can't. The check will likely skip, and name, every laser chamber. `npm run verify` passes with the laser chambers in (decision 18).
+- [ ] **R6 Docs.** All four entries in `docs/elements.md`, with the settling rule written out. Add a `docs/level_design.md` guideline: a beam must not cross something its own receiver holds open (a door, the exit, a bridged ditch, or a laser or light barrier held off). Stepping onto it cuts the beam and switches it under the subject (decision 20).
 - [ ] **R7 Chambers.** Teach and test chambers, solutions, a cold playtest; neither raises an oscillation warning in the replay check or the random walk.
 
 ### Phase 4 — Wrap-up
@@ -275,7 +276,7 @@ Revised 2026-11-09 (decisions 13 and 14): the solver budget, no-solver, medal pa
 - **Interactions multiply.** Each new element must be defined against every other. The interaction table and fixtures exist so that gaps show up as "to do" cells, not as player bug reports.
 - **Beams settle in surprising ways.** Feedback through receivers and loops through portals are handled by deterministic rules and warnings, but they can still confuse players. Watch the playtest notes.
 - **State growth.** Mirror boxes (positions) grow the state. The printed state size shows it early; the solver check skips, and names, a chamber it can't handle (decision 18).
-- **New elements must read clearly.** Slide floor and plain floor, beam and laser field must stay distinct. R3's check and the cold playtests catch this.
+- **New elements must read clearly.** Slide floor and plain floor, beam and laser field must stay distinct, all the more since a laser field blocks walking and a beam doesn't (decision 20). R3's check and the cold playtests catch this.
 - **"Moves" changes meaning.** A slide moves many tiles on one key. Follow stage 01's definition (one move) and note any change in meaning, because analytics parameter names are permanent and their history spans the change.
 - **Feeling borrowed.** Keep names, looks and combinations original (decision 1).
 
