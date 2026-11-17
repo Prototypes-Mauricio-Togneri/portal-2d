@@ -151,7 +151,8 @@ export function hasAmbientLife(state: RulesState): boolean {
  * other draw layer back to front. The core step's layers (floor, portals,
  * subject) are drawn here; every other layer draws its element types in
  * registry order, each by its drawing in ELEMENT_DRAWINGS. Tiles are square,
- * sized to fit the chamber in the screen area, and row 0 is at the bottom.
+ * sized to fit the chamber in the screen area, but no larger than a chamber of
+ * the minimum size would get, and row 0 is at the bottom.
  * Part way through a step, the subject and a box it carries are drawn at the
  * subject's pose; the rest is drawn as the state after the step, but for the
  * blocked walls' steel still sliding apart or shut, the ditches' grates still
@@ -171,10 +172,11 @@ export class Renderer {
    * @param canvas - The canvas to draw on
    * @param screenWidth - Width available to the chamber, in pixels
    * @param screenHeight - Height available to the chamber, in pixels
+   * @param minimumTiles - Fewest tiles the tiles are sized for each way; a smaller chamber is drawn with the tiles a chamber this size would get, leaving the rest of the area empty
    * @throws Error when the canvas cannot provide a 2D context
    */
-  constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number) {
-    this.painter = new TilePainter(canvas, screenWidth, screenHeight)
+  constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number, minimumTiles = 1) {
+    this.painter = new TilePainter(canvas, screenWidth, screenHeight, minimumTiles)
   }
 
   /**

@@ -13,7 +13,7 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 
 ## Size
 
-- **Tile:** 256 × 256 px. The game shrinks each sprite once to the tile size on screen: about 40 px for chamber 1 on a 1080p screen, about 170 px for the tutorial on a high-DPI screen, and smaller still in the home menu's map.
+- **Tile:** 256 × 256 px. The game shrinks each sprite once to the tile size on screen: about 40 px for chamber 1 on a 1080p screen, about 125 px for the tutorial on a high-DPI 1920 × 1080 screen (a chamber under 16 tiles either way gets the tiles a 16 × 16 one would), and smaller still in the home menu's map.
 - **Overhang:** a sprite that spills past its tile (a glow, a portal reaching into the room) is 384 × 384 px: its tile is the centred 256 px square, with 64 px of margin on every side. Any sprite but a strip may overhang; the game tells by the file's size.
 - **Strips:** `wall`, `blocked_wall` and `ditch` are 1280 × 256 px, five tiles side by side (see [joins](#joins)).
 - **Any other size** is refused, and the sprite isn't drawn.

@@ -70,9 +70,10 @@ export type CodeDrawing = (ctx: CanvasRenderingContext2D, tileSize: number) => v
 
 /**
  * Paints the chamber's sprites onto a canvas for the renderer. Tiles are
- * square, sized to fit the chamber in the screen area, and row 0 is at the
- * bottom. Each sprite is drawn shrunk to the tile size (sprite_scaling), its
- * overhang around its tile, turned in quarter turns from facing up, at whole
+ * square, sized to fit the chamber in the screen area, but no larger than a
+ * chamber of the minimum size would get, and row 0 is at the bottom. Each
+ * sprite is drawn shrunk to the tile size (sprite_scaling), its overhang
+ * around its tile, turned in quarter turns from facing up, at whole
  * canvas pixels; a raised one over the shared drop shadow made from its
  * shape. A layer can be painted apart, on a canvas of its own, and laid down
  * later, with the shadow under its whole shape. What is drawn by code
@@ -84,6 +85,7 @@ export class TilePainter {
   private readonly context: CanvasRenderingContext2D // Its 2D context
   private screenWidth: number // Width available to the chamber, in pixels
   private screenHeight: number // Height available to the chamber, in pixels
+  private readonly minimumTiles: number // Fewest tiles the tiles are sized for each way, so a smaller chamber's tiles are no larger than a chamber this size would get
   private tileSize = 0 // Side of a tile, in pixels
   private columns = 0 // Chamber width, in tiles
   private rows = 0 // Chamber height, in tiles
@@ -94,12 +96,14 @@ export class TilePainter {
    * @param canvas - The canvas to draw on
    * @param screenWidth - Width available to the chamber, in pixels
    * @param screenHeight - Height available to the chamber, in pixels
+   * @param minimumTiles - Fewest tiles the tiles are sized for each way; a smaller chamber is drawn with the tiles a chamber this size would get, leaving the rest of the area empty
    * @throws Error when the canvas cannot provide a 2D context
    */
-  constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number) {
+  constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number, minimumTiles = 1) {
     this.canvas = canvas
     this.screenWidth = screenWidth
     this.screenHeight = screenHeight
+    this.minimumTiles = minimumTiles
 
     this.canvas.width = 0
     this.canvas.height = 0
@@ -140,8 +144,8 @@ export class TilePainter {
     this.columns = width
     this.rows = height
 
-    const blocksHorizontal = Math.trunc(this.screenWidth / width)
-    const blocksVertical = Math.trunc(this.screenHeight / height)
+    const blocksHorizontal = Math.trunc(this.screenWidth / Math.max(width, this.minimumTiles))
+    const blocksVertical = Math.trunc(this.screenHeight / Math.max(height, this.minimumTiles))
 
     this.tileSize = Math.min(blocksHorizontal, blocksVertical)
 
@@ -157,7 +161,7 @@ export class TilePainter {
    * @throws Error when the new canvas cannot provide a 2D context
    */
   createLayer(): TilePainter {
-    const layer = new TilePainter(document.createElement('canvas'), this.screenWidth, this.screenHeight)
+    const layer = new TilePainter(document.createElement('canvas'), this.screenWidth, this.screenHeight, this.minimumTiles)
 
     layer.setSize(this.columns, this.rows)
 

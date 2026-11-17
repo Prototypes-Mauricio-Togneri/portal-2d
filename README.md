@@ -12,10 +12,6 @@
 
 ## Mechanics
 
-Discouragement Redirection Cube: A specialized cube with built-in glass lenses used exclusively to reflect Thermal Discouragement Beams (lasers).
-
-Light beams: the player can pass through. they can be deflected. they can "turn on" some special switches
-
 Light beam receptor: if a light beam touches them, they activate.
 
 ## Level design

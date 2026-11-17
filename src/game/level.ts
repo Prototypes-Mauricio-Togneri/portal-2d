@@ -69,6 +69,9 @@ export class Level {
     GameKey.DOWN,
   ]
 
+  /** Fewest tiles the chamber is sized for each way, so a small chamber's tiles are no larger than a chamber this size would get */
+  private static readonly MINIMUM_TILES = 16
+
   /** The turn action that faces each direction */
   private static readonly TURNS: Readonly<Record<Direction, Action>> = {
     [Direction.UP]: Action.TURN_UP,
@@ -138,7 +141,7 @@ export class Level {
    */
   constructor(canvas: HTMLCanvasElement, bindings: KeyBindings, screenWidth: number, screenHeight: number) {
     this.canvas = canvas
-    this.renderer = new Renderer(canvas, screenWidth, screenHeight)
+    this.renderer = new Renderer(canvas, screenWidth, screenHeight, Level.MINIMUM_TILES)
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     this.input = new Input(bindings)
     document.addEventListener('visibilitychange', this.onVisibilityChange)

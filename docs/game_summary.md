@@ -5,7 +5,7 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 ## The view
 
 - Seen from straight above, with no perspective: the chamber is a grid of square tiles. Walls and other raised things cast a soft shadow.
-- The camera never moves: the whole chamber is always on screen, scaled to fit and centred. There is no scrolling and nothing outside the chamber to explore.
+- The camera never moves: the whole chamber is always on screen, scaled to fit and centred, but its tiles never grow larger than a chamber 16 tiles each way would get, so a small chamber leaves more of the room around it. There is no scrolling and nothing outside the chamber to explore.
 - Beside the chamber, a side panel shows the logo, the chamber's number, a timer and the controls, drawn as the player's own keys.
 
 ## Turn by turn
