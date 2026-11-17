@@ -1,0 +1,13 @@
+1. how movements work. how boxes work. how buttons work. how antlines work. how doors work
+2. how portals work. how walls work. how ditches work.
+	2a. a button opens a door but there is no box to keep the door open. the solution is to shoot a portal while the door is open
+3. sometimes you need to buttons to activate a door
+4. how blocked walls work. they can be deactivated with a button
+5. how lasers work
+6. how fizzlers work (trick the user to cross the fizzler carrying a box. a button controls the fizzler)
+7. how switches work
+8. how light barriers work
+9. how arrows work
+
+10. how light beams work
+11. how reflection boxes work
