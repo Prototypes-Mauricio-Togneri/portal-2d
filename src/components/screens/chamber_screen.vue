@@ -613,7 +613,7 @@ onBeforeUnmount(() => {
 
 .sign-time-value {
   position: relative;
-  top: -0.0625rem; /* A hair above the baseline so the digits sit centred beside the stopwatch */
+  top: -0.0625rem; /* A hair above the shared baseline; the reading as a whole is set lower, see above */
   font-family: var(--font-display);
   font-size: 1.125rem;
   font-variant-numeric: tabular-nums;
