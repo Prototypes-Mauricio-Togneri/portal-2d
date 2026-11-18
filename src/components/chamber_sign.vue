@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
  * The chamber's sign at the top of the chamber screen's rail, a white plate
- * framed in ink: the chamber's number, its place in the list beside whatever
- * the screen puts in the slot (the clock), a rule, then a pictogram for each
- * kind of element a chamber can hold, dark when this chamber has it and faint
- * when it hasn't.
+ * framed in grey: the chamber's number, its place in the list beside whatever
+ * the screen puts in the slot (the clock), a rule, then a row of pictograms,
+ * one for each kind of element a chamber can hold, dark when this chamber has
+ * it and faint when it hasn't.
  */
 import {computed} from 'vue'
 import ElementPictogram from '@/components/element_pictogram.vue'
@@ -29,7 +29,7 @@ export interface ChamberSignProps {
   layout: ChamberData | undefined // The chamber's file, read for the elements it holds
 }
 
-// In the sign's order, five to a row
+// In the sign's order, left to right
 const SIGN_ELEMENTS: readonly SignElement[] = [
   {
     kind: 'box',
@@ -133,15 +133,15 @@ function formatSignNumber(chamberNumber: number | null): string {
 </template>
 
 <style scoped>
-/* The plate: a white face framed in ink, standing off the rail like a sign fixed to the wall. A
-   little extra room under it sets the sign apart from the controls */
+/* The plate: a white face framed in muted grey, standing off the rail like a sign fixed to the
+   wall. A little extra room under it sets the sign apart from the controls */
 .chamber-sign {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   margin-bottom: 1rem;
   padding: 1.375rem 1.25rem;
-  border: 0.125rem solid var(--color-ink);
+  border: 0.125rem solid var(--color-ink-muted);
   background: var(--color-white);
   box-shadow: 0 0.375rem 1rem rgba(var(--color-ink-rgb), 0.12);
 }
@@ -182,18 +182,18 @@ function formatSignNumber(chamberNumber: number | null): string {
   background: var(--color-ink);
 }
 
-/* The elements, five to a row */
+/* The elements, all in one row */
 .sign-elements {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.5rem;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.25rem;
   margin-top: 0.25rem;
 }
 
-/* A framed square, its pictogram inset by a tenth of its width on each side */
+/* A framed square, its pictogram inset by 7% of its width on each side */
 .sign-element {
   aspect-ratio: 1;
-  padding: 10%;
+  padding: 7%;
   border: 0.09375rem solid var(--color-ink);
   color: var(--color-ink);
 }

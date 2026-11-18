@@ -572,7 +572,7 @@ onBeforeUnmount(() => {
 /* The clock, on the chamber sign beside the place in the list: stopwatch, small caption and digits in
    the sign face, whose digits share one width, so the readout never shifts (the body face's digits
    vary and have no tabular form); dimmed until the first key starts it. Caption and digits share a
-   baseline, a little below the stopwatch's middle, where they read level with it */
+   baseline, and the stopwatch's dial and the caption are raised to the middle of the digits */
 .sign-time {
   display: flex;
   align-items: center;
@@ -585,6 +585,8 @@ onBeforeUnmount(() => {
 }
 
 .sign-time-icon {
+  position: relative;
+  top: -0.09375rem; /* Centres the dial, below the crown, on the digits */
   flex: none;
   width: 1.25rem;
   height: 1.25rem;
@@ -602,7 +604,7 @@ onBeforeUnmount(() => {
 
 .sign-time-label {
   position: relative;
-  top: -0.09375rem; /* Lifts the shorter capitals from the shared baseline to the middle of the digits */
+  top: -0.15625rem; /* Lifts the shorter capitals from the shared baseline to the middle of the digits */
   color: var(--color-ink-muted);
   font-size: 0.8125rem;
   font-style: italic;
