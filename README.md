@@ -3,9 +3,6 @@
 ## TODO
 
 - fix chamber recordings
-- split plan 04 into two:
-  - new mechanics (add to the plan the info from this file)
-  - new levels
 - show hints for tutorial
   - how to shot portals
   - show a hint when standing on a button
