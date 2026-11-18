@@ -10,6 +10,7 @@ import {computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, useTemp
 import {onBeforeRouteLeave, onBeforeRouteUpdate, useRouter} from 'vue-router'
 import type {RouteLocationNormalized} from 'vue-router'
 import ChamberLegend from '@/components/chamber_legend.vue'
+import ChamberSign from '@/components/chamber_sign.vue'
 import CompletionDialog from '@/components/completion_dialog.vue'
 import ConfirmDialog from '@/components/confirm_dialog.vue'
 import PauseDialog from '@/components/pause_dialog.vue'
@@ -59,8 +60,6 @@ const playground = computed(() => props.chamberNumber === null) // Whether this 
 const chamber = computed(() => props.chamberNumber === null ? undefined : findChamber(props.chamberNumber)) // The chamber in the list; undefined for the playground
 const layout = computed(() => props.chamberNumber === null ? PLAYGROUND : chamber.value?.data) // What the game plays
 const nextChamber = computed(() => props.chamberNumber === null ? undefined : findChamber(props.chamberNumber + 1)) // The chamber after this one; undefined after the last and for the playground
-const signLabel = computed(() => playground.value ? 'Playground' : 'Chamber') // The sign's caption
-const signNumber = computed(() => props.chamberNumber === null ? '--' : String(props.chamberNumber).padStart(2, '0')) // Two digits, as on a test chamber sign; blank for the playground
 const chamberName = computed(() => props.chamberNumber === null ? 'Playground' : chamber.value?.name ?? `Chamber ${props.chamberNumber}`) // What the player sees it called, such as "Chamber 2" or "Tutorial"
 const dialog = ref<ChamberDialog>('none')
 const timeReadout = useTemplateRef<HTMLElement>('timeReadout')
@@ -472,11 +471,7 @@ onBeforeUnmount(() => {
 <template>
   <main class="chamber-screen">
     <aside class="chamber-rail">
-      <div class="chamber-sign">
-        <h1 class="sign-title">
-          <span class="sign-label ruled-label">{{ signLabel }}</span>
-          <span class="sign-number">{{ signNumber }}</span>
-        </h1>
+      <ChamberSign :chamber-number="chamberNumber" :layout="layout">
         <div
           class="sign-time"
           :class="{
@@ -503,7 +498,7 @@ onBeforeUnmount(() => {
             <span ref="timeReadout" class="sign-time-value">00:00.00</span>
           </span>
         </div>
-      </div>
+      </ChamberSign>
       <ChamberLegend />
       <PerformanceView v-if="PerformanceView !== null" ref="performanceView" />
     </aside>
@@ -574,47 +569,11 @@ onBeforeUnmount(() => {
   scrollbar-width: none;
 }
 
-/* Label and timer share the top row, the number runs below; the heading's own box is dropped so
-   its two spans can sit in the grid. A little extra room under the number sets the sign apart
-   from the controls, kept small so the rail fits short windows */
-.chamber-sign {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  column-gap: 1rem;
-  row-gap: 1.25rem;
-  margin-bottom: 1rem;
-}
-
-.sign-title {
-  display: contents;
-}
-
-.sign-label {
-  grid-column: 1;
-  grid-row: 1;
-  color: var(--color-ink-muted);
-  font-size: 0.9375rem;
-  font-style: italic;
-  letter-spacing: 0.35em;
-}
-
-.sign-number {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  font-family: var(--font-display);
-  font-size: 8rem;
-  font-weight: 700;
-  line-height: 0.8;
-  font-variant-numeric: tabular-nums;
-}
-
-/* The clock: stopwatch, small caption and digits in the sign face, whose digits share one width, so
-   the readout never shifts (the body face's digits vary and have no tabular form); dimmed
-   until the first key starts it. Caption and digits share a baseline, the stopwatch is centred on the digits */
+/* The clock, on the chamber sign beside the place in the list: stopwatch, small caption and digits in
+   the sign face, whose digits share one width, so the readout never shifts (the body face's digits
+   vary and have no tabular form); dimmed until the first key starts it. Caption and digits share a
+   baseline, a little below the stopwatch's middle, where they read level with it */
 .sign-time {
-  grid-column: 2;
-  grid-row: 1;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -633,6 +592,8 @@ onBeforeUnmount(() => {
 }
 
 .sign-time-reading {
+  position: relative;
+  top: 0.125rem;
   display: flex;
   align-items: baseline;
   gap: 0.5rem;

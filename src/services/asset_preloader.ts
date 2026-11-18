@@ -36,6 +36,7 @@ const IMAGE_URLS = Object.values(import.meta.glob<string>('@/assets/images/**/*'
 
 // The font faces index.html requests from Google Fonts; keep the two in step
 const FONT_FACES = [
+  '300 1rem "Oxanium"',
   '600 1rem "Oxanium"',
   '700 1rem "Oxanium"',
   '400 1rem "Chakra Petch"',
