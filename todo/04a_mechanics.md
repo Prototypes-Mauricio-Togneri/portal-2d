@@ -1,7 +1,7 @@
 # Stage 04a — Mechanics
 
 Status: Draft
-Last revised: 2026-11-17
+Last revised: 2026-11-18
 
 ## Goal
 
@@ -120,6 +120,11 @@ Decisions 1–19 were made while this stage and stage 04b were one stage (README
 | 18 | 2026-11-15 | The other open decisions settled as recommended: today's laser tiles stay their own element; unfinished chambers go straight into the catalogue while only the author plays, and into a development-only lab list once friends play; a beam stops at the subject, which it leaves unharmed; a mirror box's angle is fixed in the chamber file; and the solver check skips, and names, each chamber it can't handle. With every open decision settled, the section was removed; their options stay in git history |
 | 19 | 2026-11-15 | Loading chambers without a hand-kept list dropped: it would only save one import line per chamber, the play order stays a hand-typed list anyway, the engine scripts can't use Vite's loading and keep their own list, and TypeScript would stop checking each chamber file against the chamber type. Chambers stay imported by hand in `src/services/chamber_catalogue.ts`; the catalogue check stays |
 | 20 | 2026-11-17 | The subject can walk into, stand in and cross a beam. A beam blocks nothing; it stops at the subject and leaves it unharmed (decision 18), so standing in a beam switches its receiver off until the subject steps out. Today's laser tiles stay the light that blocks walking, and a beam is only a signal, so the two differ in what they do, not only in colour. This replaces the draft rule that a beam blocks walking like a lit laser field. That rule repeated the laser tiles, and it came bundled with decision 18's option without being weighed on its own |
+| 21 | 2026-11-18 | The slide floor looks like candidate A, "Hairlines", of the look-and-motion mockup (https://claude.ai/artifact/GtCKTDDaa8iUshquvW3Q3J): the floor tile a shade cooler, with thin diagonal lines that run on across neighbouring tiles, keeping the floor's groove so every tile stays a tile. Candidates B (a polished grey slab with no groove, under a soft sheen) and C (the same slab in pale lilac) were not chosen. Its SVG source is written out under Phase 1, step 2 |
+| 22 | 2026-11-18 | A slide is drawn along the path the step reports: the rules step also returns the tiles a slide passed (only when it slid), and the subject glides along them, through portals, instead of jumping to its end. Recomputing the path in the browser was rejected: a fizzler passed mid-slide closes portals and resets the carried box inside the step, so the browser would have to copy the rules |
+| 23 | 2026-11-18 | During a slide, what happens on the way shows when the subject gets there: a passed fizzler's break-up, the box leaving the subject's hands, the crossing's sound, and at the end the slide stop and whatever the step's settling changed (buttons, doors, the exit and the rest). A new press flushes what is still waiting. Every other step keeps playing everything in the press's frame, as today |
+| 24 | 2026-11-18 | A chamber file lists slide floors as it lists walls: each entry one tile (`x`, `y`) or a rectangle (`xFrom`, `xTo`, `yFrom`, `yTo`, both ends inclusive), since a slide area is usually a whole room or lane |
+| 25 | 2026-11-18 | Phase 1 is built R1–R6 first. R7 (the teach and test chambers, their recorded solutions and the cold playtest) follows once the author has tried slide floors in the playground |
 
 ## Steps
 
@@ -171,28 +176,175 @@ Filled in from the real results during the mechanic phases and Phase 4:
 
 ### Phase 1 — Slide floors
 
-Draft spec:
-- A floor tile with no state of its own; not linkable in this version.
-- When the subject enters a slide floor (by walking or by coming out of a portal), it keeps moving in its travel direction, one tile at a time, all inside the same step.
-- Each tile entered gets the full landing checks. An open ditch, a lit laser field, a light barrier that is on, a closed door or a closed exit stops the slide on the current tile; a beam doesn't (decision 20). An arrow stops it unless the travel matches the arrow's direction, in which case the subject enters the arrow and stops there (arrows are not slide floor). An active fizzler fires as the subject passes (portals cleared, carried box reset) and the slide goes on.
-- If the next tile is a wall holding a portal whose open side faces the subject, and the other portal is open, the subject comes out of the other portal facing away from it. It keeps sliding in that direction if the exit tile is a slide floor, and stops there otherwise.
-- Entering a normal tile ends the slide on it. Entering the open exit ends the slide and completes the chamber.
+**Where this stands (2026-11-18).** Planned in detail below, in one session that will not be around to explain it, so this section is meant to be enough on its own. The author chose decisions 21–25. The items under "To confirm" are proposals the author has not answered yet: ask about them before R1, and before any code. Nothing is built yet; no file outside this one was changed. The mockup (decision 21's link; read it with the Artifact tool's `read` action) shows the three candidate tiles and a chamber playing the spec below with the game's own sprites. Its few lines of rules script were written for the page and are not code to copy into the game.
+
+#### Spec
+
+The draft, with what planning settled folded in. A bullet marked *(to confirm)* is a proposal, listed again under "To confirm".
+
+- A floor tile with no state of its own; not linkable in this version. It blocks nothing: walking, shots and portals treat it as plain floor, apart from what follows.
+- When the subject enters a slide floor (by walking, or by coming out of a portal), it keeps moving in its travel direction, one tile at a time, all inside the same step. A subject at rest on a slide floor (a slide that ended against a wall) that moves onto another slide floor enters it, so it slides again; one that moves onto plain floor just steps.
+- Each tile entered gets the same checks as a step onto it (`canEnter` and `boxBlocksEntry` in `step.ts`). An open ditch, a laser that is on, a light barrier that is on, a closed door, a closed exit, an arrow pointing any other way, or a resting box *(to confirm)* stops the slide on the current tile. A beam doesn't (decision 20). An arrow pointing the travel's way is entered, and the slide stops on it (arrows are not slide floor).
+- A fizzler that is on fires as the subject passes over it: both portals close and a carried box goes back to its start, as the fizzler rule does. The slide goes on, and a wall whose portal the fizzler closed is a plain wall for the rest of the slide.
+- If the next tile is a wall holding a portal whose open side faces the subject, and the other portal is open, the subject comes out of the other portal facing away from it (`crossed`). It keeps sliding that way if the exit tile is a slide floor, and stops there otherwise. Mid-slide, a crossing whose exit tile can't be entered stops the slide in front of the portal, silently *(to confirm)*; a crossing tried from rest is refused as today, with the error sound.
+- Entering a plain tile ends the slide on it. Entering the open exit ends the slide and completes the chamber.
 - Buttons, switches and beams react only to the tile where the subject stops: passing over a button does not press it, and sliding through a beam does not cut it (decision 20).
-- Loose boxes don't slide. A carried box travels with the subject.
-- Turning in place on a slide floor (with the turn key) doesn't move the subject. Shooting from a slide floor works as usual.
-- If a slide would enter the same tile in the same direction twice (a loop through portals), the whole move is refused: the state stays as before the key and the existing `refused` event plays the error sound.
-- A slide counts as one move (README decision 8).
-- Chamber validation: a slide floor can't share a tile with a wall, ditch, door, exit, arrow or switch.
+- Loose boxes don't slide; a box can be put down on, and picked up from, a slide floor as from plain floor. A carried box travels with the subject.
+- Turning in place on a slide floor (with the turn key) doesn't move the subject. A turn towards the way the subject already faces is a move, as today, so it may slide. Shooting from a slide floor works as usual.
+- If a slide would enter the same tile in the same direction twice (a loop through portals), the whole move is refused: the state stays exactly as before the key, the facing included *(to confirm)*, and `refused` plays the error sound. The tile the subject started on doesn't count as entered.
+- A slide counts as one move (README decision 8). A slide that ends back on its start tile counts none, as a crossing back onto the same tile does today; if the facing is also unchanged, `step` returns the very same state, so nothing is drawn, though its events still play.
+- Events: `slideStarted` the first time in a step the subject moves on from a slide floor tile it entered; `slideStopped` when that slide ends. Entering a slide floor and being stopped at once reports neither.
+- Chamber validation: a slide floor can't share a tile with a wall, ditch, door, exit, arrow or switch. It may share one with a button, a fizzler, a laser, a light barrier, a box's start and the subject's start *(to confirm)*. It can't stand on the chamber's edge. A tile listed twice in the slide floors is an error, as it is for walls.
+
+#### To confirm
+
+Proposals made while planning, not yet answered by the author. Ask before R1; the plan below assumes the proposal in each.
+
+1. **Tile sharing.** A slide floor may share its tile with a button, a fizzler, a laser, a light barrier, a box's start and the subject's start, as the draft spec implies by forbidding only the others. Today a floor tile holds at most one of light barrier, ditch, door, exit, fizzler, arrow, button, switch and laser (`FIXTURES` in `validate_chamber.ts`), so the slide floor stays out of that list and gets its own check. Without sharing, "button passed over" and "fizzler mid-slide" can't happen in a real chamber.
+2. **A box ahead stops a slide**, on the tile before it, as it stops a walk (the draft's "full landing checks"; its list of what stops a slide leaves boxes out).
+3. **A refused loop leaves even the facing unchanged**, as the draft says, although a crossing refused from rest keeps the new facing today (`docs/elements.md`, crossing a portal).
+4. **Mid-slide, a portal whose exit tile can't be entered stops the slide in front of it, without the error sound.** The draft doesn't say. Today's `crossPortal` emits `refused` in that case, so the slide needs its own crossing that doesn't.
+5. **The interaction table.** R1 asks to "fill the slide floor's row" of Phase 0's interaction table, which doesn't exist yet. Proposal: write the slide floor's interactions into its rules in `docs/elements.md`, and leave R1 unticked until Phase 0 builds the table (or build the table first, as Phase 0 asks).
+6. **The chamber sign gets an eleventh pictogram.** Its row is fixed at ten columns (`repeat(10, 1fr)` in `chamber_sign.vue`). Proposal: eleven columns in one row, every pictogram a little smaller.
+7. **Names.** Element kind `slideFloor`, chamber file field `slideFloors`, sprite `slide_floor`, events `SLIDE_STARTED: 'slideStarted'` and `SLIDE_STOPPED: 'slideStopped'`, definition property `continuesMovement` (step 3). Avoid the word "sliding" in new names: it already names the doors', grates' and blocked walls' opening animation (`SlidingKind` and `slidingDrawing` in `element_drawings.ts`, `drawTileSlid` in `tile_painter.ts`, "Sliding" in `docs/sprites.md`). These are working names (decision 1); Phase 0's "Names and colours" isn't done.
+8. **Placeholder sounds.** Two new `Sound`s that reuse existing files, so real files later swap in one place. Suggested: slide start on `cross.mp3` at a lower volume, slide stop on `box.mp3`; pick by ear in the browser. No new audio file.
+9. **The completion dialog after a slide onto the exit.** Today `onCompleted` runs in the press's frame, so the dialog would cover a slide still being drawn. Proposal: the level calls it when the slide's drawing ends; the clock still stops at the press, and the time shown is unchanged.
+
+#### The code as it is (found 2026-11-18)
+
+So a new session doesn't have to explore again. Line numbers drift; the names don't.
+
+- **Element definitions.** `ElementDefinition` in `src/game/rules/element_definition.ts`, built with `defineElement<Entry>()({...})`: `kind`, `fileKey`, `count` (`'one'` or `'many'`), `sitsOn`, `layer`, `linkable`, `defaultBlocked` (`null` means no blocked flag), `blocksWalking`, `blocksShots`, `stopsShootingFrom`, `takesPortals` (nothing reads it), `reactsToSubject` (only the solver's walk graph reads it), `events`, and `hooks`: `interact`, `subjectInside` (the fizzler rule), `everyPass` (the button), `linkUnblocked`, `linkBlocked`, each `(draft, index)`. No hook runs when the subject enters a tile, and none can keep it moving. The arrow (`elements/arrow.ts`) is the simplest definition to copy: `layer: 'floorMarks'`, `blocksWalking: 'alongDirection'`, everything else never or false, no hooks. `ELEMENT_REGISTRY` in `element_registry.ts` lists every definition; its order is the drawing order within a layer. `CORE_STEP_EVENTS` there owns the two portal-opened events, `crossed` and `refused`.
+- **The step** (`src/game/rules/step.ts`). `move` checks `allowsWay` on the current tile (on an arrow only its way acts), faces the subject, returns there for a turn, then either crosses (`portalEntrance` on the wall ahead, then `crossPortal`) or calls `draft.moveSubject` when `canEnter` and not `boxBlocksEntry`. It moves one tile and has no loop. `crossPortal` checks the exit tile with `canEnter` and `boxBlocksEntry`, then moves, faces the exit side and emits `crossed`, or emits `refused`. `step()` makes a `StateDraft`, runs the action (`runAction`), `draft.carryBoxAlong()`, then `settle`: passes capped at 32 (`PASS_CAP`), each running the `subjectInside` hooks of the elements on the subject's tile only, then every `everyPass` hook, then `destroyBoxesOnBlockedTiles`; then the exit check at the subject's tile. It returns the very same state object when nothing changed. `StepResult` is `{state, events}`.
+- **The fizzler rule** (`applyFizzlerRule`, `elements/fizzler.ts`) runs only at the tile where the subject ends, so a fizzler passed mid-slide is missed unless the slide runs it. It is safe to run more than once a step: it reports `fizzled` at most once, and not at all when the subject started the step in a field that is on (it then has no portals or box to lose).
+- **The draft** (`state_draft.ts`): `moveSubject`, `face`, `emit`, `closePortals`, `destroyCarriedBox`, `carryBoxAlong`, `toState()`, and reads from `StateReader`. There is no rollback, and an emitted event can't be withdrawn.
+- **Events.** `GameEvent` in `src/game/game_event.ts` is a plain string union (a type plus a const object), with no payload. Each event has exactly one owner, a definition's `events` or `CORE_STEP_EVENTS`, checked by `checkRegistryEvents` in `scripts/check_chambers.ts`. `Level.SOUNDS` in `src/game/level.ts` maps every event to a `Sound` or `null`, so the build asks for each new one. `Sound`s are in `src/game/sound.ts` (`new Sound(importedUrl, volume)`); a `Sound` played again restarts itself, cutting off the first; several `Sound`s may share one file.
+- **Format and loader.** `ChamberData` in `src/game/chamber_data.ts`; its element fields are typed from the registry. `WallData = PositionData | WallRangeData` (`{xFrom, xTo, yFrom, yTo}`, both ends inclusive), read by `readWall` in `src/game/rules/chamber_parser.ts`, where `CHAMBER_FIELDS` lists every field by hand (`checkRegistryFields` in `check_chambers.ts` compares it with the registry) and `readChamber` reads each list by hand. The compiled chamber (`compiled_chamber.ts`) indexes every registered kind by tile with no change (`elementAt(kind, x, y)`, constant time, `NO_ELEMENT` when none), and `listEntries` (`chamber_entries.ts`) already expands rectangles for any kind.
+- **Validator** (`src/game/rules/validate_chamber.ts`). `OccupantKind` is a hand-written union; `placeElements` has one line per kind; `placeWalls` and `placeWall` handle rectangles and report a tile listed twice; anything sharing a wall's tile is reported as inside a wall; `FIXTURES` allows at most one of its kinds per tile (two crossing lasers aside); a box or the subject may start only where every fixture is a button (`startsBadly`); `EDGE_KINDS` is what may stand on the edge; `describeKind` words a kind whose name is more than one word ("a lightBarrier" otherwise).
+- **Hashes.** A chamber's hash (`getChamberHash` in `src/game/replay_data.ts`) hashes the parsed chamber, where a missing list is `undefined` and dropped, so every existing chamber keeps its hash as long as it leaves `slideFloors` out (an empty list would change it). The slide floor has no flag, so no state hash changes either: every recorded solution and fixture must still pass unchanged.
+- **Drawing.** `BACKDROP_LAYERS` in `src/game/renderer.ts` is floor, floorMarks and structure, drawn once per chamber and tile size. `drawFloor` paints the `floor` sprite on every tile and never draws the `'floor'` layer's elements, so an element on layer `'floor'` is drawn nowhere today. `drawBackdropCover` draws the floorMarks layer (arrows) over the antlines, which an opaque tile would hide. Both backdrop paths (`drawBackdrop` and `composeBackdrop`, which redraws when an antline lights) call `drawFloor`. `ELEMENT_DRAWINGS` in `src/game/element_drawings.ts` is a `Record` over every kind, so the build asks for an entry. Sprites: `SPRITE_SHAPES` in `src/game/sprite_set.ts` (its key order is the gallery's order; shape `'tile'` takes 256 or 384 px); files are found by name (`import.meta.glob` in `sprite_sources.ts`); `npm run assets:check` requires one file per key, so the file goes in first; `RAISED_SPRITES` gets the drop shadow (not this one).
+- **Animation.** `StepAnimation` (`src/game/step_animation.ts`) has one fixed `STEP_MILLISECONDS = 120`, a cubic ease-out and a one-frame lead; `StepTransition` is `{from, to, events, progress}`. `subjectPose` (`src/game/subject_pose.ts`) works from `from` and `to` alone: a one-tile glide, or a single crossing found from the portals before it; anything else shows the subject at its end at once. `Level.applyStep` knows the action but doesn't pass it on, and starts every effect in the press's frame: element transitions (`changes.start`), fizzle particles (`fizzle.start(before, after, events, time)`, which puts a lost carried box's burst at `after`'s subject tile), box fall, portal openings, miss ripple, then `playEvents`. The subject's sprite (holding a box or the gun) comes from the state drawn.
+- **Moves.** `Level` counts a move when the subject's tile changes, and `countsAsMove` (`src/game/rules/step_counts.ts`) does the same for the replay runner and the solver; `createReplay` checks the two agree. No change needed. Comments that say "tiles stepped onto" (`analytics.ts`, `level.ts`, `replay_data.ts`, `replay_runner.ts`, AGENTS.md's analytics rule) should say "steps that put the subject on another tile".
+- **Solver.** `walk_graph.ts` treats the tiles of every kind with `reactsToSubject` as event tiles: walks never lead onto one and a walk from one goes nowhere. `scripts/check_solver.ts` checks walks only from states along the recorded solutions of chamber files, and every move onto an event tile goes through the rules' step. Traced, not run: with `reactsToSubject: true` on the slide floor, every solver check should pass, and nothing in the state key, shot lines or action filter assumes a move goes one tile. Decision 18's skip mechanism is not built. The solver ignores extra fields on `StepResult`.
+- **Chamber sign.** `src/components/chamber_sign.vue`: `SIGN_ELEMENTS`, a hand list of `{kind, field, name}`, each shown dark when the chamber file's list is non-empty; the grid is `repeat(10, 1fr)`. `src/components/element_pictogram.vue`: one hand-drawn SVG per kind on a 48 × 48 viewBox in a `v-if` chain, with line-weight classes; nothing checks that a kind has one.
+- **Fixtures.** `Fixture = {name, behaviour, chamber, actions, expected: {completed, moves, portals, finalHash}}` in `scripts/fixtures/fixtures.ts`; each chamber is a JSON file in `scripts/fixtures/`, imported at the top and typed `ChamberData`, read without the layout checks; `listFixtureChambers()` feeds the random walk. No helper prints a hash: write a placeholder, run `npm run replay:check`, and copy the actual hash it prints, but only once the outcome is checked to be the intended one (by reasoning, or by a throwaway script that prints the end state). Validator cases: `ChamberCase = {name, data, problems}` in `scripts/fixtures/format_examples.ts`, each problem the exact printed line, also copied from a failing `npm run chamber:check`. `scripts/fixtures/format_v2_example.json` is meant to hold every addition to the format.
+- **Playground** (`src/dev/playground.json`): 15 × 15, a cross whose four arms each test one group, every arm used, the corners solid wall. Its layout is described by hand in AGENTS.md (Chambers) and in a comment in `src/services/chamber_catalogue.ts`.
+- **Sprite gallery.** The specimen chamber is `specimenData(on)` in `src/dev/gallery_layouts.ts` (10 × 8; free floor tiles include (1,6), (2,6) and (3,6)); its description is in `src/dev/sprite_gallery.html`.
+
+#### Plan
+
+Steps in order; each says what it changes and how it is checked. After every step that changes code: `npm run lint:fix`, then `npm run build` (it type-checks first). Every existing recorded solution and fixture must keep passing unchanged throughout.
+
+1. **R1, the spec.** Once the author has answered "To confirm", write the answers into the spec above, drop the *(to confirm)* marks, and update "To confirm". Checked by reading the spec against `docs/elements.md`'s rules.
+2. **The sprite.** Add `art/sprites/slide_floor.svg` with the source below, then export it as AGENTS.md says, opaque like `floor`: `inkscape art/sprites/slide_floor.svg --export-type=png --export-filename=slide_floor.png`, then `convert slide_floor.png -quality 90 -alpha off src/assets/images/chamber/slide_floor.webp` (delete the PNG). Add `slide_floor: 'tile'` to `SPRITE_SHAPES` right after `floor`. In `docs/sprites.md`: the transparency list of sprites that fill their tile, the count sentence before "The set", a row after `floor` in "The set" (renumber the rows after it), and `slide_floor` in row 1 of "Order". In AGENTS.md, add `slide_floor` to the sprites exported with `-alpha off`. Checked by `npm run assets:check` and the sprite gallery (`/src/dev/sprite_gallery.html` in `npm run dev`).
+
+   The source. Its face is a shade cooler and greyer than the floor's (232, 235, 242 against 239, 241, 248), under the floor's texture at a little less strength. Over it run twelve lines along x + y = 21.33 + 42.67 k (k = 0 to 11, six to a tile's width), so they meet their neighbours' lines across every edge. Last come the floor's own lip and groove:
+
+   ```svg
+   <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+     <!--
+       A slide floor (docs/sprites.md): the floor tile a shade cooler, with thin
+       diagonal lines that run on across neighbouring tiles, so a run of slide
+       floor reads as one hatched surface; it keeps the floor's groove.
+     -->
+     <defs>
+       <!-- The floor's mottling and grain, a little fainter, wrapping at the tile's edges -->
+       <filter id="texture" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+         <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="11" stitchTiles="stitch" result="mottle"/>
+         <feColorMatrix in="mottle" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.06" result="softLayer"/>
+         <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="5" stitchTiles="stitch" result="grain"/>
+         <feColorMatrix in="grain" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.04" result="grainLayer"/>
+         <feMerge>
+           <feMergeNode in="softLayer"/>
+           <feMergeNode in="grainLayer"/>
+         </feMerge>
+       </filter>
+       <clipPath id="tile">
+         <rect x="0" y="0" width="256" height="256"/>
+       </clipPath>
+     </defs>
+
+     <!-- The tile's face -->
+     <rect x="0" y="0" width="256" height="256" fill="rgb(232, 235, 242)"/>
+     <rect x="0" y="0" width="256" height="256" filter="url(#texture)"/>
+
+     <!-- The diagonal lines, x + y = 21.33 + 42.67 k, so they repeat every tile -->
+     <g clip-path="url(#tile)" stroke="rgb(168, 173, 186)" stroke-width="6">
+       <line x1="85.33" y1="-64" x2="-64" y2="85.33"/>
+       <line x1="128" y1="-64" x2="-64" y2="128"/>
+       <line x1="170.67" y1="-64" x2="-64" y2="170.67"/>
+       <line x1="213.33" y1="-64" x2="-64" y2="213.33"/>
+       <line x1="256" y1="-64" x2="-64" y2="256"/>
+       <line x1="298.67" y1="-64" x2="-64" y2="298.67"/>
+       <line x1="341.33" y1="-64" x2="-64" y2="341.33"/>
+       <line x1="384" y1="-64" x2="-64" y2="384"/>
+       <line x1="426.67" y1="-64" x2="-64" y2="426.67"/>
+       <line x1="469.33" y1="-64" x2="-64" y2="469.33"/>
+       <line x1="512" y1="-64" x2="-64" y2="512"/>
+       <line x1="554.67" y1="-64" x2="-64" y2="554.67"/>
+     </g>
+
+     <!-- The floor's lit lip just inside the groove, and half of the groove shared with each neighbour -->
+     <rect x="5.5" y="5.5" width="245" height="245" fill="none" stroke="rgb(237, 238, 243)" stroke-width="3"/>
+     <rect x="2" y="2" width="252" height="252" fill="none" stroke="rgb(186, 187, 194)" stroke-width="4"/>
+   </svg>
+   ```
+
+   In the mockup it read clearly apart from plain floor at 40 px a tile (chamber 1 on a 1080p screen); at the home menu map's 16 px it turns into a faint hatch, still apart from the floor.
+3. **R2, the element and the format.**
+   - `src/game/rules/element_definition.ts`: a new required property `continuesMovement: boolean` ("entering its tile keeps the subject moving the same way"), the movement-continuation hook Phase 0 names, kept as data; set it to `false` in every existing definition.
+   - `src/game/rules/elements/slide_floor.ts` (new): `kind: 'slideFloor'`, `fileKey: 'slideFloors'`, `count: 'many'`, `sitsOn: 'floor'`, `layer: 'floor'`, `linkable: false`, `defaultBlocked: null`, `blocksWalking: 'never'`, `blocksShots: 'never'`, `stopsShootingFrom: 'never'`, `takesPortals: 'never'`, `reactsToSubject: true` (R5), `continuesMovement: true`, `events: [GameEvent.SLIDE_STARTED, GameEvent.SLIDE_STOPPED]`, no hooks. Its entry type is `WallData`, or a new alias of it named for floors in `chamber_data.ts`.
+   - `element_registry.ts`: its line (first, as the only floor-layer element) and the doc comments.
+   - `game_event.ts`: `SLIDE_STARTED` and `SLIDE_STOPPED`. `level.ts`: their entries in `SOUNDS`, with the placeholder `Sound`s in `sound.ts` (To confirm, 8).
+   - `chamber_parser.ts`: `slideFloors` in `CHAMBER_FIELDS`, and its list read in `readChamber` with the walls' reader. Leave it out of the parsed object when the file leaves it out, so old hashes hold.
+   - `validate_chamber.ts`: `'slideFloor'` in `OccupantKind`, placed like walls (rectangles, a tile listed twice), wording "a slide floor" in `describeKind`, kept out of `FIXTURES` and `EDGE_KINDS`, and a new check in `checkOverlaps`: a slide floor on a ditch, door, exit, arrow or switch is an error (a wall is already caught by "inside a wall"). Leave `startsBadly` alone, so the subject and boxes may start on it.
+   - `draw_layer.ts`: its comment, which says the core step draws the floor and one fixed element per floor tile.
+   - `scripts/fixtures/format_examples.ts`: a broken case for each new problem (a slide floor on each of ditch, door, exit, arrow and switch, a slide floor listed twice, a rectangle whose from corner is past its to corner, a slide floor on the edge), plus slide floors, a tile and a rectangle, in `format_v2_example.json`.
+   - Checked by the build, `npm run chamber:check` (the new cases report exactly their pinned problems; the registry checks pass), and `npm run replay:check`, `npm run smoke:engine` and `npm run random:walk` passing unchanged.
+4. **The slide rule** (`src/game/rules/step.ts`, `state_draft.ts`).
+   - After `move` steps the subject onto a tile, or `crossPortal` brings it out onto one, and the tile holds an element with `continuesMovement` (read from the registry, like the other lookup tables at the top of `step.ts`), run the slide: take the next tile the way the subject faces. On a wall, cross if `portalEntrance` finds a portal and the exit tile passes `canEnter` and `boxBlocksEntry` (then emit `crossed` and face the exit side), else stop: mid-slide a blocked exit tile stops it silently (To confirm, 4). Otherwise step on when `canEnter` and not `boxBlocksEntry`, else stop. Stop after entering a tile without `continuesMovement` (the open exit included; `settle` completes the chamber).
+   - Before moving on from each tile it passes, run the `subjectInside` hooks of the elements on that tile, as `runPass` does (this is the fizzler rule; the final tile is left to `settle`, as today). Emit `slideStarted` on the first move on from a slide floor tile, and `slideStopped` when the slide ends.
+   - Keep a set of (tile, way) entered in the slide; it bounds the loop (at most four entries a tile). On a repeat, the action reports a whole refusal: `step()` then drops the draft and returns the state before the key with only `refused`, without settling. No rollback is needed.
+   - `StepResult` gains `path`: an empty shared constant (no allocation, so the solver, which calls `step` millions of times, pays nothing) unless the step slid. Otherwise one leg per tile entered, starting with the move or crossing that began it: the tile, the way, whether it came out of a portal, the events emitted while entering it (the draft records how many events existed when each leg began), and the state after entering it (`draft.toState()`, before settling). Return it from `step()`; `startChamber` returns the empty path. The solver, the replay runner and the scripts ignore it.
+   - Checked by the build, `npm run chamber:check` (each new event has one owner), `npm run replay:check` and `npm run random:walk` unchanged, and the fixtures of step 5.
+5. **R4, the fixtures** (`scripts/fixtures/fixtures.ts`, one small JSON chamber per case or shared, in `scripts/fixtures/`, a `behaviour` line each). One per spec bullet and edge case: slide to a wall (stops on the last slide floor); onto a plain tile (stops on it); through a portal onto a slide floor, then onto a plain tile; from plain floor into a portal whose exit tile is slide floor (slides); a fizzler mid-slide, with both portals open and a box carried (portals closed, box back at its start, slide goes on, `moves: 1`); an arrow pointing the slide's way (stops on it) and one pointing elsewhere (stops before it); an open ditch, a laser on and a light barrier on ahead (stops before each); the exit mid-slide (completes); a refused loop (state and facing unchanged, `moves: 0`); a button passed over (not pressed) and one stopped on (pressed, its link acting); a box ahead (stops before it); a carried box (ends on the final tile, put down there afterwards); a mid-slide crossing that can't come out (stops in front of the portal, no `refused`); a turn in place on slide floor (doesn't move). Get each hash as "The code as it is" says, after checking its outcome. Checked by `npm run replay:check` passing, and failing once with the slide deliberately broken (say, the fizzler not run mid-slide), then reverted.
+6. **R3, drawing and motion.**
+   - `renderer.ts`: `drawFloor` also draws the `'floor'` layer's elements after the plain floor, so slide floors sit under the antlines, arrows and walls in both backdrop paths; update its comments. `element_drawings.ts`: `slideFloor: drawSlideFloors`, which draws `slide_floor` on every tile of every entry (rectangles expanded), modelled on `drawSwitches`. It joins no other list there or in `element_transitions.ts`.
+   - `step_animation.ts`: `start` also takes the path; a step that slid lasts (units + 1) × 60 ms, counting one unit for a plain leg and two for a crossing, and its distance along the path is one tile every 60 ms until the last unit, then an ease-out (1 − (1 − t)²) over the last 120 ms, which starts at that same speed. Every other step keeps the 120 ms cubic ease-out. The one-frame lead stays. A six-tile slide takes about 0.42 s.
+   - `subject_pose.ts`: with a path, the pose along it: a plain leg glides; a crossing leg slides into the entry portal facing it, clipped to the tile it left, then out of the exit portal, clipped to the tile it reached, as `crossingPose` does; distances rounded to whole canvas pixels. Without a path, today's code, unchanged.
+   - What is drawn during a slide (`renderer.ts`, `level.ts`): the state of the leg the subject is at least half-way into (portals, boxes, buttons, flags, and the subject's sprite, holding a box or the gun), then the step's final state once the slide ends.
+   - `level.ts` (decision 23): for a step that slid, nothing but the counts, the log and the clock happens at the press. Each leg's events and effects wait for the moment the subject is half-way into that leg's tile (for a crossing, the moment it passes through the portal): its sounds, and, when `fizzled` is among them, `fizzle.start(previous leg's state, this leg's state, its events, time)`, which breaks up the portals and puts a lost carried box's burst at this leg's tile, so `fizzle_particles.ts` needs no change. `slideStarted` plays as the subject reaches the first slide floor tile it moves on from. At the slide's end: `slideStopped` and every event from settling, with the element transitions, box fall, portal openings and ripple started from the last leg's state to the final state, and `onCompleted` (To confirm, 9). A press, a load or a reset while a slide is drawn ends it at once, as today, after first firing everything still waiting, in order. Pausing doesn't hold them, since the step animation already runs while paused. With `prefers-reduced-motion`, nothing glides and everything happens at the press, as today.
+   - Leave out the mockup's motion trail (after-images while sliding); the spec doesn't ask for it.
+   - Checked in the browser (AGENTS.md, "Testing in the browser": `npm run dev`, a new tab, muted as AGENTS.md says) on the playground once step 8 is done: every case of step 5 played by hand, at pixel ratio 1 and 2, with reduced motion, and with the sound setting off silencing the new sounds; and the sprite gallery.
+7. **The chamber sign** (use the `frontend-design` skill). `element_pictogram.vue`: a slide floor pictogram in the style of the others, for example a square tile with three diagonal hatch lines. `chamber_sign.vue`: its `{kind: 'slideFloor', field: 'slideFloors', name: …}` line in `SIGN_ELEMENTS`, and the column count (To confirm, 6). AGENTS.md says "ten kinds"; make it eleven. Checked by a browser screenshot of the sign in a chamber with and without slide floors.
+8. **Playground and gallery.**
+   - `src/dev/playground.json`: give the slide floor a place (AGENTS.md asks it of every new element), for example a slide room carved out of a solid corner and reached from one arm: one rectangle of slide floor, walls that take portals at its far ends, a fizzler across it, a button on slide floor and a box. Update its description in AGENTS.md (Chambers) and in `chamber_catalogue.ts`'s comment.
+   - `src/dev/gallery_layouts.ts`: slide floor on (1,6) to (3,6) of the specimen chamber, and the specimen's description in `sprite_gallery.html`.
+   - Checked by `npm run chamber:check`, `npm run smoke:engine` and `npm run random:walk`, and both pages in the browser.
+9. **R5, the solver.** `reactsToSubject: true` (step 3) makes the solver's walks end on slide floor; `docs/solver.md` lists the event tiles, and says a new mechanic should declare its own. Checked by `npm run solver:check` passing. It only runs on campaign chambers, so it meets no slide floor until R7: tick R5 then.
+10. **R6, the docs.**
+    - `docs/elements.md`: the element table row; the `slideFloors` field under "Chamber format"; the slide under "Move or turn" and "Crossing a portal", and its interactions (fizzlers, buttons, arrows, boxes, the exit, portals, loops); the new problems under "What the validator rejects" and the sharing rule there; "Adding an element", step 1 (`continuesMovement`) and step 7 (the floor layer is now drawn into the backdrop, under the antlines).
+    - `docs/game_summary.md`: the tiles table, "How each tile looks" (next to the floor's "very light grey"), and the line that a step glides the subject one tile.
+    - `docs/level_design.md`: slide pitfalls under "States to avoid" and "Dead ends" (a slide that ends somewhere the subject can never leave; a loop the player can set up only to be refused).
+    - AGENTS.md: the rules' element count ("walls and the eleven elements" becomes twelve), the definition contract, the renderer's backdrop description, the step animation and effect timing in "Game/Vue boundary", the sign's "ten kinds", the playground, the fixtures, the `-alpha off` list, and "tiles stepped onto".
+    - The comments that say a move is one tile (see "Moves" above, and `draw_layer.ts`, `miss_ripple.ts`).
+    - The sounds and colours table above: the slide floor's colours (face 232, 235, 242; lines 168, 173, 186) and its placeholder sounds.
+    - Checked by reading each against the code.
+11. **Wrap-up.** `npm run lint:fix`, `npm run build`, then `npm run verify` (R5 asks for it), then the `delta-review` skill on every changed file. Tick only the R-steps finished: R2, R3, R4 and R6; R1 once the interaction table question (To confirm, 5) is settled; R5 after R7.
+
+#### After R1–R6
+
+R7, once the author has tried slide floors in the playground (decision 25): a teach and a test chamber, ids 4 and 5 (the next free ids; files `src/chambers/chamber_4.json` and `chamber_5.json`), each with an entry in `src/services/chamber_catalogue.ts` and `scripts/chamber_files.ts`, and a recorded solution made by completing it in `npm run dev` and pressing Download solution, moved next to it. Then `npm run verify` with them in (R5), and the author's cold playtest, with teach notes in stage 04b's campaign plan table.
 
 Chambers. Teach: a slide-floor room where stepping on slides you to the far wall, and the exit can only be reached by placing a portal so the slide comes out facing it. Test: two slides joined by portals, where the order you place them in matters. The twist and combine ideas are stage 04b's.
 
-- [ ] **R1 Spec.** Finalise the spec above and fill the slide floor's row.
-- [ ] **R2 Element and format.** The slide floor element file and its optional list in format v2.
-- [ ] **R3 Drawing and sounds.** A pale floor tile with thin diagonal lines; slide start and stop events, with placeholder sounds.
-- [ ] **R4 Fixtures.** Slide to a wall, onto a normal tile, through a portal onto a slide and onto a normal tile, a fizzler mid-slide, an arrow mid-slide, the exit mid-slide, a refused loop, and a button passed over without being pressed.
-- [ ] **R5 Solver check.** A slide carries the subject past the next tile, where the solver's walks expect it to stop, unless the slide floor counts as an element that reacts to the subject (`reactsToSubject` in its definition): walks then end there, which likely keeps them right. `npm run verify` passes with the slide chambers in (decision 18).
-- [ ] **R6 Docs.** The slide floor in `docs/elements.md`.
-- [ ] **R7 Chambers.** Teach and test chambers, solutions, a cold playtest.
+- [ ] **R1 Spec.** Finalise the spec above and fill the slide floor's row. Plan step 1, after "To confirm" is answered.
+- [ ] **R2 Element and format.** The slide floor element file and its optional list in format v2. Plan step 3.
+- [ ] **R3 Drawing and sounds.** A pale floor tile with thin diagonal lines (decision 21); slide start and stop events, with placeholder sounds. Plan steps 2, 6 and 7.
+- [ ] **R4 Fixtures.** Slide to a wall, onto a normal tile, through a portal onto a slide and onto a normal tile, a fizzler mid-slide, an arrow mid-slide, the exit mid-slide, a refused loop, and a button passed over without being pressed, plus the other cases in plan step 5.
+- [ ] **R5 Solver check.** A slide carries the subject past the next tile, where the solver's walks expect it to stop, unless the slide floor counts as an element that reacts to the subject (`reactsToSubject` in its definition): walks then end there, which likely keeps them right. `npm run verify` passes with the slide chambers in (decision 18). Plan step 9; ticked after R7.
+- [ ] **R6 Docs.** The slide floor in `docs/elements.md`. Plan step 10.
+- [ ] **R7 Chambers.** Teach and test chambers, solutions, a cold playtest. After R1–R6 (decision 25).
 
 ### Phase 2 — Rotating arrows
 
