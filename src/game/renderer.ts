@@ -7,6 +7,7 @@ import type {MissRipple} from '@/game/miss_ripple'
 import type {CompiledChamber} from '@/game/rules/compiled_chamber'
 import {DRAW_LAYERS, type DrawLayer} from '@/game/rules/draw_layer'
 import {ELEMENT_REGISTRY} from '@/game/rules/element_registry'
+import {drawPortalOpening, openingGlowShare, type PortalOpenings} from '@/game/portal_openings'
 import {PORTAL_COLORS, PortalColor} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
 import {NO_BOX} from '@/game/rules/state_layout'
@@ -26,6 +27,14 @@ type Backdrop = {
   readonly cover: TilePainter | null // What the backdrop lays over its antlines (floor marks, then walls over their shadow), kept apart to draw it again when one changes, or null when the chamber has none
   readonly litKey: string // Which antlines the backdrop shows lit, from antlinesLitKey()
 }
+
+/**
+ * How far a portal has opened, for the one opening, or null to draw it as
+ * it is.
+ * @param color - The portal
+ * @returns How far it has opened, from 0 to under 1, or null when it isn't opening
+ */
+type OpeningProgress = (color: PortalColor) => number | null
 
 /** Each portal's sprite */
 export const PORTAL_SPRITES: Readonly<Record<PortalColor, SpriteName>> = {
@@ -161,8 +170,8 @@ export function hasAmbientLife(state: RulesState): boolean {
  * blocked walls' steel still sliding apart or shut, the ditches' grates still
  * sliding in or out, the doors and the exit still sliding open or shut, the
  * fizzlers still crumbling away or forming and the lasers and light barriers
- * still fading out or in, drawn part way. Last, over everything, the lasers' and portals' glows are added
- * to what lies beneath, pulsing, what a fizzle took breaks up and a missed
+ * still fading out or in, drawn part way, and a portal opening drawn part way open. Last, over everything, the lasers' and portals' glows are added
+ * to what lies beneath, pulsing, an opening portal's rising with it, what a fizzle took breaks up and a missed
  * shot ripples where it stopped; at no time given, nothing changes over
  * time, the glows hold steady and nothing breaks up or ripples.
  */
@@ -249,15 +258,25 @@ export class Renderer {
   }
 
   /**
-   * Draws an open portal over its wall tile, turned to the side it opens to.
+   * Draws an open portal over its wall tile, turned to the side it opens to,
+   * part way open while it is opening.
    * @param state - The state drawn
    * @param color - The portal
+   * @param opening - How far the portal opening is drawn, or null to draw both open
    */
-  private drawPortal(state: RulesState, color: PortalColor): void {
+  private drawPortal(state: RulesState, color: PortalColor, opening: OpeningProgress | null): void {
     const side = state.portalSide(color)
 
-    if (side !== null) {
+    if (side === null) {
+      return
+    }
+
+    const progress = (opening === null) ? null : opening(color)
+
+    if (progress === null) {
       this.painter.drawSprite(PORTAL_SPRITES[color], state.portalX(color), state.portalY(color), side)
+    } else {
+      drawPortalOpening(this.painter, PORTAL_SPRITES[color], state.portalX(color), state.portalY(color), side, progress)
     }
   }
 
@@ -285,13 +304,14 @@ export class Renderer {
    * @param layer - The layer
    * @param transition - The step being drawn, ending on the state drawn, or null to draw the state as it is
    * @param shares - How far blocked the blocked walls, the ditches, the doors, the exit, the fizzlers, the lasers and the light barriers that are changing are drawn, or null to draw every one as the state says
+   * @param opening - How far the portal opening is drawn, or null to draw both open
    */
-  private drawLayer(state: RulesState, layer: DrawLayer, transition: StepTransition | null, shares: BlockedShares | null): void {
+  private drawLayer(state: RulesState, layer: DrawLayer, transition: StepTransition | null, shares: BlockedShares | null, opening: OpeningProgress | null): void {
     this.painter.drawShadowsFirst(() => {
       switch (layer) {
         case 'portals':
-          this.drawPortal(state, PortalColor.BLUE)
-          this.drawPortal(state, PortalColor.ORANGE)
+          this.drawPortal(state, PortalColor.BLUE, opening)
+          this.drawPortal(state, PortalColor.ORANGE, opening)
           break
 
         case 'subject':
@@ -305,27 +325,32 @@ export class Renderer {
 
   /**
    * Draws the glows of the lasers that are on, those fading out or in part
-   * way, and of the open portals, each added to what lies beneath.
+   * way, and of the open portals, each added to what lies beneath, a portal
+   * opening rising with it.
    * @param state - The state drawn
    * @param strength - How strongly they shine, from glowStrength()
    * @param shares - How far on the lasers that are changing are drawn, or null to draw every one as the state says
+   * @param opening - How far the portal opening is drawn, or null to draw both open
    */
-  private drawGlows(state: RulesState, strength: number, shares: BlockedShares | null): void {
+  private drawGlows(state: RulesState, strength: number, shares: BlockedShares | null, opening: OpeningProgress | null): void {
     drawLaserGlows(this.painter, state, strength, shares)
 
     for (const color of PORTAL_COLORS) {
       const side = state.portalSide(color)
+      const progress = (opening === null) ? null : opening(color)
+      const share = (progress === null) ? 1 : openingGlowShare(progress)
 
-      if (side !== null) {
-        this.painter.drawSpriteAdded(PORTAL_GLOWS[color], state.portalX(color), state.portalY(color), side, strength)
+      if ((side !== null) && (share > 0)) {
+        this.painter.drawSpriteAdded(PORTAL_GLOWS[color], state.portalX(color), state.portalY(color), side, strength * share)
       }
     }
   }
 
   /**
    * Draws a whole frame, back to front: the backdrop, every layer above it,
-   * with the boxes falling into ditches over the ditches, then the glows,
-   * the pieces of what a fizzle took and a missed shot's ripple.
+   * with the boxes falling into ditches over the ditches and a portal
+   * opening part way open, then the glows, the pieces of what a fizzle took
+   * and a missed shot's ripple.
    * @param state - The state to draw
    * @param transition - The step being drawn, ending on the state drawn, or null (the default) to draw the state as it is
    * @param time - Now, in milliseconds on the frame clock, for what moves with time alone, or null (the default) to hold it still
@@ -333,20 +358,22 @@ export class Renderer {
    * @param changes - The blocked walls, the ditches, the doors, the exit, the fizzlers, the lasers and the light barriers changing over time, or null (the default) when none can
    * @param ripple - Where the latest missed shot stopped, rippling, or null (the default) when none can
    * @param fall - The boxes falling into ditches, or null (the default) when none can
+   * @param openings - The portals opening, or null (the default) when none can
    */
-  render(state: RulesState, transition: StepTransition | null = null, time: number | null = null, fizzle: FizzleParticles | null = null, changes: ElementTransitions | null = null, ripple: MissRipple | null = null, fall: BoxFall | null = null): void {
+  render(state: RulesState, transition: StepTransition | null = null, time: number | null = null, fizzle: FizzleParticles | null = null, changes: ElementTransitions | null = null, ripple: MissRipple | null = null, fall: BoxFall | null = null, openings: PortalOpenings | null = null): void {
     // A canvas not yet sized for a chamber has nothing to draw
     if (this.painter.blockSize <= 0) {
       return
     }
 
     const shares: BlockedShares | null = ((time !== null) && (changes !== null)) ? (kind, index) => changes.blockedAt(kind, index, time) : null
+    const opening: OpeningProgress | null = ((time !== null) && (openings !== null)) ? (color) => openings.progressAt(state, color, time) : null
 
     this.painter.drawLayer(this.backdropOf(state), false)
 
     for (const layer of DRAW_LAYERS) {
       if (!BACKDROP_LAYERS.has(layer)) {
-        this.drawLayer(state, layer, transition, shares)
+        this.drawLayer(state, layer, transition, shares, opening)
       }
 
       // Down in the pit, over the grate sliding away and under everything standing on the floor
@@ -355,7 +382,7 @@ export class Renderer {
       }
     }
 
-    this.drawGlows(state, glowStrength(time), shares)
+    this.drawGlows(state, glowStrength(time), shares, opening)
 
     if ((time !== null) && (fizzle !== null)) {
       fizzle.draw(this.painter, time)

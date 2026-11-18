@@ -122,7 +122,7 @@ The game draws from the bottom up, each later row over the earlier ones:
 | 4 | Structure | `wall`, `blocked_wall` for the blocked walls no link reaches |
 | 5 | Blockers | `blocked_wall` over the blocked walls a link reaches while blocked, `light_barrier_on`, then `light_barrier_end_*` over the bands, `ditch`, `ditch_bridged`, `laser_on`, then `laser_end_*` over the beams, `door_closed`, `exit_closed` |
 | 6 | Fall | `box`, falling into an open ditch (see [fall](#fall)) |
-| 7 | Portals | `portal_*` |
+| 7 | Portals | `portal_*`, growing open just after a shot opens one (see [opening](#opening)) |
 | 8 | Fixtures | `button_*`, `switch` |
 | 9 | Items | `box` |
 | 10 | Subject | `subject_holding_gun`, or `subject_holding_box` while it carries a box |
@@ -134,6 +134,10 @@ The game draws from the bottom up, each later row over the earlier ones:
 ## Glow
 
 The three glows are drawn over everything but a fizzle's pieces and a missed shot's ripple, and added to the colours beneath, so they brighten and never darken. Their strength pulses slowly, all together, between 60 % and full. Draw only the light, at full strength: colour fading to transparent, with no beam or portal in it. A missing glow file just means no glow. With reduced motion, and in the home menu's map and the gallery, the glow holds steady at 80 %.
+
+## Opening
+
+When a shot opens a portal, the game grows it open on its wall from its own sprite, so there is nothing extra to draw: it grows from the middle of its oval, past its size to about 110 %, and settles back, in about 0.2 s, fading in over the first 40 ms, while its glow rises with it. The game takes the oval's middle as 23.5 px of the 256 px tile in from the tile's top edge, as drawn (`src/game/portal_openings.ts`), so move it there too if the oval moves. The portal it replaces, if any, still vanishes at once; one that moves or closes while it opens is drawn as it is, and one that breaks up while it opens breaks up whole (see [fizzle](#fizzle)). With reduced motion, and in the home menu's map and the gallery, a portal appears at once.
 
 ## Fizzle
 

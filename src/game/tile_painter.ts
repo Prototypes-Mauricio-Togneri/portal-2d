@@ -436,18 +436,19 @@ export class TilePainter {
   }
 
   /**
-   * Draws a sprite shrunk about its middle and see-through, its overhang
-   * too, without its shadow: something sinking out of sight. Nothing is
-   * drawn while only shadows are painted.
+   * Draws a sprite shrunk, or grown, about a point and see-through, its
+   * overhang too, without its shadow: something sinking out of sight, or
+   * opening up. Nothing is drawn while only shadows are painted.
    * @param name - The sprite
    * @param x - Column of the sprite's middle, in tiles: a tile's middle is its column plus a half
    * @param y - Row of the sprite's middle, in tiles: a tile's middle is its row plus a half
    * @param size - The sprite's side before it shrinks, as a share of a tile: 1 for a whole tile, less for a carried box
    * @param way - The way it is turned to face, from facing up as drawn
-   * @param scale - How far it has shrunk, as a share of that side
+   * @param scale - How far it has shrunk, as a share of that side; over 1 when it has grown
    * @param opacity - How opaque it is drawn, from 0 (not at all) to 1
+   * @param pivotY - How far below the sprite's middle, as drawn facing up, the point it shrinks about lies, in tiles: 0 (the default) for its middle, less than 0 for a point above it
    */
-  drawSpriteShrunk(name: SpriteName, x: number, y: number, size: number, way: Direction, scale: number, opacity: number): void {
+  drawSpriteShrunk(name: SpriteName, x: number, y: number, size: number, way: Direction, scale: number, opacity: number, pivotY = 0): void {
     if ((this.pass === 'shadows') || (scale <= 0) || (opacity <= 0)) {
       return
     }
@@ -460,14 +461,18 @@ export class TilePainter {
     }
 
     const turn = TURNS[way]
+    const pivot = pivotY * this.tileSize
 
     this.context.save()
 
     try {
       this.context.globalAlpha = Math.min(opacity, 1)
       this.context.translate(x * this.tileSize, this.canvas.height - (y * this.tileSize))
-      this.context.transform(turn.cos * scale, turn.sin * scale, -turn.sin * scale, turn.cos * scale, 0, 0)
-      this.context.drawImage(sprite.image, -(side / 2) - sprite.margin, -(side / 2) - sprite.margin)
+      this.context.transform(turn.cos, turn.sin, -turn.sin, turn.cos, 0, 0)
+      // Scaled about the pivot, which stays where it is
+      this.context.translate(0, pivot)
+      this.context.scale(scale, scale)
+      this.context.drawImage(sprite.image, -(side / 2) - sprite.margin, -(side / 2) - sprite.margin - pivot)
     } finally {
       this.context.restore()
     }
