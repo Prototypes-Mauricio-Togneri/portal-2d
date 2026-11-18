@@ -8,7 +8,6 @@
 
 ## YouTube
 
-https://www.youtube.com/watch?v=99egKsmVyhI
 https://www.youtube.com/watch?v=nS8VDs9rxiw
 
 ## Others
