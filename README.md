@@ -2,7 +2,6 @@
 
 ## TODO
 
-- add animation when placing a portal? currently the portal just appears?
 - add footsteps sound?
 - fix chamber recordings
 - split plan 04 into two:
