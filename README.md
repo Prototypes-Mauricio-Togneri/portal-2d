@@ -2,7 +2,6 @@
 
 ## TODO
 
-- fix chamber recordings
 - show hints for tutorial
   - how to shot portals
   - show a hint when standing on a button
