@@ -64,14 +64,15 @@ export const PROGRESS_INTERVAL = 4096
 
 /**
  * The solver's macro search (docs/solver.md). A state is a settled state of
- * the rules with the subject turned to its tile's canonical facing, since
- * turning is free. From each state it walks, without the rules' step, to
- * every tile walk edges reach, never onto a resting box (WalkGraph), then
- * tries there each action whose effect a walk can't have, through the rules'
- * step: interact (once, or each way that faces a box in reach), both shots
- * each way the subject may face, and each move a walk doesn't cover (onto or
- * off an event tile, into a resting box, into a wall, which crosses a portal
- * there), but no interact or move that can't change anything (ActionFilter).
+ * the rules with the subject turned to its tile's canonical facing for the
+ * state's blocked flags, since turning is free. From each state it walks,
+ * without the rules' step, to every tile walk edges reach, never onto a
+ * resting box (WalkGraph), then tries there each action whose effect a walk
+ * can't have, through the rules' step: interact (once, or each way that
+ * faces a box in reach), both shots each way the subject may face, and each
+ * move a walk doesn't cover (onto or off an event tile, into a resting box,
+ * into a wall, which crosses a portal there), but no interact or move that
+ * can't change anything (ActionFilter).
  * Each shot line takes its shots through the rules' step once per state, and
  * its other tiles reuse them (ShotLines). A macro action costs the walk's
  * moves plus what the step counts. States are kept as 64-bit keys in a
@@ -122,7 +123,7 @@ export class MacroSearch {
 
     this.chamber = chamber
     this.codec = new StateKeyCodec(index)
-    this.graph = new WalkGraph(index, startChamber(chamber).state)
+    this.graph = new WalkGraph(index)
     this.lines = new ShotLines(this.codec, this.graph)
     this.mode = mode
     this.folded = mode === SearchMode.SOLVABLE
@@ -228,17 +229,19 @@ export class MacroSearch {
 
   /**
    * The low word of a key with the subject moved to a tile, as the search
-   * stores it: facing the tile's canonical way, and in the solvable mode on
-   * the tile's region instead.
+   * stores it: facing the tile's canonical way for the key's flags, and in
+   * the solvable mode on the tile's region instead.
+   * @param state - The key's state, or one with its blocked flags
+   * @param flags - The key's blocked flags, as one number
    * @param low - The key's low word
    * @param tile - The subject's tile
    * @param regions - Each tile's region for the key's flags and resting boxes, or null outside the solvable mode
    * @returns The low word
    */
-  private placeStored(low: number, tile: number, regions: Int32Array | null): number {
+  private placeStored(state: RulesState, flags: number, low: number, tile: number, regions: Int32Array | null): number {
     const place = (regions === null) ? tile : (regions[tile] ?? tile)
 
-    return this.codec.placeSubject(low, place, this.graph.facingOf(place))
+    return this.codec.placeSubject(low, place, this.graph.facingOf(state, flags, place))
   }
 
   /**
@@ -284,8 +287,8 @@ export class MacroSearch {
     for (let position = 0; position < reachedCount; position++) {
       const tile = this.graph.reachedTile(position)
       const distance = this.graph.distanceTo(tile)
-      const standingLow = this.placeStored(low, tile, regions)
-      const canonicalIndex = this.graph.facingOf(tile)
+      const standingLow = this.placeStored(state, flags, low, tile, regions)
+      const canonicalIndex = this.graph.facingOf(state, flags, tile)
       const interacting = this.filter.interactWays(tile, canonicalIndex)
       let moving = 0
 
@@ -319,7 +322,7 @@ export class MacroSearch {
       }
 
       for (let directionIndex = 0; directionIndex < DIRECTIONS.length; directionIndex++) {
-        if (this.graph.allowsWayFrom(tile, directionIndex)) {
+        if (this.graph.allowsWayFrom(state, flags, tile, directionIndex)) {
           for (const action of SHOT_ACTIONS) {
             this.tryShot(entry, low, high, standingLow, regions, action, tile, directionIndex, distance)
           }

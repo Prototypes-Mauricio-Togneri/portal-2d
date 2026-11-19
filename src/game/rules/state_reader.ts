@@ -1,6 +1,6 @@
 import type {Direction} from '@/game/direction'
 import {type CompiledChamber, NO_ELEMENT} from '@/game/rules/compiled_chamber'
-import type {BlockableKind} from '@/game/rules/element_registry'
+import type {BlockableKind, OneWayKind} from '@/game/rules/element_registry'
 import type {PortalColor} from '@/game/rules/portal_color'
 import {CLOSED_PORTAL, DIRECTIONS, NO_BOX, NOT_STORED, PORTAL_SLOTS, StateSlot} from '@/game/rules/state_layout'
 
@@ -249,6 +249,19 @@ export abstract class StateReader {
     const offset = layout.flagOffset(kind, index)
 
     return (offset === NOT_STORED) ? layout.isBlockedAtStart(kind, index) : (this.read(offset) === 1)
+  }
+
+  /**
+   * Which way a one-way element (an arrow) points now: its turned way while
+   * it has one and a link holds it unblocked, otherwise its own way.
+   * @param kind - The element type
+   * @param index - The element's index in the type's list
+   * @returns The way, or null when it points no way of the four
+   */
+  pointingWay(kind: OneWayKind, index: number): Direction | null {
+    const turned = this.chamber.turnedDirectionOf(kind, index)
+
+    return ((turned !== null) && !this.isBlocked(kind, index)) ? turned : this.chamber.directionOf(kind, index)
   }
 
   /**

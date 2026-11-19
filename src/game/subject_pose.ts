@@ -122,7 +122,9 @@ function glidePose(from: RulesState, to: RulesState, remaining: number, tileSize
 /**
  * Where the subject is drawn part way through a portal crossing: two tiles'
  * travel, the first into the entry portal's wall, facing it, the second out
- * of the exit portal's wall, facing the way it came out.
+ * of the exit portal's wall, facing as it does after the crossing: the way
+ * it came out, or the new way of an arrow that turned it as the step
+ * settled.
  * @param from - The state before the crossing
  * @param to - The state after it
  * @param progress - How far the drawing has gone, eased, from 0 to 1
@@ -130,22 +132,22 @@ function glidePose(from: RulesState, to: RulesState, remaining: number, tileSize
  * @returns The pose, or null when the portals before the crossing don't match it
  */
 function crossingPose(from: RulesState, to: RulesState, progress: number, tileSize: number): SubjectPose | null {
-  const entryWay = crossingEntryWay(from, to)
+  const ways = crossingWays(from, to)
 
-  if (entryWay === null) {
+  if (ways === null) {
     return null
   }
 
   const travelled = progress * 2
 
   if (travelled < 1) {
-    const into = DELTAS[entryWay]
+    const into = DELTAS[ways.entry]
     const ahead = toWholePixels(travelled, tileSize)
 
     return {
       x: from.subjectX + (into.dx * ahead),
       y: from.subjectY + (into.dy * ahead),
-      facing: entryWay,
+      facing: ways.entry,
       clip: {
         x: from.subjectX,
         y: from.subjectY,
@@ -153,7 +155,7 @@ function crossingPose(from: RulesState, to: RulesState, progress: number, tileSi
     }
   }
 
-  const out = DELTAS[to.facing]
+  const out = DELTAS[ways.exit]
   const behind = toWholePixels(2 - travelled, tileSize)
 
   return {
@@ -168,32 +170,56 @@ function crossingPose(from: RulesState, to: RulesState, progress: number, tileSi
 }
 
 /**
- * The way the subject moved into the entry portal of a crossing, read from
- * the portals before it: the exit portal opens to the way the subject came
- * out, in front of the tile it reached, and the entry portal, the other one,
- * is on the wall next to the tile it left, facing that tile.
+ * The ways a portal crossing went, read from the portals before it.
+ */
+type CrossingWays = {
+  readonly entry: Direction // The way the subject moved into the entry portal
+  readonly exit: Direction // The way it came out of the exit portal
+}
+
+/**
+ * The ways a portal crossing went, read from the portals before it: the
+ * exit portal opens in front of the tile the subject reached, and the entry
+ * portal, the other one, is on the wall next to the tile it left, facing
+ * that tile. The subject faces the way it came out after a crossing, which
+ * tells the portals apart when both face its tile, unless an arrow turned it
+ * as the step settled; only then are they matched on where they lie alone.
  * @param from - The state before the crossing
  * @param to - The state after it
- * @returns The way into the entry portal, or null when no pair of portals matches
+ * @returns The ways, or null when no pair of portals matches
  */
-function crossingEntryWay(from: RulesState, to: RulesState): Direction | null {
+function crossingWays(from: RulesState, to: RulesState): CrossingWays | null {
+  return matchCrossing(from, to, true) ?? matchCrossing(from, to, false)
+}
+
+/**
+ * Finds the pair of portals a crossing went through.
+ * @param from - The state before the crossing
+ * @param to - The state after it
+ * @param facingOut - Whether the exit portal must open the way the subject faces after it
+ * @returns The ways, or null when no pair of portals matches
+ */
+function matchCrossing(from: RulesState, to: RulesState, facingOut: boolean): CrossingWays | null {
   for (const exit of PORTAL_COLORS) {
     const entrance = (exit === PortalColor.BLUE) ? PortalColor.ORANGE : PortalColor.BLUE
     const exitSide = from.portalSide(exit)
     const entrySide = from.portalSide(entrance)
 
-    if ((exitSide !== to.facing) || (entrySide === null)) {
+    if ((exitSide === null) || (entrySide === null) || (facingOut && (exitSide !== to.facing))) {
       continue
     }
 
-    const out = DELTAS[to.facing]
+    const out = DELTAS[exitSide]
     const entryWay = OPPOSITES[entrySide]
     const into = DELTAS[entryWay]
     const cameOut = ((from.portalX(exit) + out.dx) === to.subjectX) && ((from.portalY(exit) + out.dy) === to.subjectY)
     const wentIn = ((from.subjectX + into.dx) === from.portalX(entrance)) && ((from.subjectY + into.dy) === from.portalY(entrance))
 
     if (cameOut && wentIn) {
-      return entryWay
+      return {
+        entry: entryWay,
+        exit: exitSide,
+      }
     }
   }
 

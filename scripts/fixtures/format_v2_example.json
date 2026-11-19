@@ -73,7 +73,16 @@
         {
             "x": 2,
             "y": 1,
-            "links": [20]
+            "links": [20, 30]
+        }
+    ],
+    "arrows": [
+        {
+            "x": 3,
+            "y": 3,
+            "direction": "UP",
+            "id": 30,
+            "turnedDirection": "LEFT"
         }
     ],
     "doors": [

@@ -1,7 +1,8 @@
 /**
  * Where something is drawn, back to front, in the original game's drawing
  * order with the slide floors added: the floor and the slide floors over it,
- * the arrows, the walls, the blockers (switchable blocked walls' surface
+ * the arrows (those a link turns drawn every frame, over the walls' shadow
+ * and under the blockers), the walls, the blockers (switchable blocked walls' surface
  * while blocked, light barriers, ditches, lasers, doors and the exit), the
  * portals, the buttons and switches, the boxes, the subject, then the
  * fizzlers over everything. The core step draws the plain floor under every

@@ -4,7 +4,7 @@ import {GameEvent} from '@/game/game_event'
 import {Action, MOVEMENTS, type Movement} from '@/game/rules/action'
 import {type CompiledChamber, NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
 import type {ElementDefinition, ElementHooks} from '@/game/rules/element_definition'
-import {type BlockableKind, ELEMENT_REGISTRY, isBlockableElement, type RegisteredElement} from '@/game/rules/element_registry'
+import {type BlockableKind, ELEMENT_REGISTRY, isBlockableElement, isOneWayElement, type OneWayKind, type RegisteredElement} from '@/game/rules/element_registry'
 import {destroyBoxesOnBlockedTiles} from '@/game/rules/elements/box'
 import {PORTAL_COLORS, PortalColor} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
@@ -114,9 +114,9 @@ const WALK_BLOCKED_ALWAYS: readonly PlacedKind[] = FLOOR_ELEMENTS
   .filter((definition: ElementDefinition) => definition.blocksWalking === 'always')
   .map((definition) => definition.kind)
 
-/** Types entered only moving their way, from which only their way acts (arrows) */
-const ONE_WAY: readonly PlacedKind[] = PLACED_ELEMENTS
-  .filter((definition: ElementDefinition) => definition.blocksWalking === 'alongDirection')
+/** Types entered only moving the way they point now, from which only that way acts (arrows) */
+const ONE_WAY: readonly OneWayKind[] = ELEMENT_REGISTRY
+  .filter(isOneWayElement)
   .map((definition) => definition.kind)
 
 /** Types that stop a shot on their tile while blocked */
@@ -174,8 +174,9 @@ const EVERY_PASS_HOOKS = collectHooks('everyPass')
 
 /**
  * Whether the elements on a tile let the subject move a way: a one-way tile
- * (an arrow) allows only its own way, both into it and out of it. Exported
- * for the solver, which reads walking from the rules rather than copying it.
+ * (an arrow) allows only the way it points now, both into it and out of it.
+ * Exported for the solver, which reads walking from the rules rather than
+ * copying it.
  * @param draft - The state, a step's draft or a settled state
  * @param x - Column
  * @param y - Row
@@ -185,7 +186,7 @@ const EVERY_PASS_HOOKS = collectHooks('everyPass')
 export function allowsWay(draft: StateReader, x: number, y: number, direction: Direction): boolean {
   for (const kind of ONE_WAY) {
     for (let index = draft.chamber.elementAt(kind, x, y); index !== NO_ELEMENT; index = draft.chamber.nextOnTile(kind, index)) {
-      if (draft.chamber.directionOf(kind, index) !== direction) {
+      if (draft.pointingWay(kind, index) !== direction) {
         return false
       }
     }
@@ -500,7 +501,7 @@ function slide(draft: StateDraft, crossed: boolean, eventStart: number): readonl
 }
 
 /**
- * Moves or turns: on a one-way tile only its way acts. The subject faces
+ * Moves or turns: on a one-way tile only the way it points now acts. The subject faces
  * the way first; a turn stops there unless it already faced that way. Then
  * it steps onto the next tile if it can enter it and no box rests there, or
  * crosses a portal on a wall there, and slides on from a tile that keeps it

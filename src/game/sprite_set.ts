@@ -98,6 +98,8 @@ export const SPRITE_SHAPES = {
   laser_end_on: 'tile',
   laser_end_off: 'tile',
   arrow: 'tile',
+  turntable: 'tile',
+  turntable_arrow: 'tile',
   portal_blue: 'tile',
   portal_orange: 'tile',
   portal_blue_glow: 'glow',

@@ -1,6 +1,6 @@
 # Chamber Elements
 
-Reference for the elements a chamber file (`src/chambers/*.json`) can contain, carried over from the original game's help page with the light barrier and the blocked wall added in place of its barrier, and the slide floor, which the original game didn't have, followed by the chamber file format, the rules and what adding an element touches.
+Reference for the elements a chamber file (`src/chambers/*.json`) can contain, carried over from the original game's help page with the light barrier and the blocked wall added in place of its barrier, and the slide floor and the arrow a link turns, which the original game didn't have, followed by the chamber file format, the rules and what adding an element touches.
 
 | # | Element | Description | Can be activated/deactivated? | Can portals go through it? | Can the subject go through it? | Quantity |
 |---|---------|-------------|-------------------------------|----------------------------|--------------------------------|----------|
@@ -16,13 +16,13 @@ Reference for the elements a chamber file (`src/chambers/*.json`) can contain, c
 | 10 | Fizzler | Resets portals and boxes (if the subject is carrying one) | Yes | No | Yes | 0..∞ |
 | 11 | Exit | Reach it to complete the test chamber | Yes | No | No | 1 |
 | 12 | Laser | Obstructs the passage of the subject | Yes | Yes | No | 0..∞ |
-| 13 | Arrow | Limits the movement of the subject | No | Yes | Yes | 0..∞ |
+| 13 | Arrow | Limits the movement of the subject; one with a turned way is turned by a link | Yes, when linked | Yes | Yes | 0..∞ |
 | 14 | Slide floor | A floor tile that keeps the subject moving the way it entered it | No | Yes | Yes | 0..∞ |
 
 ## Notes
 
 - Activate/deactivate means the element changes its state when a button is pushed or a switch is turned on, if they are linked to the element.
-- Blocked walls, light barriers, ditches, doors, fizzlers, exits and lasers can be locked or unlocked by enabling their linked activator. Boxes, instead, are reset to their original position.
+- Blocked walls, light barriers, ditches, doors, fizzlers, exits and lasers can be locked or unlocked by enabling their linked activator. Arrows with a turned way are turned between their own way and their turned way. Boxes, instead, are reset to their original position.
 - Buttons and switches can be linked to many objects. For example, pushing a button can unlock a door and switch off a light barrier at the same time.
 
 ## Chamber format
@@ -43,25 +43,25 @@ A chamber file is a JSON object in format 2 (`ChamberData` in `src/game/chamber_
 | 10 | `lightBarriers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn and which walls end its run, which take no portal), and optionally `id` and `blocked`. |
 | 11 | `boxes` | `x`, `y`, and optionally `id`. |
 | 12 | `buttons`, `switches` | `x`, `y` and `links`, all required: the ids of the elements and link groups it acts on (see [links](#links)). |
-| 13 | `arrows` | `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required: the one way the subject can enter the tile. |
+| 13 | `arrows` | `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required: the one way the subject can enter the tile; and optionally `id` and `turnedDirection` (`UP`, `DOWN`, `LEFT` or `RIGHT`), always together, a quarter turn from `direction`: the way it points while a link holds it turned (see [links](#links)). An arrow takes no `blocked`: every one starts pointing its `direction`, so one meant to start turned swaps its two ways. |
 | 14 | `groups` | Link groups, each with an `id` and `links`, both required: the ids of the elements it stands for, never another group. |
 | 15 | `antlines` | Dotted lines on the floor, each with `link` and `path`, both required: `link` the id of the one element it leads to, never a group's, and `path` its corner tiles (`x`, `y`), at least two, from the tile of a button or switch that links that element to the element's own tile. |
 | 16 | `par` | How well the chamber can be solved, for medals: optionally `moves` and `portals`, each 0 or more. Reserved: nothing writes it yet (see `docs/solver.md`). |
 
 - **`id`:** 1 or more, unique among every element and group, and needed only by what a button, switch or group links to; an element without one can't be linked.
 - **`blocked`:** true when absent (see [blocking](#blocking)).
-- **`antlines`:** only drawn, as in the original game, to show which button or switch acts on which element: they change nothing in the rules, the solver or the recorded solutions. A chamber may have none, and a link needs none; they are meant mostly for the tutorial and the early chambers. A line is lit while the element it leads to is unblocked (a door or the exit open, a laser, a light barrier or a fizzler off, a ditch bridged, a blocked wall taking portals), so a line to a box never lights, and two buttons on one door both light when it opens. Each corner shares a row or a column with the one before it, so the line runs straight between them; it may run under walls, hidden there and showing again beyond, and under any element. The chamber's hash, which a recorded solution keeps, leaves them out, so adding, moving or removing one needs no new recording. How they look: `docs/sprites.md`.
+- **`antlines`:** only drawn, as in the original game, to show which button or switch acts on which element: they change nothing in the rules, the solver or the recorded solutions. A chamber may have none, and a link needs none; they are meant mostly for the tutorial and the early chambers. A line is lit while the element it leads to is unblocked (a door or the exit open, a laser, a light barrier or a fizzler off, a ditch bridged, a blocked wall taking portals, an arrow turned), so a line to a box never lights, and two buttons on one door both light when it opens. Each corner shares a row or a column with the one before it, so the line runs straight between them; it may run under walls, hidden there and showing again beyond, and under any element. The chamber's hash, which a recorded solution keeps, leaves them out, so adding, moving or removing one needs no new recording. How they look: `docs/sprites.md`.
 - **Other versions:** a file whose `version` is missing or not 2 is refused.
 
 ## Rules
 
-The rules the game plays, in `src/game/rules/` (`step.ts`), pinned by each chamber's recorded solution and by the behaviour fixtures (`npm run replay:check`). They follow the original game's rules apart from the [changes from the original rules](#changes-from-the-original-rules) listed at the end, and add two elements the original game didn't have, in place of its barrier: the light barrier, which plays a barrier's rules on a floor tile (fixture: `light_barrier_switches_off_and_on`), and the blocked wall, which a link can switch between refusing and taking portals, as a barrier on a wall did (fixture: `blocked_wall_switches_off_and_on`). They also add one with no counterpart there, the slide floor, which keeps the subject moving (see [a slide](#a-slide); fixtures: every `slide_*` one, and `portal_onto_slide_floor_slides`).
+The rules the game plays, in `src/game/rules/` (`step.ts`), pinned by each chamber's recorded solution and by the behaviour fixtures (`npm run replay:check`). They follow the original game's rules apart from the [changes from the original rules](#changes-from-the-original-rules) listed at the end, and add two elements the original game didn't have, in place of its barrier: the light barrier, which plays a barrier's rules on a floor tile (fixture: `light_barrier_switches_off_and_on`), and the blocked wall, which a link can switch between refusing and taking portals, as a barrier on a wall did (fixture: `blocked_wall_switches_off_and_on`). They also add one with no counterpart there, the slide floor, which keeps the subject moving (see [a slide](#a-slide); fixtures: every `slide_*` one, and `portal_onto_slide_floor_slides`), and let a link turn an arrow (see [links](#links); fixtures: every `arrow_*` one, `slide_stops_on_turned_arrow`, `slide_stops_before_turned_back_arrow`, `portal_onto_turned_arrow` and `portal_onto_turned_back_arrow_refused`).
 
 Tiles are counted with x growing to the right and y growing upwards from the bottom row, so "up" is towards a higher y. Chambers the validator rejects (see [what the validator rejects](#what-the-validator-rejects)) are outside these rules.
 
 ### Blocking
 
-Blocked walls, light barriers, ditches, doors, the exit, fizzlers and lasers each have one flag, `blocked` in the chamber file (true when absent). Blocked means: a blocked wall refuses portals, a ditch is open, a door or the exit is closed, a light barrier, a fizzler or a laser is on. Buttons and switches change it through [links](#links); nothing else does.
+Blocked walls, light barriers, ditches, doors, the exit, fizzlers and lasers each have one flag, `blocked` in the chamber file (true when absent). Blocked means: a blocked wall refuses portals, a ditch is open, a door or the exit is closed, a light barrier, a fizzler or a laser is on. An arrow with a turned way has the flag too, but no `blocked` field, so it always starts blocked: blocked, it points its own way (`direction`), unblocked, its turned way. Buttons and switches change it through [links](#links); nothing else does.
 
 ### A step
 
@@ -87,7 +87,7 @@ Events are reported in the order they happen. The rules keep no counters: the ga
 
 #### Move or turn
 
-On an arrow tile, the three directions other than the arrow's do nothing at all. Every other move or turn first faces the subject that way. A turn does only that, unless the subject already faced that way: then it moves like a move. The game takes a turn for a move key pressed while the turn key (Shift by default) is held. To move, it looks at the next tile in that direction:
+On an arrow tile, the three directions other than the arrow's do nothing at all. An arrow's way, here and everywhere in these rules, is the way it points now, which a link can turn (see [links](#links)). Every other move or turn first faces the subject that way. A turn does only that, unless the subject already faced that way: then it moves like a move. The game takes a turn for a move key pressed while the turn key (Shift by default) is held. To move, it looks at the next tile in that direction:
 
 - **Outside the chamber:** a [wall that takes no portals](#outside-the-chamber).
 - **A wall, blocked or not:** if both portals are open and this wall holds one of them on the side facing the subject, the subject [crosses](#crossing-a-portal) that portal. Otherwise nothing more happens.
@@ -151,7 +151,7 @@ A button is held down while the subject or any box is on its tile. Each pass jud
 
 ### Links
 
-A button or switch names its links by element id. Only blocked walls (one tile each), light barriers, ditches, boxes, fizzlers, doors, lasers and the exit can be linked. A link can also name a link group (format 2), which stands for its elements: they act at the group's place in the list, in the group's order.
+A button or switch names its links by element id. Only blocked walls (one tile each), light barriers, ditches, boxes, fizzlers, doors, lasers, the exit and arrows with a turned way can be linked. A link can also name a link group (format 2), which stands for its elements: they act at the group's place in the list, in the group's order.
 
 | # | Element | Unblocked (button pressed, switch used) | Blocked (button released) |
 |---|---------|-----------------------------------------|---------------------------|
@@ -163,8 +163,11 @@ A button or switch names its links by element id. Only blocked walls (one tile e
 | 6 | Fizzler | Off | On (see [the fizzler rule](#the-fizzler-rule)), and a portal on a wall side facing it closes: `portalFizzled` |
 | 7 | Laser | Off | On |
 | 8 | Box | Back to its start tile (see [one box per tile](#one-box-per-tile)), unless it is carried | Nothing; the validator warns about a box linked to a button |
+| 9 | Arrow | Points its turned way: `arrowTurned`; a subject on it turns with it | Points its own way: `arrowTurned`; a subject on it turns with it |
 
-A door or the exit reports its event only when it actually opens or closes, and a fizzler reports `portalFizzled` only when it closes a portal; the others are silent.
+A door or the exit reports its event only when it actually opens or closes, an arrow `arrowTurned` only when it actually turns, and a fizzler reports `portalFizzled` only when it closes a portal; the others are silent.
+
+An arrow turning under the subject turns the subject with it, to face the arrow's new way, so on an arrow the subject always faces the way it points, and its shots fly that way; a carried box stays carried. It can then leave only that way. An arrow turns only as links act: as a button goes down or comes up while the step settles (a chamber's start included), or on a switch's use. A slide judges no button until it ends, so no arrow turns mid-slide, but a slide's end can turn one, under the subject too.
 
 A blocked wall is a wall in every state: it stops walking and shots, and joins the walls around it. Blocking it closes a portal already on it, silently. A fizzler switching on closes a portal on a wall side facing its tile, one opened while it was off (a fizzler that is on stops shots and keeps the subject from shooting): `portalFizzled`, which the game shows by breaking the portal up, with no sound. A light barrier stands only on a floor tile, which never holds a portal, so switching it on closes none.
 
@@ -174,7 +177,7 @@ A step that ends with the subject on the exit completes the chamber. The subject
 
 ### Something blocking under the subject
 
-A door or the exit closing, a ditch opening, or a light barrier or a laser turning on under the subject does nothing to it: it can still turn, shoot, interact and walk off. A box it carries is kept, and no box lies there with it, since a box shares the subject's tile only on the box's start (see [one box per tile](#one-box-per-tile)), which is plain floor or a button. A fizzler turning on under the subject runs the fizzler rule in that same step. Chambers avoid this state (`docs/level_design.md`).
+A door or the exit closing, a ditch opening, or a light barrier or a laser turning on under the subject does nothing to it: it can still turn, shoot, interact and walk off. A box it carries is kept, and no box lies there with it, since a box shares the subject's tile only on the box's start (see [one box per tile](#one-box-per-tile)), which is plain floor or a button. A fizzler turning on under the subject runs the fizzler rule in that same step. Chambers avoid this state (`docs/level_design.md`). An arrow turning under the subject turns it with it (see [links](#links)), which chambers may use.
 
 ### Outside the chamber
 
@@ -185,7 +188,8 @@ Outside the chamber's edge counts as a wall that takes no portals, and the valid
 A chamber file is read field by field, then checked as a whole (`src/game/rules/`, run on every chamber by `npm run chamber:check`). Each problem names its field and its tile, where it has them. Errors keep a chamber from loading:
 
 - **Fields:** a missing field, an unknown or misspelled one (an `id` on a blocked wall rectangle among them), a value of the wrong kind or out of range (see the [chamber format](#chamber-format)), a wall, blocked wall or slide floor rectangle whose from corner is past its to corner, an antline path with fewer than two corners, or a `version` other than 2.
-- **Ids and links:** an id used twice (elements and groups share the ids), a link naming an id nothing has, and a group naming another group.
+- **Ids and links:** an id used twice (elements, arrows with a turned way among them, and groups share the ids), a link naming an id nothing has, and a group naming another group.
+- **Arrows:** an arrow with a turned way but no `id`, or an `id` but no turned way, and a turned way that is the arrow's own way or opposite it (a half turn), so every turn is a quarter turn.
 - **Antlines:** an antline leading to an id nothing has, or to a group, since an antline leads to one element; a corner outside the chamber, the same as the corner before it, or sharing neither a row nor a column with it (only the first such corner is reported); a first corner on no button or switch that links the element, by its id or through a group; and a last corner away from the element's tile.
 - **Bounds:** anything outside the chamber, the same wall tile listed twice, by walls or blocked walls, and the same slide floor tile listed twice.
 - **What shares a tile:** a wall or blocked wall holds nothing else, so the subject, the exit and a light barrier are never inside a wall. A floor tile holds at most one of a light barrier, ditch, door, exit, fizzler, arrow, button, switch or laser, except two lasers that cross (one `H`, one `V`). A slide floor lies under what shares its tile, which can be a button, a fizzler, a laser, a light barrier, a box's start or the subject's start, but never a ditch, a door, the exit, an arrow or a switch. A box and the subject start on plain floor, slide floor or a button, with at most one box per tile, and the subject never on a box, since a box keeps it off its tile.
@@ -223,7 +227,7 @@ Every element against every other. Each cell names the rules below that bring th
 
 | # | Element | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |---|---------|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | Subject | — | P1 P5 | M1 V1 | M1 V1 | M2 U1 V4 | M2 U1 V4 | M4 B3 V4 | M6 | M5 K3 | M5 K4 V4 | M2 U1 V4 | M5 F1 V4 | M2 X1 V4 | M2 U1 V4 | M3 V4 | SL1 |
+| 1 | Subject | — | P1 P5 | M1 V1 | M1 V1 | M2 U1 V4 | M2 U1 V4 | M4 B3 V4 | M6 | M5 K3 | M5 K4 V4 | M2 U1 V4 | M5 F1 V4 | M2 X1 V4 | M2 U1 V4 | M3 A2 V4 | SL1 |
 | 2 | Portal | P1 P5 | P1 P5 | P1 P5 | P2 P5 | P3 P5 P7 | P4 P5 | P4 P5 | P5 P8 | P4 | P4 | P3 P6 | P3 F1 F2 | P3 P6 | P4 P5 P7 | P4 P5 | P4 SL3 SL6 |
 | 3 | Wall | M1 V1 | P1 P5 | V1 | V1 | P7 V1 | V1 | V1 | B2 | V1 | V1 | P6 V1 | F2 V1 | P6 V1 | P7 V1 | V1 | SL2 V1 |
 | 4 | Blocked wall | M1 V1 | P2 P5 | V1 | V1 | P7 V1 | V1 | V1 | B2 | K1 V1 | K1 V1 | P6 V1 | F2 V1 | P6 V1 | P7 V1 | V1 | SL2 V1 |
@@ -231,20 +235,20 @@ Every element against every other. Each cell names the rules below that bring th
 | 6 | Ditch | M2 U1 V4 | P4 P5 | V1 | V1 | V2 | V2 | B1 V4 | B2 U1 | K1 V2 | K1 V2 | V2 | V2 | V2 | V2 | V2 | SL2 V3 |
 | 7 | Box | M4 B3 V4 | P4 P5 | V1 | V1 | B1 V4 | B1 V4 | B4 V4 | B2 B4 | B5 B6 | B2 B6 K4 V4 | B1 V4 | B1 B3 V4 | B2 V4 | B1 V4 | B3 V4 | SL2 SL7 |
 | 8 | Carried box | M6 | P5 P8 | B2 | B2 | B2 U1 | B2 U1 | B2 B4 | — | B6 | B2 B6 K4 | B2 U1 | F1 B2 | B2 | B2 U1 | B2 | SL7 |
-| 9 | Button | M5 K3 | P4 | V1 | K1 V1 | K1 V2 | K1 V2 | B5 B6 | B6 | K2 V2 | V2 | K1 V2 | K1 V2 | K1 V2 | K1 V2 | V2 | SL5 |
-| 10 | Switch | M5 K4 V4 | P4 | V1 | K1 V1 | K1 V2 | K1 V2 | B2 B6 K4 V4 | B2 B6 K4 | V2 | V2 | K1 V2 | K1 V2 | K1 V2 | K1 V2 | V2 | SL2 V3 |
+| 9 | Button | M5 K3 | P4 | V1 | K1 V1 | K1 V2 | K1 V2 | B5 B6 | B6 | K2 V2 | V2 | K1 V2 | K1 V2 | K1 V2 | K1 V2 | A1 V2 | SL5 |
+| 10 | Switch | M5 K4 V4 | P4 | V1 | K1 V1 | K1 V2 | K1 V2 | B2 B6 K4 V4 | B2 B6 K4 | V2 | V2 | K1 V2 | K1 V2 | K1 V2 | K1 V2 | A1 V2 | SL2 V3 |
 | 11 | Door | M2 U1 V4 | P3 P6 | P6 V1 | P6 V1 | V2 | V2 | B1 V4 | B2 U1 | K1 V2 | K1 V2 | V2 | V2 | V2 | V2 | V2 | SL2 V3 |
 | 12 | Fizzler | M5 F1 V4 | P3 F1 F2 | F2 V1 | F2 V1 | V2 | V2 | B1 B3 V4 | F1 B2 | K1 V2 | K1 V2 | V2 | F3 V2 | V2 | V2 | V2 | SL4 |
 | 13 | Exit | M2 X1 V4 | P3 P6 | P6 V1 | P6 V1 | V2 | V2 | B2 V4 | B2 | K1 V2 | K1 V2 | V2 | V2 | — | V2 | V2 | SL2 V3 |
 | 14 | Laser | M2 U1 V4 | P4 P5 P7 | P7 V1 | P7 V1 | V2 | V2 | B1 V4 | B2 U1 | K1 V2 | K1 V2 | V2 | V2 | V2 | L1 V2 | V2 | SL2 |
-| 15 | Arrow | M3 V4 | P4 P5 | V1 | V1 | V2 | V2 | B3 V4 | B2 | V2 | V2 | V2 | V2 | V2 | V2 | V2 | SL2 V3 |
+| 15 | Arrow | M3 A2 V4 | P4 P5 | V1 | V1 | V2 | V2 | B3 V4 | B2 | A1 V2 | A1 V2 | V2 | V2 | V2 | V2 | V2 | SL2 V3 |
 | 16 | Slide floor | SL1 | P4 SL3 SL6 | SL2 V1 | SL2 V1 | SL2 | SL2 V3 | SL2 SL7 | SL7 | SL5 | SL2 V3 | SL2 V3 | SL4 | SL2 V3 | SL2 | SL2 V3 | SL1 V3 |
 
 Moving ([move or turn](#move-or-turn)):
 
 - **M1:** the subject never steps into a wall or a blocked wall, outside the edge included; walking into one only turns it, unless a portal there takes it through (P5).
 - **M2:** the subject can't step onto a light barrier or a laser that is on, an open ditch, or a closed door or exit, and can once it isn't blocked; walking into one only turns it.
-- **M3:** an arrow lets the subject onto its tile only moving its way, and on it only moves and turns its way do anything.
+- **M3:** an arrow lets the subject onto its tile only moving the way it points now, and on it only moves and turns that way do anything.
 - **M4:** a resting box keeps the subject off its tile; the two share a tile only when the box is sent back to its start under the subject.
 - **M5:** a button, a switch or a fizzler never stops the subject.
 - **M6:** the carried box rides on the subject's tile wherever it goes, through portals and along slides.
@@ -277,7 +281,7 @@ Boxes ([interact](#interact), [a box where something blocks](#a-box-where-someth
 
 Buttons, switches and links ([buttons](#buttons), [links](#links), [interact](#interact)):
 
-- **K1:** a button unblocks its links as it goes down and blocks them as it comes up, so another button sharing a link can undo it while it stays down; a switch unblocks them each time it is used. Links reach one-tile blocked walls, light barriers, ditches, doors, fizzlers, lasers and the exit, and boxes (B6).
+- **K1:** a button unblocks its links as it goes down and blocks them as it comes up, so another button sharing a link can undo it while it stays down; a switch unblocks them each time it is used. Links reach one-tile blocked walls, light barriers, ditches, doors, fizzlers, lasers, the exit and arrows with a turned way (A1), and boxes (B6).
 - **K2:** each pass judges the buttons in list order, each acting at once, so a later one sees what an earlier one did.
 - **K3:** a button is held down while the subject stands on it.
 - **K4:** standing on a switch, interact uses it, any number of times, so it never picks up the box in front; while a box is carried it is refused, and the box stays carried.
@@ -298,6 +302,11 @@ Slides ([a slide](#a-slide)):
 - **SL6:** a slide that would enter a tile the same way twice, looping through portals, is refused whole: the subject only turns.
 - **SL7:** loose boxes don't slide, and go down on and come up from slide floor as from plain floor; a carried box slides with the subject.
 
+Turning arrows ([links](#links)):
+
+- **A1:** a link turns an arrow with a turned way: unblocked, it points its turned way, blocked, its own way, `arrowTurned` when it turns; it turns only as a button goes down or comes up or a switch is used, never mid-slide.
+- **A2:** an arrow turning under the subject turns the subject with it, so on an arrow the subject always faces the way it points.
+
 Can't happen ([what the validator rejects](#what-the-validator-rejects)):
 
 - **V1:** a wall or a blocked wall holds nothing else, and no wall tile is listed twice, by walls or by blocked walls.
@@ -315,7 +324,7 @@ Element types are described by data in `src/game/rules/`, but a new one still to
 4. **Reader:** its field in `CHAMBER_FIELDS` and its list read in `chamber_parser.ts`.
 5. **Validator:** its kind in `validate_chamber.ts`, placed on its tiles, and in the lists of what may share a tile, what may stand on the edge and what links can reach; a kind whose name is more than one word also needs its wording in the inside-a-wall message (`describeKind`), or it reads "a lightBarrier".
 6. **Events:** each new one in `src/game/game_event.ts`, with its sound in `Level` (`src/game/level.ts`), or none.
-7. **Drawing:** its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`), drawing its sprite for each state; each new sprite in the set (`src/game/sprite_set.ts` and `docs/sprites.md`), drawn in code as an SVG in `art/sprites/` and exported to its file in `src/assets/images/chamber/` (as `AGENTS.md` says) before it joins the set, since `npm run assets:check` requires every sprite's file, and in `RAISED_SPRITES` when it stands raised, so it gets the shared drop shadow; in `GAP_SIDE_KINDS` when it lines a gap that a door, the exit or a fizzler turns to fill (see `docs/sprites.md`, turning); and, when links switch it, its kind in `TRANSITION_KINDS` and `TRANSITION_STYLES` (`src/game/element_transitions.ts`), with its drawing part way through the change, or it switches at once. The floor, floor marks and structure layers are drawn once per chamber as its backdrop, the floor layer's elements (the slide floors) under the antlines and the other two over them (`src/game/renderer.ts`), so an element on them must look the same in every state. An antline to a linkable element lights while the element is unblocked; one with no blocked flag, as the box, needs its own answer in the antline drawing (`src/game/antline_drawing.ts`), which the build asks for.
+7. **Drawing:** its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`), drawing its sprite for each state; each new sprite in the set (`src/game/sprite_set.ts` and `docs/sprites.md`), drawn in code as an SVG in `art/sprites/` and exported to its file in `src/assets/images/chamber/` (as `AGENTS.md` says) before it joins the set, since `npm run assets:check` requires every sprite's file, and in `RAISED_SPRITES` when it stands raised, so it gets the shared drop shadow; in `GAP_SIDE_KINDS` when it lines a gap that a door, the exit or a fizzler turns to fill (see `docs/sprites.md`, turning); and, when links switch it, its kind in `TRANSITION_KINDS` and `TRANSITION_STYLES` (`src/game/element_transitions.ts`), with its drawing part way through the change, or it switches at once. The floor, floor marks and structure layers are drawn once per chamber as its backdrop, the floor layer's elements (the slide floors) under the antlines and the other two over them (`src/game/renderer.ts`), so an element on them must look the same in every state, or be left out of the backdrop and drawn every frame right over it instead, as the arrows a link turns are (`drawTurnableArrows` in `element_drawings.ts`, which also draws an arrow's turn part way, the arrow being in `TRANSITION_KINDS`). An antline to a linkable element lights while the element is unblocked; one with no blocked flag, as the box, needs its own answer in the antline drawing (`src/game/antline_drawing.ts`), which the build asks for.
 8. **Docs and fixtures:** its row in the table at the top, its field under [chamber format](#chamber-format), its rule under [rules](#rules) and [what the validator rejects](#what-the-validator-rejects), its row and column in the [interaction table](#interactions), every cell a rule, a case the validator forbids or *to do*, and any rule they need; behaviour fixtures in `scripts/fixtures/fixtures.ts`, and a case in `scripts/fixtures/format_examples.ts` for each new validator problem.
 9. **Playground:** a place in the development-only playground (`src/dev/playground.json`, see `AGENTS.md`), switched by a button when it can be, so it can be tried by hand.
 10. **Chamber sign:** its pictogram in `src/components/element_pictogram.vue` and its line in the sign's list (`src/components/chamber_sign.vue`), where it is shown dark in the chambers that hold it; it lays them out in rows of seven (the column count is fixed in the sign's styles), with room for fourteen, so a fifteenth starts a third row and makes the sign taller.

@@ -62,11 +62,20 @@ const POSITION_FIELDS = [
   'y',
 ]
 
-/** The fields of the subject and an arrow, all required; a laser and a light barrier have them too */
+/** The fields of the subject, all required; an arrow, a laser and a light barrier have them too */
 const DIRECTED_FIELDS = [
   'x',
   'y',
   'direction',
+]
+
+/** The fields an arrow may have: an id and a turned way, given together, for one a link turns */
+const ARROW_FIELDS = [
+  'x',
+  'y',
+  'direction',
+  'id',
+  'turnedDirection',
 ]
 
 /** The fields a ditch, door, fizzler or the exit may have */
@@ -456,7 +465,7 @@ class ChamberParser {
    * @returns The arrow, or null when it is wrong
    */
   readArrow(value: unknown, field: string): ArrowData | null {
-    const entry = this.readObject(value, field, DIRECTED_FIELDS, DIRECTED_FIELDS)
+    const entry = this.readObject(value, field, ARROW_FIELDS, DIRECTED_FIELDS)
 
     if (entry === null) {
       return null
@@ -465,11 +474,17 @@ class ChamberParser {
     const x = this.readInteger(entry.x, fieldPath(field, 'x'), null)
     const y = this.readInteger(entry.y, fieldPath(field, 'y'), null)
     const direction = this.readChoice(entry.direction, fieldPath(field, 'direction'), DIRECTIONS)
+    const id = this.readOptionalId(entry.id, fieldPath(field, 'id'))
+    const turnedDirection = (entry.turnedDirection === undefined) ? undefined : this.readChoice(entry.turnedDirection, fieldPath(field, 'turnedDirection'), DIRECTIONS)
 
-    return ((x === null) || (y === null) || (direction === null)) ? null : {
+    // Both optional fields go in even when absent, as undefined, which a
+    // chamber's hash leaves out, so an arrow without them hashes as before
+    return ((x === null) || (y === null) || (direction === null) || (id === null) || (turnedDirection === null)) ? null : {
       x: x,
       y: y,
       direction: direction,
+      id: id,
+      turnedDirection: turnedDirection,
     }
   }
 

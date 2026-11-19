@@ -1,5 +1,7 @@
 import type {ChamberData} from '@/game/chamber_data'
+import arrowTurnedDirectionValue from '@scripts/fixtures/arrow_turned_direction_value.json'
 import brokenAntlines from '@scripts/fixtures/broken_antlines.json'
+import brokenArrows from '@scripts/fixtures/broken_arrows.json'
 import brokenChamberFields from '@scripts/fixtures/broken_chamber_fields.json'
 import brokenChamberLayout from '@scripts/fixtures/broken_chamber_layout.json'
 import brokenSlideFloors from '@scripts/fixtures/broken_slide_floors.json'
@@ -15,7 +17,7 @@ import subjectOnBox from '@scripts/fixtures/subject_on_box.json'
 // fails when it doesn't fit the format, and cases that pin exactly what
 // loading a file reports, broken ones included
 
-/** A format 2 chamber using every addition (blocked walls, one tile of them linked, slide floors, a tile and a rectangle, a link group named by a button and a switch, an antline to an element the group stands for and one to an element named directly, an empty par) and leaving out every list it doesn't need */
+/** A format 2 chamber using every addition (blocked walls, one tile of them linked, slide floors, a tile and a rectangle, an arrow a link turns, a link group named by a button and a switch, an antline to an element the group stands for and one to an element named directly, an empty par) and leaving out every list it doesn't need */
 export const FORMAT_V2_EXAMPLE: ChamberData = formatV2Example
 
 /**
@@ -149,5 +151,22 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
       'error slideFloors[0] at (4, 1): a slide floor can\'t share a tile with an arrow',
       'error slideFloors[0] at (5, 1): a slide floor can\'t share a tile with a switch',
     ],
+  },
+  {
+    name: 'broken_arrows',
+    // Each arrow but the last is wrong about how it turns; the last, an id and a quarter turn, is right
+    data: brokenArrows,
+    problems: [
+      'error arrows[0] at (1, 1): an arrow with a turned way needs an id, or nothing can turn it',
+      'error arrows[1] at (2, 1): an arrow with an id needs a turned way, or a link to it changes nothing',
+      'error arrows[2] at (3, 1): an arrow\'s turned way can\'t be its own way',
+      'error arrows[3] at (4, 1): an arrow\'s turned way must be a quarter turn from its own way, not a half turn',
+    ],
+  },
+  {
+    name: 'arrow_turned_direction_value',
+    // An arrow's turned way is one of the four ways, like its own
+    data: arrowTurnedDirectionValue,
+    problems: ['error arrows[0].turnedDirection: is not one of UP, DOWN, LEFT, RIGHT'],
   },
 ]

@@ -55,10 +55,22 @@ export type ElementKind = RegisteredElement['kind']
 type BlockableElement = Extract<RegisteredElement, {readonly defaultBlocked: boolean}>
 
 /**
- * The name of an element type that has a blocked flag: a blocked wall, a
- * light barrier, ditch, laser, door, the exit or a fizzler.
+ * The name of an element type that has a blocked flag: an arrow, a blocked
+ * wall, a light barrier, ditch, laser, door, the exit or a fizzler.
  */
 export type BlockableKind = BlockableElement['kind']
+
+/**
+ * An element type entered only moving the way it points, from which only
+ * that way acts.
+ */
+type OneWayElement = Extract<RegisteredElement, {readonly blocksWalking: 'alongDirection'}>
+
+/**
+ * The name of an element type entered only moving the way it points: an
+ * arrow. Its way can be turned by a link, so it has a blocked flag.
+ */
+export type OneWayKind = OneWayElement['kind']
 
 /** Every element definition, by its kind */
 const DEFINITIONS_BY_KIND: ReadonlyMap<ElementKind, ElementDefinition> = new Map(ELEMENT_REGISTRY.map((definition) => [
@@ -73,6 +85,15 @@ const DEFINITIONS_BY_KIND: ReadonlyMap<ElementKind, ElementDefinition> = new Map
  */
 export function isBlockableElement(definition: RegisteredElement): definition is BlockableElement {
   return definition.defaultBlocked !== null
+}
+
+/**
+ * Whether an element type is entered only moving the way it points.
+ * @param definition - An element type from the registry
+ * @returns True when it is one way
+ */
+export function isOneWayElement(definition: RegisteredElement): definition is OneWayElement {
+  return definition.blocksWalking === 'alongDirection'
 }
 
 /**

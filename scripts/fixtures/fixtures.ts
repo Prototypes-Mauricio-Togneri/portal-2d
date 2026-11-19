@@ -1,6 +1,11 @@
 import type {ChamberData} from '@/game/chamber_data'
 import type {ReplayExpectation} from '@/game/replay_data'
 import type {Action} from '@/game/rules/action'
+import arrowBox from '@scripts/fixtures/arrow_box.json'
+import arrowButton from '@scripts/fixtures/arrow_button.json'
+import arrowPortal from '@scripts/fixtures/arrow_portal.json'
+import arrowSlide from '@scripts/fixtures/arrow_slide.json'
+import arrowSwitch from '@scripts/fixtures/arrow_switch.json'
 import blockedWall from '@scripts/fixtures/blocked_wall.json'
 import boxInReach from '@scripts/fixtures/box_in_reach.json'
 import boxLinkedButton from '@scripts/fixtures/box_linked_button.json'
@@ -35,7 +40,7 @@ import twoButtonsOneDoor from '@scripts/fixtures/two_buttons_one_door.json'
 // how the rules play a change from the original rules (docs/elements.md,
 // "Changes from the original rules") or an element the original game didn't
 // have (the light barrier, the blocked wall that a link switches, the slide
-// floor). The replay check runs them. The chambers are read without the layout
+// floor, the arrow that a link turns). The replay check runs them. The chambers are read without the layout
 // checks, so the one open at the edge still plays
 
 /**
@@ -1061,6 +1066,145 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 3,
       portals: 0,
       finalHash: 'eef8f80b',
+    },
+  },
+  {
+    name: 'arrow_turned_back_under_subject',
+    behaviour: 'A button turns an arrow while pressed; stepping off it onto the arrow, entered its turned way, turns the arrow back under the subject, which turns with it and can then leave only the arrow\'s own way.',
+    chamber: arrowButton,
+    actions: [
+      'right',
+      'right',
+      'right',
+      'left',
+      'up',
+    ],
+    expected: {
+      completed: false,
+      moves: 3,
+      portals: 0,
+      finalHash: 'f49345ce',
+    },
+  },
+  {
+    name: 'arrow_turned_back_when_released',
+    behaviour: 'An arrow a button turned turns back to its own way when the button comes up, so it is entered its own way again.',
+    chamber: arrowButton,
+    actions: [
+      'right',
+      'left',
+      'down',
+      'right',
+      'right',
+      'up',
+    ],
+    expected: {
+      completed: false,
+      moves: 6,
+      portals: 0,
+      finalHash: '7e35f401',
+    },
+  },
+  {
+    name: 'arrow_turned_by_switch_for_good',
+    behaviour: 'A switch turns an arrow for good: leaving the switch doesn\'t turn it back.',
+    chamber: arrowSwitch,
+    actions: [
+      'right',
+      'interact',
+      'right',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 3,
+      portals: 0,
+      finalHash: '00ab08f6',
+    },
+  },
+  {
+    name: 'arrow_turns_subject_with_it',
+    behaviour: 'A box put down on a button turns the arrow the subject stands on, and the subject turns with it, so its shot flies the arrow\'s new way.',
+    chamber: arrowBox,
+    actions: [
+      'turnUp',
+      'interact',
+      'right',
+      'interact',
+      'blue',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 1,
+      finalHash: '1593b241',
+    },
+  },
+  {
+    name: 'slide_stops_on_turned_arrow',
+    behaviour: 'A slide enters an arrow turned to point its way and stops on it.',
+    chamber: arrowSlide,
+    actions: ['right'],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: 'fa742c4c',
+    },
+  },
+  {
+    name: 'slide_stops_before_turned_back_arrow',
+    behaviour: 'Once its button comes up, the arrow points its own way again, so a slide stops in front of it.',
+    chamber: arrowSlide,
+    actions: [
+      'turnDown',
+      'interact',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: 'c9ff4773',
+    },
+  },
+  {
+    name: 'portal_onto_turned_arrow',
+    behaviour: 'Coming out of a portal onto an arrow turned to point the way out is allowed.',
+    chamber: arrowPortal,
+    actions: [
+      'blue',
+      'turnRight',
+      'orange',
+      'left',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 2,
+      finalHash: '45ad93be',
+    },
+  },
+  {
+    name: 'portal_onto_turned_back_arrow_refused',
+    behaviour: 'Once its button comes up, the arrow points its own way again, so coming out of a portal onto it the other way is refused.',
+    chamber: arrowPortal,
+    actions: [
+      'turnDown',
+      'interact',
+      'turnUp',
+      'interact',
+      'turnLeft',
+      'blue',
+      'turnRight',
+      'orange',
+      'left',
+    ],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 2,
+      finalHash: 'dc93eaa2',
     },
   },
 ]

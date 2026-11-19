@@ -29,13 +29,14 @@ export const SHOT_ACTIONS: readonly Action[] = [
  * opens are the same. In one expansion, where the portals and flags don't
  * change, the first tile on a line takes each shot through the rules' step,
  * and the other tiles on it reuse the result with the subject's tile
- * rewritten in the key. Tiles where something can keep the subject from
- * shooting (fizzlers) always take the rules' step. The solver check compares
- * every shot this gives with the rules' step.
+ * rewritten in the key, facing its canonical way for the expanded state's
+ * flags, which a shot doesn't change. Tiles where something can keep the
+ * subject from shooting (fizzlers) always take the rules' step. The solver
+ * check compares every shot this gives with the rules' step.
  */
 export class ShotLines {
   private readonly codec: StateKeyCodec // The chamber's state key
-  private readonly graph: WalkGraph // Where the subject can walk, and each tile's canonical facing
+  private readonly graph: WalkGraph // Where the subject can walk, and each tile's canonical facing per set of blocked flags
   private readonly shares: Uint8Array // 1 on each tile whose shots may be reused
   private readonly stopsByFlags = new Map<number, Int32Array>() // Each tile's shot stops, by the blocked flags they were found for
   private readonly paddedWidth: number // The chamber's width with a column of outside on each side, for numbering stops
@@ -48,6 +49,8 @@ export class ShotLines {
   private readonly slotTiles: Int32Array // The tile that took the slot's shot through the rules' step
   private readonly words = new Uint32Array(2) // Room for one key
   private stops: Int32Array = new Int32Array(0) // The current flags' shot stops, four per tile in DIRECTIONS order
+  private state: RulesState | null = null // The state expanded
+  private flags = 0 // Its blocked flags, as one number
   private serial = 0 // The current expansion's number
   private shotChanged = false // Whether the last shot changed the state
   private shotLow = 0 // The low word of the last shot's result key, with the canonical facing
@@ -161,12 +164,15 @@ export class ShotLines {
 
   /**
    * Starts an expansion: forgets the shots taken so far, since the portals
-   * may differ, and takes the shot stops for the state's flags.
+   * may differ, and takes the state, its flags, for the canonical facings,
+   * and the shot stops for them.
    * @param state - The state expanded
    * @param flags - Its blocked flags, as one number
    */
   begin(state: RulesState, flags: number): void {
     this.serial++
+    this.state = state
+    this.flags = flags
     this.stops = this.stopsFor(state, flags)
   }
 
@@ -189,7 +195,7 @@ export class ShotLines {
     if (shares && (this.slotSerials[slot] === this.serial)) {
       this.reusedCount++
       this.shotChanged = this.slotChanged[slot] === 1
-      this.shotLow = this.codec.placeSubject(this.slotLows[slot] ?? 0, tile, this.graph.facingOf(tile))
+      this.shotLow = this.codec.placeSubject(this.slotLows[slot] ?? 0, tile, this.graph.facingOf(this.expanded, this.flags, tile))
       this.shotHigh = this.slotHighs[slot] ?? 0
       this.shotPortals = this.slotPortals[slot] ?? 0
       this.shotState = this.slotStates[slot] ?? null
@@ -224,6 +230,19 @@ export class ShotLines {
     }
 
     return this.shotChanged
+  }
+
+  /**
+   * The state expanded.
+   * @returns The state
+   * @throws Error before begin
+   */
+  private get expanded(): RulesState {
+    if (this.state === null) {
+      throw new Error('no expansion begun')
+    }
+
+    return this.state
   }
 
   /**

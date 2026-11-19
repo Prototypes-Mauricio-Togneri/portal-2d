@@ -15,8 +15,9 @@ export type ElementGround = 'floor' | 'wall' | 'floorOrWall'
 
 /**
  * When an element keeps the subject from stepping onto its tile:
- * alongDirection means always, except while moving the element's way, and
- * while on its tile only that way acts (an arrow).
+ * alongDirection means always, except while moving the way the element
+ * points now, and while on its tile only that way acts (an arrow, which a
+ * link can turn).
  */
 export type WalkBlocking = 'never' | 'whenBlocked' | 'always' | 'alongDirection'
 

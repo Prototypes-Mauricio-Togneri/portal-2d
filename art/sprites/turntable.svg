@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    A turntable (docs/sprites.md): the floor itself cut round and set
+    turning under a turnable arrow, a disc a shade lighter than the floor
+    inside a dark cut, the same all round, so it shows that the arrow on
+    it turns but not which way. The arrow's chevron is drawn over it
+    (turntable_arrow), turned; the disc itself is never turned.
+  -->
+  <defs>
+    <!-- The floor's mottling and grain, a little fainter -->
+    <filter id="texture" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="23" result="mottle"/>
+      <feColorMatrix in="mottle" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.07" result="softLayer"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="5" result="grain"/>
+      <feColorMatrix in="grain" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.05" result="grainLayer"/>
+      <feMerge>
+        <feMergeNode in="softLayer"/>
+        <feMergeNode in="grainLayer"/>
+      </feMerge>
+    </filter>
+    <clipPath id="disc">
+      <circle cx="128" cy="128" r="96"/>
+    </clipPath>
+  </defs>
+
+  <!-- The disc's face, a shade lighter than the floor -->
+  <circle cx="128" cy="128" r="96" fill="rgb(245, 246, 251)"/>
+  <rect x="0" y="0" width="256" height="256" filter="url(#texture)" clip-path="url(#disc)"/>
+
+  <!-- The lit lip just inside the cut -->
+  <circle cx="128" cy="128" r="93.5" fill="none" stroke="rgb(253, 253, 255)" stroke-width="3"/>
+
+  <!-- The cut between the disc and the floor -->
+  <circle cx="128" cy="128" r="99" fill="none" stroke="rgb(132, 136, 147)" stroke-width="6"/>
+</svg>

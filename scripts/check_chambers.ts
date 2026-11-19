@@ -22,9 +22,9 @@ import {CHAMBER_CASES, type ChamberCase, FORMAT_V2_EXAMPLE} from '@scripts/fixtu
 // per chamber, case, compiled example and registry check, then any problem
 // below it, and exits non-zero on any failure
 
-/** What each button's and switch's links reach in the compiled format 2 example: its group stands for the door and the linked blocked wall, in that order */
+/** What each button's and switch's links reach in the compiled format 2 example: its group stands for the door and the linked blocked wall, in that order, and the button also turns the arrow */
 const EXAMPLE_LINKS: readonly string[] = [
-  'button 0: door 0, blockedWall 0',
+  'button 0: door 0, blockedWall 0, arrow 0',
   'switch 0: door 0, blockedWall 0, exit 0',
 ]
 

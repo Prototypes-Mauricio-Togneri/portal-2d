@@ -1,0 +1,46 @@
+{
+    "version": 2,
+    "size": {
+        "width": 6,
+        "height": 3
+    },
+    "subject": {
+        "x": 0,
+        "y": 1,
+        "direction": "RIGHT"
+    },
+    "exit": {
+        "x": 5,
+        "y": 0
+    },
+    "slideFloors": [
+        {
+            "xFrom": 1,
+            "xTo": 3,
+            "yFrom": 1,
+            "yTo": 1
+        }
+    ],
+    "arrows": [
+        {
+            "x": 4,
+            "y": 1,
+            "direction": "UP",
+            "id": 1,
+            "turnedDirection": "RIGHT"
+        }
+    ],
+    "buttons": [
+        {
+            "x": 0,
+            "y": 0,
+            "links": [1]
+        }
+    ],
+    "boxes": [
+        {
+            "x": 0,
+            "y": 0
+        }
+    ]
+}

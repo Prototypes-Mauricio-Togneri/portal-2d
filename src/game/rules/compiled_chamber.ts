@@ -194,6 +194,7 @@ export class CompiledChamber {
   private readonly tileIndexes = new Map<PlacedKind, TileIndex>() // Where each type's elements are
   private readonly entries = new Map<PlacedKind, readonly PlacedEntry[]>() // Each type's entries, in list order
   private readonly directions = new Map<PlacedKind, readonly (Direction | null)[]>() // Which way each element points, by type, then index
+  private readonly turnedDirections = new Map<PlacedKind, readonly (Direction | null)[]>() // Which way each arrow a link can turn points while unblocked, by type, then index
   private readonly links = new Map<PlacedKind, readonly (readonly LinkTarget[])[]>() // What each element's links reach, by type, then index
 
   /**
@@ -225,6 +226,7 @@ export class CompiledChamber {
 
       this.entries.set(definition.kind, entries)
       this.directions.set(definition.kind, entries.map((entry) => readDirection(entry.direction)))
+      this.turnedDirections.set(definition.kind, entries.map((entry) => readDirection(entry.turnedDirection)))
       this.tileIndexes.set(definition.kind, this.indexTiles(entries))
       this.links.set(definition.kind, entries.map((entry) => resolveLinks(entry.links ?? [], linkIds)))
     }
@@ -499,13 +501,24 @@ export class CompiledChamber {
   }
 
   /**
-   * Which way an element points, for an arrow.
+   * Which way an element points as its file gives it, for an arrow: the way
+   * it points while blocked, as every arrow starts.
    * @param kind - The element type
    * @param index - The element's index in the type's list
    * @returns Its direction, or null when it points no way of the four
    */
   directionOf(kind: PlacedKind, index: number): Direction | null {
     return this.directions.get(kind)?.[index] ?? null
+  }
+
+  /**
+   * Which way an arrow a link can turn points while unblocked.
+   * @param kind - The element type
+   * @param index - The element's index in the type's list
+   * @returns Its turned direction, or null for an element without one
+   */
+  turnedDirectionOf(kind: PlacedKind, index: number): Direction | null {
+    return this.turnedDirections.get(kind)?.[index] ?? null
   }
 
   /**

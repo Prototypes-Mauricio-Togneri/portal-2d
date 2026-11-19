@@ -52,7 +52,7 @@ export type BlockedWallData = (PositionData & {
 
 /**
  * An element a button or switch can open and close: ditch, door, fizzler or
- * exit.
+ * exit. An arrow, which a link turns, has its own entry type.
  */
 export type BlockableData = PositionData & {
   readonly id?: number // Target for button and switch links; absent means it cannot be linked
@@ -75,10 +75,13 @@ export type BeamData = BlockableData & {
 }
 
 /**
- * A one-way floor tile.
+ * A one-way floor tile. With an id and a turned way, given together, a
+ * button or switch can turn it between its way and its turned way.
  */
 export type ArrowData = PositionData & {
-  readonly direction: string // 'UP', 'DOWN', 'LEFT' or 'RIGHT'
+  readonly direction: string // 'UP', 'DOWN', 'LEFT' or 'RIGHT': the way it points while blocked, as it starts
+  readonly id?: number // Target for button and switch links; absent means it cannot be linked
+  readonly turnedDirection?: string // 'UP', 'DOWN', 'LEFT' or 'RIGHT': the way it points while a link holds it turned; given with id
 }
 
 /**

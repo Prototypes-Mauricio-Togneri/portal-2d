@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    A turnable arrow's chevron (docs/sprites.md): the floor arrow's chevron
+    (arrow.svg) at 85 % of its size round the tile's middle, so it sits on
+    its turntable with a band of disc all round it at every angle. Drawn
+    pointing up; the game turns it to the way the arrow points, and by any
+    angle while it turns. Keep it in step with arrow.svg.
+  -->
+  <g transform="translate(128 128) scale(0.85) translate(-128 -128)">
+    <polyline points="62,163 128,103 194,163" fill="none" stroke="rgb(150, 153, 160)" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="4" stroke-width="32"/>
+  </g>
+</svg>

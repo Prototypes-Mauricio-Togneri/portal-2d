@@ -2,18 +2,19 @@ import type {RulesState} from '@/game/rules/rules_state'
 
 /**
  * The element types drawn changing over a short time when a step switches
- * them: doors and the exit slide open or shut, a blocked wall's steel splits
- * and slides into the wall beside it or back, a ditch's grate slides in or
- * out, fizzlers crumble away or form again, and lasers and light barriers
- * fade out or in.
+ * them: an arrow's chevron turns, doors and the exit slide open or shut, a
+ * blocked wall's steel splits and slides into the wall beside it or back, a
+ * ditch's grate slides in or out, fizzlers crumble away or form again, and
+ * lasers and light barriers fade out or in.
  */
-export type TransitionKind = 'blockedWall' | 'ditch' | 'door' | 'exit' | 'fizzler' | 'laser' | 'lightBarrier'
+export type TransitionKind = 'arrow' | 'blockedWall' | 'ditch' | 'door' | 'exit' | 'fizzler' | 'laser' | 'lightBarrier'
 
 /**
- * How far blocked an element is drawn, from 0 (a blocked wall taking
- * portals, a ditch bridged, a door or the exit open, a fizzler, a laser or a
- * light barrier off) to 1 (refusing portals, open, shut, on), or null to draw
- * it as the state says.
+ * How far blocked an element is drawn, from 0 (an arrow pointing its turned
+ * way, a blocked wall taking portals, a ditch bridged, a door or the exit
+ * open, a fizzler, a laser or a light barrier off) to 1 (pointing its own
+ * way, refusing portals, open, shut, on), or null to draw it as the state
+ * says.
  */
 export type BlockedShares = (kind: TransitionKind, index: number) => number | null
 
@@ -39,6 +40,7 @@ type Transition = {
 
 /** The element types that change over time, in the order they are looked through */
 const TRANSITION_KINDS: readonly TransitionKind[] = [
+  'arrow',
   'blockedWall',
   'ditch',
   'door',
@@ -48,8 +50,12 @@ const TRANSITION_KINDS: readonly TransitionKind[] = [
   'lightBarrier',
 ]
 
-/** How each element type changes: a blocked wall's steel, a ditch's grate, a door or the exit slides, eased like a step's glide; a field crumbles at an even pace, its pieces each in their own time; a beam fades at an even pace */
+/** How each element type changes: an arrow's chevron turns, and a blocked wall's steel, a ditch's grate, a door or the exit slides, eased like a step's glide; a field crumbles at an even pace, its pieces each in their own time; a beam fades at an even pace */
 const TRANSITION_STYLES: Readonly<Record<TransitionKind, TransitionStyle>> = {
+  arrow: {
+    milliseconds: 300,
+    eased: true,
+  },
   blockedWall: {
     milliseconds: 300,
     eased: true,
@@ -81,11 +87,12 @@ const TRANSITION_STYLES: Readonly<Record<TransitionKind, TransitionStyle>> = {
 }
 
 /**
- * The blocked walls' steel sliding apart or shut, the ditches' grates
- * sliding in or out, the doors and the exit sliding open or shut, the
- * fizzlers crumbling away or forming again and the lasers and light barriers
- * fading out or in, over a short time after a step switched them. Only a
- * blocked wall a link reaches is ever switched.
+ * The arrows' chevrons turning, the blocked walls' steel sliding apart or
+ * shut, the ditches' grates sliding in or out, the doors and the exit
+ * sliding open or shut, the fizzlers crumbling away or forming again and the
+ * lasers and light barriers fading out or in, over a short time after a step
+ * switched them. Only an arrow or a blocked wall a link reaches is ever
+ * switched.
  * Purely visual: the rules have already switched them, and nothing waits
  * for a change, so a press never cuts one short. An element switched back
  * part way changes back from where it is drawn.
@@ -94,8 +101,8 @@ export class ElementTransitions {
   private transitions: readonly Transition[] = [] // The changes running, empty when none is
 
   /**
-   * Starts changing each blocked wall, ditch, door, exit, fizzler, laser and
-   * light barrier that a step switched, from where it is drawn now.
+   * Starts changing each arrow, blocked wall, ditch, door, exit, fizzler,
+   * laser and light barrier that a step switched, from where it is drawn now.
    * @param before - The state before the step
    * @param after - The state after the step
    * @param time - Now, in milliseconds on the frame clock
@@ -146,7 +153,7 @@ export class ElementTransitions {
    * Whether anything is still changing at a time. A change whose time has
    * reached its end is over.
    * @param time - The frame's time, in milliseconds on the frame clock
-   * @returns True while a blocked wall, a ditch, a door, the exit, a fizzler, a laser or a light barrier is changing
+   * @returns True while an arrow, a blocked wall, a ditch, a door, the exit, a fizzler, a laser or a light barrier is changing
    */
   isRunningAt(time: number): boolean {
     if (this.transitions.some((transition) => time - transition.startTime >= transition.duration)) {
@@ -161,7 +168,7 @@ export class ElementTransitions {
    * @param kind - Its type
    * @param index - Its number among its type's elements
    * @param time - The frame's time, in milliseconds on the frame clock
-   * @returns From 0 (a blocked wall taking portals, a ditch bridged, a door or the exit open, a fizzler, a laser or a light barrier off) to 1 (refusing portals, open, shut, on), or null when it isn't changing
+   * @returns From 0 (an arrow pointing its turned way, a blocked wall taking portals, a ditch bridged, a door or the exit open, a fizzler, a laser or a light barrier off) to 1 (pointing its own way, refusing portals, open, shut, on), or null when it isn't changing
    */
   blockedAt(kind: TransitionKind, index: number, time: number): number | null {
     const transition = this.transitions.find((running) => (running.kind === kind) && (running.index === index))

@@ -21,6 +21,7 @@ export type GameEvent =
   | 'switchUsed'
   | 'slideStarted'
   | 'slideStopped'
+  | 'arrowTurned'
 
 /**
  * Named values of GameEvent.
@@ -44,4 +45,5 @@ export const GameEvent = {
   SWITCH_USED: 'switchUsed', // The subject used a switch
   SLIDE_STARTED: 'slideStarted', // The subject, having entered a slide floor, slid on from it
   SLIDE_STOPPED: 'slideStopped', // A slide that started ended
+  ARROW_TURNED: 'arrowTurned', // An arrow turned, by a link, to its turned way or back
 } as const

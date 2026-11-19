@@ -1,0 +1,44 @@
+{
+    "version": 2,
+    "size": {
+        "width": 4,
+        "height": 3
+    },
+    "subject": {
+        "x": 0,
+        "y": 1,
+        "direction": "RIGHT"
+    },
+    "exit": {
+        "x": 3,
+        "y": 0
+    },
+    "walls": [
+        {
+            "x": 1,
+            "y": 2
+        }
+    ],
+    "boxes": [
+        {
+            "x": 0,
+            "y": 2
+        }
+    ],
+    "arrows": [
+        {
+            "x": 1,
+            "y": 1,
+            "direction": "RIGHT",
+            "id": 1,
+            "turnedDirection": "UP"
+        }
+    ],
+    "buttons": [
+        {
+            "x": 2,
+            "y": 1,
+            "links": [1]
+        }
+    ]
+}

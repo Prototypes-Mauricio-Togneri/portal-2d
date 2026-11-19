@@ -10,6 +10,7 @@ export type PlacedEntry = PositionData & {
   readonly links?: readonly number[] // Ids it links, for a button or a switch
   readonly blocked?: boolean // Its blocked flag at the start, for an element that has one
   readonly direction?: string // Which way it points: UP, DOWN, LEFT or RIGHT for an arrow, H or V for a laser or a light barrier
+  readonly turnedDirection?: string // Which way an arrow a link can turn points while unblocked: UP, DOWN, LEFT or RIGHT
   readonly xTo?: number // A rectangle's last column, both ends included; absent for one tile
   readonly yTo?: number // A rectangle's last row, both ends included; absent for one tile
 }

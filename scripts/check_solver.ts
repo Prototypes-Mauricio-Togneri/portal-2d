@@ -31,7 +31,8 @@ import {SOLVER_FIXTURES, type SolverFixture, type SolverRoute} from '@scripts/so
 // the solver fixtures, each walk it allows gives through the rules' step the
 // state the solver builds, no move it leaves out (onto a resting box among
 // them) walks onto a plain tile, and turning gives the state the solver
-// builds for that facing; each shot from
+// builds for that facing, with the ways and canonical facings for the
+// state's blocked flags; each shot from
 // each tile a walk reaches, each way and colour, gives through the rules'
 // step the state the solver builds from the shot it shares with its line;
 // each move the solver skips as changing nothing changes nothing through the
@@ -131,13 +132,14 @@ function walkStates(chamber: CompiledChamber, visit: (state: RulesState) => void
 }
 
 /**
- * Checks the walk graph and the canonical facing against the rules' step
- * from each of a list of states: walking each walk edge with the move action,
- * but onto a resting box (walkTarget), gives the state the solver builds by
- * rewriting the key; no move the graph leaves out, onto a resting box
- * included, lands on the plain tile next to it; and turning each way gives
- * the state the solver builds for that facing, or changes nothing where the
- * subject may not move that way.
+ * Checks the walk graph and the canonical facing, for each state's blocked
+ * flags, against the rules' step from each of a list of states: walking each
+ * walk edge with the move action, but onto a resting box (walkTarget), gives
+ * the state the solver builds by rewriting the key; no move the graph leaves
+ * out, onto a resting box included, lands on the plain tile next to it; and
+ * turning each way gives the state the solver builds for that facing, or
+ * changes nothing where the subject may not move that way (on an arrow, any
+ * way but the one it points in that state).
  * @param codec - The chamber's state key
  * @param graph - The chamber's walk graph
  * @param states - The states to walk from
@@ -155,8 +157,9 @@ function checkWalks(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
 
     const low = words[0] ?? 0
     const high = words[1] ?? 0
+    const flags = codec.flagsOf(low, high)
     const from = codec.subjectTileOf(low)
-    const edges = graph.edgesFor(state, codec.flagsOf(low, high))
+    const edges = graph.edgesFor(state, flags)
     const reachedCount = graph.walk(state, edges, from)
     const walkedTo = new Map<number, RulesState>()
 
@@ -180,7 +183,8 @@ function checkWalks(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
         if ((target !== NO_WALK) && (!graph.isEventTile(tile))) {
           encodeCanonical(codec, graph, moved, words)
 
-          if ((words[0] !== codec.placeSubject(low, target, graph.facingOf(target))) || (words[1] !== high)) {
+          // A walk changes no blocked flag, so the target's facing is the one for the state walked from
+          if ((words[0] !== codec.placeSubject(low, target, graph.facingOf(state, flags, target))) || (words[1] !== high)) {
             throw new Error(`walking ${direction} from tile ${tile} gives another state than the solver builds (state ${state.hash})`)
           }
 
@@ -201,7 +205,7 @@ function checkWalks(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
         words[0] = codec.placeSubject(low, tile, directionIndex)
         words[1] = high
 
-        if (graph.allowsWayFrom(tile, directionIndex) ? (turned.key !== codec.decode(words, 0).key) : (turned.key !== standing.key)) {
+        if (graph.allowsWayFrom(state, flags, tile, directionIndex) ? (turned.key !== codec.decode(words, 0).key) : (turned.key !== standing.key)) {
           throw new Error(`turning ${direction} on tile ${tile} gives another state than the solver builds (state ${state.hash})`)
         }
       })
@@ -250,14 +254,14 @@ function checkShots(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
     for (let position = 0; position < reachedCount; position++) {
       const tile = graph.reachedTile(position)
 
-      words[0] = codec.placeSubject(low, tile, graph.facingOf(tile))
+      words[0] = codec.placeSubject(low, tile, graph.facingOf(state, flags, tile))
       words[1] = high
 
       // checkWalks proves this is the state walking there gives
       const standing = codec.decode(words, 0)
 
       DIRECTIONS.forEach((direction, directionIndex) => {
-        if (!graph.allowsWayFrom(tile, directionIndex)) {
+        if (!graph.allowsWayFrom(state, flags, tile, directionIndex)) {
           return
         }
 
@@ -326,7 +330,8 @@ function checkSkips(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
 
     for (let position = 0; position < reachedCount; position++) {
       const tile = graph.reachedTile(position)
-      const standingLow = codec.placeSubject(low, tile, graph.facingOf(tile))
+      const canonicalIndex = graph.facingOf(state, flags, tile)
+      const standingLow = codec.placeSubject(low, tile, canonicalIndex)
 
       words[0] = standingLow
       words[1] = high
@@ -334,7 +339,7 @@ function checkSkips(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
       // checkWalks proves this is the state walking there gives
       const standing = codec.decode(words, 0)
 
-      const ways = filter.interactWays(tile, graph.facingOf(tile))
+      const ways = filter.interactWays(tile, canonicalIndex)
       // The states the interacts it takes there give, and the state it stood in
       const reached = [`${standingLow},${high}`]
       const skipped: SkippedInteract[] = []
@@ -342,7 +347,7 @@ function checkSkips(codec: StateKeyCodec, graph: WalkGraph, states: readonly Rul
       DIRECTIONS.forEach((direction, directionIndex) => {
         const taken = ((ways >> directionIndex) & 1) === 1
 
-        if (!graph.allowsWayFrom(tile, directionIndex)) {
+        if (!graph.allowsWayFrom(state, flags, tile, directionIndex)) {
           if (taken) {
             throw new Error(`the solver interacts facing ${direction} on tile ${tile}, a way the subject can't face there (state ${state.hash})`)
           }
@@ -456,7 +461,7 @@ function checkRegions(codec: StateKeyCodec, graph: WalkGraph, states: readonly R
 function checkChamberKey(file: string, data: unknown): string {
   const chamber = compileChamber(data)
   const codec = new StateKeyCodec(new ChamberIndex(chamber))
-  const graph = new WalkGraph(codec.index, startChamber(chamber).state)
+  const graph = new WalkGraph(codec.index)
   const words = new Uint32Array(2)
   const solutionUrl = new URL(file.replace(/\.json$/, '.solution.json'), CHAMBERS_DIRECTORY)
   const solution = parseSolutionData(JSON.parse(readFileSync(solutionUrl, 'utf8')))
@@ -597,7 +602,7 @@ function checkSolverFixture(fixture: SolverFixture): string {
     throw new Error(`${states.length} distinct states share ${set.size} keys`)
   }
 
-  const graph = new WalkGraph(codec.index, startChamber(chamber).state)
+  const graph = new WalkGraph(codec.index)
   const walks = checkWalks(codec, graph, states)
   const shots = checkShots(codec, graph, states)
   const skips = checkSkips(codec, graph, states)

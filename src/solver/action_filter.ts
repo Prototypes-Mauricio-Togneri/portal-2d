@@ -150,7 +150,7 @@ export class ActionFilter {
    * box in reach (canInteract). Counts the tiles where it rules every way
    * out.
    * @param tile - The tile's number
-   * @param canonicalIndex - The tile's canonical facing, as an index in DIRECTIONS
+   * @param canonicalIndex - The tile's canonical facing for the expanded state's blocked flags, as an index in DIRECTIONS
    * @returns The ways for which the rules' step has to tell, as bits; 0 for none
    * @throws Error before begin
    */
@@ -201,7 +201,7 @@ export class ActionFilter {
     let limited = false
 
     DIRECTIONS.forEach((direction, directionIndex) => {
-      // The subject can't face another way on a one-way tile
+      // On a one-way tile the subject faces only the way it points in this state
       if (!allowsWay(state, x, y, direction)) {
         return
       }

@@ -44,7 +44,8 @@ type SlideBeat = {
  * ends it at once. When a step fizzles, what it took breaks up over a few
  * frames, and so does a box a door, a laser, a light barrier or a fizzler
  * destroys where it lies, while one on a ditch that opens falls out of sight;
- * a blocked wall a step switches slides its steel apart or shut, a
+ * an arrow a step turns swings its chevron round, a blocked wall a step
+ * switches slides its steel apart or shut, a
  * ditch a step switches slides its grate in or out, a door or the exit a step
  * opens or closes slides open or shut, a fizzler a step switches crumbles
  * away or forms, a laser or a light barrier a step switches fades out or in, a portal a shot opens grows open on its
@@ -93,6 +94,7 @@ export class Level {
     [GameEvent.SWITCH_USED]: Sound.SWITCH,
     [GameEvent.SLIDE_STARTED]: null,
     [GameEvent.SLIDE_STOPPED]: null,
+    [GameEvent.ARROW_TURNED]: null,
   }
 
   onCompleted: (() => void) | null = null // Called once per load when the subject reaches the exit
@@ -110,7 +112,7 @@ export class Level {
   private readonly renderer: Renderer // Draws the state
   private readonly animation = new StepAnimation() // The step being drawn over a few frames, if any
   private readonly fizzle = new FizzleParticles() // What the latest fizzle took, breaking up over a few frames, if anything
-  private readonly changes = new ElementTransitions() // The blocked walls, the ditches, the doors, the exit, the fizzlers, the lasers and the light barriers changing over a few frames after a step switched them, if any
+  private readonly changes = new ElementTransitions() // The arrows, the blocked walls, the ditches, the doors, the exit, the fizzlers, the lasers and the light barriers changing over a few frames after a step switched them, if any
   private readonly ripple = new MissRipple() // Where the latest missed portal shot stopped, rippling over a few frames, if anywhere
   private readonly fall = new BoxFall() // The boxes the latest step dropped into ditches, falling over a few frames, if any
   private readonly openings = new PortalOpenings() // The portals shots opened lately, opening over a few frames, if any
@@ -314,8 +316,8 @@ export class Level {
   /**
    * Draws the current state, part way through the step being drawn, if any,
    * with what moves with time alone at this time, what breaks up or falls, a portal
-   * opening, a missed shot's ripple and the doors, the exit, the fizzlers, the lasers and the
-   * light barriers changing included, or held still when the player asks for
+   * opening, a missed shot's ripple and the arrows, the blocked walls, the ditches, the doors,
+   * the exit, the fizzlers, the lasers and the light barriers changing included, or held still when the player asks for
    * reduced motion.
    * @param time - Now, in milliseconds on the frame clock
    */
@@ -446,7 +448,7 @@ export class Level {
   /**
    * Takes a step of the rules: records it in the log,
    * counts the move and the portals opened, starts drawing the step when it changed the state, with
-   * each blocked wall, ditch, door, exit, fizzler, laser and light barrier it switched changing, what it took
+   * each arrow, blocked wall, ditch, door, exit, fizzler, laser and light barrier it switched changing, what it took
    * breaking up when it fizzled, each box it destroyed breaking up or falling, a portal it opened opening, and a ripple
    * where a portal shot it refused stopped, and plays the sounds of what happened, a missed portal shot's own.
    * A step that slid and is drawn over time leaves all but the log and the
@@ -540,8 +542,8 @@ export class Level {
 
   /**
    * Shows what happened from one state to the next, all of a step or a part
-   * of a slide: each blocked wall, ditch, door, exit, fizzler, laser and light
-   * barrier switched starts changing, what a fizzle took breaks up, each box
+   * of a slide: each arrow, blocked wall, ditch, door, exit, fizzler, laser and
+   * light barrier switched starts changing, what a fizzle took breaks up, each box
    * destroyed breaks up or falls, a portal opened opens and a refused portal
    * shot ripples, all only when motion is allowed; then the sounds play, and
    * the completion is told when the chamber is completed.

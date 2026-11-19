@@ -96,13 +96,15 @@ function beam(x: number, y: number, direction: 'H' | 'V', on: boolean): BeamData
  * a blocked wall that refuses them only while on in the inner wall, and two
  * light barriers in the bottom right corner;
  * a strip of slide floor runs along the top left, under the exit;
- * arrows point all four ways, two lasers cross, one box lies on a button,
+ * arrows point all four ways, and a turnable one beside them points up,
+ * turned right while off by the button its box holds down, two lasers cross,
+ * one box lies on a button,
  * another on the floor, and a third beside the subject, on its left. The
  * switch links the fizzler, never used, so an antline runs between them,
  * unlit while the fizzler is on and lit while it is off. Column 4 and row 3
  * stay clear but for that third box, which lets shots through, so the
  * subject's shots reach the walls.
- * @param on - Whether every element that can be blocked is: the inner blocked wall refusing portals, the light barriers on, ditches open, doors and the exit closed, the fizzler and lasers on
+ * @param on - Whether every element that can be blocked is: the turnable arrow pointing its own way, the inner blocked wall refusing portals, the light barriers on, ditches open, doors and the exit closed, the fizzler and lasers on
  * @returns The chamber
  */
 function specimenData(on: boolean): ChamberData {
@@ -216,12 +218,19 @@ function specimenData(on: boolean): ChamberData {
         y: 2,
         direction: 'LEFT',
       },
+      {
+        x: 3,
+        y: 2,
+        direction: 'UP',
+        id: 2,
+        turnedDirection: 'RIGHT',
+      },
     ],
     buttons: [
       {
         x: 5,
         y: 1,
-        links: [],
+        links: on ? [] : [2],
       },
       {
         x: 5,

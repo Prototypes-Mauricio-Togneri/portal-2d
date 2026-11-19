@@ -17,7 +17,9 @@ import type {PiecePlacer, TilePainter} from '@/game/tile_painter'
 // walls and open ditches join their neighbours, quarter by quarter (a blocked
 // wall a link reaches is drawn in the backdrop as a wall, its blocked surface
 // painted over it while it is blocked), and doors, the exit and
-// fizzlers are turned to the walls beside them; a blocked wall's steel
+// fizzlers are turned to the walls beside them; an arrow's chevron turning
+// (an arrow a link turns is drawn every frame over the backdrop, by its own
+// drawing), a blocked wall's steel
 // sliding apart into the wall beside it or shut, a ditch's grate sliding in
 // or out, a door or the exit sliding open or shut, a fizzler crumbling away
 // or forming, or a laser or a light barrier fading out or in, is drawn part
@@ -338,7 +340,9 @@ function drawFizzlers(painter: TilePainter, state: RulesState, shares: BlockedSh
 }
 
 /**
- * Draws the arrows, each turned to its way.
+ * Draws the arrows no link can turn, each turned to its way, into the
+ * backdrop. Those a link can turn are drawn every frame by
+ * drawTurnableArrows().
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  */
@@ -349,8 +353,76 @@ function drawArrows(painter: TilePainter, state: RulesState): void {
     const position = chamber.positionOf('arrow', i)
     const direction = chamber.directionOf('arrow', i)
 
-    if (direction !== null) {
+    if ((direction !== null) && (chamber.turnedDirectionOf('arrow', i) === null)) {
       painter.drawSprite('arrow', position.x, position.y, direction)
+    }
+  }
+}
+
+/**
+ * How far a sprite drawn facing up is turned to face each way, in radians,
+ * clockwise on the canvas.
+ */
+const WAY_ANGLES: Readonly<Record<Direction, number>> = {
+  [Direction.UP]: 0,
+  [Direction.RIGHT]: Math.PI / 2,
+  [Direction.DOWN]: Math.PI,
+  [Direction.LEFT]: -Math.PI / 2,
+}
+
+/**
+ * The angle of a turnable arrow's chevron part way through its quarter turn,
+ * between its turned way and its own way, the short way round.
+ * @param turned - The arrow's turned way
+ * @param own - The arrow's own way
+ * @param share - How far along from its turned way (0) to its own way (1)
+ * @returns The angle, in radians, clockwise on the canvas from facing up
+ */
+function turningAngle(turned: Direction, own: Direction, share: number): number {
+  const start = WAY_ANGLES[turned]
+  // The validator keeps every turn a quarter turn, so this is ±π/2 once
+  // brought into (-π, π]
+  let difference = WAY_ANGLES[own] - start
+
+  if (difference > Math.PI) {
+    difference -= 2 * Math.PI
+  } else if (difference <= -Math.PI) {
+    difference += 2 * Math.PI
+  }
+
+  return start + (difference * share)
+}
+
+/**
+ * Draws the arrows a link can turn, every frame over the backdrop, since a
+ * link turns them while a chamber is played: each its turntable, which never
+ * turns, then its chevron at the way it points now, or part way through its
+ * quarter turn while it is turning.
+ * @param painter - Paints on the canvas
+ * @param state - The state drawn
+ * @param shares - How far towards their own way the arrows that are turning are drawn, or null (the default) to draw every one at the way it points
+ */
+export function drawTurnableArrows(painter: TilePainter, state: RulesState, shares: BlockedShares | null = null): void {
+  const chamber = state.chamber
+
+  for (let i = 0; i < chamber.countOf('arrow'); i++) {
+    const turned = chamber.turnedDirectionOf('arrow', i)
+    const own = chamber.directionOf('arrow', i)
+
+    if ((turned === null) || (own === null)) {
+      continue
+    }
+
+    const position = chamber.positionOf('arrow', i)
+    const share = (shares === null) ? null : shares('arrow', i)
+    const way = state.pointingWay('arrow', i)
+
+    painter.drawSprite('turntable', position.x, position.y)
+
+    if (share !== null) {
+      painter.drawSpriteRotated('turntable_arrow', position.x, position.y, turningAngle(turned, own, share))
+    } else if (way !== null) {
+      painter.drawSprite('turntable_arrow', position.x, position.y, way)
     }
   }
 }

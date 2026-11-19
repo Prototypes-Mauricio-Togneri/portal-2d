@@ -1,4 +1,5 @@
-import type {AntlineData, ChamberData, PositionData, WallRangeData} from '@/game/chamber_data'
+import type {AntlineData, ArrowData, ChamberData, PositionData, WallRangeData} from '@/game/chamber_data'
+import {DELTAS, parseDirection} from '@/game/direction'
 import {type ChamberProblem, chamberError, chamberWarning, type ProblemTile} from '@/game/rules/chamber_problem'
 
 /**
@@ -347,7 +348,9 @@ class ChamberValidator {
   }
 
   /**
-   * Notes every id: the linkable elements' and the groups'.
+   * Notes every id: the linkable elements' and the groups'. Arrows come
+   * after the exit, the last linkable element before them, so the messages
+   * of chambers without linked arrows keep their order.
    */
   private collectTargets(): void {
     const chamber = this.chamber
@@ -392,6 +395,7 @@ class ChamberValidator {
       },
       links: [],
     })
+    addElements(chamber.arrows, 'arrow', 'arrows')
     chamber.groups?.forEach((group, index) => this.addTarget(group.id, {
       kind: 'group',
       field: `groups[${index}]`,
@@ -447,6 +451,23 @@ class ChamberValidator {
 
     checkTriggers(chamber.buttons, 'buttons', true)
     checkTriggers(chamber.switches, 'switches', false)
+  }
+
+  /**
+   * Checks that each arrow a link can turn has both an id and a turned way,
+   * and that its turned way is a quarter turn from its own way.
+   */
+  private checkArrows(): void {
+    this.chamber.arrows?.forEach((arrow, index) => {
+      const problem = arrowProblem(arrow)
+
+      if (problem !== null) {
+        this.problems.push(chamberError(`arrows[${index}]`, {
+          x: arrow.x,
+          y: arrow.y,
+        }, problem))
+      }
+    })
   }
 
   /**
@@ -586,9 +607,45 @@ class ChamberValidator {
     this.checkOverlaps()
     this.collectTargets()
     this.checkLinks()
+    this.checkArrows()
     this.chamber.antlines?.forEach((antline, index) => this.checkAntline(antline, `antlines[${index}]`))
     this.checkEdge()
   }
+}
+
+/**
+ * What is wrong with how an arrow can turn: a turned way without an id or an
+ * id without one, or a turned way that isn't a quarter turn from its own way.
+ * @param arrow - The arrow, its fields already read
+ * @returns The problem, or null when it has none
+ */
+function arrowProblem(arrow: ArrowData): string | null {
+  const turned = arrow.turnedDirection
+
+  if ((turned === undefined) && (arrow.id === undefined)) {
+    return null
+  }
+
+  if (turned === undefined) {
+    return 'an arrow with an id needs a turned way, or a link to it changes nothing'
+  }
+
+  if (arrow.id === undefined) {
+    return 'an arrow with a turned way needs an id, or nothing can turn it'
+  }
+
+  if (turned === arrow.direction) {
+    return 'an arrow\'s turned way can\'t be its own way'
+  }
+
+  const own = DELTAS[parseDirection(arrow.direction)]
+  const other = DELTAS[parseDirection(turned)]
+
+  if ((own.dx === -other.dx) && (own.dy === -other.dy)) {
+    return 'an arrow\'s turned way must be a quarter turn from its own way, not a half turn'
+  }
+
+  return null
 }
 
 /**

@@ -44,7 +44,7 @@ A sprite with a direction is drawn once, one way, and the game turns it in quart
 | # | Sprites | Drawn | Turned |
 |---|---------|-------|--------|
 | 1 | `subject_holding_gun`, `subject_holding_box` | Facing up, towards the top of the screen | To the way the subject faces |
-| 2 | `arrow` | Pointing up: the one way the subject may enter its tile | To the arrow's way |
+| 2 | `arrow`, `turntable_arrow` | Pointing up: the one way the subject may enter its tile | To the way the arrow points. `turntable_arrow` is also turned by any angle while a link turns its arrow (see [turning arrows](#turning-arrows)), the one sprite turned by other than quarter turns; its `turntable` is never turned |
 | 3 | `portal_blue`, `portal_orange` and their glows | On the top edge of its wall tile, opening up onto the tile above: a flat oval lying on the wall's slope, from just inside the tile's edge to the slope's lit lip, short enough to stay clear of the diagonals where two slopes meet at a wall's end; the glow centred on it | To the side of the wall it opens on |
 | 4 | `laser_on`, `laser_glow` | A beam running left to right through the tile's middle, touching both side edges, so neighbouring laser tiles make one beam | A quarter turn for a vertical laser; two lasers crossing on a tile are both drawn |
 | 5 | `light_barrier_on` | A band running left to right through the tile's middle, touching both side edges, so neighbouring light barriers make one band | A quarter turn for a vertical light barrier |
@@ -104,12 +104,14 @@ Every sprite is 256 px, or 384 px when it overhangs, except the three strips (12
 | 19 | `laser_end_on` | A laser's end plate while the laser is on: a small plate where the beam starts or stops, its slot lit. Drawn at both ends of each run of lasers, over the beams, fading with its beam |
 | 20 | `laser_end_off` | The same plate with its slot dark: drawn at both ends of each run, on or off, under `laser_end_on`, so the two must match but for the slot |
 | 21 | `arrow` | A floor arrow |
-| 22 | `portal_blue` | The blue portal |
-| 23 | `portal_orange` | The orange portal |
-| 24 | `portal_blue_glow` | The blue portal's glow |
-| 25 | `portal_orange_glow` | The orange portal's glow |
-| 26 | `subject_holding_gun` | The test subject seen from above, facing up: an orange jumpsuit, holding the portal gun pointing the way it faces, which makes the facing unmistakable. Drawn while its hands are free. Painted (see [the subject](#the-subject)) |
-| 27 | `subject_holding_box` | The same subject holding a box out in front of it in both hands, with no portal gun. Drawn while it carries a box. Painted (see [the subject](#the-subject)) |
+| 22 | `turntable` | A turnable arrow's disc: the floor cut round under it, a disc a shade lighter than the floor (245, 246, 251) under the floor's texture, a little fainter, with a lit lip (253, 253, 255) just inside a dark cut (132, 136, 147), the same all round, so it shows that the arrow turns but not which way. Never turned |
+| 23 | `turntable_arrow` | A turnable arrow's chevron: the floor arrow's (150, 153, 160) at 85 % of its size about the tile's middle, so a band of disc shows all round it at every angle. Keep it in step with `arrow` |
+| 24 | `portal_blue` | The blue portal |
+| 25 | `portal_orange` | The orange portal |
+| 26 | `portal_blue_glow` | The blue portal's glow |
+| 27 | `portal_orange_glow` | The orange portal's glow |
+| 28 | `subject_holding_gun` | The test subject seen from above, facing up: an orange jumpsuit, holding the portal gun pointing the way it faces, which makes the facing unmistakable. Drawn while its hands are free. Painted (see [the subject](#the-subject)) |
+| 29 | `subject_holding_box` | The same subject holding a box out in front of it in both hands, with no portal gun. Drawn while it carries a box. Painted (see [the subject](#the-subject)) |
 
 ## Order
 
@@ -121,16 +123,17 @@ The game draws from the bottom up, each later row over the earlier ones:
 | 2 | Antlines | None: dotted lines, drawn in code (see [antlines](#antlines)) |
 | 3 | Floor marks | `arrow` |
 | 4 | Structure | `wall`, `blocked_wall` for the blocked walls no link reaches |
-| 5 | Blockers | `blocked_wall` over the blocked walls a link reaches while blocked, `light_barrier_on`, then `light_barrier_end_*` over the bands, `ditch`, `ditch_bridged`, `laser_on`, then `laser_end_*` over the beams, `door_closed`, `exit_closed` |
-| 6 | Fall | `box`, falling into an open ditch (see [fall](#fall)) |
-| 7 | Portals | `portal_*`, growing open just after a shot opens one (see [opening](#opening)) |
-| 8 | Fixtures | `button_*`, `switch` |
-| 9 | Items | `box` |
-| 10 | Subject | `subject_holding_gun`, or `subject_holding_box` while it carries a box |
-| 11 | Fields | `fizzler_on`, whole or in pieces (see [fizzle](#fizzle)) |
-| 12 | Glow | `laser_glow`, `portal_*_glow` |
-| 13 | Fizzle | `portal_*`, `box`, in pieces (see [fizzle](#fizzle)) |
-| 14 | Miss | None: a missed shot's ripple, drawn in code (see [miss](#miss)) |
+| 5 | Turnable arrows | `turntable`, then `turntable_arrow` over it, at the way the arrow points or part way through a turn, drawn every frame over the rows above |
+| 6 | Blockers | `blocked_wall` over the blocked walls a link reaches while blocked, `light_barrier_on`, then `light_barrier_end_*` over the bands, `ditch`, `ditch_bridged`, `laser_on`, then `laser_end_*` over the beams, `door_closed`, `exit_closed` |
+| 7 | Fall | `box`, falling into an open ditch (see [fall](#fall)) |
+| 8 | Portals | `portal_*`, growing open just after a shot opens one (see [opening](#opening)) |
+| 9 | Fixtures | `button_*`, `switch` |
+| 10 | Items | `box` |
+| 11 | Subject | `subject_holding_gun`, or `subject_holding_box` while it carries a box |
+| 12 | Fields | `fizzler_on`, whole or in pieces (see [fizzle](#fizzle)) |
+| 13 | Glow | `laser_glow`, `portal_*_glow` |
+| 14 | Fizzle | `portal_*`, `box`, in pieces (see [fizzle](#fizzle)) |
+| 15 | Miss | None: a missed shot's ripple, drawn in code (see [miss](#miss)) |
 
 ## Glow
 
@@ -166,6 +169,10 @@ A ditch switched slides its grate over about 0.3 s: the ditch is drawn as part o
 
 There is nothing extra to draw. With reduced motion, and in the home menu's map and the gallery, nothing slides.
 
+## Turning arrows
+
+When a link turns an arrow, its `turntable_arrow` rotates the quarter turn about the tile's middle over about 0.3 s, eased out like the doors, from where it is drawn if it was still turning; its `turntable` stays. A subject standing on it faces the new way at once. There is nothing extra to draw. With reduced motion, and in the home menu's map and the gallery, nothing turns: the chevron is drawn at the way the arrow points.
+
 ## The subject
 
 The subject's two sprites are the only ones not drawn in code. They are painted images that break this spec on purpose: their light is painted, not straight overhead; the subject wears orange and its portal gun glows blue, the portals' colours; and their sources are the painted PNGs `art/sprites/subject_holding_gun.png` and `art/sprites/subject_holding_box.png` (1526 × 1526 px each), with no SVG.
@@ -189,7 +196,7 @@ convert art/sprites/subject_holding_box.png -channel A -level 3%,98% +channel -b
 Drop the file into the folder, and `npm run dev` picks it up. The sprite gallery, at `/src/dev/sprite_gallery.html` in `npm run dev`, reloads by itself when a file lands and shows:
 
 - each sprite as the game has it, at full size on a checkerboard, with its size and whether its file is in use, missing, not downloaded or refused (and why); one without a usable file shows as an empty frame, since the game draws nothing for it;
-- a small chamber with every element and an antline, drawn by the game with everything on and with everything off (the antline unlit, then lit), the subject carrying a box and both portals open;
+- a small chamber with every element and an antline, drawn by the game with everything on and with everything off (the antline unlit, then lit; the turnable arrow pointing its own way, then turned), the subject carrying a box and both portals open;
 - every way walls and open ditches meet;
 - each chamber at its start.
 

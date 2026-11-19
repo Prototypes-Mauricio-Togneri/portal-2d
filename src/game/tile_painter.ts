@@ -345,6 +345,42 @@ export class TilePainter {
   }
 
   /**
+   * Draws a sprite over a tile turned by any angle about the tile's middle,
+   * without a shadow: the one sprite turned by other than quarter turns, a
+   * turnable arrow's chevron part way through its turn. At rest it is drawn
+   * with drawSprite(), whose quarter turns are exact. Nothing is drawn while
+   * only shadows are painted.
+   * @param name - The sprite, one that isn't raised
+   * @param x - Column
+   * @param y - Row
+   * @param angle - How far it is turned from facing up as drawn, in radians, clockwise on the canvas: a quarter turn to the right is π/2
+   */
+  drawSpriteRotated(name: SpriteName, x: number, y: number, angle: number): void {
+    if (this.pass === 'shadows') {
+      return
+    }
+
+    const size = this.tileSize
+    const sprite = scaledSprite(name, size)
+
+    if (sprite === null) {
+      return
+    }
+
+    const half = size / 2
+
+    this.context.save()
+
+    try {
+      this.context.translate(Math.round(x * size) + half, Math.round(this.tileTop(y)) + half)
+      this.context.rotate(angle)
+      this.context.drawImage(sprite.image, -half - sprite.margin, -half - sprite.margin)
+    } finally {
+      this.context.restore()
+    }
+  }
+
+  /**
    * Draws one quarter of a tile from the same quarter of one of a strip's
    * tiles, pixel for pixel.
    * @param name - The strip's sprite

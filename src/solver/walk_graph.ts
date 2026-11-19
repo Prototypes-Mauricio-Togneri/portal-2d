@@ -24,6 +24,15 @@ export function isPlacedKind(kind: ElementKind): kind is PlacedKind {
   return (kind !== 'wall') && (kind !== 'box')
 }
 
+/**
+ * Each tile's ways for one set of blocked flags, which turn the arrows a
+ * link reaches.
+ */
+type TileWays = {
+  readonly allowed: Uint8Array // Each tile's ways the subject may move, one bit per index in DIRECTIONS
+  readonly facings: Uint8Array // Each tile's canonical facing, as an index in DIRECTIONS
+}
+
 /** The element types whose tile can change the state when the subject enters or leaves it */
 const REACTING_KINDS: readonly PlacedKind[] = ELEMENT_REGISTRY
   .filter((definition) => definition.reactsToSubject)
@@ -122,15 +131,15 @@ function findRegions(edges: Int32Array, tileCount: number): Int32Array {
  * tile, its facing and a carried box's tile, so the solver can take a whole
  * walk as one move. The regions, the tiles the subject can walk between both
  * ways, depend on the resting boxes too, so they are built once per set of
- * flags and of the resting boxes' tiles. Also numbers each tile's canonical
- * facing: the first way the subject may move there, which on an arrow is its
- * own way.
+ * flags and of the resting boxes' tiles. Also gives each tile's ways the
+ * subject may move and its canonical facing, the first of them, which on an
+ * arrow is the way it points now; a link can turn an arrow, so they too are
+ * built once per set of flags.
  */
 export class WalkGraph {
   readonly index: ChamberIndex // The chamber's tile numbers
   private readonly eventTiles: Uint8Array // 1 on each event tile
-  private readonly facings: Uint8Array // Each tile's canonical facing, as an index in DIRECTIONS
-  private readonly allowedWays: Uint8Array // Each tile's ways the subject may move, one bit per index in DIRECTIONS
+  private readonly waysByFlags = new Map<number, TileWays>() // Each tile's allowed ways and canonical facing, by the blocked flags they were built for
   private readonly edgesByFlags = new Map<number, Int32Array>() // The walk edges, by the blocked flags they were built for
   private readonly regionsByKey = new Map<string, Int32Array>() // Each tile's region, by the blocked flags and the resting boxes' tiles it was found for (regionsKey)
   private readonly regionEdges: Int32Array // The walk edges but those onto a resting box, for finding regions; apart from the walk's buffers, so finding regions mid-expansion leaves the last walk intact
@@ -141,38 +150,19 @@ export class WalkGraph {
 
   /**
    * @param index - The chamber's tile numbers
-   * @param state - Any state of the chamber; arrows don't depend on it
    */
-  constructor(index: ChamberIndex, state: RulesState) {
+  constructor(index: ChamberIndex) {
     const chamber = index.chamber
 
     this.index = index
     this.eventTiles = new Uint8Array(index.tileCount)
-    this.facings = new Uint8Array(index.tileCount)
-    this.allowedWays = new Uint8Array(index.tileCount)
     this.regionEdges = new Int32Array(index.tileCount * DIRECTIONS.length)
     this.reached = new Int32Array(index.tileCount)
     this.distances = new Int32Array(index.tileCount).fill(UNREACHED)
     this.arrivals = new Int8Array(index.tileCount)
 
     for (let tile = 0; tile < index.tileCount; tile++) {
-      const x = index.tileX(tile)
-      const y = index.tileY(tile)
-      let facing = NO_WALK
-
-      this.eventTiles[tile] = REACTING_KINDS.some((kind) => chamber.elementAt(kind, x, y) !== NO_ELEMENT) ? 1 : 0
-
-      DIRECTIONS.forEach((direction, directionIndex) => {
-        if (allowsWay(state, x, y, direction)) {
-          this.allowedWays[tile] = (this.allowedWays[tile] ?? 0) | (1 << directionIndex)
-
-          if (facing === NO_WALK) {
-            facing = directionIndex
-          }
-        }
-      })
-
-      this.facings[tile] = Math.max(facing, 0)
+      this.eventTiles[tile] = REACTING_KINDS.some((kind) => chamber.elementAt(kind, index.tileX(tile), index.tileY(tile)) !== NO_ELEMENT) ? 1 : 0
     }
   }
 
@@ -186,23 +176,75 @@ export class WalkGraph {
   }
 
   /**
-   * A tile's canonical facing.
+   * A tile's canonical facing for a set of blocked flags: the first way the
+   * subject may move there, which on an arrow is the way it points now. The
+   * caller passes a state with these flags, from which they are built the
+   * first time they are asked for.
+   * @param state - A state with these flags
+   * @param flags - Its blocked flags, as one number, the cache key
    * @param tile - The tile's number
    * @returns The facing, as an index in DIRECTIONS
    */
-  facingOf(tile: number): number {
-    return this.facings[tile] ?? 0
+  facingOf(state: RulesState, flags: number, tile: number): number {
+    return this.waysFor(state, flags).facings[tile] ?? 0
   }
 
   /**
-   * Whether the subject may move or shoot a way from a tile; only an arrow's
-   * own way acts on an arrow.
+   * Whether the subject may move or shoot a way from a tile, for a set of
+   * blocked flags; on an arrow only the way it points now acts. The caller
+   * passes a state with these flags, from which they are built the first
+   * time they are asked for.
+   * @param state - A state with these flags
+   * @param flags - Its blocked flags, as one number, the cache key
    * @param tile - The tile's number
    * @param directionIndex - The way, as an index in DIRECTIONS
    * @returns True when it may
    */
-  allowsWayFrom(tile: number, directionIndex: number): boolean {
-    return (((this.allowedWays[tile] ?? 0) >> directionIndex) & 1) === 1
+  allowsWayFrom(state: RulesState, flags: number, tile: number, directionIndex: number): boolean {
+    return (((this.waysFor(state, flags).allowed[tile] ?? 0) >> directionIndex) & 1) === 1
+  }
+
+  /**
+   * Each tile's allowed ways and canonical facing for a state's blocked
+   * flags, from the rules' allowsWay on that state.
+   * @param state - A state with these flags
+   * @param flags - Its blocked flags, as one number, the cache key
+   * @returns The ways
+   */
+  private waysFor(state: RulesState, flags: number): TileWays {
+    const cached = this.waysByFlags.get(flags)
+
+    if (cached !== undefined) {
+      return cached
+    }
+
+    const index = this.index
+    const ways: TileWays = {
+      allowed: new Uint8Array(index.tileCount),
+      facings: new Uint8Array(index.tileCount),
+    }
+
+    for (let tile = 0; tile < index.tileCount; tile++) {
+      const x = index.tileX(tile)
+      const y = index.tileY(tile)
+      let facing = NO_WALK
+
+      DIRECTIONS.forEach((direction, directionIndex) => {
+        if (allowsWay(state, x, y, direction)) {
+          ways.allowed[tile] = (ways.allowed[tile] ?? 0) | (1 << directionIndex)
+
+          if (facing === NO_WALK) {
+            facing = directionIndex
+          }
+        }
+      })
+
+      ways.facings[tile] = Math.max(facing, 0)
+    }
+
+    this.waysByFlags.set(flags, ways)
+
+    return ways
   }
 
   /**

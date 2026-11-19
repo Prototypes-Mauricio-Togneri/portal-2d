@@ -4,9 +4,11 @@ import type {Action} from '@/game/rules/action'
 import arrowTrap from '@scripts/solver_fixtures/arrow_trap.json'
 import boxOnButton from '@scripts/solver_fixtures/box_on_button.json'
 import boxThroughPortal from '@scripts/solver_fixtures/box_through_portal.json'
+import buttonArrow from '@scripts/solver_fixtures/button_arrow.json'
 import fizzlerBox from '@scripts/solver_fixtures/fizzler_box.json'
 import freeHands from '@scripts/solver_fixtures/free_hands.json'
 import portalWalk from '@scripts/solver_fixtures/portal_walk.json'
+import switchArrow from '@scripts/solver_fixtures/switch_arrow.json'
 import switchDoor from '@scripts/solver_fixtures/switch_door.json'
 
 // Tiny chambers (the JSON files next to this one) with hand-counted optimal
@@ -445,6 +447,95 @@ export const SOLVER_FIXTURES: readonly SolverFixture[] = [
         moves: 14,
         portals: 0,
         finalHash: '4c7fd45d',
+      },
+    },
+  },
+  // No wall takes portals. The exit at (6,1) can be entered only from (5,1),
+  // and (5,1) only from the arrow at (4,1), its other neighbours but the exit
+  // being walls.
+  // The arrow can be entered only moving right, from (3,1), so only once the
+  // switch at (2,2) has turned it right; pointing up, its own way, it would
+  // have to be entered from the wall below it. Reaching the switch from the
+  // start at (1,1) takes at least 2 moves, and going from the switch to the
+  // exit at least 5: 7
+  {
+    name: 'switch_arrow',
+    covers: 'A switch turns an arrow for good: the only way to the exit runs across the arrow, which points into a wall until it is turned.',
+    chamber: switchArrow,
+    fewestMoves: {
+      actions: [
+        'up',
+        'right',
+        'interact',
+        'down',
+        'right',
+        'right',
+        'right',
+        'right',
+      ],
+      expected: {
+        completed: true,
+        moves: 7,
+        portals: 0,
+        finalHash: '151af5f2',
+      },
+    },
+    fewestPortals: {
+      actions: [
+        'up',
+        'right',
+        'interact',
+        'down',
+        'right',
+        'right',
+        'right',
+        'right',
+      ],
+      expected: {
+        completed: true,
+        moves: 7,
+        portals: 0,
+        finalHash: '151af5f2',
+      },
+    },
+  },
+  // No wall takes portals. 4 moves is the distance from the start at (1,1)
+  // to the exit at (3,3). The exit can be entered only from (3,2), (3,2)
+  // only from the arrow at (3,1), and the arrow only moving right from the
+  // button at (2,1), while the subject holds the button down and the arrow
+  // turned right. Stepping onto the arrow releases the button, so the arrow
+  // turns back up under the subject, which turns with it and leaves up: 4
+  // moves. The subject stands on an arrow that turned under it
+  {
+    name: 'button_arrow_twist',
+    covers: 'A button turns an arrow while it is held: stepping off the button onto the arrow turns it back under the subject, which turns with it and leaves the only way it then points.',
+    chamber: buttonArrow,
+    fewestMoves: {
+      actions: [
+        'right',
+        'right',
+        'up',
+        'up',
+      ],
+      expected: {
+        completed: true,
+        moves: 4,
+        portals: 0,
+        finalHash: '71be6b3f',
+      },
+    },
+    fewestPortals: {
+      actions: [
+        'right',
+        'right',
+        'up',
+        'up',
+      ],
+      expected: {
+        completed: true,
+        moves: 4,
+        portals: 0,
+        finalHash: '71be6b3f',
       },
     },
   },

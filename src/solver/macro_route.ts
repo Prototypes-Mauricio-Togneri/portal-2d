@@ -28,7 +28,7 @@ export type ExpandedRoute = {
 
 /**
  * Packs a state into its key, with the canonical facing of the subject's
- * tile, as the solver stores states.
+ * tile for the state's blocked flags, as the solver stores states.
  * @param codec - The chamber's state key
  * @param graph - The chamber's walk graph
  * @param state - The state
@@ -37,16 +37,18 @@ export type ExpandedRoute = {
 export function encodeCanonical(codec: StateKeyCodec, graph: WalkGraph, state: RulesState, words: Uint32Array): void {
   codec.encode(state, words, 0)
 
-  const tile = codec.subjectTileOf(words[0] ?? 0)
+  const low = words[0] ?? 0
+  const tile = codec.subjectTileOf(low)
 
-  words[0] = codec.placeSubject(words[0] ?? 0, tile, graph.facingOf(tile))
+  words[0] = codec.placeSubject(low, tile, graph.facingOf(state, codec.flagsOf(low, words[1] ?? 0), tile))
 }
 
 /**
  * Puts the subject of a packed key on its region's tile, the smallest of
  * the tiles it can walk between both ways, facing that tile's canonical
- * way, as the search for any route stores states. The regions are the
- * key's state's, whose blocked flags and resting boxes decide them.
+ * way, as the search for any route stores states. The regions and the
+ * facing are the key's state's, whose blocked flags and resting boxes
+ * decide them.
  * @param codec - The chamber's state key
  * @param graph - The chamber's walk graph
  * @param state - The key's state, or one with its blocked flags and resting boxes, to find the regions from
@@ -55,9 +57,10 @@ export function encodeCanonical(codec: StateKeyCodec, graph: WalkGraph, state: R
 export function foldSubject(codec: StateKeyCodec, graph: WalkGraph, state: RulesState, words: Uint32Array): void {
   const low = words[0] ?? 0
   const tile = codec.subjectTileOf(low)
-  const region = graph.regionsFor(state, codec.flagsOf(low, words[1] ?? 0))[tile] ?? tile
+  const flags = codec.flagsOf(low, words[1] ?? 0)
+  const region = graph.regionsFor(state, flags)[tile] ?? tile
 
-  words[0] = codec.placeSubject(low, region, graph.facingOf(region))
+  words[0] = codec.placeSubject(low, region, graph.facingOf(state, flags, region))
 }
 
 /**

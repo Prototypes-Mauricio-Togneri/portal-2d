@@ -1,6 +1,6 @@
 import {antlinesLitKey, drawAntlines} from '@/game/antline_drawing'
 import type {BoxFall} from '@/game/box_fall'
-import {drawLaserGlows, ELEMENT_DRAWINGS, glowStrength} from '@/game/element_drawings'
+import {drawLaserGlows, drawTurnableArrows, ELEMENT_DRAWINGS, glowStrength} from '@/game/element_drawings'
 import type {BlockedShares, ElementTransitions} from '@/game/element_transitions'
 import type {FizzleParticles} from '@/game/fizzle_particles'
 import type {MissRipple} from '@/game/miss_ripple'
@@ -54,7 +54,7 @@ export const CARRIED_BOX_AHEAD = 0.26
 /** The side of the box sprite drawn where the subject's box-holding sprite shows its box, as a share of a tile, so the two boxes match */
 export const CARRIED_BOX_SIZE = 0.7
 
-/** The bottom layers, which never change while a chamber is played: drawn as its backdrop with the antlines, never each frame */
+/** The bottom layers, which never change while a chamber is played: drawn as its backdrop with the antlines, never each frame. An arrow a link turns, on the floor marks' layer, is left out of it and drawn every frame right over it */
 const BACKDROP_LAYERS: ReadonlySet<DrawLayer> = new Set<DrawLayer>([
   'floor',
   'floorMarks',
@@ -349,7 +349,8 @@ export class Renderer {
   }
 
   /**
-   * Draws a whole frame, back to front: the backdrop, every layer above it,
+   * Draws a whole frame, back to front: the backdrop, the arrows a link
+   * turns, every layer above it,
    * with the boxes falling into ditches over the ditches and a portal
    * opening part way open, then the glows, the pieces of what a fizzle took
    * and a missed shot's ripple. Part way along a slide, everything but the
@@ -359,7 +360,7 @@ export class Renderer {
    * @param transition - The step being drawn, ending on the state drawn, or null (the default) to draw the state as it is
    * @param time - Now, in milliseconds on the frame clock, for what moves with time alone, or null (the default) to hold it still
    * @param fizzle - What a fizzle took, breaking up, or null (the default) when nothing can
-   * @param changes - The blocked walls, the ditches, the doors, the exit, the fizzlers, the lasers and the light barriers changing over time, or null (the default) when none can
+   * @param changes - The arrows, the blocked walls, the ditches, the doors, the exit, the fizzlers, the lasers and the light barriers changing over time, or null (the default) when none can
    * @param ripple - Where the latest missed shot stopped, rippling, or null (the default) when none can
    * @param fall - The boxes falling into ditches, or null (the default) when none can
    * @param openings - The portals opening, or null (the default) when none can
@@ -376,6 +377,7 @@ export class Renderer {
     const opening: OpeningProgress | null = ((time !== null) && (openings !== null)) ? (color) => openings.progressAt(shown, color, time) : null
 
     this.painter.drawLayer(this.backdropOf(shown), false)
+    drawTurnableArrows(this.painter, shown, shares)
 
     for (const layer of DRAW_LAYERS) {
       if (!BACKDROP_LAYERS.has(layer)) {

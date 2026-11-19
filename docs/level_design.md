@@ -10,7 +10,7 @@ A chamber should never let the player reach one of these, whatever they do and i
 
 Only Restart chamber gets the player out (guideline 15).
 
-- **Frozen on an arrow:** the subject stands on an arrow, which lets it move only its own way, and that way is shut: a wall without a portal it can cross, an arrow pointing back, or a door, ditch, laser or light barrier that is blocked, often because stepping onto the arrow released the button holding it open (guideline 16).
+- **Frozen on an arrow:** the subject stands on an arrow, which lets it move only its own way, and that way is shut: a wall without a portal it can cross, an arrow pointing back, or a door, ditch, laser or light barrier that is blocked, often because stepping onto the arrow released the button holding it open, or an arrow turned under the subject to a way that is shut (guideline 16).
 - **Shut in:** the subject is in a part of the chamber it can't leave: one it entered past an arrow, or by a portal when no portal it can shoot from inside brings it out again, or the portal it came out of closed behind it (guidelines 2, 15, 16 and 17).
 - **A needed box out of reach:** a box the route still needs lies where the subject can't get to it, such as beyond a one-way passage, in a part reached only by portal, or on a start tile it was sent back to that the subject can't reach, or can't leave with the box (guidelines 5, 15 and 17).
 - **A box barring the way:** a box put down, or sent back, in a one-tile passage, a doorway or on a button the route must cross, with no tile beside it left that the subject can reach and pick it up from (guideline 9).
@@ -37,7 +37,7 @@ Only Restart chamber gets the player out (guideline 15).
 ### The puzzle is bypassed
 
 - **A box delivered by its start tile:** a box sent back lands on its start tile wherever that is, so a start beyond a barrier delivers it past the barrier, and a start on a button presses the button from anywhere (guideline 6).
-- **A portal route the design didn't intend:** shots fly over lasers, ditches, boxes and arrows, so a portal can skip a laser, a ditch or a one-way passage (guidelines 14 and 28).
+- **A portal route the design didn't intend:** shots fly over lasers, ditches, boxes and arrows, so a portal can skip a laser, a ditch or a one-way passage (guidelines 14 and 29).
 - **A pass through a blocked element:** a closed door, an open ditch, or a laser or a light barrier that is on, switched under the subject, lets it walk out the far side without holding the button (guidelines 1, 2 and 22).
 
 The rules already keep out the rest, so a design never needs to guard against them: the subject coming out of a portal onto a tile it couldn't walk onto, into a doorway or onto the exit; a box lying in a closed door, over an open ditch, or in a laser, a light barrier or a fizzler that is on; a box on the exit or a switch, two boxes on one tile, or the subject on a box, but for a box sent back to its start under it; a carried box inside a fizzler that is on; and the subject leaving the chamber. A layout that starts in a broken state is rejected by the chamber check.
@@ -46,21 +46,23 @@ The rules already keep out the rest, so a design never needs to guard against th
 
 Releasing a button closes or switches back on what it holds open, even under the subject. The rules leave the subject unharmed, but it is left standing in a closed door, over an open ditch, or inside a laser or a light barrier, which looks broken, and it can then walk out the far side, past the element, without holding the button.
 
+Arrows are the exception: an arrow a link turns may turn under the subject. The subject turns with it, so nothing looks broken, and it can then leave only the arrow's new way, so it walks past nothing. Guideline 16 still holds, for both ways the arrow can point.
+
 1. Don't put a button next to an element it links that keeps the subject out while blocked: a door, a ditch, a laser, a light barrier or the exit. Stepping off the button onto the element closes it under the subject, and so does picking up, from the element's tile, the box holding the button down. Stepping onto the exit completes the chamber even as it closes, so its button would never need a box.
 2. Don't let a portal carry the subject straight from a button onto such an element: if a button stands in front of a wall side that can take a portal, no wall side facing one of its linked ditches, lasers or light barriers should take one. Doors and the exit are safe, since a wall side facing one never takes a portal. Nor should any side of a blocked wall the button links take one: crossing from the button out of a portal there blocks the wall again, which closes that portal, and the way back with it.
 3. A fizzler next to its own button fizzles the subject as it steps off: both portals close and a carried box breaks up. So does picking the button's box up from the fizzler's tile, and crossing from the button out of a portal facing the fizzler, so if the button stands in front of a wall side that can take a portal, no wall side facing the fizzler should take one. Use these only as a deliberate trap.
 
 ## Links
 
-4. Don't link an element to a button and to anything else that switches it, another button or a switch, directly or through a group. A button acts only when it goes down or comes up, and coming up blocks its links whatever else holds them: with two buttons on one door, releasing either closes the door while the other is still held, and one step from one button onto the other can end with the door closed under a pressed button. An element a button links should also start blocked, since one that starts unblocked stays open until the button has been pressed and released.
+4. Don't link an element to a button and to anything else that switches it, another button or a switch, directly or through a group. A button acts only when it goes down or comes up, and coming up blocks its links whatever else holds them: with two buttons on one door, releasing either closes the door while the other is still held, and one step from one button onto the other can end with the door closed under a pressed button. An element a button links should also start blocked, since one that starts unblocked stays open until the button has been pressed and released. This holds for an arrow a link turns too: one button or one switch per arrow.
 
 ## Boxes
 
 5. A box that breaks up or falls goes back to its start tile: a fizzler destroys a box carried into it, and a door closing, a ditch opening, or a laser, a light barrier or a fizzler switching on destroys a box lying there. Keep each box's start tile within reach, from a tile beside it, for as long as the box is needed, with a way from there to where it is needed that crosses no fizzler that is on.
 6. A box's start tile is where it lands, from anywhere, each time it is sent back, so make it a place where a box may appear at any time: not beyond a barrier the box shouldn't cross, and not on a button unless pressing it then is meant. A box resting on another box's start tile is sent to its own start, without any sign, when that box lands, so keep start tiles off the natural places to put a box down. Keep them off a fizzler's neighbours too, where picking the box up from inside the field only plays the pickup sound.
 7. Don't let a box be sent back to its start while the subject stands there. Keep each box's start off the tiles from which the subject puts a box on, or takes one off, a button whose links send that box back or destroy it (a door, a ditch, a laser, a light barrier or a fizzler where it lies), and off the tiles the subject stands on while such a link can switch. Otherwise the box lands under the subject, which must step off and pick it up from beside it.
-8. A box is put down only on the tile the subject faces; when that tile can't take it, the key is refused. Holding the turn key faces the subject any way without moving, so a box can go on any tile next to one the subject can stand on, if that tile can take it; only an arrow tile, where the subject can face nothing but the arrow's way, limits which way it faces. Don't count on the way the subject walked in to keep a box off a tile.
-9. A box bars its tile: a box put down, or sent back, in a one-tile passage, a doorway or on a button closes that tile to the subject until it is picked up from beside it. Make sure a tile beside it, from which the subject can face it and pick it up, stays reachable; on an arrow tile the subject faces only the arrow's way.
+8. A box is put down only on the tile the subject faces; when that tile can't take it, the key is refused. Holding the turn key faces the subject any way without moving, so a box can go on any tile next to one the subject can stand on, if that tile can take it; only an arrow tile, where the subject can face nothing but the arrow's way, limits which way it faces; on an arrow a link turns, that way changes as it turns. Don't count on the way the subject walked in to keep a box off a tile.
+9. A box bars its tile: a box put down, or sent back, in a one-tile passage, a doorway or on a button closes that tile to the subject until it is picked up from beside it. Make sure a tile beside it, from which the subject can face it and pick it up, stays reachable; on an arrow tile the subject faces only the arrow's way, which on an arrow a link turns changes as it turns.
 10. Send a box back with a switch, not a button: a button sends it back when pressed, but releasing it does nothing (the chamber check warns).
 11. Keep the chamber within the solver's state key, 64 bits: `npm run solve` prints each chamber's width (today's use 20 to 53 bits). Each box adds about 8 bits, and each element a link reaches 1.
 
@@ -73,7 +75,7 @@ Releasing a button closes or switches back on what it holds open, even under the
 ## Dead ends
 
 15. Steps can't be taken back, so a stuck player's only way out is Restart chamber. Avoid dead ends a player can walk into without noticing, such as an arrow leading into a pocket with no way back. A chamber that can be lost on purpose should make it obvious.
-16. On an arrow, only its own way does anything, so the tile it points to must always let the subject on: not a wall without a portal it can cross, nor an arrow pointing back, nor a door, ditch, laser or light barrier that can be blocked while the subject stands on the arrow, above all one whose button the subject leaves by stepping onto the arrow. A portal facing an arrow tile only lets the subject out, and only when the arrow points away from the wall: the subject can never walk back into it.
+16. On an arrow, only its own way does anything, so the tile it points to must always let the subject on: not a wall without a portal it can cross, nor an arrow pointing back, nor a door, ditch, laser or light barrier that can be blocked while the subject stands on the arrow, above all one whose button the subject leaves by stepping onto the arrow. A portal facing an arrow tile only lets the subject out, and only when the arrow points away from the wall: the subject can never walk back into it. An arrow a link turns must follow this for both ways it can point, for as long as the subject can stand on it pointing that way, including right after it turns under the subject.
 17. A part of the chamber the subject reaches only by portal needs a way back: a wall side it can shoot from inside that brings it out again, and the portal it came out of must not close behind it (guidelines 2 and 13).
 18. The subject can't shoot while carrying a box, nor put the box down while standing on a switch, or where no tile it can face can take it, so a pocket it can enter carrying a box needs a tile there to put the box down, next to one the subject can stand on and face it from.
 
@@ -87,11 +89,15 @@ Releasing a button closes or switches back on what it holds open, even under the
 24. A slide that would enter the same tile the same way twice, looping through two portals, is refused as a whole: the error sound plays and the subject only turns the way pressed, which reads as a bug unless the chamber shows it. Don't let a chamber's natural moves set up such a loop by surprise.
 25. A portal can only be shot at a wall from that wall's own row or column, so the portal that starts a slide into a lane is aimed from somewhere on the lane's line. If the subject should reach the lane only out of that portal, the spot to aim from must lie past something shots fly over but the subject can't cross, such as a ditch at the lane's far end; from anywhere else on the line it could simply walk or slide into the lane. The slide out of the portal then stops at the ditch, so put the way on (the exit, or the next spot to aim from) beside that tile.
 
+## Turnable arrows
+
+26. A turntable shows that an arrow turns, not which way it will point. Let the player see it turn, with its button or switch in view or an antline to it, before a route depends on its turned way.
+
 ## Antlines
 
-26. Draw antlines in the tutorial and the early chambers, from each button or switch to what it links, so the player learns how links work; later chambers can leave them out.
+27. Draw antlines in the tutorial and the early chambers, from each button or switch to what it links, so the player learns how links work; later chambers can leave them out.
 
 ## Checking a chamber
 
-27. Record its solution by playing it through (Download solution in the completion dialog, in `npm run dev`), and record it again after any change to the chamber but its antlines.
-28. Run `npm run chamber:check` and `npm run replay:check`. `npm run solve -- --par src/chambers/chamber_N.json --max-states=40000000` finds the fewest moves and the fewest portals, which shows any shortcut the design didn't intend.
+28. Record its solution by playing it through (Download solution in the completion dialog, in `npm run dev`), and record it again after any change to the chamber but its antlines.
+29. Run `npm run chamber:check` and `npm run replay:check`. `npm run solve -- --par src/chambers/chamber_N.json --max-states=40000000` finds the fewest moves and the fewest portals, which shows any shortcut the design didn't intend.
