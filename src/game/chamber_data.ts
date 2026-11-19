@@ -44,7 +44,7 @@ export type SlideFloorData = PositionData | WallRangeData
  * rectangle of tiles, which none can.
  */
 export type BlockedWallData = (PositionData & {
-  readonly id?: number // Target for button and switch links; absent means it cannot be linked
+  readonly id?: number // Target for button, switch and receiver links; absent means it cannot be linked
   readonly blocked?: boolean // Initial state; true when absent
 }) | (WallRangeData & {
   readonly blocked?: boolean // Initial state; true when absent
@@ -55,7 +55,7 @@ export type BlockedWallData = (PositionData & {
  * exit. An arrow, which a link turns, has its own entry type.
  */
 export type BlockableData = PositionData & {
-  readonly id?: number // Target for button and switch links; absent means it cannot be linked
+  readonly id?: number // Target for button, switch and receiver links; absent means it cannot be linked
   readonly blocked?: boolean // Initial state; true when absent
 }
 
@@ -64,7 +64,7 @@ export type BlockableData = PositionData & {
  * With a mirror, it turns an emitter's ray a quarter turn while it rests.
  */
 export type BoxData = PositionData & {
-  readonly id?: number // Target for button and switch links; absent means it cannot be linked
+  readonly id?: number // Target for button, switch and receiver links; absent means it cannot be linked
   readonly mirror?: string // '/' or '\\': the mirror it holds from corner to corner, fixed wherever it goes; absent for a plain box
 }
 
@@ -82,7 +82,7 @@ export type BeamData = BlockableData & {
  */
 export type ArrowData = PositionData & {
   readonly direction: string // 'UP', 'DOWN', 'LEFT' or 'RIGHT': the way it points while blocked, as it starts
-  readonly id?: number // Target for button and switch links; absent means it cannot be linked
+  readonly id?: number // Target for button, switch and receiver links; absent means it cannot be linked
   readonly turnedDirection?: string // 'UP', 'DOWN', 'LEFT' or 'RIGHT': the way it points while a link holds it turned; given with id
 }
 
@@ -130,14 +130,14 @@ export type LinkGroupData = {
 }
 
 /**
- * An antline: a dotted line on the floor from a button or switch to one
- * element it links, drawn only, lit while that element is unblocked. Its path
- * runs straight along rows and columns from corner to corner, from the
- * button's or switch's tile to the element's.
+ * An antline: a dotted line on the floor from a button, switch or receiver
+ * to one element it links, drawn only, lit while that element is unblocked.
+ * Its path runs straight along rows and columns from corner to corner, from
+ * the button's, switch's or receiver's tile to the element's.
  */
 export type AntlineData = {
   readonly link: number // Id of the element it leads to, never a group's
-  readonly path: readonly PositionData[] // Its corner tiles, from the button or switch to the element, at least two
+  readonly path: readonly PositionData[] // Its corner tiles, from the button, switch or receiver to the element, at least two
 }
 
 /**
@@ -165,6 +165,6 @@ export type ChamberData = {
   }
   readonly subject: SubjectData // Where the subject starts and which way it faces
   readonly groups?: readonly LinkGroupData[] // Link groups
-  readonly antlines?: readonly AntlineData[] // Drawn only: dotted lines from buttons and switches to elements they link
+  readonly antlines?: readonly AntlineData[] // Drawn only: dotted lines from buttons, switches and receivers to elements they link
   readonly par?: ParData // How well the chamber can be solved
 } & ChamberElementFields

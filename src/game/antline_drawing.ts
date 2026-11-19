@@ -5,7 +5,8 @@ import type {RulesState} from '@/game/rules/rules_state'
 import type {TilePainter} from '@/game/tile_painter'
 
 // How the antlines are drawn (docs/sprites.md): dotted lines on the floor
-// from a button or switch to an element it links, drawn by code, unlit in
+// from a button, switch or receiver to an element it links (from a receiver,
+// under its wall tile up to the floor), drawn by code, unlit in
 // cyan and lit in amber while the element they lead to is unblocked, each
 // dot ringed by a darker border. They lie over the floor and under
 // everything else, so the renderer draws them into its backdrop
@@ -37,8 +38,8 @@ const LEEWAY = 1e-6
 /**
  * Whether an antline is lit: while the element it leads to is unblocked (a
  * door or the exit open, a laser, a light barrier or a fizzler off, a ditch
- * bridged, a blocked wall taking portals). A box has no blocked flag, so a
- * line to it is never lit.
+ * bridged, a blocked wall taking portals, an emitter on). A box has no
+ * blocked flag, so a line to it is never lit.
  * @param state - The state drawn
  * @param antline - The antline
  * @returns True when it is lit
@@ -61,9 +62,9 @@ export function antlinesLitKey(state: RulesState): string {
 
 /**
  * The middles of an antline's dots, every tile middle along its path among
- * them and each corner once, from the middle of the button's or switch's
- * tile to just short of the element's tile.
- * @param path - Its corner tiles, from the button or switch to the element
+ * them and each corner once, from the middle of the button's, switch's or
+ * receiver's tile to just short of the element's tile.
+ * @param path - Its corner tiles, from the button, switch or receiver to the element
  * @returns The dots, in order along the line
  */
 function dotsAlong(path: CompiledAntline['path']): DotPoint[] {
