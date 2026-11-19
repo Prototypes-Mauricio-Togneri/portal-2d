@@ -61,7 +61,7 @@ The existing elements need chambers too (portal basics, boxes and buttons, doors
 |---|---|---|---|
 | 1 | Existing elements | About 4 | — |
 | 2 | Slide floors | About 4 | Chambers 4 (teach) and 5 (test), stage 04a's cold playtest of 2026-11-19: no confusion seen |
-| 3 | Rotating arrows | About 4 | — |
+| 3 | Rotating arrows | About 4 | Chambers 6 (teach) and 7 (twist), stage 04a's cold playtest of 2026-11-19: no confusion seen |
 | 4 | Live lasers | About 4 | — |
 | 5 | Total | 16 (20 with chambers 0–3) | |
 
