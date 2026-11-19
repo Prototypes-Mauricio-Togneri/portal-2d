@@ -622,6 +622,21 @@ function drawButtons(painter: TilePainter, state: RulesState): void {
 }
 
 /**
+ * Draws the slide floors, every tile of each entry, a rectangle's included.
+ * @param painter - Paints on the canvas
+ * @param state - The state drawn
+ */
+function drawSlideFloors(painter: TilePainter, state: RulesState): void {
+  for (const entry of state.chamber.entriesOf('slideFloor')) {
+    for (let x = entry.x; x <= (entry.xTo ?? entry.x); x++) {
+      for (let y = entry.y; y <= (entry.yTo ?? entry.y); y++) {
+        painter.drawSprite('slide_floor', x, y)
+      }
+    }
+  }
+}
+
+/**
  * Draws the switches.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
@@ -654,6 +669,7 @@ function drawBoxes(painter: TilePainter, state: RulesState): void {
 
 /** How each element type is drawn */
 export const ELEMENT_DRAWINGS: Readonly<Record<ElementKind, ElementDrawing>> = {
+  slideFloor: drawSlideFloors,
   arrow: drawArrows,
   wall: drawWalls,
   blockedWall: drawBlockedWalls,

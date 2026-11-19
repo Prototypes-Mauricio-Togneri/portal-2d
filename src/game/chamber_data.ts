@@ -16,7 +16,8 @@ export type PositionData = {
 }
 
 /**
- * A rectangle of wall tiles, both ends inclusive.
+ * A rectangle of tiles (walls, blocked walls or slide floors), both ends
+ * inclusive.
  */
 export type WallRangeData = {
   readonly xFrom: number
@@ -30,6 +31,12 @@ export type WallRangeData = {
  * a rectangle of tiles.
  */
 export type WallData = PositionData | WallRangeData
+
+/**
+ * A slide floor entry, floor that keeps the subject moving: one tile when it
+ * has x and y, otherwise a rectangle of tiles.
+ */
+export type SlideFloorData = PositionData | WallRangeData
 
 /**
  * A blocked wall entry, a wall that refuses portals while blocked: one tile

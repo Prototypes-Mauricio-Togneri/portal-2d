@@ -40,6 +40,7 @@ export const EXIT_ELEMENT = defineElement<BlockableData>()({
   stopsShootingFrom: 'never',
   takesPortals: 'never',
   reactsToSubject: true,
+  continuesMovement: false,
   events: [
     GameEvent.EXIT_OPENED,
     GameEvent.EXIT_CLOSED,

@@ -73,6 +73,8 @@ export class Level {
     [GameEvent.BUTTON_PRESSED]: Sound.BUTTON_ON,
     [GameEvent.BUTTON_RELEASED]: Sound.BUTTON_OFF,
     [GameEvent.SWITCH_USED]: Sound.SWITCH,
+    [GameEvent.SLIDE_STARTED]: null,
+    [GameEvent.SLIDE_STOPPED]: null,
   }
 
   onCompleted: (() => void) | null = null // Called once per load when the subject reaches the exit

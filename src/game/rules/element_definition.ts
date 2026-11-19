@@ -78,6 +78,7 @@ export type ElementDefinition<Entry = unknown> = {
   readonly stopsShootingFrom: ShootingFromBlocking // When standing on it keeps the portal keys from shooting
   readonly takesPortals: PortalTaking // When a portal can open on it
   readonly reactsToSubject: boolean // Whether entering or leaving its tile can change the state
+  readonly continuesMovement: boolean // Whether entering its tile keeps the subject moving the same way (a slide floor)
   readonly events: readonly GameEvent[] // The events it reports
   readonly hooks?: ElementHooks // What it does in a step beyond its fixed data; absent when the core step does it all
   readonly [entryType]?: Entry // Never set: carries the type of its entries in a chamber file

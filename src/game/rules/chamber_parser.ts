@@ -21,6 +21,7 @@ export const CHAMBER_FIELDS = [
   'exit',
   'walls',
   'blockedWalls',
+  'slideFloors',
   'lightBarriers',
   'ditches',
   'boxes',
@@ -552,10 +553,11 @@ class ChamberParser {
   }
 
   /**
-   * Reads a wall entry: one tile when it has x or y, otherwise a rectangle.
+   * Reads a wall or slide floor entry: one tile when it has x or y, otherwise
+   * a rectangle.
    * @param value - The value
    * @param field - Its path
-   * @returns The wall, or null when it is wrong
+   * @returns The wall or slide floor, or null when it is wrong
    */
   readWall(value: unknown, field: string): WallData | null {
     if (isJsonObject(value) && (('x' in value) || ('y' in value))) {
@@ -710,6 +712,7 @@ class ChamberParser {
     const exit = this.readBlockable(file.exit, 'exit')
     const walls = this.readList(file.walls, 'walls', (entry, field) => this.readWall(entry, field))
     const blockedWalls = this.readList(file.blockedWalls, 'blockedWalls', (entry, field) => this.readBlockedWall(entry, field))
+    const slideFloors = this.readList(file.slideFloors, 'slideFloors', (entry, field) => this.readWall(entry, field))
     const lightBarriers = this.readList(file.lightBarriers, 'lightBarriers', (entry, field) => this.readBeam(entry, field))
     const ditches = this.readList(file.ditches, 'ditches', (entry, field) => this.readBlockable(entry, field))
     const boxes = this.readList(file.boxes, 'boxes', (entry, field) => this.readBox(entry, field))
@@ -726,7 +729,7 @@ class ChamberParser {
     // Every wrong entry was reported and left out of its list, so the chamber
     // is only built when nothing was wrong
     if ((this.problems.length > 0) || (version === null) || (size === null) || (subject === null) || (exit === null) ||
-      (walls === null) || (blockedWalls === null) || (lightBarriers === null) || (ditches === null) || (boxes === null) ||
+      (walls === null) || (blockedWalls === null) || (slideFloors === null) || (lightBarriers === null) || (ditches === null) || (boxes === null) ||
       (buttons === null) || (arrows === null) || (fizzlers === null) || (doors === null) || (switches === null) ||
       (lasers === null) || (groups === null) || (antlines === null) || (par === null)) {
       return null
@@ -739,6 +742,8 @@ class ChamberParser {
       exit: exit,
       walls: walls,
       blockedWalls: blockedWalls,
+      // Undefined when the file leaves it out, so the chamber's hash is the one it had before slide floors
+      slideFloors: slideFloors,
       lightBarriers: lightBarriers,
       ditches: ditches,
       boxes: boxes,

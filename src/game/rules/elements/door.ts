@@ -39,6 +39,7 @@ export const DOOR_ELEMENT = defineElement<BlockableData>()({
   stopsShootingFrom: 'never',
   takesPortals: 'never',
   reactsToSubject: false,
+  continuesMovement: false,
   events: [
     GameEvent.DOOR_OPENED,
     GameEvent.DOOR_CLOSED,

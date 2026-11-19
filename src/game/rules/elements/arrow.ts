@@ -15,5 +15,6 @@ export const ARROW_ELEMENT = defineElement<ArrowData>()({
   stopsShootingFrom: 'never',
   takesPortals: 'never',
   reactsToSubject: false,
+  continuesMovement: false,
   events: [],
 })

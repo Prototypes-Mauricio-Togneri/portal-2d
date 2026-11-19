@@ -35,6 +35,7 @@ export const SWITCH_ELEMENT = defineElement<TriggerData>()({
   stopsShootingFrom: 'never',
   takesPortals: 'never',
   reactsToSubject: false,
+  continuesMovement: false,
   events: [GameEvent.SWITCH_USED],
   hooks: {
     interact: useSwitch,

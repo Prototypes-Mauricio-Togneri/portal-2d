@@ -35,6 +35,7 @@ export const LIGHT_BARRIER_ELEMENT = defineElement<BeamData>()({
   stopsShootingFrom: 'never',
   takesPortals: 'never',
   reactsToSubject: false,
+  continuesMovement: false,
   events: [],
   hooks: {
     linkUnblocked: switchLightBarrierOff,

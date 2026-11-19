@@ -10,11 +10,13 @@ import {EXIT_ELEMENT} from '@/game/rules/elements/exit'
 import {FIZZLER_ELEMENT} from '@/game/rules/elements/fizzler'
 import {LASER_ELEMENT} from '@/game/rules/elements/laser'
 import {LIGHT_BARRIER_ELEMENT} from '@/game/rules/elements/light_barrier'
+import {SLIDE_FLOOR_ELEMENT} from '@/game/rules/elements/slide_floor'
 import {SWITCH_ELEMENT} from '@/game/rules/elements/switch'
 import {WALL_ELEMENT} from '@/game/rules/elements/wall'
 
-/** Every element type a chamber can hold, in the original game's drawing order; the subject and the portals belong to the core step */
+/** Every element type a chamber can hold, in drawing order: the slide floor, under everything, then the original game's order; the subject and the portals belong to the core step */
 export const ELEMENT_REGISTRY = [
+  SLIDE_FLOOR_ELEMENT,
   ARROW_ELEMENT,
   WALL_ELEMENT,
   BLOCKED_WALL_ELEMENT,

@@ -64,6 +64,7 @@ export const BOX_ELEMENT = defineElement<BoxData>()({
   stopsShootingFrom: 'never',
   takesPortals: 'never',
   reactsToSubject: false,
+  continuesMovement: false,
   events: [
     GameEvent.BOX_PICKED_UP,
     GameEvent.BOX_PUT_DOWN,

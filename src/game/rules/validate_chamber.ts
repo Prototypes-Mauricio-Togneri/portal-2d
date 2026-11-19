@@ -5,7 +5,7 @@ import {type ChamberProblem, chamberError, chamberWarning, type ProblemTile} fro
  * What can stand on a tile at the start: a wall, a fixed element, a box or
  * the subject.
  */
-type OccupantKind = 'wall' | 'blockedWall' | 'lightBarrier' | 'ditch' | 'door' | 'exit' | 'fizzler' | 'arrow' | 'button' | 'switch' | 'laser' | 'box' | 'subject'
+type OccupantKind = 'wall' | 'blockedWall' | 'slideFloor' | 'lightBarrier' | 'ditch' | 'door' | 'exit' | 'fizzler' | 'arrow' | 'button' | 'switch' | 'laser' | 'box' | 'subject'
 
 /**
  * Something standing on a tile at the start.
@@ -53,6 +53,15 @@ const FIXTURES: readonly OccupantKind[] = [
   'laser',
 ]
 
+/** The fixed elements a slide floor can't share its tile with, besides a wall; it may share one with any other, which it lies under */
+const SLIDE_FLOOR_EXCLUDED: readonly OccupantKind[] = [
+  'ditch',
+  'door',
+  'exit',
+  'arrow',
+  'switch',
+]
+
 /** What may stand on a tile of the chamber's edge, so that the chamber is enclosed */
 const EDGE_KINDS: readonly OccupantKind[] = [
   'wall',
@@ -77,6 +86,10 @@ function describeKind(kind: OccupantKind): string {
 
   if (kind === 'blockedWall') {
     return 'a blocked wall'
+  }
+
+  if (kind === 'slideFloor') {
+    return 'a slide floor'
   }
 
   return (kind === 'arrow') ? 'an arrow' : `a ${kind}`
@@ -173,33 +186,44 @@ class ChamberValidator {
    * outside the chamber and a tile listed twice.
    */
   private placeWalls(): void {
-    this.chamber.walls?.forEach((wall, index) => this.placeWall(wall, 'wall', `walls[${index}]`))
-    this.chamber.blockedWalls?.forEach((wall, index) => this.placeWall(wall, 'blockedWall', `blockedWalls[${index}]`))
+    this.chamber.walls?.forEach((wall, index) => this.placeTiles(wall, 'wall', `walls[${index}]`, WALL_KINDS, 'wall'))
+    this.chamber.blockedWalls?.forEach((wall, index) => this.placeTiles(wall, 'blockedWall', `blockedWalls[${index}]`, WALL_KINDS, 'wall'))
   }
 
   /**
-   * Places the tiles of one wall or blocked wall entry, reporting it when it
-   * reaches outside the chamber and each tile another entry already lists.
-   * @param wall - The entry: one tile or an inclusive rectangle
-   * @param kind - A wall or a blocked wall
-   * @param field - Where in the file it is listed
+   * Places every slide floor tile, reporting an entry that reaches outside
+   * the chamber and a tile listed twice.
    */
-  private placeWall(wall: PositionData | WallRangeData, kind: OccupantKind, field: string): void {
-    const xFrom = ('x' in wall) ? wall.x : wall.xFrom
-    const xTo = ('x' in wall) ? wall.x : wall.xTo
-    const yFrom = ('y' in wall) ? wall.y : wall.yFrom
-    const yTo = ('y' in wall) ? wall.y : wall.yTo
+  private placeSlideFloors(): void {
+    this.chamber.slideFloors?.forEach((floor, index) => this.placeTiles(floor, 'slideFloor', `slideFloors[${index}]`, ['slideFloor'], 'slide floor'))
+  }
+
+  /**
+   * Places the tiles of one wall, blocked wall or slide floor entry,
+   * reporting it when it reaches outside the chamber and each tile another
+   * entry of its kinds already lists.
+   * @param entry - The entry: one tile or an inclusive rectangle
+   * @param kind - A wall, a blocked wall or a slide floor
+   * @param field - Where in the file it is listed
+   * @param sameKinds - The kinds whose entries may not list a tile it lists
+   * @param name - What a tile of those kinds is called in a problem's message
+   */
+  private placeTiles(entry: PositionData | WallRangeData, kind: OccupantKind, field: string, sameKinds: readonly OccupantKind[], name: string): void {
+    const xFrom = ('x' in entry) ? entry.x : entry.xFrom
+    const xTo = ('x' in entry) ? entry.x : entry.xTo
+    const yFrom = ('y' in entry) ? entry.y : entry.yFrom
+    const yTo = ('y' in entry) ? entry.y : entry.yTo
     const outside = (xFrom < 0) || (yFrom < 0) || (xTo >= this.chamber.size.width) || (yTo >= this.chamber.size.height)
 
     // Only the part inside the chamber is walked, so a rectangle with huge
     // corners in a file from anywhere costs no more than the chamber itself
     for (let x = Math.max(xFrom, 0); x <= Math.min(xTo, this.chamber.size.width - 1); x++) {
       for (let y = Math.max(yFrom, 0); y <= Math.min(yTo, this.chamber.size.height - 1); y++) {
-        if ((this.occupants.get(tileKey(x, y))?.list ?? []).some((occupant) => WALL_KINDS.includes(occupant.kind))) {
+        if ((this.occupants.get(tileKey(x, y))?.list ?? []).some((occupant) => sameKinds.includes(occupant.kind))) {
           this.problems.push(chamberError(field, {
             x: x,
             y: y,
-          }, 'lists a wall tile that another wall entry already lists'))
+          }, `lists a ${name} tile that another ${name} entry already lists`))
         }
 
         this.addOccupant(x, y, {
@@ -239,9 +263,10 @@ class ChamberValidator {
 
   /**
    * Checks what shares each tile: a wall holds nothing else; a floor tile
-   * holds at most one fixed element, or two crossing lasers; a box and the
-   * subject start on plain floor or a button, with at most one box, and the
-   * subject never on a box, since a box keeps it off its tile.
+   * holds at most one fixed element, or two crossing lasers; a slide floor
+   * shares no tile with a ditch, door, exit, arrow or switch; a box and the
+   * subject start on plain floor, slide floor or a button, with at most one
+   * box, and the subject never on a box, since a box keeps it off its tile.
    */
   private checkOverlaps(): void {
     for (const entry of this.occupants.values()) {
@@ -268,6 +293,16 @@ class ChamberValidator {
       if ((fixtures.length > 1) && (!crossingLasers)) {
         const names = fixtures.map((occupant) => `${occupant.kind} (${occupant.field})`).join(', ')
         this.problems.push(chamberError(fixtures[1]?.field ?? '', tile, `more than one element on a tile: ${names}; only two crossing lasers can share one`))
+      }
+
+      const slideFloor = list.find((occupant) => occupant.kind === 'slideFloor')
+
+      if (slideFloor !== undefined) {
+        for (const occupant of list) {
+          if (SLIDE_FLOOR_EXCLUDED.includes(occupant.kind)) {
+            this.problems.push(chamberError(slideFloor.field, tile, `a slide floor can't share a tile with ${describeKind(occupant.kind)}`))
+          }
+        }
       }
 
       const startsBadly = fixtures.some((occupant) => occupant.kind !== 'button')
@@ -546,6 +581,7 @@ class ChamberValidator {
    */
   validate(): void {
     this.placeWalls()
+    this.placeSlideFloors()
     this.placeElements()
     this.checkOverlaps()
     this.collectTargets()

@@ -39,6 +39,7 @@ export const BLOCKED_WALL_ELEMENT = defineElement<BlockedWallData>()({
   stopsShootingFrom: 'never',
   takesPortals: 'whenUnblocked',
   reactsToSubject: false,
+  continuesMovement: false,
   events: [],
   hooks: {
     linkUnblocked: unblockWall,

@@ -19,6 +19,8 @@ export type GameEvent =
   | 'buttonPressed'
   | 'buttonReleased'
   | 'switchUsed'
+  | 'slideStarted'
+  | 'slideStopped'
 
 /**
  * Named values of GameEvent.
@@ -40,4 +42,6 @@ export const GameEvent = {
   BUTTON_PRESSED: 'buttonPressed', // A button went down
   BUTTON_RELEASED: 'buttonReleased', // A button came up
   SWITCH_USED: 'switchUsed', // The subject used a switch
+  SLIDE_STARTED: 'slideStarted', // The subject, having entered a slide floor, slid on from it
+  SLIDE_STOPPED: 'slideStopped', // A slide that started ended
 } as const

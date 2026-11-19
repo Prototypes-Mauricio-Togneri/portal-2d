@@ -2,10 +2,12 @@ import type {ChamberData} from '@/game/chamber_data'
 import brokenAntlines from '@scripts/fixtures/broken_antlines.json'
 import brokenChamberFields from '@scripts/fixtures/broken_chamber_fields.json'
 import brokenChamberLayout from '@scripts/fixtures/broken_chamber_layout.json'
+import brokenSlideFloors from '@scripts/fixtures/broken_slide_floors.json'
 import formatV2Example from '@scripts/fixtures/format_v2_example.json'
 import lightBarrierDirection from '@scripts/fixtures/light_barrier_direction.json'
 import lightBarrierInWall from '@scripts/fixtures/light_barrier_in_wall.json'
 import lightBarrierSharedTile from '@scripts/fixtures/light_barrier_shared_tile.json'
+import slideFloorRectangle from '@scripts/fixtures/slide_floor_rectangle.json'
 import subjectOnBox from '@scripts/fixtures/subject_on_box.json'
 
 // Chamber files for the chamber check (npm run chamber:check), outside the
@@ -13,7 +15,7 @@ import subjectOnBox from '@scripts/fixtures/subject_on_box.json'
 // fails when it doesn't fit the format, and cases that pin exactly what
 // loading a file reports, broken ones included
 
-/** A format 2 chamber using every addition (blocked walls, one tile of them linked, a link group named by a button and a switch, an antline to an element the group stands for and one to an element named directly, an empty par) and leaving out every list it doesn't need */
+/** A format 2 chamber using every addition (blocked walls, one tile of them linked, slide floors, a tile and a rectangle, a link group named by a button and a switch, an antline to an element the group stands for and one to an element named directly, an empty par) and leaving out every list it doesn't need */
 export const FORMAT_V2_EXAMPLE: ChamberData = formatV2Example
 
 /**
@@ -126,6 +128,26 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
       'error antlines[5] at (2, 1): starts on no button or switch that links id 1',
       'error antlines[6] at (1, 1): starts on no button or switch that links id 2',
       'error antlines[7] at (4, 1): ends away from id 1, which is at (5, 2)',
+    ],
+  },
+  {
+    name: 'slide_floor_rectangle',
+    // Slide floors are listed as walls are, so a rectangle's corners are read the same way
+    data: slideFloorRectangle,
+    problems: ['error slideFloors[0]: a rectangle\'s from corner is past its to corner'],
+  },
+  {
+    name: 'broken_slide_floors',
+    // The second row's slide floor shares its tiles with the subject's start, a button with a box's start, a fizzler, a laser and a light barrier, which is right; the first row's shares each of its tiles with an element it can't
+    data: brokenSlideFloors,
+    problems: [
+      'error slideFloors[3] at (2, 3): lists a slide floor tile that another slide floor entry already lists',
+      'error slideFloors[4] at (0, 3): a slide floor can\'t be inside a wall',
+      'error slideFloors[0] at (1, 1): a slide floor can\'t share a tile with a ditch',
+      'error slideFloors[0] at (2, 1): a slide floor can\'t share a tile with a door',
+      'error slideFloors[0] at (3, 1): a slide floor can\'t share a tile with the exit',
+      'error slideFloors[0] at (4, 1): a slide floor can\'t share a tile with an arrow',
+      'error slideFloors[0] at (5, 1): a slide floor can\'t share a tile with a switch',
     ],
   },
 ]
