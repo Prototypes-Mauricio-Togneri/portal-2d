@@ -19,6 +19,7 @@ type Burst = {
   readonly size: number // Its side, as a share of a tile
   readonly way: Direction // The way it was turned to face
   readonly seed: number // Sets its pieces' paths apart from another burst's
+  readonly startTime: number // When it started breaking up, in milliseconds on the frame clock
 }
 
 /** How long the pieces take to drift apart and fade, in milliseconds: long enough to read, gone well before the next few presses */
@@ -90,7 +91,6 @@ function placePiece(burst: Burst, progress: number, offsetX: number, offsetY: nu
  */
 export class FizzleParticles {
   private bursts: readonly Burst[] = [] // What is breaking up, empty when nothing is
-  private startTime = 0 // When the breaking up started, in milliseconds on the frame clock
   private burstCount = 0 // Bursts started so far, which seeds each new one
 
   /**
@@ -102,13 +102,16 @@ export class FizzleParticles {
    * fizzler that is on after it, so a portal a blocked wall closed in the
    * same step still just vanishes. And each box destroyed where it lay or
    * was put down (boxDestroyed), but one that fell into a ditch. Replaces
-   * anything still breaking up, unless the step took nothing.
-   * @param before - The state before the step
-   * @param after - The state after the step
-   * @param events - What happened in the step
+   * anything still breaking up, unless the step took nothing, or it is a
+   * later part of a step whose earlier part broke something up (a slide's
+   * stop after a fizzler it passed), which it joins.
+   * @param before - The state before the step, or before this part of it
+   * @param after - The state after the step, or after this part of it
+   * @param events - What happened in the step, or in this part of it
    * @param time - Now, in milliseconds on the frame clock
+   * @param joining - Whether it joins what the step's earlier parts broke up rather than replacing it
    */
-  start(before: RulesState, after: RulesState, events: readonly GameEvent[], time: number): void {
+  start(before: RulesState, after: RulesState, events: readonly GameEvent[], time: number, joining = false): void {
     const bursts: Burst[] = []
     const subjectFizzled = events.includes(GameEvent.FIZZLED)
 
@@ -130,6 +133,7 @@ export class FizzleParticles {
           size: 1,
           way: side,
           seed: this.burstCount++,
+          startTime: time,
         })
       }
     }
@@ -146,6 +150,7 @@ export class FizzleParticles {
         size: CARRIED_BOX_SIZE,
         way: after.facing,
         seed: this.burstCount++,
+        startTime: time,
       })
     }
 
@@ -158,13 +163,16 @@ export class FizzleParticles {
           size: box.size,
           way: box.way,
           seed: this.burstCount++,
+          startTime: time,
         })
       }
     }
 
     if (bursts.length > 0) {
-      this.bursts = bursts
-      this.startTime = time
+      this.bursts = joining ? [
+        ...this.bursts.filter((burst) => time - burst.startTime < FIZZLE_MILLISECONDS),
+        ...bursts,
+      ] : bursts
     }
   }
 
@@ -182,8 +190,8 @@ export class FizzleParticles {
    * @returns True while pieces are left to draw
    */
   isRunningAt(time: number): boolean {
-    if ((this.bursts.length > 0) && (time - this.startTime >= FIZZLE_MILLISECONDS)) {
-      this.bursts = []
+    if (this.bursts.some((burst) => time - burst.startTime >= FIZZLE_MILLISECONDS)) {
+      this.bursts = this.bursts.filter((burst) => time - burst.startTime < FIZZLE_MILLISECONDS)
     }
 
     return this.bursts.length > 0
@@ -195,13 +203,13 @@ export class FizzleParticles {
    * @param time - The frame's time, in milliseconds on the frame clock
    */
   draw(painter: TilePainter, time: number): void {
-    const progress = Math.max(time - this.startTime, 0) / FIZZLE_MILLISECONDS
-
-    if (progress >= 1) {
-      return
-    }
-
     for (const burst of this.bursts) {
+      const progress = Math.max(time - burst.startTime, 0) / FIZZLE_MILLISECONDS
+
+      if (progress >= 1) {
+        continue
+      }
+
       painter.drawSpritePieces(burst.sprite, burst.x, burst.y, burst.size, burst.way, PIECES_ACROSS, (offsetX, offsetY, index) => placePiece(burst, progress, offsetX, offsetY, index))
     }
   }

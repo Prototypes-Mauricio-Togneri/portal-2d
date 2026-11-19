@@ -861,21 +861,20 @@ export const FIXTURES: readonly Fixture[] = [
   },
   {
     name: 'slide_back_to_start_no_move',
-    behaviour: 'A slide that a portal brings back onto the tile it started from counts no move: only the facing changes.',
+    behaviour: 'A slide that a portal brings back onto the tile it started from counts no move: the subject ends where it started, facing the way it came out of the portal in the floor, unlike a refused move, which would leave it facing the way pressed.',
     chamber: slidePortals,
     actions: [
-      'turnLeft',
+      'turnDown',
       'blue',
       'turnRight',
       'orange',
-      'turnUp',
       'right',
     ],
     expected: {
       completed: false,
       moves: 0,
       portals: 2,
-      finalHash: 'e6455d93',
+      finalHash: '88a62f1f',
     },
   },
   {

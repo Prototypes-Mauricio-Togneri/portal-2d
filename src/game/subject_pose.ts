@@ -3,8 +3,8 @@ import {DELTAS, type Direction} from '@/game/direction'
 import {GameEvent} from '@/game/game_event'
 import {PORTAL_COLORS, PortalColor} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
-import {OPPOSITES} from '@/game/rules/step'
-import type {StepTransition} from '@/game/step_animation'
+import {OPPOSITES, type SlideLeg} from '@/game/rules/step'
+import {legUnits, slideUnits, type StepTransition} from '@/game/step_animation'
 
 /**
  * Where the subject is drawn in a frame: its tile, part way between two
@@ -23,9 +23,11 @@ export type SubjectPose = {
  * it one tile, it glides from the tile it left to the tile it reached.
  * Through a portal, it slides into the entry portal, shown only inside the
  * tile it left, then out of the exit portal, shown only inside the tile it
- * reached, each half one tile's travel at the pace of a glide. The distance
- * still to go is rounded to whole canvas pixels, so its edges stay sharp.
- * Every other step, and a frame drawing no step, shows it where it stands.
+ * reached, each half one tile's travel at the pace of a glide. Along a
+ * slide, it goes the same way leg by leg, gliding onto each tile and passing
+ * through each portal on its path. The distance still to go is rounded to
+ * whole canvas pixels, so its edges stay sharp. Every other step, and a
+ * frame drawing no step, shows it where it stands.
  * @param state - The state drawn
  * @param transition - The step being drawn, ending on the state drawn, or null
  * @param tileSize - Side of a tile, in canvas pixels
@@ -45,23 +47,74 @@ export function subjectPose(state: RulesState, transition: StepTransition | null
 
   const from = transition.from
 
+  if (transition.path.length > 0) {
+    return slidePose(from, transition.path, transition.progress * slideUnits(transition.path), tileSize) ?? rest
+  }
+
   if (transition.events.includes(GameEvent.CROSSED)) {
     return crossingPose(from, state, transition.progress, tileSize) ?? rest
   }
 
-  const dx = state.subjectX - from.subjectX
-  const dy = state.subjectY - from.subjectY
+  return glidePose(from, state, 1 - transition.progress, tileSize) ?? rest
+}
 
-  if ((Math.abs(dx) + Math.abs(dy)) !== 1) {
-    return rest
+/**
+ * Where the subject is drawn part way along a slide: on the leg it has got
+ * to, gliding onto that leg's tile from the one before it, or passing
+ * through a portal onto it (crossingPose).
+ * @param from - The state before the step
+ * @param path - Each tile the slide entered, in order, at least one
+ * @param travelled - How far along the path the drawing has gone, in units (legUnits)
+ * @param tileSize - Side of a tile, in canvas pixels
+ * @returns The pose, or null when a leg doesn't follow on from the tile before it
+ */
+function slidePose(from: RulesState, path: readonly SlideLeg[], travelled: number, tileSize: number): SubjectPose | null {
+  let before = from
+  let unitsBefore = 0
+
+  for (const [
+    index,
+    leg,
+  ] of path.entries()) {
+    const units = legUnits(leg)
+
+    if ((travelled < (unitsBefore + units)) || (index === (path.length - 1))) {
+      const along = Math.min(Math.max(travelled - unitsBefore, 0), units)
+
+      return leg.crossed ? crossingPose(before, leg.state, along / units, tileSize) : glidePose(before, leg.state, units - along, tileSize)
+    }
+
+    unitsBefore += units
+    before = leg.state
   }
 
-  const behind = toWholePixels(1 - transition.progress, tileSize)
+  return null
+}
+
+/**
+ * Where the subject is drawn part way through gliding one tile, from where
+ * it stands in one state to where it stands in the next, facing the way it
+ * faces there.
+ * @param from - The state it glides from
+ * @param to - The state it glides to, on the next tile
+ * @param remaining - How much of the tile it still has to go, from 0 to 1
+ * @param tileSize - Side of a tile, in canvas pixels
+ * @returns The pose, or null when the two tiles aren't next to each other
+ */
+function glidePose(from: RulesState, to: RulesState, remaining: number, tileSize: number): SubjectPose | null {
+  const dx = to.subjectX - from.subjectX
+  const dy = to.subjectY - from.subjectY
+
+  if ((Math.abs(dx) + Math.abs(dy)) !== 1) {
+    return null
+  }
+
+  const behind = toWholePixels(remaining, tileSize)
 
   return {
-    x: state.subjectX - (dx * behind),
-    y: state.subjectY - (dy * behind),
-    facing: state.facing,
+    x: to.subjectX - (dx * behind),
+    y: to.subjectY - (dy * behind),
+    facing: to.facing,
     clip: null,
   }
 }

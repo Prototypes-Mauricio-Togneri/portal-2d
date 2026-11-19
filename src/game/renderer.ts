@@ -13,8 +13,8 @@ import type {RulesState} from '@/game/rules/rules_state'
 import {NO_BOX} from '@/game/rules/state_layout'
 import type {SpriteName} from '@/game/sprite_set'
 import {spriteOf} from '@/game/sprite_sources'
-import type {StepTransition} from '@/game/step_animation'
-import {subjectPose} from '@/game/subject_pose'
+import {shownState, type StepTransition} from '@/game/step_animation'
+import {subjectPose, type SubjectPose} from '@/game/subject_pose'
 import {TilePainter} from '@/game/tile_painter'
 
 /**
@@ -77,7 +77,8 @@ function drawElementsOn(painter: TilePainter, state: RulesState, layer: DrawLaye
 }
 
 /**
- * Draws the background and the floor of every tile.
+ * Draws the background, the floor of every tile, then the floor layer's
+ * elements over it (the slide floors), all under the antlines.
  * @param painter - Paints on the canvas, already sized for the chamber
  * @param state - A state of the chamber
  */
@@ -89,6 +90,8 @@ function drawFloor(painter: TilePainter, state: RulesState): void {
       painter.drawSprite('floor', x, y)
     }
   }
+
+  drawElementsOn(painter, state, 'floor')
 }
 
 /**
@@ -110,7 +113,7 @@ function drawBackdropCover(painter: TilePainter, state: RulesState): void {
 /**
  * Draws a chamber's backdrop, the layers that change only when an antline
  * lights up or goes dark while it is played: the background, the floor of
- * every tile, the antlines and the floor marks, then the walls, painted
+ * every tile and the slide floors, the antlines and the floor marks, then the walls, painted
  * apart and laid down over the shared drop shadow of their whole mass.
  * @param painter - Paints on the canvas, already sized for the chamber
  * @param state - The state whose antlines are drawn; the rest is the same for every state of the chamber
@@ -157,8 +160,8 @@ export function hasAmbientLife(state: RulesState): boolean {
 
 /**
  * Draws a state of the rules onto a canvas from the chamber sprites
- * (docs/sprites.md): the chamber's backdrop (floor, antlines, floor marks
- * and walls), drawn once per chamber and tile size, and again when an
+ * (docs/sprites.md): the chamber's backdrop (floor and slide floors, antlines,
+ * floor marks and walls), drawn once per chamber and tile size, and again when an
  * antline lights up or goes dark, and copied every frame, then each
  * other draw layer back to front. The core step's layers (floor, portals,
  * subject) are drawn here; every other layer draws its element types in
@@ -284,11 +287,10 @@ export class Renderer {
    * Draws the subject turned to the way it faces, holding a box it carries
    * or else its portal gun, at its pose: where it stands, or part way
    * through the step being drawn.
-   * @param state - The state drawn
-   * @param transition - The step being drawn, ending on the state drawn, or null to draw the state as it is
+   * @param state - The state drawn, which says whether it carries a box
+   * @param pose - Where it is drawn, from subjectPose()
    */
-  private drawSubject(state: RulesState, transition: StepTransition | null): void {
-    const pose = subjectPose(state, transition, this.painter.blockSize)
+  private drawSubject(state: RulesState, pose: SubjectPose): void {
     const sprite = (state.carriedBox === NO_BOX) ? 'subject_holding_gun' : 'subject_holding_box'
 
     this.painter.drawClippedToTile(pose.clip, () => {
@@ -302,11 +304,11 @@ export class Renderer {
    * on it go down before any of them, so touching ones don't shade each other.
    * @param state - The state drawn
    * @param layer - The layer
-   * @param transition - The step being drawn, ending on the state drawn, or null to draw the state as it is
+   * @param pose - Where the subject is drawn, from subjectPose()
    * @param shares - How far blocked the blocked walls, the ditches, the doors, the exit, the fizzlers, the lasers and the light barriers that are changing are drawn, or null to draw every one as the state says
    * @param opening - How far the portal opening is drawn, or null to draw both open
    */
-  private drawLayer(state: RulesState, layer: DrawLayer, transition: StepTransition | null, shares: BlockedShares | null, opening: OpeningProgress | null): void {
+  private drawLayer(state: RulesState, layer: DrawLayer, pose: SubjectPose, shares: BlockedShares | null, opening: OpeningProgress | null): void {
     this.painter.drawShadowsFirst(() => {
       switch (layer) {
         case 'portals':
@@ -315,7 +317,7 @@ export class Renderer {
           break
 
         case 'subject':
-          this.drawSubject(state, transition)
+          this.drawSubject(state, pose)
           break
       }
 
@@ -350,7 +352,9 @@ export class Renderer {
    * Draws a whole frame, back to front: the backdrop, every layer above it,
    * with the boxes falling into ditches over the ditches and a portal
    * opening part way open, then the glows, the pieces of what a fizzle took
-   * and a missed shot's ripple.
+   * and a missed shot's ripple. Part way along a slide, everything but the
+   * subject's pose is drawn as the state on the last tile it has reached
+   * (shownState), and the state after the step once the slide ends.
    * @param state - The state to draw
    * @param transition - The step being drawn, ending on the state drawn, or null (the default) to draw the state as it is
    * @param time - Now, in milliseconds on the frame clock, for what moves with time alone, or null (the default) to hold it still
@@ -366,14 +370,16 @@ export class Renderer {
       return
     }
 
+    const shown = ((transition === null) || (transition.to !== state)) ? state : shownState(transition)
+    const pose = subjectPose(state, transition, this.painter.blockSize)
     const shares: BlockedShares | null = ((time !== null) && (changes !== null)) ? (kind, index) => changes.blockedAt(kind, index, time) : null
-    const opening: OpeningProgress | null = ((time !== null) && (openings !== null)) ? (color) => openings.progressAt(state, color, time) : null
+    const opening: OpeningProgress | null = ((time !== null) && (openings !== null)) ? (color) => openings.progressAt(shown, color, time) : null
 
-    this.painter.drawLayer(this.backdropOf(state), false)
+    this.painter.drawLayer(this.backdropOf(shown), false)
 
     for (const layer of DRAW_LAYERS) {
       if (!BACKDROP_LAYERS.has(layer)) {
-        this.drawLayer(state, layer, transition, shares, opening)
+        this.drawLayer(shown, layer, pose, shares, opening)
       }
 
       // Down in the pit, over the grate sliding away and under everything standing on the floor
@@ -382,7 +388,7 @@ export class Renderer {
       }
     }
 
-    this.drawGlows(state, glowStrength(time), shares, opening)
+    this.drawGlows(shown, glowStrength(time), shares, opening)
 
     if ((time !== null) && (fizzle !== null)) {
       fizzle.draw(this.painter, time)

@@ -15,11 +15,25 @@ import {hasAmbientLife, Renderer} from '@/game/renderer'
 import {Action, actionOfPress} from '@/game/rules/action'
 import {CompiledChamber} from '@/game/rules/compiled_chamber'
 import {loadChamber} from '@/game/rules/load_chamber'
+import type {PortalColor} from '@/game/rules/portal_color'
 import {runRulesReplay} from '@/game/rules/replay_runner'
 import type {RulesState} from '@/game/rules/rules_state'
 import {startChamber, step, type StepResult} from '@/game/rules/step'
 import {Sound} from '@/game/sound'
-import {StepAnimation} from '@/game/step_animation'
+import {legReach, slideUnits, StepAnimation} from '@/game/step_animation'
+
+/**
+ * Something a slide being drawn still has waiting: what happened on one of
+ * the tiles it entered, played as the subject gets there, or its stop and
+ * settling, played as it ends.
+ */
+type SlideBeat = {
+  readonly time: number // When it plays, in milliseconds on the frame clock
+  readonly before: RulesState // The state drawn until then
+  readonly after: RulesState // The state drawn from then on
+  readonly events: readonly GameEvent[] // What happened, in order
+  readonly joinsBreakUp: boolean // Whether what it breaks up joins what an earlier beat of the same slide broke up, rather than replacing it
+}
 
 /**
  * Plays a chamber on a canvas, driven by the chamber screen. Each frame takes
@@ -37,7 +51,11 @@ import {StepAnimation} from '@/game/step_animation'
  * wall, and a portal shot that misses
  * ripples where it stopped; no press waits for them nor cuts them short. While
  * anything glows, breaks up, falls, changes, opens or ripples, every frame is drawn too. Nothing is drawn over time when the player asks for reduced
- * motion: the glows hold steady. Every press it acts on is logged, so the run
+ * motion: the glows hold steady. A step that slides is drawn along its path,
+ * and what happens on each tile it enters (a fizzle, a portal crossing) waits
+ * until the subject gets there, its stop and settling (buttons, doors, the
+ * completion) until the slide ends; the next press first plays all that is
+ * still waiting, and a load drops it. Every press it acts on is logged, so the run
  * since the last load can be replayed without a browser.
  */
 export class Level {
@@ -96,6 +114,7 @@ export class Level {
   private readonly ripple = new MissRipple() // Where the latest missed portal shot stopped, rippling over a few frames, if anywhere
   private readonly fall = new BoxFall() // The boxes the latest step dropped into ditches, falling over a few frames, if any
   private readonly openings = new PortalOpenings() // The portals shots opened lately, opening over a few frames, if any
+  private slideBeats: SlideBeat[] = [] // What the slide being drawn still has waiting, in order; empty when none is
   private frameTime = 0 // The latest frame's time, in milliseconds on the frame clock; redraws outside a frame use it, so a step being drawn never goes back
   private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time something could be drawn over time
   private ambientDrawn = false // Whether the latest frame was drawn for what moves with time alone, so the frame after it ends draws it still
@@ -148,13 +167,16 @@ export class Level {
     this.stepCount = 0
     this.portalCount = 0
     this.animation.finish()
+    // What a slide of the run being dropped still had waiting goes with it, its completion included
+    this.slideBeats = []
     this.fizzle.clear()
     this.changes.clear()
     this.ripple.clear()
     this.fall.clear()
     this.openings.clear()
 
-    this.playEvents(start.events)
+    this.countPortals(start.events)
+    this.playSounds(start.events)
 
     if (!this.initialized) {
       this.initialized = true
@@ -324,19 +346,37 @@ export class Level {
   }
 
   /**
-   * Plays the sound of each thing that happened, in order, and counts the
-   * portals opened. A portal shot that misses plays the shot sound instead
-   * of the error sound; any other refusal plays the error sound. A portal a
-   * fizzler closes by turning on plays none.
+   * Plays the sound of each thing that happened, in order. A portal shot
+   * that misses plays the shot sound instead of the error sound; any other
+   * refusal plays the error sound. A portal a fizzler closes by turning on
+   * plays none.
    * @param events - What happened
    * @param shot - Whether a portal shot made it happen
    */
-  private playEvents(events: readonly GameEvent[], shot = false): void {
+  private playSounds(events: readonly GameEvent[], shot = false): void {
     for (const event of events) {
       const sound = (shot && (event === GameEvent.REFUSED)) ? Sound.SHOOT : Level.SOUNDS[event]
 
       sound?.play()
+    }
+  }
 
+  /**
+   * Whether what happened can break something up: a fizzle, a portal a
+   * fizzler closed by switching on, or a box destroyed.
+   * @param events - What happened
+   * @returns True when it can
+   */
+  private static breaksUp(events: readonly GameEvent[]): boolean {
+    return events.includes(GameEvent.FIZZLED) || events.includes(GameEvent.PORTAL_FIZZLED) || events.includes(GameEvent.BOX_DESTROYED)
+  }
+
+  /**
+   * Counts the portals opened on a wall.
+   * @param events - What happened
+   */
+  private countPortals(events: readonly GameEvent[]): void {
+    for (const event of events) {
       if ((event === GameEvent.BLUE_PORTAL_OPENED) || (event === GameEvent.ORANGE_PORTAL_OPENED)) {
         this.portalCount++
       }
@@ -355,9 +395,12 @@ export class Level {
   private update(delta: number, input: Input, time: number): boolean {
     let updated = false
 
-    // The clock counts from the frame after the first key, so the wait before it is not included
+    // The clock counts from the frame after the first key, so the wait before it is not included,
+    // and stops at the press that completes the chamber, though a slide onto the exit is drawn before the completion is told
     if (this.clockStarted) {
-      this.elapsedSeconds += delta
+      if ((this.state === null) || !this.state.completed) {
+        this.elapsedSeconds += delta
+      }
     } else if (Level.CLOCK_START_KEYS.some((key) => input.isPressed(key))) {
       this.clockStarted = true
     }
@@ -366,8 +409,10 @@ export class Level {
       const press = input.takePress()
 
       // A press never waits for the step being drawn: it ends it at once,
-      // even when the press itself changes nothing
+      // even when the press itself changes nothing, after playing all that a
+      // slide still has waiting
       if (press !== null) {
+        this.playSlideBeats(time, true)
         this.animation.finish()
         updated = this.updateRules(this.chamber, this.state, press, time)
       }
@@ -399,10 +444,12 @@ export class Level {
 
   /**
    * Takes a step of the rules: records it in the log,
-   * counts the move, starts drawing the step when it changed the state, with
+   * counts the move and the portals opened, starts drawing the step when it changed the state, with
    * each blocked wall, ditch, door, exit, fizzler, laser and light barrier it switched changing, what it took
    * breaking up when it fizzled, each box it destroyed breaking up or falling, a portal it opened opening, and a ripple
    * where a portal shot it refused stopped, and plays the sounds of what happened, a missed portal shot's own.
+   * A step that slid and is drawn over time leaves all but the log and the
+   * counts waiting until the subject gets to each tile, and the end of the slide.
    * @param state - The state before the step
    * @param action - The action stepped
    * @param result - What the rules' step gave for it
@@ -414,6 +461,7 @@ export class Level {
     // A shot tried while carrying a box never leaves, so its refusal is the
     // error sound, with no ripple
     const shot = ((action === Action.BLUE) || (action === Action.ORANGE)) && !state.isCarrying
+    const drawn = (next !== state) && !this.reducedMotion.matches
 
     this.logStep(action, next)
 
@@ -422,40 +470,119 @@ export class Level {
       this.stepCount++
     }
 
+    this.countPortals(result.events)
     this.state = next
 
-    if ((next !== state) && !this.reducedMotion.matches) {
-      this.animation.start(state, next, result.events, time)
-      this.changes.start(state, next, time)
+    if (drawn) {
+      this.animation.start(state, next, result.events, result.path, time)
     }
 
-    // A fizzler breaks up what it takes: both portals and a carried box when the subject is caught in it, a portal facing it when it turns on; and a box lying where something closes or switches on breaks up too
-    if ((result.events.includes(GameEvent.FIZZLED) || result.events.includes(GameEvent.PORTAL_FIZZLED) || result.events.includes(GameEvent.BOX_DESTROYED)) && !this.reducedMotion.matches) {
-      this.fizzle.start(state, next, result.events, time)
-    }
-
-    // Unless it lay on a ditch that opened, into which it falls
-    if (result.events.includes(GameEvent.BOX_DESTROYED) && !this.reducedMotion.matches) {
-      this.fall.start(state, next, result.events, time)
-    }
-
-    // A portal a shot opened grows open on its wall
-    if ((result.events.includes(GameEvent.BLUE_PORTAL_OPENED) || result.events.includes(GameEvent.ORANGE_PORTAL_OPENED)) && !this.reducedMotion.matches) {
-      this.openings.start(next, result.events, time)
-    }
-
-    // Only a shot's refusal ripples: a refused crossing or interact shows nothing
-    if (shot && result.events.includes(GameEvent.REFUSED) && !this.reducedMotion.matches) {
-      this.ripple.start(next, action, time)
-    }
-
-    this.playEvents(result.events, shot)
-
-    if (next.completed) {
-      this.onCompleted?.()
+    if (drawn && (result.path.length > 0)) {
+      this.queueSlideBeats(state, result)
+    } else {
+      this.playStep(state, next, result.events, shot ? action : null, time)
     }
 
     return next !== state
+  }
+
+  /**
+   * Leaves what a slide being drawn did waiting: what happened on each tile
+   * it entered until the subject is half way into that tile, or through the
+   * portal onto it, and its stop and settling until the slide ends.
+   * @param state - The state before the step
+   * @param result - What the rules' step gave for it, a slide
+   */
+  private queueSlideBeats(state: RulesState, result: StepResult): void {
+    const path = result.path
+    let before = state
+    let legEvents = 0
+    let brokeUp = false
+
+    for (const [
+      index,
+      leg,
+    ] of path.entries()) {
+      this.slideBeats.push({
+        time: this.animation.momentAt(legReach(path, index)) ?? this.frameTime,
+        before: before,
+        after: leg.state,
+        events: leg.events,
+        joinsBreakUp: brokeUp,
+      })
+      before = leg.state
+      legEvents += leg.events.length
+      brokeUp = brokeUp || Level.breaksUp(leg.events)
+    }
+
+    this.slideBeats.push({
+      time: this.animation.momentAt(slideUnits(path)) ?? this.frameTime,
+      before: before,
+      after: result.state,
+      events: result.events.slice(legEvents),
+      joinsBreakUp: brokeUp,
+    })
+  }
+
+  /**
+   * Plays what a slide being drawn has waiting, in order, up to a time, or
+   * all of it.
+   * @param time - Now, in milliseconds on the frame clock
+   * @param all - Whether to play all of it, even what is due later
+   */
+  private playSlideBeats(time: number, all = false): void {
+    for (let beat = this.slideBeats.at(0); (beat !== undefined) && (all || (beat.time <= time)); beat = this.slideBeats.at(0)) {
+      this.slideBeats.shift()
+      this.playStep(beat.before, beat.after, beat.events, null, Math.min(beat.time, time), beat.joinsBreakUp)
+    }
+  }
+
+  /**
+   * Shows what happened from one state to the next, all of a step or a part
+   * of a slide: each blocked wall, ditch, door, exit, fizzler, laser and light
+   * barrier switched starts changing, what a fizzle took breaks up, each box
+   * destroyed breaks up or falls, a portal opened opens and a refused portal
+   * shot ripples, all only when motion is allowed; then the sounds play, and
+   * the completion is told when the chamber is completed.
+   * @param before - The state before
+   * @param after - The state after
+   * @param events - What happened, in order
+   * @param shot - The colour of the portal shot that made it happen, or null for anything else
+   * @param time - When it happened, in milliseconds on the frame clock
+   * @param joinsBreakUp - Whether what it breaks up joins what an earlier part of the same step broke up, rather than replacing it
+   */
+  private playStep(before: RulesState, after: RulesState, events: readonly GameEvent[], shot: PortalColor | null, time: number, joinsBreakUp = false): void {
+    if (!this.reducedMotion.matches) {
+      if (after !== before) {
+        this.changes.start(before, after, time)
+      }
+
+      // A fizzler breaks up what it takes: both portals and a carried box when the subject is caught in it, a portal facing it when it turns on; and a box lying where something closes or switches on breaks up too
+      if (Level.breaksUp(events)) {
+        this.fizzle.start(before, after, events, time, joinsBreakUp)
+      }
+
+      // Unless it lay on a ditch that opened, into which it falls
+      if (events.includes(GameEvent.BOX_DESTROYED)) {
+        this.fall.start(before, after, events, time)
+      }
+
+      // A portal a shot opened grows open on its wall
+      if (events.includes(GameEvent.BLUE_PORTAL_OPENED) || events.includes(GameEvent.ORANGE_PORTAL_OPENED)) {
+        this.openings.start(after, events, time)
+      }
+
+      // Only a shot's refusal ripples: a refused crossing or interact shows nothing
+      if ((shot !== null) && events.includes(GameEvent.REFUSED)) {
+        this.ripple.start(after, shot, time)
+      }
+    }
+
+    this.playSounds(events, shot !== null)
+
+    if (after.completed) {
+      this.onCompleted?.()
+    }
   }
 
   /**
@@ -502,6 +629,9 @@ export class Level {
     // through, or its end once it is over or a press ended it
     const wasAnimating = this.animation.running
     let stateUpdated = false
+
+    // What a slide being drawn has waiting plays as the subject gets there, paused or not
+    this.playSlideBeats(time)
 
     if (!this.isPaused) {
       stateUpdated = this.update(delta, this.input, time)

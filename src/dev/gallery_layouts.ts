@@ -95,6 +95,7 @@ function beam(x: number, y: number, direction: 'H' | 'V', on: boolean): BeamData
  * a blocked wall that always refuses portals, the other door, the fizzler and
  * a blocked wall that refuses them only while on in the inner wall, and two
  * light barriers in the bottom right corner;
+ * a strip of slide floor runs along the top left, under the exit;
  * arrows point all four ways, two lasers cross, one box lies on a button,
  * another on the floor, and a third beside the subject, on its left. The
  * switch links the fizzler, never used, so an antline runs between them,
@@ -160,6 +161,14 @@ function specimenData(on: boolean): ChamberData {
         yTo: 6,
       },
       blockable(6, 3, on),
+    ],
+    slideFloors: [
+      {
+        xFrom: 1,
+        xTo: 3,
+        yFrom: 6,
+        yTo: 6,
+      },
     ],
     doors: [
       blockable(3, 0, on),

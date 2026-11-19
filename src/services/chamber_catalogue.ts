@@ -51,8 +51,8 @@ export const CHAMBERS: ChamberEntry[] = CHAMBER_LISTINGS.map((listing, index) =>
 }))
 
 // Development only: the playground, a chamber outside the list for trying every element, each
-// direction from the start switched by its own button. Production builds have none, and the
-// comparison lets them leave the file out
+// direction from the start switched by its own button, and a slide room off the left arm.
+// Production builds have none, and the comparison lets them leave the file out
 export const PLAYGROUND: ChamberData | undefined = import.meta.env.DEV === true ? playgroundData : undefined
 
 /**
