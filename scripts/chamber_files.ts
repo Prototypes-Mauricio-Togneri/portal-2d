@@ -5,6 +5,8 @@ import chamber2 from '@/chambers/chamber_2.json'
 import chamber3 from '@/chambers/chamber_3.json'
 import chamber4 from '@/chambers/chamber_4.json'
 import chamber5 from '@/chambers/chamber_5.json'
+import chamber6 from '@/chambers/chamber_6.json'
+import chamber7 from '@/chambers/chamber_7.json'
 import playground from '@/dev/playground.json'
 import type {ChamberData} from '@/game/chamber_data'
 
@@ -20,6 +22,8 @@ export const CHAMBER_FILES: Readonly<Record<string, ChamberData>> = {
   'chamber_3.json': chamber3,
   'chamber_4.json': chamber4,
   'chamber_5.json': chamber5,
+  'chamber_6.json': chamber6,
+  'chamber_7.json': chamber7,
 }
 
 /** The playground (src/dev/playground.json), the development-only chamber for trying every element: checked, settled and walked like a chamber file, but it has no recorded solution and the solver leaves it out */

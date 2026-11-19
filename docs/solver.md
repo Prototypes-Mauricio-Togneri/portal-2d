@@ -58,6 +58,8 @@ Size of the problem, as the chambers are now (`npm run solve`, 2026-11-19). The 
 | 4 | 3 | 23×17 | 241 | 167 | 5 | 2 | 4 | ~10^13.7 | 49 |
 | 5 | 4 | 13×9 | 65 | 61 | 0 | 0 | 0 | ~10^6.0 | 21 |
 | 6 | 5 | 9×13 | 40 | 36 | 0 | 0 | 0 | ~10^5.3 | 20 |
+| 7 | 6 | 10×7 | 27 | 28 | 1 | 0 | 0 | ~10^5.3 | 18 |
+| 8 | 7 | 10×9 | 36 | 44 | 2 | 1 | 2 | ~10^7.6 | 29 |
 
 The searches below ran on 2026-11-08 and are a record, not today's figures. The chambers' barriers have since become blocked walls; their floor tiles then still counted as tiles (262, 189 and 268, with a key of 52–53 bits), but nothing could stand on them, so that only renumbered the states. The rules have changed too (shooting takes free hands, and a tile holds one box, both 2026-11-15; the walls beside a door or the exit, and those behind a laser's or a light barrier's end plate, take no portal, which also left fewer wall sides to number, and a fizzler switching on closes a portal facing it, both 2026-11-16), which changes the states a chamber can reach.
 

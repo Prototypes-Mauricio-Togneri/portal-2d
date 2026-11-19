@@ -37,7 +37,7 @@ Only Restart chamber gets the player out (guideline 15).
 ### The puzzle is bypassed
 
 - **A box delivered by its start tile:** a box sent back lands on its start tile wherever that is, so a start beyond a barrier delivers it past the barrier, and a start on a button presses the button from anywhere (guideline 6).
-- **A portal route the design didn't intend:** shots fly over lasers, ditches, boxes and arrows, so a portal can skip a laser, a ditch or a one-way passage (guidelines 14 and 29).
+- **A portal route the design didn't intend:** shots fly over lasers, ditches, boxes and arrows, so a portal can skip a laser, a ditch or a one-way passage (guidelines 14 and 31).
 - **A pass through a blocked element:** a closed door, an open ditch, or a laser or a light barrier that is on, switched under the subject, lets it walk out the far side without holding the button (guidelines 1, 2 and 22).
 
 The rules already keep out the rest, so a design never needs to guard against them: the subject coming out of a portal onto a tile it couldn't walk onto, into a doorway or onto the exit; a box lying in a closed door, over an open ditch, or in a laser, a light barrier or a fizzler that is on; a box on the exit or a switch, two boxes on one tile, or the subject on a box, but for a box sent back to its start under it; a carried box inside a fizzler that is on; and the subject leaving the chamber. A layout that starts in a broken state is rejected by the chamber check.
@@ -64,7 +64,7 @@ Arrows are the exception: an arrow a link turns may turn under the subject. The 
 8. A box is put down only on the tile the subject faces; when that tile can't take it, the key is refused. Holding the turn key faces the subject any way without moving, so a box can go on any tile next to one the subject can stand on, if that tile can take it; only an arrow tile, where the subject can face nothing but the arrow's way, limits which way it faces; on an arrow a link turns, that way changes as it turns. Don't count on the way the subject walked in to keep a box off a tile.
 9. A box bars its tile: a box put down, or sent back, in a one-tile passage, a doorway or on a button closes that tile to the subject until it is picked up from beside it. Make sure a tile beside it, from which the subject can face it and pick it up, stays reachable; on an arrow tile the subject faces only the arrow's way, which on an arrow a link turns changes as it turns.
 10. Send a box back with a switch, not a button: a button sends it back when pressed, but releasing it does nothing (the chamber check warns).
-11. Keep the chamber within the solver's state key, 64 bits: `npm run solve` prints each chamber's width (today's use 20 to 53 bits). Each box adds about 8 bits, and each element a link reaches 1.
+11. Keep the chamber within the solver's state key, 64 bits: `npm run solve` prints each chamber's width (today's use 18 to 53 bits). Each box adds about 8 bits, and each element a link reaches 1.
 
 ## Portals
 
@@ -92,12 +92,14 @@ Arrows are the exception: an arrow a link turns may turn under the subject. The 
 ## Turnable arrows
 
 26. A turntable shows that an arrow turns, not which way it will point. Let the player see it turn, with its button or switch in view or an antline to it, before a route depends on its turned way.
+27. An arrow is entered only moving the way it points now, so a fixed arrow pointing into a turnable one freezes the subject on it once the turnable one turns away (guideline 16). Reach a turnable arrow from plain floor, making it the gate of a run of arrows rather than its last arrow.
+28. A turnable arrow whose button lies right behind it, the way it turns to, can be entered only from that button, and only by the subject standing there; stepping off the button turns the arrow back, so it always sends the subject on its own way. A box on that button holds the arrow turned but takes the one tile it is entered from, so the box seals it rather than opening it.
 
 ## Antlines
 
-27. Draw antlines in the tutorial and the early chambers, from each button or switch to what it links, so the player learns how links work; later chambers can leave them out.
+29. Draw antlines in the tutorial and the early chambers, from each button or switch to what it links, so the player learns how links work; later chambers can leave them out.
 
 ## Checking a chamber
 
-28. Record its solution by playing it through (Download solution in the completion dialog, in `npm run dev`), and record it again after any change to the chamber but its antlines.
-29. Run `npm run chamber:check` and `npm run replay:check`. `npm run solve -- --par src/chambers/chamber_N.json --max-states=40000000` finds the fewest moves and the fewest portals, which shows any shortcut the design didn't intend.
+30. Record its solution by playing it through (Download solution in the completion dialog, in `npm run dev`), and record it again after any change to the chamber but its antlines.
+31. Run `npm run chamber:check` and `npm run replay:check`. `npm run solve -- --par src/chambers/chamber_N.json --max-states=40000000` finds the fewest moves and the fewest portals, which shows any shortcut the design didn't intend. To check that no route skips an element, solve a copy of the chamber with the links to it removed, using `--solvable`: it should come back unsolvable.

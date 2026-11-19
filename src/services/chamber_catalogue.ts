@@ -7,6 +7,8 @@ import chamberTwoData from '@/chambers/chamber_2.json'
 import chamberThreeData from '@/chambers/chamber_3.json'
 import chamberFourData from '@/chambers/chamber_4.json'
 import chamberFiveData from '@/chambers/chamber_5.json'
+import chamberSixData from '@/chambers/chamber_6.json'
+import chamberSevenData from '@/chambers/chamber_7.json'
 import playgroundData from '@/dev/playground.json'
 import type {ChamberData} from '@/game/chamber_data'
 
@@ -50,6 +52,14 @@ const CHAMBER_LISTINGS: ChamberListing[] = [
   {
     id: 5,
     data: chamberFiveData,
+  },
+  {
+    id: 6,
+    data: chamberSixData,
+  },
+  {
+    id: 7,
+    data: chamberSevenData,
   },
 ]
 

@@ -1,0 +1,150 @@
+{
+    "version": 2,
+    "size": {
+        "width": 10,
+        "height": 7
+    },
+    "subject": {
+        "x": 2,
+        "y": 2,
+        "direction": "UP"
+    },
+    "exit": {
+        "x": 8,
+        "y": 6,
+        "blocked": false
+    },
+    "walls": [
+        {
+            "xFrom": 0,
+            "xTo": 9,
+            "yFrom": 0,
+            "yTo": 0
+        },
+        {
+            "x": 0,
+            "y": 1
+        },
+        {
+            "xFrom": 5,
+            "xTo": 9,
+            "yFrom": 1,
+            "yTo": 1
+        },
+        {
+            "x": 0,
+            "y": 2
+        },
+        {
+            "xFrom": 5,
+            "xTo": 9,
+            "yFrom": 2,
+            "yTo": 2
+        },
+        {
+            "x": 0,
+            "y": 3
+        },
+        {
+            "x": 0,
+            "y": 4
+        },
+        {
+            "xFrom": 5,
+            "xTo": 7,
+            "yFrom": 4,
+            "yTo": 4
+        },
+        {
+            "x": 9,
+            "y": 4
+        },
+        {
+            "x": 0,
+            "y": 5
+        },
+        {
+            "xFrom": 5,
+            "xTo": 7,
+            "yFrom": 5,
+            "yTo": 5
+        },
+        {
+            "x": 9,
+            "y": 5
+        },
+        {
+            "xFrom": 0,
+            "xTo": 7,
+            "yFrom": 6,
+            "yTo": 6
+        },
+        {
+            "x": 9,
+            "y": 6
+        }
+    ],
+    "blockedWalls": [
+        {
+            "x": 9,
+            "y": 3
+        }
+    ],
+    "switches": [
+        {
+            "x": 3,
+            "y": 4,
+            "links": [
+                1
+            ]
+        }
+    ],
+    "arrows": [
+        {
+            "x": 5,
+            "y": 3,
+            "direction": "DOWN",
+            "id": 1,
+            "turnedDirection": "RIGHT"
+        },
+        {
+            "x": 6,
+            "y": 3,
+            "direction": "RIGHT"
+        },
+        {
+            "x": 7,
+            "y": 3,
+            "direction": "RIGHT"
+        },
+        {
+            "x": 8,
+            "y": 4,
+            "direction": "UP"
+        },
+        {
+            "x": 8,
+            "y": 5,
+            "direction": "UP"
+        }
+    ],
+    "antlines": [
+        {
+            "link": 1,
+            "path": [
+                {
+                    "x": 3,
+                    "y": 4
+                },
+                {
+                    "x": 3,
+                    "y": 3
+                },
+                {
+                    "x": 5,
+                    "y": 3
+                }
+            ]
+        }
+    ]
+}
