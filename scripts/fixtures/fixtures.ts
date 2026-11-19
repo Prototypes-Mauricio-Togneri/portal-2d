@@ -20,15 +20,23 @@ import portalOntoBox from '@scripts/fixtures/portal_onto_box.json'
 import portalOntoDitch from '@scripts/fixtures/portal_onto_ditch.json'
 import portalOntoFizzler from '@scripts/fixtures/portal_onto_fizzler.json'
 import portalOntoLaser from '@scripts/fixtures/portal_onto_laser.json'
+import slideArrowsExit from '@scripts/fixtures/slide_arrows_exit.json'
+import slideBlockers from '@scripts/fixtures/slide_blockers.json'
+import slideButtons from '@scripts/fixtures/slide_buttons.json'
+import slideCrossingBlocked from '@scripts/fixtures/slide_crossing_blocked.json'
+import slideFizzler from '@scripts/fixtures/slide_fizzler.json'
+import slideLane from '@scripts/fixtures/slide_lane.json'
+import slideLoop from '@scripts/fixtures/slide_loop.json'
+import slidePortals from '@scripts/fixtures/slide_portals.json'
 import twoBoxesFizzler from '@scripts/fixtures/two_boxes_fizzler.json'
 import twoButtonsOneDoor from '@scripts/fixtures/two_buttons_one_door.json'
 
 // Short replays on tiny chambers (the JSON files next to this one): each pins
 // how the rules play a change from the original rules (docs/elements.md,
 // "Changes from the original rules") or an element the original game didn't
-// have (the light barrier, the blocked wall that a link switches). The replay
-// check runs them. The chambers are read without the layout checks, so the one
-// open at the edge still plays
+// have (the light barrier, the blocked wall that a link switches, the slide
+// floor). The replay check runs them. The chambers are read without the layout
+// checks, so the one open at the edge still plays
 
 /**
  * A replay pinning one behaviour of the rules.
@@ -705,6 +713,355 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 1,
       portals: 0,
       finalHash: 'ed3e6ba3',
+    },
+  },
+  {
+    name: 'slide_stops_at_wall',
+    behaviour: 'Stepping onto slide floor keeps the subject moving the same way, tile by tile, until a wall stops it on the last slide floor tile, all in one step that counts as one move.',
+    chamber: slideLane,
+    actions: ['right'],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: 'df4f72c1',
+    },
+  },
+  {
+    name: 'slide_stops_on_plain_floor',
+    behaviour: 'A slide that runs off the slide floor stops on the first plain floor tile it enters.',
+    chamber: slideLane,
+    actions: [
+      'up',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: '378464c6',
+    },
+  },
+  {
+    name: 'slide_floor_to_plain_floor_steps',
+    behaviour: 'At rest on slide floor, a move onto plain floor steps one tile and stops there, though plain floor lies beyond.',
+    chamber: slideLane,
+    actions: [
+      'right',
+      'up',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: 'ef4c0399',
+    },
+  },
+  {
+    name: 'slide_floor_to_slide_floor_slides',
+    behaviour: 'At rest on slide floor, a move onto the next slide floor tile slides again, here back along the whole lane onto the plain floor at its end.',
+    chamber: slideLane,
+    actions: [
+      'right',
+      'left',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: 'af728a9b',
+    },
+  },
+  {
+    name: 'slide_floor_turn_stays',
+    behaviour: 'Turning in place on slide floor only turns the subject: it doesn\'t slide.',
+    chamber: slideLane,
+    actions: [
+      'right',
+      'turnLeft',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: 'e70b37d8',
+    },
+  },
+  {
+    name: 'slide_carries_box',
+    behaviour: 'A carried box slides with the subject to the tile where the slide stops, and from there it is put down on slide floor as on plain floor.',
+    chamber: slideLane,
+    actions: [
+      'up',
+      'interact',
+      'right',
+      'turnDown',
+      'interact',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: '1f302d65',
+    },
+  },
+  {
+    name: 'slide_through_portal_slides_on',
+    behaviour: 'A slide into a portal comes out of the other one and, coming out onto slide floor, slides on the way it came out, stopping on the first plain floor tile.',
+    chamber: slidePortals,
+    actions: [
+      'blue',
+      'turnUp',
+      'orange',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 2,
+      finalHash: '8e19bd54',
+    },
+  },
+  {
+    name: 'portal_onto_slide_floor_slides',
+    behaviour: 'Walking from plain floor into a portal that comes out onto slide floor slides on from there, the way the subject came out.',
+    chamber: slidePortals,
+    actions: [
+      'turnLeft',
+      'blue',
+      'turnUp',
+      'orange',
+      'left',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 2,
+      finalHash: 'fc8d324b',
+    },
+  },
+  {
+    name: 'slide_through_portal_onto_plain_floor_stops',
+    behaviour: 'A slide into a portal that comes out onto plain floor stops on that tile.',
+    chamber: slidePortals,
+    actions: [
+      'blue',
+      'up',
+      'turnRight',
+      'orange',
+      'down',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 3,
+      portals: 2,
+      finalHash: '6d6c50b5',
+    },
+  },
+  {
+    name: 'slide_back_to_start_no_move',
+    behaviour: 'A slide that a portal brings back onto the tile it started from counts no move: only the facing changes.',
+    chamber: slidePortals,
+    actions: [
+      'turnLeft',
+      'blue',
+      'turnRight',
+      'orange',
+      'turnUp',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 2,
+      finalHash: 'e6455d93',
+    },
+  },
+  {
+    name: 'slide_crossing_blocked_stops_silently',
+    behaviour: 'Mid-slide, a portal that would bring the subject out onto a tile it can\'t enter (here an open ditch) stops the slide in front of that portal, silently, where a crossing tried from rest would be refused.',
+    chamber: slideCrossingBlocked,
+    actions: [
+      'blue',
+      'turnUp',
+      'orange',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 2,
+      finalHash: '11eb7c0e',
+    },
+  },
+  {
+    name: 'slide_loop_refused',
+    behaviour: 'A slide that would enter the same tile the same way twice, looping through two portals, is refused as a whole: the subject stays where it was, only turned the way pressed, and no move counts.',
+    chamber: slideLoop,
+    actions: [
+      'turnLeft',
+      'blue',
+      'turnRight',
+      'orange',
+      'turnUp',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 2,
+      finalHash: '1809a085',
+    },
+  },
+  {
+    name: 'slide_through_fizzler',
+    behaviour: 'A fizzler that is on, passed mid-slide, closes both portals and sends the carried box back to its start, and the slide goes on past it.',
+    chamber: slideFizzler,
+    actions: [
+      'turnLeft',
+      'blue',
+      'turnDown',
+      'orange',
+      'turnUp',
+      'interact',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 2,
+      finalHash: 'b94cf858',
+    },
+  },
+  {
+    name: 'slide_stops_before_wrong_way_arrow',
+    behaviour: 'A slide stops in front of an arrow pointing another way, as a step would.',
+    chamber: slideArrowsExit,
+    actions: ['right'],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: '736c8686',
+    },
+  },
+  {
+    name: 'slide_stops_on_arrow',
+    behaviour: 'A slide enters an arrow pointing its way and stops on it, though slide floor lies beyond, since an arrow isn\'t slide floor.',
+    chamber: slideArrowsExit,
+    actions: [
+      'up',
+      'up',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 3,
+      portals: 0,
+      finalHash: '60f666bb',
+    },
+  },
+  {
+    name: 'slide_onto_open_exit_completes',
+    behaviour: 'A slide that enters the open exit stops there, though slide floor lies beyond, and completes the chamber.',
+    chamber: slideArrowsExit,
+    actions: [
+      'up',
+      'up',
+      'up',
+      'up',
+      'right',
+    ],
+    expected: {
+      completed: true,
+      moves: 5,
+      portals: 0,
+      finalHash: '43cb3598',
+    },
+  },
+  {
+    name: 'slide_stops_before_open_ditch',
+    behaviour: 'A slide stops in front of an open ditch.',
+    chamber: slideBlockers,
+    actions: ['left'],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: '4060a23a',
+    },
+  },
+  {
+    name: 'slide_stops_before_laser',
+    behaviour: 'A slide stops in front of a laser that is on.',
+    chamber: slideBlockers,
+    actions: ['right'],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: '17b1da87',
+    },
+  },
+  {
+    name: 'slide_stops_before_light_barrier',
+    behaviour: 'A slide stops in front of a light barrier that is on.',
+    chamber: slideBlockers,
+    actions: [
+      'up',
+      'up',
+      'left',
+    ],
+    expected: {
+      completed: false,
+      moves: 3,
+      portals: 0,
+      finalHash: '3a893384',
+    },
+  },
+  {
+    name: 'slide_stops_before_box',
+    behaviour: 'A slide stops in front of a resting box, as a step does.',
+    chamber: slideBlockers,
+    actions: [
+      'up',
+      'up',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 3,
+      portals: 0,
+      finalHash: '47bc9ac1',
+    },
+  },
+  {
+    name: 'slide_passes_button',
+    behaviour: 'Sliding over a button doesn\'t press it, so neither of its doors changes: the closed one stays closed, and the open one, which a press and a release on the way would have closed, stays open.',
+    chamber: slideButtons,
+    actions: ['right'],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: '6ba2cb65',
+    },
+  },
+  {
+    name: 'slide_stops_on_button',
+    behaviour: 'A slide that stops on a button presses it, and the door it opens opens in the same step.',
+    chamber: slideButtons,
+    actions: [
+      'up',
+      'up',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 3,
+      portals: 0,
+      finalHash: 'eef8f80b',
     },
   },
 ]
