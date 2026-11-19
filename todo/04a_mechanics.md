@@ -171,7 +171,7 @@ Filled in from the real results during the mechanic phases and Phase 4:
 
 | # | Mechanic | Sounds needed | Colours |
 |---|---|---|---|
-| 1 | Slide floors | Slide start, slide stop | Slide floor |
+| 1 | Slide floors | Slide start, slide stop: none yet, both events silent (decision 33) | The floor a shade cooler, rgb(232, 235, 242), crossed by lines of rgb(168, 173, 186) |
 | 2 | Rotating arrows | Arrow turn | Turned-arrow notch |
 | 3 | Live lasers | Beam hum, receiver on/off | Beam, emitter, receiver, mirror box |
 
@@ -186,7 +186,7 @@ Filled in from the real results during the mechanic phases and Phase 4:
 
 ### Phase 1 — Slide floors
 
-**Where this stands (2026-11-19).** Planned in detail below, in one session that will not be around to explain it, so this section is meant to be enough on its own. The author chose decisions 21–34; 26–34 answered the proposals planning left open, and the spec below holds them (plan step 1 is done). Plan steps 2–8 are built: the sprite, the element and its chamber file field, the slide rule with its path, the fixtures, the drawing and motion, the chamber sign, and the playground's slide room and the gallery's strip. Steps 9–11 are not started. The mockup (decision 21's link; read it with the Artifact tool's `read` action) shows the three candidate tiles and a chamber playing the spec below with the game's own sprites. Its few lines of rules script were written for the page and are not code to copy into the game.
+**Where this stands (2026-11-19).** Planned in detail below, in one session that will not be around to explain it, so this section is meant to be enough on its own. The author chose decisions 21–34; 26–34 answered the proposals planning left open, and the spec below holds them (plan step 1 is done). Plan steps 1–11 are done (R2, R3, R4 and R6 ticked; R1's box waits for the interaction table, decision 30, and R5's for R7): the sprite, the element and its chamber file field, the slide rule with its path, the fixtures, the drawing and motion, the chamber sign, the playground's slide room and the gallery's strip, and the docs. Next is R7, once the author has tried slide floors in the playground (decision 25). The mockup (decision 21's link; read it with the Artifact tool's `read` action) shows the three candidate tiles and a chamber playing the spec below with the game's own sprites. Its few lines of rules script were written for the page and are not code to copy into the game.
 
 #### Spec
 
@@ -321,8 +321,8 @@ Steps in order; each says what it changes and how it is checked. After every ste
    - `src/dev/playground.json`: give the slide floor a place (AGENTS.md asks it of every new element), for example a slide room carved out of a solid corner and reached from one arm: one rectangle of slide floor, walls that take portals at its far ends, a fizzler across it, a button on slide floor and a box. Update its description in AGENTS.md (Chambers) and in `chamber_catalogue.ts`'s comment.
    - `src/dev/gallery_layouts.ts`: slide floor on (1,6) to (3,6) of the specimen chamber, and the specimen's description in `sprite_gallery.html`.
    - Checked by `npm run chamber:check`, `npm run smoke:engine` and `npm run random:walk`, and both pages in the browser.
-9. **R5, the solver.** `reactsToSubject: true` (step 3) makes the solver's walks end on slide floor; `docs/solver.md` lists the event tiles, and says a new mechanic should declare its own. Checked by `npm run solver:check` passing. It only runs on campaign chambers, so it meets no slide floor until R7: tick R5 then.
-10. **R6, the docs.**
+9. **R5, the solver.** Done 2026-11-19: `docs/solver.md` names slide floors among the event tiles, and `npm run solver:check` passes. `reactsToSubject: true` (step 3) makes the solver's walks end on slide floor; `docs/solver.md` lists the event tiles, and says a new mechanic should declare its own. Checked by `npm run solver:check` passing. It only runs on campaign chambers, so it meets no slide floor until R7: tick R5 then.
+10. **R6, the docs.** Done 2026-11-19, each part read against the code.
     - `docs/elements.md`: the element table row; the `slideFloors` field under "Chamber format"; the slide under "Move or turn" and "Crossing a portal", and its interactions (fizzlers, buttons, arrows, boxes, the exit, portals, loops); the new problems under "What the validator rejects" and the sharing rule there; "Adding an element", step 1 (`continuesMovement`) and step 7 (the floor layer is now drawn into the backdrop, under the antlines).
     - `docs/game_summary.md`: the tiles table, "How each tile looks" (next to the floor's "very light grey"), and the line that a step glides the subject one tile.
     - `docs/level_design.md`: slide pitfalls under "States to avoid" and "Dead ends" (a slide that ends somewhere the subject can never leave; a loop the player can set up only to be refused).
@@ -330,7 +330,7 @@ Steps in order; each says what it changes and how it is checked. After every ste
     - The comments that say a move is one tile (see "Moves" above, and `draw_layer.ts`, `miss_ripple.ts`).
     - The sounds and colours table above: the slide floor's colours (face 232, 235, 242; lines 168, 173, 186), and no sounds yet (decision 33).
     - Checked by reading each against the code.
-11. **Wrap-up.** `npm run lint:fix`, `npm run build`, then `npm run verify` (R5 asks for it), then the `delta-review` skill on every changed file. Tick only the R-steps finished: R2, R3, R4 and R6; R1 once the interaction table holds the slide floor's row (decision 30); R5 after R7.
+11. **Wrap-up.** Done 2026-11-19: `npm run verify` passes, after recording a new bundle baseline the author accepted (the JS had grown 11.1% since the baseline of 2026-11-14, about 5 KB of it from this phase). The code was reviewed turn by turn as it was built; the last turn changed only docs and comments, so it had no review of its own. `npm run lint:fix`, `npm run build`, then `npm run verify` (R5 asks for it), then the `delta-review` skill on every changed file. Tick only the R-steps finished: R2, R3, R4 and R6; R1 once the interaction table holds the slide floor's row (decision 30); R5 after R7.
 
 #### After R1–R6
 
@@ -339,11 +339,11 @@ R7, once the author has tried slide floors in the playground (decision 25): a te
 Chambers. Teach: a slide-floor room where stepping on slides you to the far wall, and the exit can only be reached by placing a portal so the slide comes out facing it. Test: two slides joined by portals, where the order you place them in matters. The twist and combine ideas are stage 04b's.
 
 - [ ] **R1 Spec.** Finalise the spec above and fill the slide floor's row. The spec is final (plan step 1, decisions 26–34); the row waits for the interaction table (decision 30).
-- [ ] **R2 Element and format.** The slide floor element file and its optional list in format v2. Plan step 3.
+- [x] **R2 Element and format.** The slide floor element file and its optional list in format v2. Plan step 3.
 - [x] **R3 Drawing and sounds.** A pale floor tile with thin diagonal lines (decision 21); slide start and stop events, silent for now (decision 33). Plan steps 2, 6 and 7.
 - [x] **R4 Fixtures.** Slide to a wall, onto a normal tile, through a portal onto a slide and onto a normal tile, a fizzler mid-slide, an arrow mid-slide, the exit mid-slide, a refused loop, and a button passed over without being pressed, plus the other cases in plan step 5.
 - [ ] **R5 Solver check.** A slide carries the subject past the next tile, where the solver's walks expect it to stop, unless the slide floor counts as an element that reacts to the subject (`reactsToSubject` in its definition): walks then end there, which likely keeps them right. `npm run verify` passes with the slide chambers in (decision 18). Plan step 9; ticked after R7.
-- [ ] **R6 Docs.** The slide floor in `docs/elements.md`. Plan step 10.
+- [x] **R6 Docs.** The slide floor in `docs/elements.md`. Plan step 10.
 - [ ] **R7 Chambers.** Teach and test chambers, solutions, a cold playtest. After R1–R6 (decision 25).
 
 ### Phase 2 — Rotating arrows

@@ -122,7 +122,7 @@ export type AntlineData = {
  * no new format version.
  */
 export type ParData = {
-  readonly moves?: number // Fewest tiles stepped onto
+  readonly moves?: number // Fewest steps that put the subject on another tile
   readonly portals?: number // Fewest portals opened on a wall
 }
 

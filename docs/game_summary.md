@@ -17,7 +17,7 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 ## The subject
 
 - Stands on one tile and always faces one of the four directions. The way it faces matters, because portals are shot that way.
-- Moving in a direction first turns it that way, then steps onto the next tile if it can enter it. Walking into something it can't enter only turns it.
+- Moving in a direction first turns it that way, then steps onto the next tile if it can enter it, and keeps going while that tile is a slide floor (see [Slide floors](#slide-floors)). Walking into something it can't enter only turns it.
 - Can carry one box at a time. It picks up the box on the tile it faces, if it could step onto that tile but for the box (not through an arrow pointing another way or something that blocks walking, and not from a fizzler that is on). It puts a box down only on the tile it faces, if it could step onto that tile and no box, exit, switch or fizzler that is on is there; otherwise the error sound plays. The box goes everywhere with it, through portals too. While carrying it, it can't shoot portals: trying plays the error sound.
 
 ## Portals
@@ -34,18 +34,19 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 | #   | Tile          | What it does                                                                                                                                    | Can the subject walk on it?                          | Does a shot pass through?                                       | Can a button or switch change it? |
 | --- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------- | --------------------------------- |
 | 1   | Floor         | Empty tile, with nothing in the file                                                                                                            | Yes                                                  | Yes                                                             | No                                |
-| 2   | Wall          | Holds portals                                                                                                                                   | No (only by crossing a portal on it)                 | Stops the shot, which opens a portal there                      | No                                |
-| 3   | Blocked wall  | Refuses portals while blocked; a button or switch can unblock a one-tile one so it takes portals, and blocking it again closes any portal on it | No (only by crossing a portal on it while unblocked) | Stops the shot, which opens a portal there only while unblocked | Yes, a one-tile one               |
-| 4   | Light barrier | A field of light, on or off, horizontal or vertical; stands only on a floor tile                                                                | Only when off                                        | Only when off                                                   | Yes                               |
-| 5   | Ditch         | A hole, open or bridged                                                                                                                         | Only when bridged                                    | Yes                                                             | Yes                               |
-| 6   | Door          | Closed or open                                                                                                                                  | Only when open                                       | Only when open                                                  | Yes                               |
-| 7   | Exit          | Reaching it completes the chamber; closed or open                                                                                               | Only when open                                       | Only when open                                                  | Yes                               |
-| 8   | Fizzler       | When on, closes both portals and sends a carried box back to its start                                                                          | Yes                                                  | Only when off                                                   | Yes                               |
-| 9   | Laser         | Horizontal or vertical; two can cross on one tile                                                                                               | Only when off                                        | Yes                                                             | Yes                               |
-| 10  | Box           | Can be carried; holds a button down; one per tile                                                                                               | No (it is picked up from beside it)                  | Yes                                                             | Yes (sent back to its start)      |
-| 11  | Button        | Held down while the subject or a box is on it; its linked elements change while it's held                                                       | Yes                                                  | Yes                                                             | No                                |
-| 12  | Switch        | Interact to use it (not while carrying a box); it changes its linked elements, and using it again repeats that                                  | Yes                                                  | Yes                                                             | No                                |
-| 13  | Arrow         | One-way: the subject can enter only in the arrow's direction, and can only move or turn that way while on it                                    | Only in its direction                                | Yes                                                             | No                                |
+| 2   | Slide floor   | Keeps the subject moving: entering it, the subject goes on the same way, tile by tile, until it can't (see [Slide floors](#slide-floors))       | Yes, and slides on                                   | Yes                                                             | No                                |
+| 3   | Wall          | Holds portals                                                                                                                                   | No (only by crossing a portal on it)                 | Stops the shot, which opens a portal there                      | No                                |
+| 4   | Blocked wall  | Refuses portals while blocked; a button or switch can unblock a one-tile one so it takes portals, and blocking it again closes any portal on it | No (only by crossing a portal on it while unblocked) | Stops the shot, which opens a portal there only while unblocked | Yes, a one-tile one               |
+| 5   | Light barrier | A field of light, on or off, horizontal or vertical; stands only on a floor tile                                                                | Only when off                                        | Only when off                                                   | Yes                               |
+| 6   | Ditch         | A hole, open or bridged                                                                                                                         | Only when bridged                                    | Yes                                                             | Yes                               |
+| 7   | Door          | Closed or open                                                                                                                                  | Only when open                                       | Only when open                                                  | Yes                               |
+| 8   | Exit          | Reaching it completes the chamber; closed or open                                                                                               | Only when open                                       | Only when open                                                  | Yes                               |
+| 9   | Fizzler       | When on, closes both portals and sends a carried box back to its start                                                                          | Yes                                                  | Only when off                                                   | Yes                               |
+| 10  | Laser         | Horizontal or vertical; two can cross on one tile                                                                                               | Only when off                                        | Yes                                                             | Yes                               |
+| 11  | Box           | Can be carried; holds a button down; one per tile                                                                                               | No (it is picked up from beside it)                  | Yes                                                             | Yes (sent back to its start)      |
+| 12  | Button        | Held down while the subject or a box is on it; its linked elements change while it's held                                                       | Yes                                                  | Yes                                                             | No                                |
+| 13  | Switch        | Interact to use it (not while carrying a box); it changes its linked elements, and using it again repeats that                                  | Yes                                                  | Yes                                                             | No                                |
+| 14  | Arrow         | One-way: the subject can enter only in the arrow's direction, and can only move or turn that way while on it                                    | Only in its direction                                | Yes                                                             | No                                |
 
 Every chamber is closed in by walls (or blocked walls, doors and the exit) along its edge, and has exactly one exit. Beyond the edge counts as a wall that takes no portals.
 
@@ -54,25 +55,27 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 | #   | Tile             | Looks like                                                                                          |
 | --- | ---------------- | --------------------------------------------------------------------------------------------------- |
 | 1   | Floor            | Very light grey                                                                                     |
-| 2   | Wall             | Mid-grey raised blocks with bevelled edges; neighbouring walls join into one mass                   |
-| 3   | Blocked wall     | Blocked: darker, riveted steel. Unblocked: a plain wall, with no mark that it can switch            |
-| 4   | Light barrier    | On: a wide see-through pale teal band across the tile, horizontal or vertical, neighbours joined, a dark connector at each end. Off: only the connectors |
-| 5   | Ditch            | Open: a deep pit, neighbours joined into one. Bridged: a steel grate over it                        |
-| 6   | Door             | Closed: a burgundy panel with glowing pink strips and a ring. Open: plain floor                     |
-| 7   | Exit             | Closed: shaped like a door, but dark steel with white lights. Open: plain floor (in today's chambers, a gap in the outer wall) |
-| 8   | Fizzler          | On: a see-through cobalt-blue field with sparkles, over whatever is under it. Off: not shown        |
-| 9   | Laser            | On: a glowing crimson beam, horizontal or vertical, neighbours joined, an end plate at each end. Off: only the end plates |
-| 10  | Box              | A grey plated cube, a little smaller than its tile, so a button under it still shows                |
-| 11  | Button           | A round red button on a white plate; its dome lights up while pressed                               |
-| 12  | Switch           | The button's twin in yellow; doesn't show whether it was used                                       |
-| 13  | Arrow            | A grey chevron pointing its way                                                                     |
-| 14  | Subject          | A painted test subject in an orange jumpsuit, portal gun pointing the way it faces; while carrying a box, it holds the box out in front instead |
-| 15  | Portal           | A glowing blue or orange oval on the wall's edge facing the floor                                   |
+| 2   | Slide floor      | The floor a shade cooler, crossed by thin grey diagonal lines that run on across neighbouring tiles; it keeps the floor's groove, so each tile still shows |
+| 3   | Wall             | Mid-grey raised blocks with bevelled edges; neighbouring walls join into one mass                   |
+| 4   | Blocked wall     | Blocked: darker, riveted steel. Unblocked: a plain wall, with no mark that it can switch            |
+| 5   | Light barrier    | On: a wide see-through pale teal band across the tile, horizontal or vertical, neighbours joined, a dark connector at each end. Off: only the connectors |
+| 6   | Ditch            | Open: a deep pit, neighbours joined into one. Bridged: a steel grate over it                        |
+| 7   | Door             | Closed: a burgundy panel with glowing pink strips and a ring. Open: plain floor                     |
+| 8   | Exit             | Closed: shaped like a door, but dark steel with white lights. Open: plain floor (in today's chambers, a gap in the outer wall) |
+| 9   | Fizzler          | On: a see-through cobalt-blue field with sparkles, over whatever is under it. Off: not shown        |
+| 10  | Laser            | On: a glowing crimson beam, horizontal or vertical, neighbours joined, an end plate at each end. Off: only the end plates |
+| 11  | Box              | A grey plated cube, a little smaller than its tile, so a button under it still shows                |
+| 12  | Button           | A round red button on a white plate; its dome lights up while pressed                               |
+| 13  | Switch           | The button's twin in yellow; doesn't show whether it was used                                       |
+| 14  | Arrow            | A grey chevron pointing its way                                                                     |
+| 15  | Subject          | A painted test subject in an orange jumpsuit, portal gun pointing the way it faces; while carrying a box, it holds the box out in front instead |
+| 16  | Portal           | A glowing blue or orange oval on the wall's edge facing the floor                                   |
 
-- A step glides the subject one tile; a crossing slides it into one portal and out of the other. Turns happen at once.
+- A step glides the subject one tile; a crossing slides it into one portal and out of the other; a slide glides it along its whole path, about 60 ms a tile, through any portals on the way, easing into its last tile. Turns happen at once.
+- During a slide, what happens on the way shows as the subject gets there (a fizzler breaking up the portals, a crossing's sound), and what its stop sets off (a button, a door, the chamber's completion) when it stops: after a slide onto the exit, the completion dialog opens as the slide ends, though the timer stopped at the key press. A key pressed during a slide ends it at once, showing all it still had waiting.
 - When switched, doors, the exit and blocked walls slide open or shut, a ditch's grate slides in or out, a fizzler crumbles away or forms, and a laser or light barrier fades. A fizzle breaks the lost portals and a carried box into pieces, and so does a fizzler switching on with a portal facing it (silently), and a door closing or a laser, light barrier or fizzler switching on with a box lying there (silently); a box on a ditch that opens falls into the pit (silently), a missed shot ripples, a portal a shot opens grows open on its wall, and lasers and portals glow with a slow pulse.
 - With reduced motion, nothing animates: everything changes at once and the glows hold steady.
-- Each event has a sound: a portal opening (one per colour), a missed shot, a box picked up or put down (the same sound), a fizzle, a crossing, a door or the exit opening or closing, a button pressed or released, a switch used. Any refused action plays an error sound: a crossing, shooting or using a switch while carrying a box, or putting a box down facing a tile that can't take it.
+- Each event has a sound: a portal opening (one per colour), a missed shot, a box picked up or put down (the same sound), a fizzle, a crossing, a door or the exit opening or closing, a button pressed or released, a switch used; a slide has no sound of its own yet. Any refused action plays an error sound: a crossing, shooting or using a switch while carrying a box, or putting a box down facing a tile that can't take it.
 
 ## Buttons, switches and links
 
@@ -90,6 +93,15 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 - A portal can be shot past a fizzler that is off, or from inside it, onto the wall beyond; when the fizzler turns on, that portal closes and breaks up. So a crossing lands in a fizzler that is on only when the crossing itself turns it on, for example by leaving the button that held it off.
 - While standing in a fizzler that is on, no portal can be shot.
 - A box lying in a fizzler that switches on is destroyed: it goes back to its start, breaking up. Any other box lying on the floor is affected only when it lies on the start tile of the box sent back, which sends it back to its own start.
+
+## Slide floors
+
+- Entering a slide floor, by walking onto it or coming out of a portal onto it, keeps the subject going the way it moves, tile by tile, all in the same action. It stops on the first tile that isn't slide floor (plain floor, an arrow pointing its way, or the open exit, which completes the chamber), or in front of anything it couldn't walk onto: a wall without a portal it can go through, an open ditch, a closed door or exit, a laser or a light barrier that is on, an arrow pointing another way, or a resting box.
+- A slide goes through portals: sliding into a wall that holds a portal on that side, with the other one open, the subject comes out of the other portal, and slides on if it comes out onto slide floor. If it couldn't come out there, it stops in front of the portal, without the error sound a crossing from rest plays.
+- On the way, a fizzler that is on still closes both portals and sends a carried box back to its start, and the slide goes on. A button passed over isn't pressed: only the tile where the slide stops counts.
+- Standing on a slide floor, turning only turns; a move onto plain floor is a single step, and a move onto more slide floor slides again. Shooting, and picking up or putting down a box, work as on plain floor.
+- Boxes don't slide: a box put down on slide floor stays there, and a carried box slides with the subject. A resting box stops a slide on the tile before it.
+- A slide that would go round and round through two portals is refused: the error sound plays and the subject only turns the way pressed.
 
 ## Other details
 

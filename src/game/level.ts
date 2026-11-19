@@ -105,7 +105,7 @@ export class Level {
   private stepHashes: string[] = [] // Hash of the state right after each logged press
   private clockStarted = false // Whether a game key has been pressed since the last load
   private elapsedSeconds = 0 // Play time since the clock started; only grows while unpaused
-  private stepCount = 0 // Tiles the subject has stepped onto since the last load
+  private stepCount = 0 // Steps that put the subject on another tile since the last load
   private portalCount = 0 // Portals opened on a wall since the last load, misses not counted
   private readonly renderer: Renderer // Draws the state
   private readonly animation = new StepAnimation() // The step being drawn over a few frames, if any
@@ -227,9 +227,10 @@ export class Level {
   }
 
   /**
-   * Tiles the subject has stepped onto since the last load. Turning in place
-   * and walking into something solid don't count; walking through a portal
-   * counts as one step.
+   * Steps that put the subject on another tile since the last load: a walk,
+   * a portal crossing or a whole slide counts as one. Turning in place,
+   * walking into something solid and a slide that ends where it started
+   * don't count.
    */
   get moves(): number {
     return this.stepCount

@@ -1,6 +1,6 @@
 # Chamber Elements
 
-Reference for the elements a chamber file (`src/chambers/*.json`) can contain, carried over from the original game's help page with the light barrier and the blocked wall added in place of its barrier, followed by the chamber file format, the rules and what adding an element touches.
+Reference for the elements a chamber file (`src/chambers/*.json`) can contain, carried over from the original game's help page with the light barrier and the blocked wall added in place of its barrier, and the slide floor, which the original game didn't have, followed by the chamber file format, the rules and what adding an element touches.
 
 | # | Element | Description | Can be activated/deactivated? | Can portals go through it? | Can the subject go through it? | Quantity |
 |---|---------|-------------|-------------------------------|----------------------------|--------------------------------|----------|
@@ -17,6 +17,7 @@ Reference for the elements a chamber file (`src/chambers/*.json`) can contain, c
 | 11 | Exit | Reach it to complete the test chamber | Yes | No | No | 1 |
 | 12 | Laser | Obstructs the passage of the subject | Yes | Yes | No | 0..∞ |
 | 13 | Arrow | Limits the movement of the subject | No | Yes | Yes | 0..∞ |
+| 14 | Slide floor | A floor tile that keeps the subject moving the way it entered it | No | Yes | Yes | 0..∞ |
 
 ## Notes
 
@@ -36,15 +37,16 @@ A chamber file is a JSON object in format 2 (`ChamberData` in `src/game/chamber_
 | 4 | `exit` | The exit, a single entry: `x`, `y`, and optionally `id` and `blocked`. |
 | 5 | `walls` | One tile (`x`, `y`) or a rectangle of tiles (`xFrom`, `xTo`, `yFrom`, `yTo`, both ends included, each from no greater than its to): walls, which take portals. |
 | 6 | `blockedWalls` | One tile (`x`, `y`, and optionally `id` and `blocked`) or a rectangle of tiles (corners as for `walls`, and optionally `blocked`): blocked walls, which refuse portals while blocked. Only a one-tile entry can have an `id`, so only it can be linked. |
-| 7 | `ditches`, `doors`, `fizzlers` | `x`, `y`, and optionally `id` and `blocked`. |
-| 8 | `lasers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn and which walls end its run, which take no portal, and two lasers can share a tile only when they cross), and optionally `id` and `blocked`. |
-| 9 | `lightBarriers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn and which walls end its run, which take no portal), and optionally `id` and `blocked`. |
-| 10 | `boxes` | `x`, `y`, and optionally `id`. |
-| 11 | `buttons`, `switches` | `x`, `y` and `links`, all required: the ids of the elements and link groups it acts on (see [links](#links)). |
-| 12 | `arrows` | `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required: the one way the subject can enter the tile. |
-| 13 | `groups` | Link groups, each with an `id` and `links`, both required: the ids of the elements it stands for, never another group. |
-| 14 | `antlines` | Dotted lines on the floor, each with `link` and `path`, both required: `link` the id of the one element it leads to, never a group's, and `path` its corner tiles (`x`, `y`), at least two, from the tile of a button or switch that links that element to the element's own tile. |
-| 15 | `par` | How well the chamber can be solved, for medals: optionally `moves` and `portals`, each 0 or more. Reserved: nothing writes it yet (see `docs/solver.md`). |
+| 7 | `slideFloors` | One tile (`x`, `y`) or a rectangle of tiles (corners as for `walls`): slide floors, which keep the subject moving (see [a slide](#a-slide)). They have no `id` or `blocked`, so links never reach them. |
+| 8 | `ditches`, `doors`, `fizzlers` | `x`, `y`, and optionally `id` and `blocked`. |
+| 9 | `lasers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn and which walls end its run, which take no portal, and two lasers can share a tile only when they cross), and optionally `id` and `blocked`. |
+| 10 | `lightBarriers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn and which walls end its run, which take no portal), and optionally `id` and `blocked`. |
+| 11 | `boxes` | `x`, `y`, and optionally `id`. |
+| 12 | `buttons`, `switches` | `x`, `y` and `links`, all required: the ids of the elements and link groups it acts on (see [links](#links)). |
+| 13 | `arrows` | `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required: the one way the subject can enter the tile. |
+| 14 | `groups` | Link groups, each with an `id` and `links`, both required: the ids of the elements it stands for, never another group. |
+| 15 | `antlines` | Dotted lines on the floor, each with `link` and `path`, both required: `link` the id of the one element it leads to, never a group's, and `path` its corner tiles (`x`, `y`), at least two, from the tile of a button or switch that links that element to the element's own tile. |
+| 16 | `par` | How well the chamber can be solved, for medals: optionally `moves` and `portals`, each 0 or more. Reserved: nothing writes it yet (see `docs/solver.md`). |
 
 - **`id`:** 1 or more, unique among every element and group, and needed only by what a button, switch or group links to; an element without one can't be linked.
 - **`blocked`:** true when absent (see [blocking](#blocking)).
@@ -53,7 +55,7 @@ A chamber file is a JSON object in format 2 (`ChamberData` in `src/game/chamber_
 
 ## Rules
 
-The rules the game plays, in `src/game/rules/` (`step.ts`), pinned by each chamber's recorded solution and by the behaviour fixtures (`npm run replay:check`). They follow the original game's rules apart from the [changes from the original rules](#changes-from-the-original-rules) listed at the end, and add two elements the original game didn't have, in place of its barrier: the light barrier, which plays a barrier's rules on a floor tile (fixture: `light_barrier_switches_off_and_on`), and the blocked wall, which a link can switch between refusing and taking portals, as a barrier on a wall did (fixture: `blocked_wall_switches_off_and_on`).
+The rules the game plays, in `src/game/rules/` (`step.ts`), pinned by each chamber's recorded solution and by the behaviour fixtures (`npm run replay:check`). They follow the original game's rules apart from the [changes from the original rules](#changes-from-the-original-rules) listed at the end, and add two elements the original game didn't have, in place of its barrier: the light barrier, which plays a barrier's rules on a floor tile (fixture: `light_barrier_switches_off_and_on`), and the blocked wall, which a link can switch between refusing and taking portals, as a barrier on a wall did (fixture: `blocked_wall_switches_off_and_on`). They also add one with no counterpart there, the slide floor, which keeps the subject moving (see [a slide](#a-slide); fixtures: every `slide_*` one, and `portal_onto_slide_floor_slides`).
 
 Tiles are counted with x growing to the right and y growing upwards from the bottom row, so "up" is towards a higher y. Chambers the validator rejects (see [what the validator rejects](#what-the-validator-rejects)) are outside these rules.
 
@@ -65,7 +67,7 @@ Blocked walls, light barriers, ditches, doors, the exit, fizzlers and lasers eac
 
 The player gives one action per step: move or turn (up, down, left or right), shoot blue, shoot orange, or interact. A step carries out every consequence of its action before it ends; nothing waits for a later step.
 
-1. The action runs (see [Actions](#actions)).
+1. The action runs (see [Actions](#actions)); a move onto slide floor goes on as [a slide](#a-slide), within this step.
 2. A carried box moves onto the subject's tile.
 3. Then, repeated until a pass changes nothing:
    1. the [fizzler rule](#the-fizzler-rule);
@@ -79,7 +81,7 @@ Once the chamber is completed, a step changes nothing.
 
 A chamber starts from its file's state, settled like the end of a step: with no action before them, the repeat loop runs until a pass changes nothing, then the exit check, and their events are reported. So a button under the subject or a box starts pressed, with its links acted on.
 
-Events are reported in the order they happen. The rules keep no counters: the game counts a move for each step that puts the subject on another tile (a portal crossing included) and a portal for each portal-opened event.
+Events are reported in the order they happen. The rules keep no counters: the game counts a move for each step that puts the subject on another tile (a portal crossing included, and a slide as one, however many tiles it crosses) and a portal for each portal-opened event.
 
 ### Actions
 
@@ -93,9 +95,22 @@ On an arrow tile, the three directions other than the arrow's do nothing at all.
 
 Only the tile the subject moves onto is checked, never the one it leaves (see [something blocking under the subject](#something-blocking-under-the-subject), and a box sent back under it in [one box per tile](#one-box-per-tile)).
 
+A subject that steps onto slide floor slides on (see [a slide](#a-slide)). Standing on slide floor changes nothing else: a turn only turns it, a shot leaves as from anywhere, and a move onto plain floor is one step.
+
 #### Crossing a portal
 
-The subject comes out on the tile in front of the other portal, facing away from that portal's wall. That tile is checked like a step onto it, in that facing, so an arrow there must point the way the subject comes out, and no box may rest there. If the subject can enter it, it is put there: `crossed`. If not, the crossing is refused: `refused`, and the subject stays in front of the portal it walked into, facing it. A carried box comes along. Two portals can face the same tile; walking from it into one of them brings the subject back onto it, facing the new way, if the check allows.
+The subject comes out on the tile in front of the other portal, facing away from that portal's wall. That tile is checked like a step onto it, in that facing, so an arrow there must point the way the subject comes out, and no box may rest there. If the subject can enter it, it is put there: `crossed`, and on slide floor it slides on from there, the way it came out (see [a slide](#a-slide)). If not, the crossing is refused: `refused`, and the subject stays in front of the portal it walked into, facing it. A carried box comes along. Two portals can face the same tile; walking from it into one of them brings the subject back onto it, facing the new way, if the check allows.
+
+#### A slide
+
+A subject that enters slide floor, by a move or out of a portal, keeps moving the way it faces, one tile at a time, within the same step:
+
+- **A floor tile ahead** is checked like a step onto it (see [Move or turn](#move-or-turn)): an open ditch, a laser or a light barrier that is on, a closed door, the closed exit, an arrow pointing another way or a resting box stops the slide on the tile it is on. A tile it can enter, it enters: on slide floor it goes on; on any other tile, an arrow pointing its way and the open exit included, it stops there.
+- **A wall ahead** stops it, unless the wall holds a portal on the side facing the subject while the other portal is open: then it crosses (see [crossing a portal](#crossing-a-portal)) and goes on the way it came out if it came out onto slide floor, or stops there if not. A crossing onto a tile the subject can't enter stops the slide in front of the entry portal, silently, where a crossing tried from rest is `refused`.
+- **On each tile it passes**, the carried box comes along and the [fizzler rule](#the-fizzler-rule) runs: a fizzler that is on closes both portals and destroys a carried box, and the slide goes on; a wall whose portal closed is a plain wall for the rest of it. Buttons are judged only once the slide has ended, as the step goes on, so passing over a button doesn't press it, and stopping on one does.
+- **A loop:** a slide that would enter a tile the same way it already entered it in this slide (going round through two portals; the tile it started from doesn't count) is refused whole: nothing changes but the subject's facing, which turns to the way pressed, as a refused crossing leaves it; `refused`, and nothing settles.
+
+Loose boxes never slide; a box is put down on slide floor and picked up from it as on plain floor. A slide counts as one move, and as none when it ends back on the tile it started from; with the facing also unchanged, the step changes nothing, though its events are still reported. It reports `slideStarted` the first time the subject moves on from a slide floor tile it entered, and `slideStopped` when that slide ends; entering slide floor and stopping at once reports neither. Neither plays a sound yet. The game draws a slide along its path, showing what happens on each tile as the subject gets there and the rest once it stops (see `AGENTS.md`).
 
 #### Shoot blue or orange
 
@@ -118,7 +133,7 @@ A box picked up while the subject stands in a fizzler that is on, from the tile 
 
 ### The fizzler rule
 
-If the subject stands in a fizzler that is on, both portals close and a carried box is destroyed: it goes back to its start tile (see [one box per tile](#one-box-per-tile)) and is no longer carried. `fizzled` is reported at most once per step, and only if the subject wasn't standing in a fizzler that was on when the step began: it walked or crossed into the field, or the field turned on under it. Nothing remembers having been inside a field.
+If the subject stands in a fizzler that is on, both portals close and a carried box is destroyed (a slide also runs this rule on each tile it passes, see [a slide](#a-slide)): it goes back to its start tile (see [one box per tile](#one-box-per-tile)) and is no longer carried. `fizzled` is reported at most once per step, and only if the subject wasn't standing in a fizzler that was on when the step began: it walked or crossed into the field, or the field turned on under it. Nothing remembers having been inside a field.
 
 ### A box where something blocks
 
@@ -169,12 +184,12 @@ Outside the chamber's edge counts as a wall that takes no portals, and the valid
 
 A chamber file is read field by field, then checked as a whole (`src/game/rules/`, run on every chamber by `npm run chamber:check`). Each problem names its field and its tile, where it has them. Errors keep a chamber from loading:
 
-- **Fields:** a missing field, an unknown or misspelled one (an `id` on a blocked wall rectangle among them), a value of the wrong kind or out of range (see the [chamber format](#chamber-format)), a wall or blocked wall rectangle whose from corner is past its to corner, an antline path with fewer than two corners, or a `version` other than 2.
+- **Fields:** a missing field, an unknown or misspelled one (an `id` on a blocked wall rectangle among them), a value of the wrong kind or out of range (see the [chamber format](#chamber-format)), a wall, blocked wall or slide floor rectangle whose from corner is past its to corner, an antline path with fewer than two corners, or a `version` other than 2.
 - **Ids and links:** an id used twice (elements and groups share the ids), a link naming an id nothing has, and a group naming another group.
 - **Antlines:** an antline leading to an id nothing has, or to a group, since an antline leads to one element; a corner outside the chamber, the same as the corner before it, or sharing neither a row nor a column with it (only the first such corner is reported); a first corner on no button or switch that links the element, by its id or through a group; and a last corner away from the element's tile.
-- **Bounds:** anything outside the chamber, and the same wall tile listed twice, by walls or blocked walls.
-- **What shares a tile:** a wall or blocked wall holds nothing else, so the subject, the exit and a light barrier are never inside a wall. A floor tile holds at most one of a light barrier, ditch, door, exit, fizzler, arrow, button, switch or laser, except two lasers that cross (one `H`, one `V`). A box and the subject start on plain floor or a button, with at most one box per tile, and the subject never on a box, since a box keeps it off its tile.
-- **The edge:** every tile on the chamber's edge holds a wall, a blocked wall, a door or the exit, so the chamber is enclosed.
+- **Bounds:** anything outside the chamber, the same wall tile listed twice, by walls or blocked walls, and the same slide floor tile listed twice.
+- **What shares a tile:** a wall or blocked wall holds nothing else, so the subject, the exit and a light barrier are never inside a wall. A floor tile holds at most one of a light barrier, ditch, door, exit, fizzler, arrow, button, switch or laser, except two lasers that cross (one `H`, one `V`). A slide floor lies under what shares its tile, which can be a button, a fizzler, a laser, a light barrier, a box's start or the subject's start, but never a ditch, a door, the exit, an arrow or a switch. A box and the subject start on plain floor, slide floor or a button, with at most one box per tile, and the subject never on a box, since a box keeps it off its tile.
+- **The edge:** every tile on the chamber's edge holds a wall, a blocked wall, a door or the exit, so the chamber is enclosed, and no slide floor stands there.
 
 One warning doesn't keep a chamber from loading: a button linked to a box, since releasing the button does nothing to the box.
 
@@ -206,15 +221,15 @@ Every way these rules differ from the original game's, which this game played un
 
 Element types are described by data in `src/game/rules/`, but a new one still touches several files, because the chamber file reader, the validator, the walls' portal taking and the switching animation list elements by hand:
 
-1. **Definition:** a file in `src/game/rules/elements/` that calls `defineElement` with its entry type. It gives the fixed properties (its name, its field in a chamber file, one entry or a list, the tiles it sits on, its draw layer, whether links reach it, its blocked flag's default or none, when it blocks walking, shots and shooting from its tile, when it takes portals, whether it reacts to the subject entering or leaving, its events) and hooks for the rest (`interact`, `subjectInside`, `everyPass`, `linkUnblocked`, `linkBlocked`). Nothing reads when it takes portals (`takesPortals`): which tiles are walls and can take portals, and which of their sides (none facing a door or the exit, or a laser or a light barrier running towards the wall), is written out in `src/game/rules/compiled_chamber.ts`, and whether a wall takes a portal now in `takesPortalsNow` (`step.ts`), so an element that sits on a wall, takes portals or keeps them off the walls beside it also touches both. An element that destroys a box lying on it while blocked goes in `BOX_DESTROYING_KINDS` (`elements/box.ts`); the game draws such a box breaking up, but on a ditch, where it falls (`src/game/destroyed_boxes.ts`).
+1. **Definition:** a file in `src/game/rules/elements/` that calls `defineElement` with its entry type. It gives the fixed properties (its name, its field in a chamber file, one entry or a list, the tiles it sits on, its draw layer, whether links reach it, its blocked flag's default or none, when it blocks walking, shots and shooting from its tile, when it takes portals, whether it reacts to the subject entering or leaving, whether entering it keeps the subject moving (`continuesMovement`), its events) and hooks for the rest (`interact`, `subjectInside`, `everyPass`, `linkUnblocked`, `linkBlocked`). Nothing reads when it takes portals (`takesPortals`): which tiles are walls and can take portals, and which of their sides (none facing a door or the exit, or a laser or a light barrier running towards the wall), is written out in `src/game/rules/compiled_chamber.ts`, and whether a wall takes a portal now in `takesPortalsNow` (`step.ts`), so an element that sits on a wall, takes portals or keeps them off the walls beside it also touches both. An element that destroys a box lying on it while blocked goes in `BOX_DESTROYING_KINDS` (`elements/box.ts`); the game draws such a box breaking up, but on a ditch, where it falls (`src/game/destroyed_boxes.ts`).
 2. **Registry:** its line in `ELEMENT_REGISTRY` (`element_registry.ts`), whose order is the drawing order within a layer. The element fields of `ChamberData`, the compiled chamber's lookups and the state's blocked flags follow from it.
 3. **Entry type:** a new one in `src/game/chamber_data.ts`, when none of the existing ones fits.
 4. **Reader:** its field in `CHAMBER_FIELDS` and its list read in `chamber_parser.ts`.
 5. **Validator:** its kind in `validate_chamber.ts`, placed on its tiles, and in the lists of what may share a tile, what may stand on the edge and what links can reach; a kind whose name is more than one word also needs its wording in the inside-a-wall message (`describeKind`), or it reads "a lightBarrier".
 6. **Events:** each new one in `src/game/game_event.ts`, with its sound in `Level` (`src/game/level.ts`), or none.
-7. **Drawing:** its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`), drawing its sprite for each state; each new sprite in the set (`src/game/sprite_set.ts` and `docs/sprites.md`), drawn in code as an SVG in `art/sprites/` and exported to its file in `src/assets/images/chamber/` (as `AGENTS.md` says) before it joins the set, since `npm run assets:check` requires every sprite's file, and in `RAISED_SPRITES` when it stands raised, so it gets the shared drop shadow; in `GAP_SIDE_KINDS` when it lines a gap that a door, the exit or a fizzler turns to fill (see `docs/sprites.md`, turning); and, when links switch it, its kind in `TRANSITION_KINDS` and `TRANSITION_STYLES` (`src/game/element_transitions.ts`), with its drawing part way through the change, or it switches at once. The floor marks and structure layers are drawn once per chamber as its backdrop, over the antlines (`src/game/renderer.ts`), so an element on them must look the same in every state. An antline to a linkable element lights while the element is unblocked; one with no blocked flag, as the box, needs its own answer in the antline drawing (`src/game/antline_drawing.ts`), which the build asks for.
+7. **Drawing:** its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`), drawing its sprite for each state; each new sprite in the set (`src/game/sprite_set.ts` and `docs/sprites.md`), drawn in code as an SVG in `art/sprites/` and exported to its file in `src/assets/images/chamber/` (as `AGENTS.md` says) before it joins the set, since `npm run assets:check` requires every sprite's file, and in `RAISED_SPRITES` when it stands raised, so it gets the shared drop shadow; in `GAP_SIDE_KINDS` when it lines a gap that a door, the exit or a fizzler turns to fill (see `docs/sprites.md`, turning); and, when links switch it, its kind in `TRANSITION_KINDS` and `TRANSITION_STYLES` (`src/game/element_transitions.ts`), with its drawing part way through the change, or it switches at once. The floor, floor marks and structure layers are drawn once per chamber as its backdrop, the floor layer's elements (the slide floors) under the antlines and the other two over them (`src/game/renderer.ts`), so an element on them must look the same in every state. An antline to a linkable element lights while the element is unblocked; one with no blocked flag, as the box, needs its own answer in the antline drawing (`src/game/antline_drawing.ts`), which the build asks for.
 8. **Docs and fixtures:** its row in the table at the top, its field under [chamber format](#chamber-format), its rule under [rules](#rules) and [what the validator rejects](#what-the-validator-rejects); behaviour fixtures in `scripts/fixtures/fixtures.ts`, and a case in `scripts/fixtures/format_examples.ts` for each new validator problem.
 9. **Playground:** a place in the development-only playground (`src/dev/playground.json`, see `AGENTS.md`), switched by a button when it can be, so it can be tried by hand.
-10. **Chamber sign:** its pictogram in `src/components/element_pictogram.vue` and its line in the sign's list (`src/components/chamber_sign.vue`), where it is shown dark in the chambers that hold it; the row holds exactly ten (its column count is fixed in the sign's styles), so an eleventh needs that count raised, which makes every pictogram smaller, or it wraps alone onto a second row.
+10. **Chamber sign:** its pictogram in `src/components/element_pictogram.vue` and its line in the sign's list (`src/components/chamber_sign.vue`), where it is shown dark in the chambers that hold it; it lays them out in rows of seven (the column count is fixed in the sign's styles), with room for fourteen, so a fifteenth starts a third row and makes the sign taller.
 
 The recorded solutions change only when an existing chamber or its route changes. The build catches a missing drawing or sound. `npm run chamber:check` catches a field missing from the reader's field list or used by two elements, an event with no owner or two, and an element that blocks only while blocked but has no blocked flag. Nothing catches a validator line, the list read in `chamber_parser.ts`, or the chamber sign's line, left out.

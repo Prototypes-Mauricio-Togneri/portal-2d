@@ -15,26 +15,30 @@ Only Restart chamber gets the player out (guideline 15).
 - **A needed box out of reach:** a box the route still needs lies where the subject can't get to it, such as beyond a one-way passage, in a part reached only by portal, or on a start tile it was sent back to that the subject can't reach, or can't leave with the box (guidelines 5, 15 and 17).
 - **A box barring the way:** a box put down, or sent back, in a one-tile passage, a doorway or on a button the route must cross, with no tile beside it left that the subject can reach and pick it up from (guideline 9).
 - **A box that can't be put down:** in a pocket, the subject carries a box it can't put down, since no tile it can face can take it (standing on a switch, on an arrow whose way faces a tile that can't take a box, or boxed in by walls and boxes), and it can't shoot while carrying one (guideline 18).
+- **Stranded by a slide:** a slide leaves the subject on a tile every way off which slides it back, or in a room whose only way out is a portal, after a fizzler on the slide's way closed the portals (guidelines 21 and 23).
 
 ### Something looks broken
 
-- **Standing in something that blocks:** the subject stands in a closed door, over an open ditch, or in a laser or a light barrier that is on (guidelines 1 and 2).
+- **Standing in something that blocks:** the subject stands in a closed door, over an open ditch, or in a laser or a light barrier that is on (guidelines 1, 2 and 22).
 - **The exit closing as the chamber completes:** stepping from a button onto the exit it opens completes the chamber as the exit closes, so the button never needed its box (guideline 1).
 - **An element out of step with its buttons:** a door stays closed while a button linked to it is held down, or stands open before its button has been pressed (guideline 4).
 - **A box that jumps home unseen:** a box resting on another box's start tile is sent to its own start, without any sign, when that box is sent back; and a box picked up from inside a fizzler that is on goes back to its start with only the pickup sound (guideline 6).
 - **A box under the subject:** a box sent back to its start while the subject stands there lands under it, the only way the two share a tile, and the subject must step off to pick it up from beside it (guideline 7).
 - **A shot that does nothing:** the portal keys do nothing, without a sound, while the subject stands in a fizzler that is on (guideline 13).
+- **A button slid over:** a slide over a button doesn't press it, so what the button opens stays shut as the subject slides past (guideline 20).
+- **A move that only turns:** a slide that would loop through two portals forever is refused, with the error sound, and the subject only turns the way pressed (guideline 24).
 
 ### Something is lost without warning
 
 - **Fizzled by the subject's own step:** stepping off a fizzler's button, crossing a portal from it, or picking its box up from the fizzler's tile switches the fizzler on under the subject: both portals close and a carried box breaks up (guideline 3).
 - **A portal closing by itself:** a portal facing a fizzler closes when the fizzler switches on, and one on a blocked wall closes, without a sound, when the wall is blocked again (guidelines 2 and 13).
+- **Fizzled on the way:** a slide over a fizzler that is on closes both portals and breaks up a carried box, though the subject doesn't stop there (guideline 21).
 
 ### The puzzle is bypassed
 
 - **A box delivered by its start tile:** a box sent back lands on its start tile wherever that is, so a start beyond a barrier delivers it past the barrier, and a start on a button presses the button from anywhere (guideline 6).
-- **A portal route the design didn't intend:** shots fly over lasers, ditches, boxes and arrows, so a portal can skip a laser, a ditch or a one-way passage (guidelines 14 and 21).
-- **A pass through a blocked element:** a closed door, an open ditch, or a laser or a light barrier that is on, switched under the subject, lets it walk out the far side without holding the button (guidelines 1 and 2).
+- **A portal route the design didn't intend:** shots fly over lasers, ditches, boxes and arrows, so a portal can skip a laser, a ditch or a one-way passage (guidelines 14 and 27).
+- **A pass through a blocked element:** a closed door, an open ditch, or a laser or a light barrier that is on, switched under the subject, lets it walk out the far side without holding the button (guidelines 1, 2 and 22).
 
 The rules already keep out the rest, so a design never needs to guard against them: the subject coming out of a portal onto a tile it couldn't walk onto, into a doorway or onto the exit; a box lying in a closed door, over an open ditch, or in a laser, a light barrier or a fizzler that is on; a box on the exit or a switch, two boxes on one tile, or the subject on a box, but for a box sent back to its start under it; a carried box inside a fizzler that is on; and the subject leaving the chamber. A layout that starts in a broken state is rejected by the chamber check.
 
@@ -73,11 +77,20 @@ Releasing a button closes or switches back on what it holds open, even under the
 17. A part of the chamber the subject reaches only by portal needs a way back: a wall side it can shoot from inside that brings it out again, and the portal it came out of must not close behind it (guidelines 2 and 13).
 18. The subject can't shoot while carrying a box, nor put the box down while standing on a switch, or where no tile it can face can take it, so a pocket it can enter carrying a box needs a tile there to put the box down, next to one the subject can stand on and face it from.
 
+## Slide floors
+
+19. A slide stops only on a tile that isn't slide floor, or in front of something the subject couldn't walk onto: a wall without a portal it can go through, a closed door or exit, an open ditch, a laser or a light barrier that is on, an arrow pointing another way, or a resting box. Work out where each slide stops from every tile it can start from, each way, and remember that a box the player can move changes that: a resting box stops a slide on the tile before it, which makes boxes a tool for choosing where a slide ends. Mid-slide, a portal the subject can't come out of (a box, an open ditch or a laser that is on in front of the other portal) stops the slide in front of it, silently, where the same crossing from rest is refused with the error sound.
+20. A button on slide floor is pressed only by a box or by the subject stopping on it, which there means a slide ending on it; a slide over it doesn't press it. Put a button where slides end (against a wall, before a box, at the end of a lane) or on plain floor, unless sliding over it unpressed is the point.
+21. A fizzler that is on fizzles the subject as a slide passes it: both portals close and a carried box breaks up, and the slide goes on. Treat a fizzler across a lane as one the subject walks into, and don't make the way out of a slide room depend on a portal that a fizzler in the room can close.
+22. Guideline 1 reaches along every lane that starts next to a button: sliding off a button, the subject can end its slide on an element the button links (an open door, a bridged ditch, or a laser or a light barrier that is off on a tile that isn't slide floor), which then switches under it as the slide ends.
+23. From rest on slide floor, a move onto more slide floor slides again, so the subject stops only where something stops it. Make sure every tile a slide can stop on has a move off it that leads somewhere new, so a room or lane of slide floor can't trap the subject in slides that only bring it back (guideline 15).
+24. A slide that would enter the same tile the same way twice, looping through two portals, is refused as a whole: the error sound plays and the subject only turns the way pressed, which reads as a bug unless the chamber shows it. Don't let a chamber's natural moves set up such a loop by surprise.
+
 ## Antlines
 
-19. Draw antlines in the tutorial and the early chambers, from each button or switch to what it links, so the player learns how links work; later chambers can leave them out.
+25. Draw antlines in the tutorial and the early chambers, from each button or switch to what it links, so the player learns how links work; later chambers can leave them out.
 
 ## Checking a chamber
 
-20. Record its solution by playing it through (Download solution in the completion dialog, in `npm run dev`), and record it again after any change to the chamber but its antlines.
-21. Run `npm run chamber:check` and `npm run replay:check`. `npm run solve -- --par src/chambers/chamber_N.json --max-states=40000000` finds the fewest moves and the fewest portals, which shows any shortcut the design didn't intend.
+26. Record its solution by playing it through (Download solution in the completion dialog, in `npm run dev`), and record it again after any change to the chamber but its antlines.
+27. Run `npm run chamber:check` and `npm run replay:check`. `npm run solve -- --par src/chambers/chamber_N.json --max-states=40000000` finds the fewest moves and the fewest portals, which shows any shortcut the design didn't intend.

@@ -38,7 +38,7 @@ export type TrackedSetting = 'sound' | 'music'
 /** How far a run got when it ended. */
 export type RunProgress = {
   hundredths: number // The run's time as shown to the player, in hundredths of a second
-  moves: number // Tiles the subject stepped onto
+  moves: number // Steps that put the subject on another tile
 }
 
 // Only what Analytics needs: it fetches the measurement ID from Firebase on start

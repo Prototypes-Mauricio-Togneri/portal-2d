@@ -9,7 +9,7 @@ import {countPortalsOpened, countsAsMove} from '@/game/rules/step_counts'
  */
 export type RulesReplayResult = {
   readonly completed: boolean // Whether the chamber ended completed
-  readonly moves: number // Tiles stepped onto, counted as the chamber screen counts them
+  readonly moves: number // Steps that put the subject on another tile, counted as the chamber screen counts them
   readonly portals: number // Portals opened on a wall, misses not counted
   readonly finalState: RulesState // The state after the last press
   readonly states: readonly RulesState[] // The settled start, then the state after each press
