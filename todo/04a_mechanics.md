@@ -148,12 +148,12 @@ Decisions 1–19 were made while this stage and stage 04b were one stage (README
 | 46 | 2026-11-19 | A resting box stops a ray, so a box can hold a ray cut while the subject is elsewhere, as a box holds a button down; a mirror box turns it instead. Chosen over the draft, where rays passed boxes as shots do |
 | 47 | 2026-11-19 | Decision 18's solver skip is built for live lasers: the solver check skips, and names, its walk, shot, skipped-action and region checks on each chamber with a receiver, since the subject cuts a ray by walking, and the macro search refuses such a chamber; the state key check and the reference search (`npm run solve -- --baseline`) still run on it. Chosen over extending the walks and the shot lines to work out per state where rays run |
 | 48 | 2026-11-19 | A mirror box is a box whose entry in `boxes` has a `mirror` field (`/` or `\`), so it plays every box rule (carried, picked up, put down, holding buttons, sent back, destroyed where something blocks), the solver's key and the box drawing; the chamber sign shows it with a pictogram of its own through one special case. Chosen over a list and an element of its own, which would generalise the box handling the core step writes for boxes only |
-| 49 | 2026-11-19 | A ray is pale gold, 255, 228, 112, lightening to a white-hot core (light 255, 242, 186, core 255, 252, 236), with a dark edge of its own shade, 186, 148, 30, as the beam's rim, since a pale yellow line nearly vanishes on the light floor without one. Chosen on the look-and-motion mockup (https://claude.ai/artifact/AuAtmYeHNpVYbobe1tBiFn, version 3) over violet and magenta, the planned candidates, which the author turned down for a yellow, then over lemon, canary and citron, and over no edge. A ray sits near a lit antline's amber (250, 194, 44); pale gold is the softest of the yellows |
+| 49 | 2026-11-19 | A ray is pale gold, 255, 228, 112, lightening to a white-hot core (light 255, 242, 186, core 255, 252, 236), with a dark edge of its own shade, 186, 148, 30, as the beam's rim, since a pale yellow line nearly vanishes on the light floor without one. Chosen on the look-and-motion mockup (https://claude.ai/artifact/AuAtmYeHNpVYbobe1tBiFn, version 3; version 4 opens on the picks) over violet and magenta, the planned candidates, which the author turned down for a yellow, then over lemon, canary and citron, and over no edge. A ray sits near a lit antline's amber (250, 194, 44); pale gold is the softest of the yellows |
 | 50 | 2026-11-19 | A ray is drawn as the game draws a laser field (`laser_on` and `laser_glow`), recoloured and scaled to its width: a haze tinting the floor, a soft edge, the beam from its rim to its core, and the glow band, which ends where the ray ends. Its width is medium: a 23 px beam of 256, the laser field's profile at 0.77 of its size (a laser's beam is 30 px). Chosen over the mockup's first drawing, soft strokes whose round-ended glow the author found too much, and over thin (14 px) and the laser's own 30 px |
 | 51 | 2026-11-19 | A ray's glow is held steady at 80 %, while the lasers' and portals' glows pulse, so a lit ray asks for no frame of its own. Chosen over pulsing with them and over no glow |
 | 52 | 2026-11-19 | A ray changes at once when it is cut or let through, with the step that changes it: it is traced from the state after the step, so while the subject glides into it, it already ends on the subject's tile, hidden under it. Chosen over a 0.25 s fade, which trails the subject |
 | 53 | 2026-11-19 | A carried mirror box is marked: its mirror's line is drawn in code over the carried box (the part of the `subject_holding_box` sprite 0.26 tile ahead of the subject), the right way round in the room whichever way the subject faces, so a player can tell it from a plain box in hand. Chosen over leaving the mirror hidden while it is carried |
-| 54 | 2026-11-19 | Where a ray is drawn ending, as the mockup draws it with the one change the author asked for: at the face of a wall, a closed door or the closed exit; inside a portal's oval, coming out of the other's; at the tile's middle under the subject or a plain box, which stand over its end; at a light barrier's near edge, its band's rim 50 px of 256 from the tile's middle, when the band runs across the ray, or at the tile's edge when it runs along it (the mockup first ended it in the band's middle); turning at a mirror box's middle, under the box; at a receiver's face. It is drawn over the floor and its fixtures and under the portals, boxes and the subject, and its glow over everything, as the other glows are |
+| 54 | 2026-11-19 | Where a ray is drawn ending, as the mockup draws it with the one change the author asked for: at the face of a wall, a closed door or the closed exit; inside a portal's oval, coming out of the other's; at the tile's middle under the subject or a plain box, which stand over its end; at a light barrier's near edge, its band's rim 50 px of 256 from the tile's middle, when the band runs across the ray, or at the tile's edge when it runs along it (the mockup first ended it in the band's middle); turning at a mirror box's middle, under the box; at a receiver's face. The mockup draws it after the blockers (light barriers, lasers, doors, the exit, and the emitters' and receivers' plates) and before the portals, boxes and the subject, so a portal's oval covers its end there and the subject or a box stands over its end; its glow over everything, as the other glows are. Where buttons and switches go relative to it is open ("To confirm" 5): the mockup has none in a ray's path, and in its order they would cover the ray |
 
 ## Steps
 
@@ -201,7 +201,7 @@ Filled in from the real results during the mechanic phases and Phase 4:
 - [x] **Settle the open decisions.** Record the answers under *Decisions made* (decisions 16–18). The choice of mechanics also sets the chamber counts in stage 04b's campaign plan table and which mechanic phases run.
 - [x] **Interaction table.** Add a section to `docs/elements.md` listing every element against every other. Each cell is a rule, "can't happen" (chamber validation forbids it) or "to do". Existing elements fill their cells first, from the current rules.
 - [x] **Outcome assertions in replays.** Confirm stage 01's replay format can assert an outcome: completes, does not complete, or reaches an expected state hash. It already can: every recorded solution and fixture pins whether the chamber completes, its moves, its portals and its final state hash, and the replay check reports each mismatch. Verified by one passing and one deliberately failing fixture. Done 2026-11-19: `npm run replay:check` passed every fixture; with `slide_onto_open_exit_completes` pinned as not completing, it failed that fixture alone ("completes but should not") and exited 1, and passed again once reverted.
-- [ ] **Names and colours.** Choose names for the new elements and colours for them from stage 03's palette module (decision 1, R3 constraints), and record them in `docs/elements.md`. Slide floors' (decisions 21 and 32) and turnable arrows' (decision 44 and Phase 2's spec) are recorded; live lasers' names are proposed under Phase 3's "To confirm" and their colours come from its mockup (plan step 2), so this is ticked with Phase 3's R3.
+- [ ] **Names and colours.** Choose names for the new elements and colours for them from stage 03's palette module (decision 1, R3 constraints), and record them in `docs/elements.md`. Slide floors' (decisions 21 and 32) and turnable arrows' (decision 44 and Phase 2's spec) are recorded; live lasers' names are proposed under Phase 3's "To confirm" 1, the ray's colours are decisions 49 and 50, and the emitter's, the receiver's and the mirror box's come with their drafts (Phase 3's "To confirm" 8), so this is ticked with Phase 3's R3.
 
 ### Phase 1 — Slide floors
 
@@ -559,9 +559,28 @@ Built 2026-11-19 from layouts the author approved; the author's cold playtest th
 
 ### Phase 3 — Live lasers (emitters, rays, receivers, mirror boxes)
 
-**Where this stands (2026-11-19).** Planned in one session that will not be around to explain it, so this section is meant to be enough on its own, as Phase 2's is: the spec, the code as it was found, and a plan with every file, name and check a new session needs. The author settled the four forks planning found as decisions 45–48 (a link turns an emitter on, a box stops a ray, the solver skips laser chambers, a mirror box is a box with a field). Plan step 2's look-and-motion mockup came first, at the author's asking, and the author picked the ray's look on it (decisions 49–54). Still open: the proposals under "To confirm", answered with the plan's approval, and the mockup's drafts of the emitter, the receiver and the mirror box, which the author hasn't yet passed on. Nothing is built. Next: the author approves the plan, answers "To confirm" and passes on the three drafts, whose SVG sources then go into plan step 2.
+**Where this stands (2026-11-19, end of the planning session).** Planned in one session that will not be around to explain it, so this section is meant to be enough on its own, as Phase 2's was: the spec, the code as it was found, and a plan with every file, name, number and check a new session needs. Nothing is built: no code, chamber, fixture, sprite or doc outside `todo/` has changed for Phase 3. Phases 1 and 2 are done (every R-step ticked, `npm run verify` passing on 2026-11-19 with chambers 0–7), and their plans, notes and "Done" lines are the model for how each step is carried out and reported. Phase 0 is ticked but for "Names and colours", which closes with this phase's R3.
 
-**The look and motion mockup** (decisions 49–54): https://claude.ai/artifact/AuAtmYeHNpVYbobe1tBiFn, version 3. Read it with the Artifact tool's `read` action, never a web fetch. It offers the candidates for the ray (drawn like the laser or as soft strokes, four yellows, the dark edge, three widths, the glow, a fade when cut, the carried mirror), the new pieces close up, every way a ray ends, a small chamber playing a teach idea (a mirror box and a portal pair route the ray to a receiver that opens the exit, which the subject cuts and lets through) and that chamber at 40 and 16 px. The page opens on the author's picks but for the width, where it opens on thin and the pick is medium. Its emitter, receiver and mirror box are SVG drafts in the page's script, and its script was written for the page alone: the game draws through the renderer, as plan step 8 says.
+Settled: decisions 45–48, the four forks planning found (a link turns an emitter on; a resting box stops a ray; the solver check skips, and names, chambers with a receiver; a mirror box is a box with a `mirror` field), and decisions 49–54, picked on the look-and-motion mockup the author asked to see before any building (the ray pale gold with a dark rim, drawn as the game draws a laser field at a medium 23 px width, its glow steady, changing at once, a carried mirror box marked, and where a ray is drawn ending).
+
+Still open, in the order a new session should take it:
+
+1. **"To confirm" 1–7** below: ask the author each one (one `AskUserQuestion` per point, the recommendation first, as the author's CLAUDE.md asks), record each answer as a decision from 55 on, fold it into the spec and the plan, and remove the point from "To confirm".
+2. **"To confirm" 8**, the three drafted sprites: the author passes on, or asks changes to, the mockup's emitter, receiver and mirror box (their SVG sources are written out under plan step 2, and the mockup shows them close up, on walls and in the chamber). Record it as a decision; if the author asks changes, change the sources under plan step 2 and the mockup's script both, and republish the mockup to its own link (read it first with the Artifact tool's `read` action, which returns its full HTML; publish with that link as `url`), so it stays the record.
+3. **The plan's approval**: the author's CLAUDE.md stops work after planning until the author approves the plan.
+4. **Building**: plan steps 3 to 12 in order (step 1 is bookkeeping done as 1 and 2 above, step 2 is done but for point 2), then step 13, R7, once the author has tried rays in the playground (decision 25).
+
+**The look and motion mockup** (decisions 49–54): https://claude.ai/artifact/AuAtmYeHNpVYbobe1tBiFn, version 4, private to the author. Read it with the Artifact tool's `read` action, never a web fetch; the author owns it, so a read returns its full HTML, the game's sprites embedded in it as WebP data, and a publish with its link as `url` updates it in place. Its local source was in a scratch folder this session doesn't keep. What it shows, top to bottom:
+
+- **Candidates**, a panel of choices that redraws the whole page, opening on the author's picks, each marked with a dot: Drawn (like the laser, or soft glow, the first drawing, kept to compare), Ray colour (lemon 250, 234, 40; canary 255, 208, 0; citron 222, 238, 30; pale gold 255, 228, 112), Edge (dark edge, or none), Width (thin 14 px, medium 23 px, the laser's 30 px, of 256), Glow (none, steady, pulsing), When cut (at once, or a 0.25 s fade) and Carried mirror (hidden, or marked). The picks are remembered per browser.
+- **Beside the other lights**: a 9 × 5 chamber at 40 px a tile with a laser field, the ray and a light barrier in three rows, and both portals on the walls.
+- **The new pieces**: the emitter on and off and the receiver lit and dark, each in the middle of a wall run facing a floor row; the mirror box both ways with a ray turning on it; and the carried mirror box, hidden and marked, with a ray stopping at the subject.
+- **Where a ray ends**: eight 5 × 4 corridors with an emitter in the left wall: a wall, a portal pair, a closed door, a light barrier, a box, the subject, a mirror box and a receiver (decision 54).
+- **In motion**: a 9 × 7 chamber played from a fixed script of 20 presses over 19.5 s, with its eight beats, the keys going down and each press's events (the receiver's marked as new and silent), and Replay and Slow motion buttons. It is sketched in game coordinates under "After R1–R6" as a starting point for the teach chamber.
+- **Small**: that chamber, lit, at 40 px and at 16 px a tile.
+- **What to look at**: notes on the colour, the edge, the drawing, cutting, the carried mirror, an antline from a receiver ("To confirm" 3), the silent receiver ("To confirm" 4) and reduced motion.
+
+Its emitter, receiver and mirror box are drafts drawn as SVG strings in its script (`emitterSvg`, `receiverSvg`, `MIRROR_BOX_SVG`), written out under plan step 2; its ray drawing is in `traceRays`, `splitLine`, `segmentsOf`, `fillBand`, `drawLaserLikeRays` and `drawLaserLikeGlow`, given in numbers under plan step 8. The script was written for the page alone (screen coordinates with y growing downwards, none of the project's conventions): the game draws through its renderer, as plan step 8 says.
 
 #### Spec
 
@@ -579,7 +598,7 @@ The draft, with decisions 18, 20 and 45–48 folded in. Names are working names 
 - **When rays count.** Only while a step settles, and at a chamber's start: a slide passing through a ray doesn't cut it, and one that stops in it does (decision 20, Phase 1). Walking into a ray, coming out of a portal into it or stopping a slide in it darkens what it lit within that step, and walking out lights it again. A shot that opens or moves a portal routes rays through it within that step. Putting a box down in a ray cuts it there, and picking the box up lets the ray on past that tile.
 - **Chamber check.** An emitter's or a receiver's tile is a wall tile listed nowhere else (a wall holds nothing else, V1), and it may stand on the edge; its working face must face a floor tile inside the chamber. `mirror` is `/` or `\`. A receiver's links are checked as a button's: an id nothing has is an error, a box is a warning. An antline may start on a receiver that links its element ("To confirm" 3).
 - **Solver** (decisions 18 and 47). A linked emitter adds one bit to the state key, as every linked element does; a mirror box is a box, already in the key; a receiver's lit flag is left out and worked out again on unpacking. The solver check skips, and names, its walk, shot, skipped-action and region checks on each chamber with a receiver; the macro search refuses one; the key check and the reference search still run.
-- **Look** (decisions 49–54, from the mockup, plan step 2). A ray is drawn as a laser field is, recoloured pale gold (255, 228, 112, lightening to a 255, 252, 236 core) with a dark rim (186, 148, 30), at medium width, a 23 px beam of 256; its glow is the laser's band, held steady at 80 %, ending where the ray ends. It changes at once with the step, and ends as decision 54 lists, a light barrier's near edge among them. A carried mirror box has its mirror's line drawn over it, the right way round in the room. The emitter and the receiver are plates on their working face, turned to it, and the mirror box is the box with a diagonal mirror, one sprite turned a quarter turn for the other way; their drafts in the mockup await the author. `receiverLit` and `receiverUnlit` play no sound yet ("To confirm" 4).
+- **Look** (decisions 49–54, from the mockup, plan step 2; the numbers are under plan step 8). A ray is drawn in code as the game draws a laser field (`laser_on` and `laser_glow`), recoloured pale gold (body 255, 228, 112, lightening through 255, 242, 186 to a 255, 252, 236 core) with a dark rim (186, 148, 30), and scaled to a medium width, a 23 px beam of 256 against the laser's 30 px. Its glow is the laser's band, held steady at 80 % and ending where the ray ends. It changes at once with the step (decision 52), traced from the state shown. It ends as decision 54 lists, a light barrier's near edge among them. A carried mirror box has its mirror's line drawn over it, the right way round in the room (decision 53). The emitter is a dark steel housing on its wall's firing face with a slit lens, lit pale gold while on; the receiver the same housing with a round eye, lit pale gold while a ray reaches it; the mirror box the box with a glass bar from corner to corner in place of its disc, one sprite turned a quarter turn for `\`. Those three are drafts awaiting the author ("To confirm" 8). `receiverLit` and `receiverUnlit` play no sound yet ("To confirm" 4).
 
 #### To confirm
 
@@ -589,6 +608,10 @@ Proposals planning left open, each with what it recommends; the author answers t
 2. **Emitters and receivers are wall tiles of their own**, as blocked walls are, listed only in `emitters` or `receivers` rather than marked on a tile also listed in `walls`, so no tile is kept in step in two lists. Their other three faces take portals, as the draft says. The alternative, no portal anywhere on them, reads more simply (a device is never a portal surface), but a chamber loses those wall sides as portal surfaces.
 3. **Antlines may start on a receiver**, hidden under its wall tile up to the floor, as they run under walls today, so a teach chamber can show what a receiver opens. Without it, only the rays show what a receiver acts on.
 4. **No sound yet** for `receiverLit` and `receiverUnlit`, as decisions 33 and 39; a door or the exit a receiver opens already sounds. The alternative is reusing the button's press and release sounds.
+5. **Buttons and switches over or under a ray.** `DRAW_LAYERS` runs floor, floorMarks, structure, blockers, portals, fixtures (buttons, switches), items (boxes), subject, fields. The mockup draws the ray after the blockers and before the portals (decision 54), so a portal's oval covers the ray's end inside it, but a button or a switch in a ray's path would be drawn over the ray, which the mockup never shows. Recommended: draw the ray right after the fixtures, over buttons and switches, since it passes above the floor's plates, and end it at a portal on the wall's face instead of at the oval's middle, so it meets the oval's near rim without painting over it (portals are drawn before the fixtures). The alternative keeps the mockup's order and lets buttons and switches cover the ray. Either way the mockup needs a button in a ray's path to show the author before deciding, and decision 54's portal end changes with the first.
+6. **The emitter's lens switching.** When a link switches an emitter, its lens changes at once with its ray (decision 52; recommended, and nothing goes into `ElementTransitions`), or fades over 250 ms as a laser's end plates do.
+7. **The receiver's eye switching.** At once, matching the ray (recommended), or fading over 250 ms.
+8. **The three drafts.** The emitter (slit lens), the receiver (round eye) and the mirror box (glass bar), as drawn under plan step 2 and in the mockup: the author passes them on or asks changes. The author has seen them on every version of the mockup without remarking on them, which isn't a decision.
 
 #### The code as it is (found 2026-11-19)
 
@@ -616,8 +639,137 @@ So a new session doesn't have to explore again. Line numbers drift; the names do
 Steps in order; each says what it changes and how it is checked. After every step that changes code: `npm run lint:fix`, then `npm run build`. Every existing recorded solution and fixture must keep passing unchanged throughout (no chamber gains a field, and a chamber with no receiver keeps its state's layout). AGENTS.md's rules apply, and after each turn that changes code, the `delta-review` skill on the files it changed.
 
 1. **R1, the spec.** Decisions 45–48 are in the spec above; the author's answers to "To confirm" become decisions 49 on and are folded in. R1 is ticked once the interaction table holds the new rows and columns (step 11).
-2. **The look-and-motion mockup**, as decision 21 (Phase 1) and decision 44 (Phase 2) came from one. A private Artifact page drawn with the game's own sprites, offering candidates for: the ray's colour (violet and magenta at least), its width and its glow (none, steady, or pulsing with the lasers' and the portals'); where it ends on each thing that stops it (a wall face, a portal's face, a closed door, a light barrier, a box, the subject) and how it turns on a mirror; the emitter's plate, on and off, and the receiver's, lit and dark; the mirror box resting both ways and carried (the carried box is part of a sprite that turns with the subject, so its mirror is drawn in the world's orientation, or not at all); how a ray changes (at once, or fading) as the subject cuts it, also during the 120 ms glide, while the ray is traced from the state after the step; at 40 px a tile and at the home menu map's 16 px; and a small chamber playing the teach idea. Its script is for the page alone. The author picks; the choices become decisions, and the SVG sources are written into this step, as Phase 1's and Phase 2's step 2 hold theirs. Checked by the author's choice. Done 2026-11-19 for the ray (decisions 49–54; the link is under "Where this stands"): the author asked for yellows in place of violet and magenta, and for a light barrier to stop the ray at its edge, then picked. The emitter's, the receiver's and the mirror box's drafts await the author; their SVG sources go here once passed.
-3. **The sprites.** From step 2: SVG sources in `art/sprites/` (probably `emitter_on`, `emitter_off`, `receiver_lit`, `receiver_dark` and `box_mirror`, each drawn pointing up), exported as AGENTS.md says, keys in `SPRITE_SHAPES`, the mirror box in `RAISED_SPRITES` as the box is, and `docs/sprites.md` ("Files", "Turning", the count sentence, "The set", "Order"). Checked by `npm run assets:check` and the sprite gallery.
+2. **The look-and-motion mockup**, as decision 21 (Phase 1) and decision 44 (Phase 2) came from one. A private Artifact page drawn with the game's own sprites, offering candidates for: the ray's colour (violet and magenta at least), its width and its glow (none, steady, or pulsing with the lasers' and the portals'); where it ends on each thing that stops it (a wall face, a portal's face, a closed door, a light barrier, a box, the subject) and how it turns on a mirror; the emitter's plate, on and off, and the receiver's, lit and dark; the mirror box resting both ways and carried (the carried box is part of a sprite that turns with the subject, so its mirror is drawn in the world's orientation, or not at all); how a ray changes (at once, or fading) as the subject cuts it, also during the 120 ms glide, while the ray is traced from the state after the step; at 40 px a tile and at the home menu map's 16 px; and a small chamber playing the teach idea. Its script is for the page alone. The author picks; the choices become decisions, and the SVG sources are written into this step, as Phase 1's and Phase 2's step 2 hold theirs. Checked by the author's choice. Done 2026-11-19 for the ray (decisions 49–54; the link is under "Where this stands"): on version 1 (violet and magenta) the author asked for a yellow, with a few shades to choose from, and for a light barrier to stop the ray at its edge, not its middle; on version 2 the author picked pale gold and the dark edge but found the glow too much and asked for the ray to look like the laser; on version 3 the author picked the laser-like drawing at medium width, the steady glow, at once and marked. The emitter's, the receiver's and the mirror box's drafts await the author ("To confirm" 8).
+   The drafts' sources ("To confirm" 8), each a 256 px tile drawn in the style of the game's sprites (`docs/sprites.md`: seen straight down, lit from overhead, no shadow of its own), shown in the mockup in pale gold. The emitter and the receiver are drawn, like a portal, on the top edge of a wall tile, working face up, and turned to their face (`up` as drawn, a quarter turn right for `right`, a half turn for `down`, a quarter turn left for `left`); their housings sit on the wall's 48 px bevel and reach 64 px into the tile, clear of the 128 px midlines where wall quarters join. Neither is raised (the wall casts the shadow). The mirror box is raised, as the box is, and is the box's own source (`art/sprites/box.svg`) with its disc replaced by the mirror; it is drawn as `/` and turned a quarter turn for `\`.
+
+   `art/sprites/emitter_on.svg`:
+
+   ```svg
+   <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+     <!--
+       An emitter that is on (docs/sprites.md), drawn on the top edge of its
+       wall tile, firing up onto the tile above; the game turns it to its
+       firing face. A dark steel housing set into the wall's bevel, its far
+       side past the tile's edge so only its inner corners are rounded, like a
+       laser's end plate; a dark bezel at the face holding the lens, lit pale
+       gold with a white-hot line and a soft halo; three vents and two rivets
+       behind it. It must match emitter_off but for the lens.
+     -->
+     <defs>
+       <clipPath id="tile">
+         <rect x="0" y="0" width="256" height="256"/>
+       </clipPath>
+       <filter id="soft" x="-0.3" y="-1" width="1.6" height="3" color-interpolation-filters="sRGB">
+         <feGaussianBlur stdDeviation="4"/>
+       </filter>
+     </defs>
+
+     <g clip-path="url(#tile)">
+       <!-- The housing -->
+       <rect x="74" y="-8" width="108" height="72" rx="8" fill="rgb(50, 55, 61)" stroke="rgb(176, 183, 189)" stroke-width="2.5"/>
+
+       <!-- The bezel round the lens -->
+       <rect x="88" y="-6" width="80" height="26" rx="4" fill="rgb(26, 28, 32)"/>
+
+       <!-- The lens, lit: its halo, the lens, its white-hot line -->
+       <rect x="92" y="-4" width="72" height="22" rx="4" fill="rgb(255, 228, 112)" opacity="0.75" filter="url(#soft)"/>
+       <rect x="96" y="1" width="64" height="12" rx="2.5" fill="rgb(255, 228, 112)"/>
+       <rect x="102" y="5" width="52" height="4" rx="2" fill="rgb(255, 252, 236)"/>
+
+       <!-- Vents -->
+       <g fill="rgb(32, 35, 39)">
+         <rect x="100" y="30" width="7" height="22" rx="3.5"/>
+         <rect x="124.5" y="30" width="7" height="22" rx="3.5"/>
+         <rect x="149" y="30" width="7" height="22" rx="3.5"/>
+       </g>
+
+       <!-- Rivets -->
+       <g fill="rgb(140, 146, 153)">
+         <circle cx="85" cy="52" r="3.5"/>
+         <circle cx="171" cy="52" r="3.5"/>
+       </g>
+     </g>
+   </svg>
+   ```
+
+   `art/sprites/emitter_off.svg`: the same file, its comment saying the lens is dark and that it must match `emitter_on` but for the lens, with the three lit lens lines (the halo, the lens and its white-hot line) replaced by a dark lens, and the `soft` filter dropped:
+
+   ```svg
+       <!-- The lens, dark -->
+       <rect x="96" y="1" width="64" height="12" rx="2.5" fill="rgb(74, 78, 86)"/>
+       <rect x="102" y="5" width="52" height="4" rx="2" fill="rgb(96, 101, 109)"/>
+   ```
+
+   `art/sprites/receiver_lit.svg`:
+
+   ```svg
+   <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+     <!--
+       A receiver that a ray reaches (docs/sprites.md), drawn on the top edge
+       of its wall tile, listening up onto the tile above; the game turns it to
+       its listening face. The emitter's housing, with a round eye in a dark
+       socket at the face in place of the lens, so the two never read alike:
+       a ring lit pale gold with a soft halo round a white-hot centre. It must
+       match receiver_dark but for the eye.
+     -->
+     <defs>
+       <clipPath id="tile">
+         <rect x="0" y="0" width="256" height="256"/>
+       </clipPath>
+       <filter id="halo" x="-0.6" y="-0.6" width="2.2" height="2.2" color-interpolation-filters="sRGB">
+         <feGaussianBlur stdDeviation="4"/>
+       </filter>
+     </defs>
+
+     <g clip-path="url(#tile)">
+       <!-- The housing -->
+       <rect x="74" y="-8" width="108" height="72" rx="8" fill="rgb(50, 55, 61)" stroke="rgb(176, 183, 189)" stroke-width="2.5"/>
+
+       <!-- The socket -->
+       <circle cx="128" cy="24" r="27" fill="rgb(26, 28, 32)"/>
+
+       <!-- The eye, lit: the ring's halo, the ring, its white-hot centre -->
+       <circle cx="128" cy="24" r="21" fill="none" stroke="rgb(255, 228, 112)" stroke-width="12" opacity="0.7" filter="url(#halo)"/>
+       <circle cx="128" cy="24" r="17" fill="rgb(26, 28, 32)" stroke="rgb(255, 228, 112)" stroke-width="7"/>
+       <circle cx="128" cy="24" r="7" fill="rgb(255, 252, 236)"/>
+
+       <!-- Rivets -->
+       <g fill="rgb(140, 146, 153)">
+         <circle cx="85" cy="52" r="3.5"/>
+         <circle cx="171" cy="52" r="3.5"/>
+       </g>
+     </g>
+   </svg>
+   ```
+
+   `art/sprites/receiver_dark.svg`: the same file, its comment adjusted the same way, with the lit eye's three lines replaced by a dark one, and the `halo` filter dropped:
+
+   ```svg
+       <!-- The eye, dark -->
+       <circle cx="128" cy="24" r="17" fill="rgb(26, 28, 32)" stroke="rgb(84, 89, 97)" stroke-width="7"/>
+       <circle cx="128" cy="24" r="7" fill="rgb(58, 62, 69)"/>
+   ```
+
+   `art/sprites/box_mirror.svg`: `art/sprites/box.svg` with its comment rewritten (a mirror box: the box with a mirror of glass from corner to corner, bottom left to top right, in place of its disc; the game turns it a quarter turn for `\`), the glass gradient added to its `defs`, and its last element, the disc (`<circle cx="128" cy="128" r="37.1" fill="rgb(201, 198, 199)"/>`), replaced by the mirror, still inside the group that scales the box to 80 %:
+
+   ```svg
+       <!-- In defs: the glass, lit across its width -->
+       <linearGradient id="glass" gradientUnits="userSpaceOnUse" x1="0" y1="119" x2="0" y2="137">
+         <stop offset="0" stop-color="rgb(150, 158, 170)"/>
+         <stop offset="0.45" stop-color="rgb(238, 242, 248)"/>
+         <stop offset="1" stop-color="rgb(176, 184, 196)"/>
+       </linearGradient>
+
+       <!-- In place of the disc: the mirror, from corner to corner, a "/": its dark frame, the glass, a white glint along it -->
+       <g transform="rotate(-45 128 128)">
+         <rect x="52" y="115" width="152" height="26" rx="5" fill="rgb(44, 48, 54)"/>
+         <rect x="56" y="119" width="144" height="18" rx="3" fill="url(#glass)"/>
+         <rect x="60" y="125.5" width="136" height="3" rx="1.5" fill="rgb(255, 255, 255)" opacity="0.9"/>
+       </g>
+   ```
+
+   Each is exported as AGENTS.md says, with alpha (none is opaque): `inkscape art/sprites/emitter_on.svg --export-type=png --export-filename=emitter_on.png`, then `convert emitter_on.png -quality 90 -define webp:alpha-quality=100 src/assets/images/chamber/emitter_on.webp`, and the PNG deleted. In the mockup they read at 40 px a tile and, as specks, at 16 px.
+3. **The sprites**, once "To confirm" 8 is settled. The five sources under step 2 in `art/sprites/` (`emitter_on`, `emitter_off`, `receiver_lit`, `receiver_dark`, `box_mirror`), exported as step 2 says; their keys in `SPRITE_SHAPES` (`src/game/sprite_set.ts`), all shape `'tile'` (256 px), in the spec's order, which is also the gallery's (the emitter's and receiver's after the blocked wall's, `box_mirror` after `box`); `box_mirror` in `RAISED_SPRITES`, as `box` is. `docs/sprites.md`: "Files" (none fills its tile), "Turning" (a new row: `emitter_on`, `emitter_off`, `receiver_lit`, `receiver_dark`, drawn on the top edge of the wall tile, working face up, turned to their face as portals are; and `box_mirror`, drawn as `/`, a quarter turn for `\`), the count sentence before "The set", "The set" (five rows, renumbering the rest), "Order" (the emitters and receivers among the blockers, after the blocked walls; `box_mirror` with the boxes; the ray, drawn in code, in the row step 8 and "To confirm" 5 settle; its glow among the glows), the meaning colours table (the ray's pale gold, with its rim, light and core). Checked by `npm run assets:check` (one file per key, of a size its shape allows) and the sprite gallery (`/src/dev/sprite_gallery.html` in `npm run dev`), which lists every sprite by itself.
 4. **R2, the elements and the format.**
    - `element_definition.ts`: a new required property for what stops a ray (say `blocksRays`: `'never'` or `'whenBlocked'`; the light barrier, the door and the exit `'whenBlocked'`, every other floor element `'never'`; walls and resting boxes are the core's, below).
    - `src/game/rules/elements/emitter.ts` (new): `kind: 'emitter'`, `fileKey: 'emitters'`, `count: 'many'`, `sitsOn: 'wall'`, layer `blockers`, `linkable: true`, `defaultBlocked: false`, `blocksWalking` and `blocksShots` `'always'`, `stopsShootingFrom: 'never'`, `takesPortals: 'always'` (read by nothing; its faces are `canTakePortalOn`'s), `reactsToSubject` and `continuesMovement` false, no events, hooks `linkUnblocked` (on) and `linkBlocked` (off) through `setBlocked`. Entry type: `PositionData & {direction: string, id?: number, blocked?: boolean}`, under a new name in `chamber_data.ts` that isn't a `Beam*` one.
@@ -644,12 +796,23 @@ Steps in order; each says what it changes and how it is checked. After every ste
    - `docs/solver.md`: the skip, linked emitters among what adds key bits, receivers among what unpacking works out.
    - Checked by `npm run solver:check`. It meets no receiver until R7, so R5 is ticked then, as in Phases 1 and 2; until then, a throwaway run of `checkRoundTrip` on a fixture chamber with a receiver exercises the unpacking.
 8. **R3, drawing and motion** (from step 2's decisions).
-   - A ray drawing (say `src/game/ray_drawing.ts`), drawn in code with `drawInFrame` from `traceRays(shown)` each time the renderer draws, over the fixtures and under the portals, items and the subject (decision 54): each straight run of a ray as a band across which a linear gradient repeats `laser_on`'s profile, scaled to the medium width (decision 50): its haze (pale gold at up to 32 %), its soft edge (the rim colour at 80 %), then its beam (rim, body, light, core and back). Its glow, `laser_glow`'s bell-shaped band in pale gold, drawn with the other glows at a steady 80 % (decision 51), each spot keeping its brightest before it is added, so a turn doesn't light its corner twice; steady, so `hasAmbientLife` needn't change. Its colours as `rgba()` in `PALETTE`: body, light, core and rim (decision 49). Ray ends as decision 54 lists them, a light barrier's at its band's rim (50 px of 256 from the tile's middle) when the band runs across the ray. The mockup's script (`drawLaserLikeRays`, `drawLaserLikeGlow`, `fillBand`) shows the drawing but is not code to copy.
-   - `element_drawings.ts`: `emitter` (its plate, on or off, turned to its face, and faded through `ElementTransitions` like a laser, adding `'emitter'` to `TransitionKind`, `TRANSITION_KINDS` and `TRANSITION_STYLES`, if step 2 picks a fade) and `receiver` (lit or dark); `drawBoxes` draws `box_mirror` for a mirror box, turned a quarter for `\`; the subject's drawing adds the mirror's line over a carried mirror box, the right way round in the room (decision 53).
+   - A ray drawing (say `src/game/ray_drawing.ts`), drawn in code from `traceRays(shown)` each time the renderer draws, with `drawInFrame` (tile coordinates with the canvas's y growing downwards, so the rules' rows are negated, as `antline_drawing.ts` does). The mockup's drawing in numbers (decisions 49–51):
+     - **Colours**, in `PALETTE` (`src/game/palette.ts`) as `rgba()`: body 255, 228, 112; light 255, 242, 186; core 255, 252, 236; rim (the dark edge) 186, 148, 30. No CSS token mirrors them, as none mirrors the antlines'.
+     - **Runs.** `traceRays` gives each ray as lines of points (a new line after each portal); before drawing, consecutive points along one straight run are merged, so each run is filled once and no seam shows between tiles. Each run is filled as a rectangle along it, as long as the run, with a linear gradient across it. Three bands, drawn as three passes over every ray (all hazes, then all soft edges, then all beams), so crossing rays layer cleanly. Scale s = 0.09 / (30 / 256) ≈ 0.768, the medium width over a laser's beam (decision 50). Half-widths across the run, in tiles: haze 48/256 × s ≈ 0.144, soft edge 17/256 × s ≈ 0.051, beam 15/256 × s ≈ 0.045, each at least 0.6 canvas px, so a ray still shows on the home menu's map.
+     - **Haze**: the body colour at opacity 0 at offset 0, 0.08 at 0.15, 0.24 at 0.3, 0.32 at 0.5, 0.24 at 0.7, 0.08 at 0.85 and 0 at 1 (`laser_on.svg`'s haze).
+     - **Soft edge**: the rim colour at 80 % opacity, solid across (`laser_on.svg` has its edge at 45 %; the dark rim needs more to show on the light floor).
+     - **Beam**: rim at offset 0, body at 0.25, light at 0.38, core from 0.44 to 0.56, light at 0.62, body at 0.75 and rim at 1, all opaque (`laser_on.svg`'s beam stops, with the rim in place of its crimson edge).
+     - **Glow**, drawn with the other glows, after the subject: `laser_glow.svg`'s bell, the body colour at opacity 0, 0.03, 0.12, 0.3, 0.47, 0.55, 0.47, 0.3, 0.12, 0.03 and 0 at offsets 0, 0.15, 0.3, 0.4, 0.46, 0.5, 0.54, 0.6, 0.7, 0.85 and 1, across a half-width of 80/256 × s ≈ 0.24 tile, cut square where the ray ends. The mockup draws every run's glow onto a black canvas the chamber's size with `globalCompositeOperation = 'lighten'`, each stop's colour premultiplied (each channel × its opacity, at full alpha), so each spot keeps its brightest and a turn doesn't light its corner twice, then adds that canvas with `'lighter'` at 0.8 (decision 51). The game may find a cheaper way that looks the same. Held steady, the ray adds nothing to `hasAmbientLife`, and it is drawn the same with no time given (the home menu's map, the gallery).
+     - **Ends** (decision 54): a ray starts at its emitter's face; at a portal it ends 23.5/256 tile inside the wall from the face, the oval's middle (the figure `portal_openings.ts` uses), and starts again as deep inside the other portal's wall, unless "To confirm" 5 moves it to the face; at the subject or a plain box, at the tile's middle; at a light barrier whose band crosses the ray, 50/256 tile short of the tile's middle (the band's teal rim, y 78 to 178 in `light_barrier_on.svg`), and at the tile's entry edge when the band runs along the ray; at a closed door, the closed exit, a wall or a receiver, at the face it meets; at a mirror box it turns at the tile's middle, under the box, which hides the corner; a ray stopped by its loop guard ends at the entry edge of the tile it would enter twice. `traceRays` gives these points (plan step 5), so the drawing only fills between them.
+     - **Layer**: after the blockers, so after the emitters' and receivers' plates, and before the portals, as the mockup draws it, or after the fixtures if "To confirm" 5 so decides; the renderer draws it between those layers, not through an element's entry in `ELEMENT_DRAWINGS`.
+     - **Change**: at once with the step (decision 52), from the state shown, so nothing goes into `ElementTransitions` for rays; with reduced motion the same.
+     - The mockup's script (`traceRays`, `splitLine`, `segmentsOf`, `fillBand`, `drawLaserLikeRays`, `drawLaserLikeGlow`) does all this and can be read for reference, but it is not code to copy: screen coordinates, no project conventions.
+   - `element_drawings.ts`: `emitter` (`emitter_on` or `emitter_off` on its wall tile, turned to its face; at once, or faded through `ElementTransitions` like a laser's end plates if "To confirm" 6 picks a fade, adding `'emitter'` to `TransitionKind`, `TRANSITION_KINDS` and `TRANSITION_STYLES`) and `receiver` (`receiver_lit` or `receiver_dark`, turned to its face, lit from the state's lit flag; at once unless "To confirm" 7 picks a fade); `drawBoxes` draws `box_mirror` for a mirror box, turned a quarter turn for `\`.
+   - The carried mirror box (decision 53), drawn after the subject's sprite at the subject's pose, so it glides with it: its middle is the subject's drawn middle plus `CARRIED_BOX_AHEAD` (0.26 tile) the way the subject faces; a diagonal from −0.13 to +0.13 tile each way across it, bottom left to top right on screen for `/`, top left to bottom right for `\`, whichever way the subject faces; three round-capped strokes, rgb 44, 48, 54 at 0.07 tile wide, then 226, 231, 238 at 0.045, then white at 0.012, each at least 1 px; their colours in `PALETTE`. Through a portal crossing, clipped with each half of the subject.
    - `destroyed_boxes.ts`, `box_fall.ts` and `fizzle_particles.ts`: each box's own sprite and turn, not `'box'` alone.
    - `level.ts`: nothing but `SOUNDS`, unless a receiver gets an effect of its own.
    - Checked in the browser (AGENTS.md, "Testing in the browser"; headless Chrome if the extension isn't connected) on the playground once step 10 is done, at pixel ratio 1 and 2 and with reduced motion, and in the sprite gallery.
-9. **The chamber sign** (with the `frontend-design` skill). `element_pictogram.vue`: emitter, receiver and mirror box pictograms; `PictogramKind` widened to name the mirror box; `chamber_sign.vue`: three entries, the mirror box's lit when any box has a `mirror` (and the box's then lit only for a box without one, or for any box, as step 2 suggests), filling the second row (decision 31). AGENTS.md's "eleven kinds". Checked by screenshots of the sign with and without them, and the rail still fitting a 1080 px window.
+9. **The chamber sign** (with the `frontend-design` skill). `element_pictogram.vue`: emitter, receiver and mirror box pictograms in the style of the others (one hand-drawn SVG per kind on a 48 × 48 viewBox, in its `v-if` chain), say the emitter a wall block with a slit and a line leaving it, the receiver one with a ring and a line arriving, and the mirror box a box with a diagonal; `PictogramKind` widened to name the mirror box, which isn't an element kind; `chamber_sign.vue`: three entries in `SIGN_ELEMENTS`, the mirror box's lit when any box has a `mirror`. Proposed, to put to the author with the pictograms: the box's then lit only when a box without a mirror exists. With these the sign holds fourteen, two full rows of seven (decision 31). AGENTS.md's "eleven kinds" becomes fourteen. Checked by screenshots of the sign with and without them, and the rail still fitting a 1080 px window.
 10. **Playground and gallery.**
     - `src/dev/playground.json`: a ray room carved from solid wall (x 10 to 14 by y 10 to 13, beside the top room, is the likeliest), with an emitter a button switches on, a receiver that opens a door, a mirror box, walls that take portals to route the ray, and an antline from the button to the emitter; its description in AGENTS.md and in `chamber_catalogue.ts`'s comment.
     - `src/dev/gallery_layouts.ts`: an emitter and a receiver on the specimen's walls with a ray between them, and a mirror box on a free tile, once on and once off; `sprite_gallery.html`'s description.
@@ -671,9 +834,11 @@ R7, once the author has tried rays in the playground, as in Phases 1 and 2 (deci
 
 Chambers. Teach: one emitter and one receiver that opens the exit door, with a wall between them; place a portal pair to route the ray around. Test: the ray has to turn a corner, coming out of a portal on a perpendicular wall. The twist and combine ideas are stage 04b's.
 
+A starting sketch for the teach chamber, the mockup's "In motion" chamber in game coordinates (x to the right, y upwards from the bottom row), never run through the chamber check, the rules or the solver: 9 × 7, walls all round but the exit at (2,0) in the bottom wall, and a wall stub at x 4, y 3 to 5, hanging from the top wall, so rows 1 and 2 run the whole width; an emitter at (0,4) in the left wall firing `RIGHT`; a receiver at (6,0) in the bottom wall listening `UP`, linking the exit; a mirror box `/` at (1,2); the subject at (2,2) facing `UP`; an antline from the receiver along (6,0), (6,1), (2,1) to the exit (2,0). At the start the ray runs along row 4 into the stub. The scripted route: shoot blue up from (2,2) into the top wall at (2,6); turn left and pick up the box at (1,2); step up to (2,3) and put the box down at (2,4), in the ray, which turns up into blue's wall and stops (orange is shut); step down to (2,2), right four times to (6,2), turn up and shoot orange into the top wall at (6,6): the ray goes into blue, out of orange and down column 6, and stops at the subject on (6,2); step right to (7,2): it reaches the receiver, which lights and opens the exit; step back left onto (6,2): cut, the exit closes; left again to (5,2): open again; then down to (5,1) and left along row 1 to (2,1) and down onto the exit, which keeps clear of the ray. As a real teach chamber it probably wants fewer steps (decision 25's playground trial first), and it must follow R6's guideline: no ray across what its own receiver holds open, nor across the subject's only way to the exit.
+
 - [ ] **R1 Spec.** Finalise the spec above, including the settling rule (decision 45), and fill the rows for the emitter, the receiver, the mirror box and rays. Plan steps 1 and 11.
 - [ ] **R2 Element and format.** Element files for the emitter and the receiver, and the mirror box as a field on boxes (decision 48); optional lists in format v2. Laser fields stay their own element (decision 18). Plan step 4.
-- [ ] **R3 Drawing and sounds.** As the mockup settles (plan step 2): the ray drawn in code, coloured unlike a laser field; the emitter and the receiver as plates on their wall face; the mirror box as a box with a diagonal. Receiver events, silent for now ("To confirm" 4). Plan steps 3, 8 and 9.
+- [ ] **R3 Drawing and sounds.** As the mockup settled (decisions 49–54): the ray drawn in code like a laser field, pale gold with a dark rim, medium width, steady glow, changing at once; the emitter and the receiver as plates on their wall face and the mirror box as a box with a diagonal, once their drafts are passed ("To confirm" 8). Receiver events, silent for now ("To confirm" 4). Plan steps 3, 8 and 9.
 - [ ] **R4 Fixtures.** A straight ray, a ray through portals, a ray loop, rays stopped by the subject and by a box (decision 46), the subject walking into a ray and out again (its receiver dark, then lit again), a slide passing through a ray and one ending in it, stepping onto the tile in front of a door a ray holds open (the door closes), a mirror bend, a mirror carried through a portal, a receiver opening and closing a door, a relay through an emitter, two receivers holding each other's doors (settling ends, decision 45), a fizzler resetting a carried mirror. Plan step 6.
 - [ ] **R5 Solver check.** Each mirror box is a box in the key, each linked emitter adds a flag bit, rays add none, and receivers' lit flags are worked out on unpacking. The subject cuts rays by walking (decisions 18 and 20), which the solver's walks and shared shots assume it can't, so the check skips those and names each chamber with a receiver (decision 47). `npm run verify` passes with the laser chambers in. Plan step 7; ticked after R7.
 - [ ] **R6 Docs.** All new entries in `docs/elements.md`, with the settling rule and why it ends written out. Add a `docs/level_design.md` guideline: a ray must not cross something its own receiver holds open (a door, the exit, a bridged ditch, or a laser or light barrier held off). Stepping onto it cuts the ray and switches it under the subject (decision 20). Plan step 11.
@@ -715,6 +880,8 @@ Revised 2026-11-09 (decisions 13 and 14): the solver budget, no-solver, medal pa
 
 - **Interactions multiply.** Each new element must be defined against every other. The interaction table and fixtures exist so that gaps show up as "to do" cells, not as player bug reports.
 - **Rays settle in surprising ways.** Feedback through receivers and loops through portals are handled by deterministic rules (decision 45), but they can still confuse players. Watch the playtest notes.
+- **Settling's end is argued, not proven.** Decision 45 argues that settling always ends once a link turns an emitter on; no proof was written. If a chamber ever reached the 32-pass cap, `settle` throws ("A step still changed the state after 32 passes"), and `Level.runStep` doesn't catch it, so play would stop. Phase 3's fixtures (two receivers holding each other's doors, a relay through an emitter) and the random walk on every chamber, the playground and every fixture chamber test it; a failure there means revisiting decision 45, not raising the cap.
+- **The ray beside a lit antline.** The ray's pale gold (255, 228, 112) is near a lit antline's amber dots (250, 194, 44); the dark rim and the ray's shape keep them apart in the mockup. Watch it in the playground and the cold playtests.
 - **State growth.** Mirror boxes (positions) grow the state. The printed state size shows it early; the solver check skips, and names, a chamber it can't handle (decision 18).
 - **New elements must read clearly.** Slide floor and plain floor, ray and laser field must stay distinct, all the more since a laser field blocks walking and a ray doesn't (decision 20). R3's check and the cold playtests catch this.
 - **"Moves" changes meaning.** A slide moves many tiles on one key. Follow stage 01's definition (one move) and note any change in meaning, because analytics parameter names are permanent and their history spans the change.
