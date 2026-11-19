@@ -38,6 +38,7 @@ export const BLOCKED_WALL_ELEMENT = defineElement<BlockedWallData>()({
   blocksShots: 'always',
   stopsShootingFrom: 'never',
   takesPortals: 'whenUnblocked',
+  blocksRays: 'never',
   reactsToSubject: false,
   continuesMovement: false,
   events: [],

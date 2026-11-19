@@ -95,6 +95,8 @@ export class Level {
     [GameEvent.SLIDE_STARTED]: null,
     [GameEvent.SLIDE_STOPPED]: null,
     [GameEvent.ARROW_TURNED]: null,
+    [GameEvent.RECEIVER_LIT]: null,
+    [GameEvent.RECEIVER_UNLIT]: null,
   }
 
   onCompleted: (() => void) | null = null // Called once per load when the subject reaches the exit

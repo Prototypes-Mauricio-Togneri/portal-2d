@@ -72,6 +72,20 @@ export abstract class StateReader {
   }
 
   /**
+   * Where a receiver's lit flag is kept.
+   * @param index - The receiver's index in the chamber's receiver list
+   * @returns The offset
+   * @throws RangeError for a receiver the chamber doesn't have
+   */
+  protected receiverOffset(index: number): number {
+    if ((index < 0) || (index >= this.chamber.stateLayout.receiverCount)) {
+      throw new RangeError(`no receiver ${index} in the chamber`)
+    }
+
+    return this.chamber.stateLayout.receiversOffset + index
+  }
+
+  /**
    * The subject's column.
    */
   get subjectX(): number {
@@ -235,6 +249,16 @@ export abstract class StateReader {
    */
   isButtonPressed(index: number): boolean {
     return this.read(this.buttonOffset(index)) === 1
+  }
+
+  /**
+   * Whether a receiver is lit, as the step last judged it: a settled state's
+   * receiver is lit exactly when a ray reaches it.
+   * @param index - The receiver's index in the chamber's receiver list
+   * @returns True when it is lit
+   */
+  isReceiverLit(index: number): boolean {
+    return this.read(this.receiverOffset(index)) === 1
   }
 
   /**

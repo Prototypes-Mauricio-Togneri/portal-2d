@@ -13,7 +13,7 @@ import {Objective, searchBaseline} from '@/solver/baseline_search'
 import {ChamberIndex, NO_NUMBER} from '@/solver/chamber_index'
 import {MOVE_ACTIONS, TURN_ACTIONS} from '@/solver/macro_action'
 import {encodeCanonical} from '@/solver/macro_route'
-import {MacroSearch, SearchMode} from '@/solver/macro_search'
+import {MacroSearch, macroSearchRefusal, SearchMode} from '@/solver/macro_search'
 import {SHOT_ACTIONS, ShotLines} from '@/solver/shot_lines'
 import {MAX_KEY_BITS, measureKey, StateKeyCodec} from '@/solver/state_key_codec'
 import {NO_ACTION, NO_ENTRY, StateSet} from '@/solver/state_set'
@@ -40,7 +40,9 @@ import {SOLVER_FIXTURES, type SolverFixture, type SolverRoute} from '@scripts/so
 // skips, each way the subject may face, unless it gives what an interact the
 // solver takes there gives (not the box drops the any-route search leaves
 // out, a guess this doesn't check); and a tile a walk reaches shares the
-// start's region exactly when a walk from it gets back to the start. The
+// start's region exactly when a walk from it gets back to the start. On a
+// chamber with a receiver, which the macro search refuses, the walk, shot,
+// skip and region checks are skipped, and the chamber's line says so. The
 // searches:
 // on every solver fixture (scripts/solver_fixtures/), the reference search
 // and the macro search find both hand-counted pars, the macro search also
@@ -472,12 +474,19 @@ function checkChamberKey(file: string, data: unknown): string {
   }
 
   const walked = walkStates(chamber, (state) => checkRoundTrip(codec, state, words))
+  const keyChecked = `key ${codec.widths.total} bits, ${solutionStates.length + walked} states survive it`
+  const refusal = macroSearchRefusal(chamber)
+
+  if (refusal !== null) {
+    return `${keyChecked}; walk, shot, skip and region checks skipped, since the macro search refuses the chamber: ${refusal}`
+  }
+
   const walks = checkWalks(codec, graph, solutionStates)
   const shots = checkShots(codec, graph, solutionStates)
   const skips = checkSkips(codec, graph, solutionStates)
   const regions = checkRegions(codec, graph, solutionStates)
 
-  return `key ${codec.widths.total} bits, ${solutionStates.length + walked} states survive it; ${walks} moves and turns agree with the walk graph; ${shots.checked} shots agree with the shot lines (${shots.reused} reused); ${skips} skipped interacts and moves change nothing; ${regions} tiles agree with the regions`
+  return `${keyChecked}; ${walks} moves and turns agree with the walk graph; ${shots.checked} shots agree with the shot lines (${shots.reused} reused); ${skips} skipped interacts and moves change nothing; ${regions} tiles agree with the regions`
 }
 
 /**

@@ -6,7 +6,7 @@ import {type ChamberProblem, chamberError, chamberWarning, type ProblemTile} fro
  * What can stand on a tile at the start: a wall, a fixed element, a box or
  * the subject.
  */
-type OccupantKind = 'wall' | 'blockedWall' | 'slideFloor' | 'lightBarrier' | 'ditch' | 'door' | 'exit' | 'fizzler' | 'arrow' | 'button' | 'switch' | 'laser' | 'box' | 'subject'
+type OccupantKind = 'wall' | 'blockedWall' | 'emitter' | 'receiver' | 'slideFloor' | 'lightBarrier' | 'ditch' | 'door' | 'exit' | 'fizzler' | 'arrow' | 'button' | 'switch' | 'laser' | 'box' | 'subject'
 
 /**
  * Something standing on a tile at the start.
@@ -35,10 +35,12 @@ type LinkTarget = {
   readonly links: readonly number[] // A group's ids, empty for an element
 }
 
-/** The walls: a tile holds at most one, and nothing else */
+/** The walls: a tile holds at most one, and nothing else; emitters and receivers are wall tiles of their own */
 const WALL_KINDS: readonly OccupantKind[] = [
   'wall',
   'blockedWall',
+  'emitter',
+  'receiver',
 ]
 
 /** The elements that sit fixed on a floor tile; only two crossing lasers may share one */
@@ -67,6 +69,8 @@ const SLIDE_FLOOR_EXCLUDED: readonly OccupantKind[] = [
 const EDGE_KINDS: readonly OccupantKind[] = [
   'wall',
   'blockedWall',
+  'emitter',
+  'receiver',
   'door',
   'exit',
 ]
@@ -93,7 +97,7 @@ function describeKind(kind: OccupantKind): string {
     return 'a slide floor'
   }
 
-  return (kind === 'arrow') ? 'an arrow' : `a ${kind}`
+  return ((kind === 'arrow') || (kind === 'emitter')) ? `an ${kind}` : `a ${kind}`
 }
 
 /**
@@ -108,9 +112,10 @@ function tileKey(x: number, y: number): string {
 
 /**
  * Checks how the parts of a format 2 chamber fit together: everything inside
- * the chamber, at most one fixed element per tile, ids unique and links
- * naming something, antlines leading from a button or switch to an element it
- * links, and an enclosed edge.
+ * the chamber, at most one fixed element per tile, emitters and receivers
+ * facing the floor, ids unique and links naming something, antlines leading
+ * from a button, switch or receiver to an element it links, and an enclosed
+ * edge.
  */
 class ChamberValidator {
   readonly problems: ChamberProblem[] = [] // Every problem found so far
@@ -183,12 +188,14 @@ class ChamberValidator {
   }
 
   /**
-   * Places every wall and blocked wall tile, reporting an entry that reaches
-   * outside the chamber and a tile listed twice.
+   * Places every wall, blocked wall, emitter and receiver tile, reporting an
+   * entry that reaches outside the chamber and a tile listed twice.
    */
   private placeWalls(): void {
     this.chamber.walls?.forEach((wall, index) => this.placeTiles(wall, 'wall', `walls[${index}]`, WALL_KINDS, 'wall'))
     this.chamber.blockedWalls?.forEach((wall, index) => this.placeTiles(wall, 'blockedWall', `blockedWalls[${index}]`, WALL_KINDS, 'wall'))
+    this.chamber.emitters?.forEach((emitter, index) => this.placeTiles(emitter, 'emitter', `emitters[${index}]`, WALL_KINDS, 'wall'))
+    this.chamber.receivers?.forEach((receiver, index) => this.placeTiles(receiver, 'receiver', `receivers[${index}]`, WALL_KINDS, 'wall'))
   }
 
   /**
@@ -327,6 +334,38 @@ class ChamberValidator {
   }
 
   /**
+   * Checks that each emitter fires, and each receiver listens, onto a floor
+   * tile inside the chamber: the tile its face looks onto is inside and no
+   * wall.
+   */
+  private checkDeviceFaces(): void {
+    const check = (list: readonly (PositionData & {readonly direction: string})[] | undefined, name: string, does: string): void => {
+      list?.forEach((device, index) => {
+        if (!this.isInside(device.x, device.y)) {
+          return
+        }
+
+        const delta = DELTAS[parseDirection(device.direction)]
+        const facedX = device.x + delta.dx
+        const facedY = device.y + delta.dy
+        const tile = {
+          x: device.x,
+          y: device.y,
+        }
+
+        if (!this.isInside(facedX, facedY)) {
+          this.problems.push(chamberError(`${name}[${index}]`, tile, `faces outside the chamber: it ${does} a floor tile inside it`))
+        } else if ((this.occupants.get(tileKey(facedX, facedY))?.list ?? []).some((occupant) => WALL_KINDS.includes(occupant.kind))) {
+          this.problems.push(chamberError(`${name}[${index}]`, tile, `faces a wall at (${facedX}, ${facedY}): it ${does} a floor tile`))
+        }
+      })
+    }
+
+    check(this.chamber.emitters, 'emitters', 'fires onto')
+    check(this.chamber.receivers, 'receivers', 'listens on')
+  }
+
+  /**
    * Notes what an id names, reporting an id used twice.
    * @param id - The id, or undefined when the element has none
    * @param target - What it names
@@ -348,9 +387,9 @@ class ChamberValidator {
   }
 
   /**
-   * Notes every id: the linkable elements' and the groups'. Arrows come
-   * after the exit, the last linkable element before them, so the messages
-   * of chambers without linked arrows keep their order.
+   * Notes every id: the linkable elements' and the groups'. Arrows, then
+   * emitters, come after the exit, the last linkable element before them, so
+   * the messages of chambers without them keep their order.
    */
   private collectTargets(): void {
     const chamber = this.chamber
@@ -396,6 +435,7 @@ class ChamberValidator {
       links: [],
     })
     addElements(chamber.arrows, 'arrow', 'arrows')
+    addElements(chamber.emitters, 'emitter', 'emitters')
     chamber.groups?.forEach((group, index) => this.addTarget(group.id, {
       kind: 'group',
       field: `groups[${index}]`,
@@ -406,8 +446,9 @@ class ChamberValidator {
 
   /**
    * Checks that every link names something, that a group names only
-   * elements, and warns about a button linked to a box (releasing the button
-   * does nothing to the box).
+   * elements, and warns about a button or a receiver linked to a box
+   * (releasing the button, or the receiver going dark, does nothing to the
+   * box).
    */
   private checkLinks(): void {
     const chamber = this.chamber
@@ -424,7 +465,7 @@ class ChamberValidator {
       }
     })
 
-    const checkTriggers = (list: typeof chamber.buttons, name: string, isButton: boolean): void => {
+    const checkTriggers = (list: readonly (PositionData & {readonly links: readonly number[]})[] | undefined, name: string, boxWarning: string | null): void => {
       list?.forEach((trigger, index) => {
         const field = `${name}[${index}]`
         const tile = {
@@ -442,15 +483,16 @@ class ChamberValidator {
 
           const named = (target.kind === 'group') ? target.links.map((member) => this.targets.get(member)) : [target]
 
-          if (isButton && named.some((element) => element?.kind === 'box')) {
-            this.problems.push(chamberWarning(field, tile, 'links a box: pressing sends it back to its start, releasing does nothing to it'))
+          if ((boxWarning !== null) && named.some((element) => element?.kind === 'box')) {
+            this.problems.push(chamberWarning(field, tile, boxWarning))
           }
         }
       })
     }
 
-    checkTriggers(chamber.buttons, 'buttons', true)
-    checkTriggers(chamber.switches, 'switches', false)
+    checkTriggers(chamber.buttons, 'buttons', 'links a box: pressing sends it back to its start, releasing does nothing to it')
+    checkTriggers(chamber.switches, 'switches', null)
+    checkTriggers(chamber.receivers, 'receivers', 'links a box: lighting sends it back to its start, going dark does nothing to it')
   }
 
   /**
@@ -471,8 +513,8 @@ class ChamberValidator {
   }
 
   /**
-   * Whether a button or switch on a tile links an element, by its id or
-   * through a group.
+   * Whether a button, switch or receiver on a tile links an element, by its
+   * id or through a group.
    * @param tile - The tile
    * @param id - The element's id
    * @returns True when one on the tile does
@@ -481,6 +523,7 @@ class ChamberValidator {
     const triggers = [
       ...(this.chamber.buttons ?? []),
       ...(this.chamber.switches ?? []),
+      ...(this.chamber.receivers ?? []),
     ]
 
     return triggers.some((trigger) => (trigger.x === tile.x) && (trigger.y === tile.y) &&
@@ -530,8 +573,8 @@ class ChamberValidator {
 
   /**
    * Checks one antline: it leads to an element, not a group; its corners are
-   * right; it starts on a button or switch that links the element, by its id
-   * or through a group, and ends on the element's tile.
+   * right; it starts on a button, switch or receiver that links the element,
+   * by its id or through a group, and ends on the element's tile.
    * @param antline - The antline
    * @param field - Where in the file it is listed
    */
@@ -563,7 +606,7 @@ class ChamberValidator {
       this.problems.push(chamberError(field, {
         x: start.x,
         y: start.y,
-      }, `starts on no button or switch that links id ${id}`))
+      }, `starts on no button, switch or receiver that links id ${id}`))
     }
 
     if ((end.x !== target.tile.x) || (end.y !== target.tile.y)) {
@@ -576,7 +619,7 @@ class ChamberValidator {
 
   /**
    * Checks that every tile of the chamber's edge holds a wall, a blocked
-   * wall, a door or the exit.
+   * wall, an emitter, a receiver, a door or the exit.
    */
   private checkEdge(): void {
     const width = this.chamber.size.width
@@ -591,7 +634,7 @@ class ChamberValidator {
           this.problems.push(chamberError('', {
             x: x,
             y: y,
-          }, 'the chamber\'s edge is open here: an edge tile needs a wall, a blocked wall, a door or the exit'))
+          }, 'the chamber\'s edge is open here: an edge tile needs a wall, a blocked wall, an emitter, a receiver, a door or the exit'))
         }
       }
     }
@@ -605,6 +648,7 @@ class ChamberValidator {
     this.placeSlideFloors()
     this.placeElements()
     this.checkOverlaps()
+    this.checkDeviceFaces()
     this.collectTargets()
     this.checkLinks()
     this.checkArrows()

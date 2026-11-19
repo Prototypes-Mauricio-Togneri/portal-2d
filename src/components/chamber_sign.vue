@@ -4,7 +4,9 @@
  * framed in grey: the chamber's number, its place in the list beside whatever
  * the screen puts in the slot (the clock), a rule, then two rows of
  * pictograms, one for each kind of element a chamber can hold, dark when this
- * chamber has it and faint when it hasn't.
+ * chamber has it and faint when it hasn't. A mirror box is listed among the
+ * boxes, so its pictogram is the one special case: dark when any box holds a
+ * mirror.
  */
 import {computed} from 'vue'
 import ElementPictogram from '@/components/element_pictogram.vue'
@@ -86,6 +88,21 @@ const SIGN_ELEMENTS: readonly SignElement[] = [
     field: 'lightBarriers',
     name: 'Light barrier',
   },
+  {
+    kind: 'emitter',
+    field: 'emitters',
+    name: 'Emitter',
+  },
+  {
+    kind: 'receiver',
+    field: 'receivers',
+    name: 'Receiver',
+  },
+  {
+    kind: 'mirrorBox',
+    field: 'boxes',
+    name: 'Mirror box',
+  },
 ]
 
 const props = defineProps<ChamberSignProps>()
@@ -96,7 +113,7 @@ const heading = computed(() => props.chamberNumber === null ? 'Playground' : `Ch
 const elements = computed(() => SIGN_ELEMENTS.map((element) => ({
   kind: element.kind,
   name: element.name,
-  present: (props.layout?.[element.field]?.length ?? 0) > 0,
+  present: (element.kind === 'mirrorBox') ? (props.layout?.boxes ?? []).some((box) => box.mirror !== undefined) : ((props.layout?.[element.field]?.length ?? 0) > 0),
 })))
 
 /**

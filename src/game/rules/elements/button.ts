@@ -33,6 +33,7 @@ export const BUTTON_ELEMENT = defineElement<TriggerData>()({
   blocksShots: 'never',
   stopsShootingFrom: 'never',
   takesPortals: 'never',
+  blocksRays: 'never',
   reactsToSubject: true,
   continuesMovement: false,
   events: [

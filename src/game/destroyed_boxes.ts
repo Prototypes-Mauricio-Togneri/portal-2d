@@ -1,10 +1,12 @@
 import type {PositionData} from '@/game/chamber_data'
 import {DELTAS, Direction} from '@/game/direction'
+import {boxSprite} from '@/game/element_drawings'
 import {GameEvent} from '@/game/game_event'
 import {CARRIED_BOX_AHEAD, CARRIED_BOX_SIZE} from '@/game/renderer'
 import {NO_ELEMENT} from '@/game/rules/compiled_chamber'
 import {BOX_DESTROYING_KINDS} from '@/game/rules/elements/box'
 import type {RulesState} from '@/game/rules/rules_state'
+import type {SpriteName} from '@/game/sprite_set'
 
 /**
  * A box a step destroyed where it lay, or where the subject put it down,
@@ -14,7 +16,8 @@ export type DestroyedBox = {
   readonly x: number // Column of its middle, in tiles
   readonly y: number // Row of its middle, in tiles
   readonly size: number // Its side, as a share of a tile
-  readonly way: Direction // The way it was turned to face
+  readonly sprite: SpriteName // What it is drawn as: a plain box or a mirror box
+  readonly way: Direction // The way its sprite was turned to face
   readonly tile: PositionData // The tile it was destroyed on
   readonly fell: boolean // Whether it fell into a ditch still open after the step, rather than broke up
 }
@@ -55,14 +58,16 @@ export function findDestroyedBoxes(before: RulesState, after: RulesState, events
       return
     }
 
-    const way = carried ? after.facing : Direction.UP
+    const facing = carried ? after.facing : Direction.UP
     const ahead = carried ? CARRIED_BOX_AHEAD : 0
+    const sprite = boxSprite(chamber, index, facing)
 
     destroyed.push({
-      x: x + 0.5 + (DELTAS[way].dx * ahead),
-      y: y + 0.5 + (DELTAS[way].dy * ahead),
+      x: x + 0.5 + (DELTAS[facing].dx * ahead),
+      y: y + 0.5 + (DELTAS[facing].dy * ahead),
       size: carried ? CARRIED_BOX_SIZE : 1,
-      way: way,
+      sprite: sprite.name,
+      way: sprite.way,
       tile: {
         x: x,
         y: y,

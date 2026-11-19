@@ -724,8 +724,42 @@ function drawSwitches(painter: TilePainter, state: RulesState): void {
 }
 
 /**
- * Draws the boxes that lie in the chamber, on a button as on the floor. A
- * carried box is drawn with the subject.
+ * The sprite a box is drawn as, and the way it is turned.
+ */
+export type BoxSprite = {
+  readonly name: SpriteName // The sprite
+  readonly way: Direction // The way it is turned to face, from facing up as drawn
+}
+
+/**
+ * The sprite a box is drawn as, and how it is turned: a plain box as
+ * `box`, turned the way it is held; a mirror box as `box_mirror`, drawn as
+ * '/' and turned a quarter turn for '\\', so its mirror lies the right way
+ * round in the room however it is held.
+ * @param chamber - The chamber
+ * @param index - The box's index in the chamber's box list
+ * @param held - The way a plain box is turned: up where it rests (the default), the way the subject faces in its hands
+ * @returns Its sprite and the way it is turned
+ */
+export function boxSprite(chamber: CompiledChamber, index: number, held: Direction = Direction.UP): BoxSprite {
+  const mirror = chamber.mirrorOf(index)
+
+  if (mirror === null) {
+    return {
+      name: 'box',
+      way: held,
+    }
+  }
+
+  return {
+    name: 'box_mirror',
+    way: (mirror === '\\') ? Direction.RIGHT : Direction.UP,
+  }
+}
+
+/**
+ * Draws the boxes that lie in the chamber, on a button as on the floor, a
+ * mirror box with its mirror. A carried box is drawn with the subject.
  * @param painter - Paints on the canvas
  * @param state - The state drawn
  */
@@ -735,7 +769,57 @@ function drawBoxes(painter: TilePainter, state: RulesState): void {
       continue
     }
 
-    painter.drawSprite('box', state.boxX(i), state.boxY(i))
+    const sprite = boxSprite(state.chamber, i)
+
+    painter.drawSprite(sprite.name, state.boxX(i), state.boxY(i), sprite.way)
+  }
+}
+
+/**
+ * Draws the emitters, on their wall tiles, turned to their firing face: the
+ * lens lit while on, dark while off, changing at once with the ray.
+ * @param painter - Paints on the canvas
+ * @param state - The state drawn
+ */
+function drawEmitters(painter: TilePainter, state: RulesState): void {
+  const chamber = state.chamber
+
+  for (let i = 0; i < chamber.countOf('emitter'); i++) {
+    const position = chamber.positionOf('emitter', i)
+    const way = chamber.directionOf('emitter', i)
+
+    if (way !== null) {
+      painter.drawSprite(state.isBlocked('emitter', i) ? 'emitter_off' : 'emitter_on', position.x, position.y, way)
+    }
+  }
+}
+
+/**
+ * Draws the receivers, on their wall tiles, turned to their listening face:
+ * the eye lit while a ray reaches it, dark while none does, one that is
+ * changing faded part way.
+ * @param painter - Paints on the canvas
+ * @param state - The state drawn
+ * @param shares - How far dark the receivers that are changing are drawn, or null (the default) to draw every one as the state says
+ */
+function drawReceivers(painter: TilePainter, state: RulesState, shares: BlockedShares | null = null): void {
+  const chamber = state.chamber
+
+  for (let i = 0; i < chamber.countOf('receiver'); i++) {
+    const position = chamber.positionOf('receiver', i)
+    const way = chamber.directionOf('receiver', i)
+    const share = (shares === null) ? null : shares('receiver', i)
+    const light = (share !== null) ? 1 - share : (state.isReceiverLit(i) ? 1 : 0)
+
+    if (way === null) {
+      continue
+    }
+
+    painter.drawSprite('receiver_dark', position.x, position.y, way)
+
+    if (light > 0) {
+      painter.drawSpriteFaded('receiver_lit', position.x, position.y, way, light)
+    }
   }
 }
 
@@ -745,12 +829,14 @@ export const ELEMENT_DRAWINGS: Readonly<Record<ElementKind, ElementDrawing>> = {
   arrow: drawArrows,
   wall: drawWalls,
   blockedWall: drawBlockedWalls,
+  emitter: drawEmitters,
   lightBarrier: beamDrawing('lightBarrier', LIGHT_BARRIER_SPRITES),
   ditch: drawDitches,
   laser: beamDrawing('laser', LASER_SPRITES),
   door: slidingDrawing('door', 'door_closed'),
   exit: slidingDrawing('exit', 'exit_closed'),
   button: drawButtons,
+  receiver: drawReceivers,
   switch: drawSwitches,
   box: drawBoxes,
   fizzler: drawFizzlers,

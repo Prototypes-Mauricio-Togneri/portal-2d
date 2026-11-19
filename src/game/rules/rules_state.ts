@@ -4,9 +4,10 @@ import {formatHash, hashBytes} from '@/game/text_hash'
 
 /**
  * A state of the rules, which never changes: the subject's tile, facing
- * and carried box, both portals, each box's tile, each button's pressed flag,
- * the blocked flag of each element a link reaches, and whether the chamber is
- * completed, as one short list of 16-bit numbers (see StateLayout). It holds
+ * and carried box, both portals, each box's tile, each button's pressed
+ * flag, each receiver's lit flag, the blocked flag of each element a link
+ * reaches, and whether the chamber is completed, as one short list of 16-bit
+ * numbers (see StateLayout). It holds
  * no counters: the game counts moves and portals from the steps. A step makes
  * a new state instead of changing this one.
  */

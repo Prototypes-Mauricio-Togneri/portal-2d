@@ -62,6 +62,7 @@ export const ARROW_ELEMENT = defineElement<ArrowData>()({
   blocksShots: 'never',
   stopsShootingFrom: 'never',
   takesPortals: 'never',
+  blocksRays: 'never',
   reactsToSubject: false,
   continuesMovement: false,
   events: [GameEvent.ARROW_TURNED],

@@ -39,21 +39,28 @@ export type ShootingFromBlocking = 'never' | 'whenBlocked'
 export type PortalTaking = 'never' | 'always' | 'whenUnblocked'
 
 /**
+ * When an element stops an emitter's ray on its floor tile: a light barrier
+ * that is on, or a door or the exit while closed. Walls stop rays by being
+ * walls, and boxes and the subject by the core's ray rule.
+ */
+export type RayBlocking = 'never' | 'whenBlocked'
+
+/**
  * What an element does in a step of the rules, beyond what its fixed data
  * says. Each hook gets the draft of the step's state and the element's index
  * in its type's list. A step runs them in this order: the action (interact
  * reaches the element on the subject's tile), then, in every pass of the
  * repeat loop, first subjectInside for the elements on the subject's tile,
  * then everyPass for every element, type by type in registry order; links
- * run linkUnblocked or linkBlocked on their targets whenever a button or
- * switch acts.
+ * run linkUnblocked or linkBlocked on their targets whenever a button, a
+ * switch or a receiver acts.
  */
 export type ElementHooks = {
   readonly interact?: (draft: StateDraft, index: number) => boolean // The interact key on its tile; true when it took the key, so nothing else does (a switch)
   readonly subjectInside?: (draft: StateDraft, index: number) => void // Each pass, while the subject stands on its tile (a fizzler's rule)
-  readonly everyPass?: (draft: StateDraft, index: number) => void // Each pass, in list order (a button judging whether it is held down)
-  readonly linkUnblocked?: (draft: StateDraft, index: number) => void // A link unblocks it: a button goes down or a switch is used
-  readonly linkBlocked?: (draft: StateDraft, index: number) => void // A link blocks it: a button comes up
+  readonly everyPass?: (draft: StateDraft, index: number) => void // Each pass, in list order (a button judging whether it is held down, a receiver whether a ray reaches it)
+  readonly linkUnblocked?: (draft: StateDraft, index: number) => void // A link unblocks it: a button goes down, a switch is used or a receiver lights
+  readonly linkBlocked?: (draft: StateDraft, index: number) => void // A link blocks it: a button comes up or a receiver goes dark
 }
 
 // Never exists at runtime: only its type is used, as the key that carries a
@@ -78,6 +85,7 @@ export type ElementDefinition<Entry = unknown> = {
   readonly blocksShots: ShotBlocking // When it stops a portal shot on its tile
   readonly stopsShootingFrom: ShootingFromBlocking // When standing on it keeps the portal keys from shooting
   readonly takesPortals: PortalTaking // When a portal can open on it
+  readonly blocksRays: RayBlocking // When it stops an emitter's ray on its floor tile
   readonly reactsToSubject: boolean // Whether entering or leaving its tile can change the state
   readonly continuesMovement: boolean // Whether entering its tile keeps the subject moving the same way (a slide floor)
   readonly events: readonly GameEvent[] // The events it reports

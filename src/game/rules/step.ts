@@ -1,5 +1,6 @@
 import type {PositionData} from '@/game/chamber_data'
-import {DELTAS, Direction} from '@/game/direction'
+import type {Direction} from '@/game/direction'
+import {DELTAS} from '@/game/direction'
 import {GameEvent} from '@/game/game_event'
 import {Action, MOVEMENTS, type Movement} from '@/game/rules/action'
 import {type CompiledChamber, NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
@@ -7,6 +8,7 @@ import type {ElementDefinition, ElementHooks} from '@/game/rules/element_definit
 import {type BlockableKind, ELEMENT_REGISTRY, isBlockableElement, isOneWayElement, type OneWayKind, type RegisteredElement} from '@/game/rules/element_registry'
 import {destroyBoxesOnBlockedTiles} from '@/game/rules/elements/box'
 import {PORTAL_COLORS, PortalColor} from '@/game/rules/portal_color'
+import {type Arrival, OPPOSITES, portalExit} from '@/game/rules/portals'
 import type {RulesState} from '@/game/rules/rules_state'
 import {StateDraft} from '@/game/rules/state_draft'
 import {DIRECTION_INDEX, DIRECTIONS, NO_BOX} from '@/game/rules/state_layout'
@@ -42,16 +44,6 @@ export type StepResult = {
   readonly path: readonly SlideLeg[] // Each tile a slide entered, in order; NO_PATH, empty, unless the step slid
 }
 
-/**
- * A tile the subject can come onto next, and how.
- */
-type Arrival = {
-  readonly x: number // Column
-  readonly y: number // Row
-  readonly direction: Direction // The way it faces on arriving
-  readonly crossed: boolean // Whether it comes out of a portal
-}
-
 /** The path of every step that didn't slide, shared so that such a step allocates none */
 export const NO_PATH: readonly SlideLeg[] = []
 
@@ -70,14 +62,6 @@ type PlacedElement = Extract<RegisteredElement, {readonly kind: PlacedKind}>
 
 /** The most passes of the repeat loop a step may need; one more is a mistake in the rules, reported as an error */
 export const PASS_CAP = 32
-
-/** The way opposite each way */
-export const OPPOSITES: Readonly<Record<Direction, Direction>> = {
-  [Direction.UP]: Direction.DOWN,
-  [Direction.DOWN]: Direction.UP,
-  [Direction.LEFT]: Direction.RIGHT,
-  [Direction.RIGHT]: Direction.LEFT,
-}
 
 /** The event a hit reports for each portal */
 const PORTAL_OPENED: Readonly<Record<PortalColor, GameEvent>> = {
@@ -241,62 +225,6 @@ export function canEnter(draft: StateReader, x: number, y: number, direction: Di
  */
 export function boxBlocksEntry(draft: StateReader, x: number, y: number): boolean {
   return draft.restingBoxAt(x, y) !== NO_BOX
-}
-
-/**
- * The portal a move into a wall enters: with both portals open, the one on
- * the wall's side facing the subject. Exported for the solver, like
- * allowsWay, so it skips moves into walls that can't change anything.
- * @param draft - The state, a step's draft or a settled state
- * @param wallX - Column of the wall
- * @param wallY - Row of the wall
- * @param direction - The way the subject walks
- * @returns The portal entered, or null when the move enters none
- */
-export function portalEntrance(draft: StateReader, wallX: number, wallY: number, direction: Direction): PortalColor | null {
-  if ((!draft.isPortalOpen(PortalColor.BLUE)) || (!draft.isPortalOpen(PortalColor.ORANGE))) {
-    return null
-  }
-
-  const facingSide = OPPOSITES[direction]
-
-  return PORTAL_COLORS.find((color) => (draft.portalX(color) === wallX) && (draft.portalY(color) === wallY) && (draft.portalSide(color) === facingSide)) ?? null
-}
-
-/**
- * Where walking into a wall comes out, when the wall holds a portal on its
- * side facing the subject (portalEntrance): in front of the other portal,
- * facing away from its wall. Whether the subject can arrive there isn't
- * checked.
- * @param draft - The state, a step's draft or a settled state
- * @param wallX - Column of the wall
- * @param wallY - Row of the wall
- * @param direction - The way the subject walks
- * @returns The tile and the way out, or null when the move enters no portal
- */
-function portalExit(draft: StateReader, wallX: number, wallY: number, direction: Direction): Arrival | null {
-  const entrance = portalEntrance(draft, wallX, wallY, direction)
-
-  if (entrance === null) {
-    return null
-  }
-
-  const exit = (entrance === PortalColor.BLUE) ? PortalColor.ORANGE : PortalColor.BLUE
-  const exitSide = draft.portalSide(exit)
-
-  // Both portals are open, so this never returns
-  if (exitSide === null) {
-    return null
-  }
-
-  const delta = DELTAS[exitSide]
-
-  return {
-    x: draft.portalX(exit) + delta.dx,
-    y: draft.portalY(exit) + delta.dy,
-    direction: exitSide,
-    crossed: true,
-  }
 }
 
 /**

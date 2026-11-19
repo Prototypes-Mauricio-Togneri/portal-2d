@@ -94,7 +94,9 @@ function beam(x: number, y: number, direction: 'H' | 'V', on: boolean): BeamData
  * element. The exit and one door sit in the outer wall, whose right side is
  * a blocked wall that always refuses portals, the other door, the fizzler and
  * a blocked wall that refuses them only while on in the inner wall, and two
- * light barriers in the bottom right corner;
+ * light barriers in the bottom right corner; an emitter in the top wall
+ * fires down onto a mirror box, which turns its ray right to a receiver at
+ * the top of the right side, lit while the emitter is on;
  * a strip of slide floor runs along the top left, under the exit;
  * arrows point all four ways, and a turnable one beside them points up,
  * turned right while off by the button its box holds down, two lasers cross,
@@ -104,7 +106,7 @@ function beam(x: number, y: number, direction: 'H' | 'V', on: boolean): BeamData
  * unlit while the fizzler is on and lit while it is off. Column 4 and row 3
  * stay clear but for that third box, which lets shots through, so the
  * subject's shots reach the walls.
- * @param on - Whether every element that can be blocked is: the turnable arrow pointing its own way, the inner blocked wall refusing portals, the light barriers on, ditches open, doors and the exit closed, the fizzler and lasers on
+ * @param on - Whether every element that can be blocked is: the turnable arrow pointing its own way, the inner blocked wall refusing portals, the light barriers on, ditches open, doors and the exit closed, the fizzler and lasers on; and the emitter on, which is the one unblocked while on
  * @returns The chamber
  */
 function specimenData(on: boolean): ChamberData {
@@ -129,6 +131,12 @@ function specimenData(on: boolean): ChamberData {
       },
       {
         xFrom: 3,
+        xTo: 6,
+        yFrom: 7,
+        yTo: 7,
+      },
+      {
+        xFrom: 8,
         xTo: 9,
         yFrom: 7,
         yTo: 7,
@@ -160,9 +168,25 @@ function specimenData(on: boolean): ChamberData {
         xFrom: 9,
         xTo: 9,
         yFrom: 1,
-        yTo: 6,
+        yTo: 5,
       },
       blockable(6, 3, on),
+    ],
+    emitters: [
+      {
+        x: 7,
+        y: 7,
+        direction: 'DOWN',
+        blocked: !on,
+      },
+    ],
+    receivers: [
+      {
+        x: 9,
+        y: 6,
+        direction: 'LEFT',
+        links: [],
+      },
     ],
     slideFloors: [
       {
@@ -259,6 +283,10 @@ function specimenData(on: boolean): ChamberData {
       at(3, 3),
       at(5, 1),
       at(1, 5),
+      {
+        ...at(7, 6),
+        mirror: '\\',
+      },
     ],
   }
 }

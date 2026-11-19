@@ -38,6 +38,7 @@ export const DOOR_ELEMENT = defineElement<BlockableData>()({
   blocksShots: 'whenBlocked',
   stopsShootingFrom: 'never',
   takesPortals: 'never',
+  blocksRays: 'whenBlocked',
   reactsToSubject: false,
   continuesMovement: false,
   events: [

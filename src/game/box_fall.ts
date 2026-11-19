@@ -81,7 +81,7 @@ export class BoxFall {
       const middleY = box.tile.y + 0.5
 
       painter.drawClippedToTile(box.tile, () => {
-        painter.drawSpriteShrunk('box', box.x + ((middleX - box.x) * fallen), box.y + ((middleY - box.y) * fallen), box.size, box.way, 1 - ((1 - SMALLEST_SCALE) * fallen), 1 - fallen)
+        painter.drawSpriteShrunk(box.sprite, box.x + ((middleX - box.x) * fallen), box.y + ((middleY - box.y) * fallen), box.size, box.way, 1 - ((1 - SMALLEST_SCALE) * fallen), 1 - fallen)
       })
     }
   }

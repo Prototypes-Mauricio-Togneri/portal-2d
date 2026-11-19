@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    A receiver that a ray reaches (docs/sprites.md), drawn on the top edge
+    of its wall tile, listening up onto the tile above; the game turns it to
+    its listening face. The emitter's housing, with a round eye in a dark
+    socket at the face in place of the lens, so the two never read alike:
+    a ring lit pale gold with a soft halo round a white-hot centre. It must
+    match receiver_dark but for the eye.
+  -->
+  <defs>
+    <clipPath id="tile">
+      <rect x="0" y="0" width="256" height="256"/>
+    </clipPath>
+    <filter id="halo" x="-0.6" y="-0.6" width="2.2" height="2.2" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <g clip-path="url(#tile)">
+    <!-- The housing -->
+    <rect x="74" y="-8" width="108" height="72" rx="8" fill="rgb(50, 55, 61)" stroke="rgb(176, 183, 189)" stroke-width="2.5"/>
+
+    <!-- The socket -->
+    <circle cx="128" cy="24" r="27" fill="rgb(26, 28, 32)"/>
+
+    <!-- The eye, lit: the ring's halo, the ring, its white-hot centre -->
+    <circle cx="128" cy="24" r="21" fill="none" stroke="rgb(255, 228, 112)" stroke-width="12" opacity="0.7" filter="url(#halo)"/>
+    <circle cx="128" cy="24" r="17" fill="rgb(26, 28, 32)" stroke="rgb(255, 228, 112)" stroke-width="7"/>
+    <circle cx="128" cy="24" r="7" fill="rgb(255, 252, 236)"/>
+
+    <!-- Rivets -->
+    <g fill="rgb(140, 146, 153)">
+      <circle cx="85" cy="52" r="3.5"/>
+      <circle cx="171" cy="52" r="3.5"/>
+    </g>
+  </g>
+</svg>

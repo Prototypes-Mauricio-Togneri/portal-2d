@@ -7,7 +7,7 @@ import {loadChamber} from '@/game/rules/load_chamber'
 import {runRulesReplay} from '@/game/rules/replay_runner'
 import {Objective, searchBaseline} from '@/solver/baseline_search'
 import {ChamberIndex} from '@/solver/chamber_index'
-import {MacroSearch, SearchMode} from '@/solver/macro_search'
+import {MacroSearch, macroSearchRefusal, SearchMode} from '@/solver/macro_search'
 import {StateKeyCodec} from '@/solver/state_key_codec'
 import {CHAMBERS_DIRECTORY, listChamberFiles} from '@scripts/chamber_files'
 import {readNumberOption} from '@scripts/number_option'
@@ -103,6 +103,12 @@ function describeSearch(chamber: CompiledChamber, objective: Objective, maxState
  * @throws Error when the route found doesn't replay to the counts found
  */
 function describeMacro(chamber: CompiledChamber, mode: SearchMode, maxStates: number, maxSeconds: number): string {
+  const refusal = macroSearchRefusal(chamber)
+
+  if (refusal !== null) {
+    return `  macro ${mode}: refused (${refusal})`
+  }
+
   const startTime = performance.now()
   let peakRss = process.memoryUsage().rss
 

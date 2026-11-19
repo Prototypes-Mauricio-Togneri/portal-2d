@@ -39,6 +39,7 @@ export const EXIT_ELEMENT = defineElement<BlockableData>()({
   blocksShots: 'whenBlocked',
   stopsShootingFrom: 'never',
   takesPortals: 'never',
+  blocksRays: 'whenBlocked',
   reactsToSubject: true,
   continuesMovement: false,
   events: [

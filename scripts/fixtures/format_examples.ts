@@ -2,6 +2,8 @@ import type {ChamberData} from '@/game/chamber_data'
 import arrowTurnedDirectionValue from '@scripts/fixtures/arrow_turned_direction_value.json'
 import brokenAntlines from '@scripts/fixtures/broken_antlines.json'
 import brokenArrows from '@scripts/fixtures/broken_arrows.json'
+import brokenDeviceFields from '@scripts/fixtures/broken_device_fields.json'
+import brokenDevices from '@scripts/fixtures/broken_devices.json'
 import brokenChamberFields from '@scripts/fixtures/broken_chamber_fields.json'
 import brokenChamberLayout from '@scripts/fixtures/broken_chamber_layout.json'
 import brokenSlideFloors from '@scripts/fixtures/broken_slide_floors.json'
@@ -17,7 +19,7 @@ import subjectOnBox from '@scripts/fixtures/subject_on_box.json'
 // fails when it doesn't fit the format, and cases that pin exactly what
 // loading a file reports, broken ones included
 
-/** A format 2 chamber using every addition (blocked walls, one tile of them linked, slide floors, a tile and a rectangle, an arrow a link turns, a link group named by a button and a switch, an antline to an element the group stands for and one to an element named directly, an empty par) and leaving out every list it doesn't need */
+/** A format 2 chamber using every addition (blocked walls, one tile of them linked, an emitter and a receiver that links it, slide floors, a tile and a rectangle, a mirror box, an arrow a link turns, a link group named by a button and a switch, an antline to an element the group stands for and one to an element named directly, an empty par) and leaving out every list it doesn't need */
 export const FORMAT_V2_EXAMPLE: ChamberData = formatV2Example
 
 /**
@@ -87,7 +89,7 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
       'error groups[0]: links group groups[1]; a group can only name elements',
       'warning buttons[0] at (2, 1): links a box: pressing sends it back to its start, releasing does nothing to it',
       'error buttons[1] at (3, 2): links id 7, which nothing has',
-      'error at (5, 3): the chamber\'s edge is open here: an edge tile needs a wall, a blocked wall, a door or the exit',
+      'error at (5, 3): the chamber\'s edge is open here: an edge tile needs a wall, a blocked wall, an emitter, a receiver, a door or the exit',
     ],
   },
   {
@@ -127,8 +129,8 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
       'error antlines[2] at (6, 1): is outside the chamber',
       'error antlines[3] at (2, 2): shares neither a row nor a column with the corner before it',
       'error antlines[4] at (1, 1): repeats the corner before it',
-      'error antlines[5] at (2, 1): starts on no button or switch that links id 1',
-      'error antlines[6] at (1, 1): starts on no button or switch that links id 2',
+      'error antlines[5] at (2, 1): starts on no button, switch or receiver that links id 1',
+      'error antlines[6] at (1, 1): starts on no button, switch or receiver that links id 2',
       'error antlines[7] at (4, 1): ends away from id 1, which is at (5, 2)',
     ],
   },
@@ -161,6 +163,32 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
       'error arrows[1] at (2, 1): an arrow with an id needs a turned way, or a link to it changes nothing',
       'error arrows[2] at (3, 1): an arrow\'s turned way can\'t be its own way',
       'error arrows[3] at (4, 1): an arrow\'s turned way must be a quarter turn from its own way, not a half turn',
+    ],
+  },
+  {
+    name: 'broken_devices',
+    // Each emitter and receiver but the second receiver faces the wrong way, is listed twice or links wrongly; the second receiver, facing the floor and linking a box, only warns
+    data: brokenDevices,
+    problems: [
+      'error emitters[2] at (6, 1): lists a wall tile that another wall entry already lists',
+      'error emitters[0] at (0, 1): faces outside the chamber: it fires onto a floor tile inside it',
+      'error emitters[1] at (0, 3): faces a wall at (0, 4): it fires onto a floor tile',
+      'error receivers[0] at (2, 4): faces outside the chamber: it listens on a floor tile inside it',
+      'error receivers[2] at (6, 3): faces a wall at (6, 4): it listens on a floor tile',
+      'error receivers[0] at (2, 4): links id 9, which nothing has',
+      'warning receivers[1] at (4, 0): links a box: lighting sends it back to its start, going dark does nothing to it',
+      'warning receivers[2] at (6, 3): links a box: lighting sends it back to its start, going dark does nothing to it',
+    ],
+  },
+  {
+    name: 'broken_device_fields',
+    // An emitter faces one of the four ways and has no colour, a receiver needs its links, and a box's mirror is one of two
+    data: brokenDeviceFields,
+    problems: [
+      'error emitters[0].colour: is not a field of a chamber file here (misspelled?)',
+      'error emitters[0].direction: is not one of UP, DOWN, LEFT, RIGHT',
+      'error receivers[0].links: is missing',
+      'error boxes[0].mirror: is not one of /, \\',
     ],
   },
   {

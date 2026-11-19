@@ -25,7 +25,14 @@ export type BeamKind = 'laser' | 'lightBarrier'
 export type BeamOrientation = 'H' | 'V'
 
 /**
- * An element type a button or switch link can name.
+ * The mirror a box holds from corner to corner, seen with rows growing
+ * upwards: '/' from bottom left to top right, '\\' from top left to bottom
+ * right.
+ */
+export type Mirror = '/' | '\\'
+
+/**
+ * An element type a button, switch or receiver link can name.
  */
 export type LinkableKind = Extract<(typeof ELEMENT_REGISTRY)[number], {readonly linkable: true}>['kind']
 
@@ -87,6 +94,21 @@ const BEAM_ALONG_SIDE: Readonly<Record<Direction, BeamOrientation>> = {
 
 /** The links of an element that has none */
 const NO_LINKS: readonly LinkTarget[] = []
+
+/** The element types that are wall tiles of their own and take no portal on any face: emitters and receivers */
+const DEVICE_KINDS = [
+  'emitter',
+  'receiver',
+] as const
+
+/**
+ * Reads a box's mirror.
+ * @param text - The box's mirror, when it has one
+ * @returns The mirror, or null for a plain box
+ */
+function readMirror(text: string | undefined): Mirror | null {
+  return ((text === '/') || (text === '\\')) ? text : null
+}
 
 /**
  * Reads an entry's direction when it is one of the four ways an arrow or the
@@ -176,7 +198,8 @@ function resolveLinks(ids: readonly number[], linkIds: LinkIds): readonly LinkTa
  * The fixed part of a chamber, built once per load: its
  * size, its walls and which of them can take portals, where each element is and
  * which way it points, what each link reaches, where the subject and each
- * box start, how its state is laid out, and its antlines, for the drawing.
+ * box start and which boxes hold a mirror, how its state is laid out, and
+ * its antlines, for the drawing.
  * Every lookup takes the
  * same time whatever the chamber's size. Outside the chamber's edge is wall
  * that takes no portals, with no element on it. Built from a chamber whose
@@ -189,8 +212,9 @@ export class CompiledChamber {
   readonly subjectStart: SubjectStart // Where the subject starts
   readonly stateLayout: StateLayout // How this chamber's state is laid out
   readonly antlines: readonly CompiledAntline[] // The antlines, which are only drawn; one leading to no element, which the validator rejects, is left out
-  private readonly walls: Uint8Array // 1 on each cell holding a wall, blocked walls included
+  private readonly walls: Uint8Array // 1 on each cell holding a wall, blocked walls, emitters and receivers included
   private readonly portalWalls: Uint8Array // 1 on each cell holding a wall that can take portals: a wall, or a blocked wall a link reaches or that starts unblocked
+  private readonly mirrors: readonly (Mirror | null)[] // Each box's mirror, or null for a plain box, in list order
   private readonly tileIndexes = new Map<PlacedKind, TileIndex>() // Where each type's elements are
   private readonly entries = new Map<PlacedKind, readonly PlacedEntry[]>() // Each type's entries, in list order
   private readonly directions = new Map<PlacedKind, readonly (Direction | null)[]>() // Which way each element points, by type, then index
@@ -205,6 +229,7 @@ export class CompiledChamber {
     this.width = data.size.width
     this.height = data.size.height
     this.boxStarts = data.boxes ?? []
+    this.mirrors = (data.boxes ?? []).map((box) => readMirror(box.mirror))
     this.subjectStart = {
       x: data.subject.x,
       y: data.subject.y,
@@ -252,6 +277,7 @@ export class CompiledChamber {
 
     this.stateLayout = new StateLayout(data, linked)
     this.placeBlockedWalls()
+    this.placeDevices()
   }
 
   /**
@@ -320,6 +346,21 @@ export class CompiledChamber {
   }
 
   /**
+   * Marks the emitters' and receivers' tiles as wall that takes no portal on
+   * any face.
+   */
+  private placeDevices(): void {
+    for (const kind of DEVICE_KINDS) {
+      for (const entry of this.entriesOf(kind)) {
+        this.forEachCell(entry, (cell) => {
+          this.walls[cell] = 1
+          this.portalWalls[cell] = 0
+        })
+      }
+    }
+  }
+
+  /**
    * Indexes one element type by cell. The elements on a cell are chained in
    * list order, so a tile can hold more than one (two crossing lasers). A
    * rectangle entry (a blocked wall's) is found on each of its tiles, which
@@ -384,8 +425,9 @@ export class CompiledChamber {
 
   /**
    * Whether a tile holds a wall a portal can ever open on: a wall, or a
-   * blocked wall a link reaches or that starts unblocked. Whether a blocked
-   * wall is blocked now is the step's to judge.
+   * blocked wall a link reaches or that starts unblocked, never an emitter
+   * or a receiver. Whether a blocked wall is blocked now is the step's to
+   * judge.
    * @param x - Column
    * @param y - Row
    * @returns True on a wall that can take portals; false elsewhere, outside the chamber included
@@ -522,8 +564,17 @@ export class CompiledChamber {
   }
 
   /**
+   * The mirror a box holds.
+   * @param index - The box's index in the chamber's box list
+   * @returns Its mirror, or null for a plain box or a box the chamber doesn't have
+   */
+  mirrorOf(index: number): Mirror | null {
+    return this.mirrors[index] ?? null
+  }
+
+  /**
    * What an element's links reach, groups expanded, in order.
-   * @param kind - The element type, a button or a switch for any link
+   * @param kind - The element type, a button, a switch or a receiver for any link
    * @param index - The element's index in the type's list
    * @returns The elements reached; empty for an element without links
    */

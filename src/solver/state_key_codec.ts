@@ -1,5 +1,6 @@
 import {NO_ELEMENT} from '@/game/rules/compiled_chamber'
 import {RulesState} from '@/game/rules/rules_state'
+import {traceRays} from '@/game/rules/rays'
 import {CLOSED_PORTAL, NO_BOX, PORTAL_SLOTS, StateSlot} from '@/game/rules/state_layout'
 import {type ChamberIndex, NO_NUMBER} from '@/solver/chamber_index'
 
@@ -92,8 +93,9 @@ function valueAt(values: Int16Array, offset: number): number {
  * portal's wall side, each box's tile (none for the carried box, which is on
  * the subject's tile) and each blocked flag. It leaves out what a settled
  * state determines: each button is pressed exactly when the subject or a box
- * is on it, and the chamber is completed exactly when the subject is on the
- * exit, so unpacking works those out again.
+ * is on it, each receiver is lit exactly when a ray reaches it, and the
+ * chamber is completed exactly when the subject is on the exit, so unpacking
+ * works those out again.
  */
 export class StateKeyCodec {
   readonly index: ChamberIndex // The chamber's tile and wall side numbers
@@ -307,6 +309,16 @@ export class StateKeyCodec {
       const tile = this.index.tileNumber(position.x, position.y)
 
       values[layout.buttonsOffset + button] = ((tile === subjectTile) || boxTiles.has(tile)) ? 1 : 0
+    }
+
+    // A settled state's receiver is lit exactly when a ray reaches it; rays
+    // don't depend on the receivers' own flags, so a copy without them traces them
+    if (layout.receiverCount > 0) {
+      const lit = traceRays(new RulesState(chamber, values.slice())).litReceivers
+
+      for (let receiver = 0; receiver < layout.receiverCount; receiver++) {
+        values[layout.receiversOffset + receiver] = (lit[receiver] === true) ? 1 : 0
+      }
     }
 
     // A settled state is completed exactly when the subject is on the exit

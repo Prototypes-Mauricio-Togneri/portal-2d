@@ -1,0 +1,56 @@
+{
+    "version": 2,
+    "size": {
+        "width": 5,
+        "height": 3
+    },
+    "subject": {
+        "x": 1,
+        "y": 1,
+        "direction": "RIGHT"
+    },
+    "exit": {
+        "x": 3,
+        "y": 1
+    },
+    "walls": [
+        {
+            "xFrom": 0,
+            "xTo": 4,
+            "yFrom": 0,
+            "yTo": 0
+        },
+        {
+            "xFrom": 1,
+            "xTo": 4,
+            "yFrom": 2,
+            "yTo": 2
+        },
+        {
+            "x": 0,
+            "y": 1
+        }
+    ],
+    "emitters": [
+        {
+            "x": 4,
+            "y": 1,
+            "direction": "H",
+            "colour": "gold"
+        }
+    ],
+    "receivers": [
+        {
+            "x": 0,
+            "y": 2,
+            "direction": "DOWN"
+        }
+    ],
+    "boxes": [
+        {
+            "x": 2,
+            "y": 1,
+            "mirror": "|"
+        }
+    ]
+}

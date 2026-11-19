@@ -15,6 +15,7 @@ export const SLIDE_FLOOR_ELEMENT = defineElement<SlideFloorData>()({
   blocksShots: 'never',
   stopsShootingFrom: 'never',
   takesPortals: 'never',
+  blocksRays: 'never',
   reactsToSubject: true,
   continuesMovement: true,
   events: [

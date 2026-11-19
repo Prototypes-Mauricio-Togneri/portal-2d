@@ -193,6 +193,29 @@ export class TilePainter {
   }
 
   /**
+   * Lays a layer down over the whole canvas, added to the colours beneath,
+   * so it only brightens them: a glow painted apart.
+   * @param layer - The layer, from createLayer()
+   * @param strength - How much of it is added, from 0 (nothing) to 1 (all of it)
+   */
+  drawLayerAdded(layer: TilePainter, strength: number): void {
+    // A canvas with no pixels can't be drawn
+    if ((layer.canvas.width === 0) || (layer.canvas.height === 0)) {
+      return
+    }
+
+    this.context.save()
+
+    try {
+      this.context.globalCompositeOperation = 'lighter'
+      this.context.globalAlpha = strength
+      this.context.drawImage(layer.canvas, 0, 0)
+    } finally {
+      this.context.restore()
+    }
+  }
+
+  /**
    * Runs a drawing twice: first painting only the shadows of the raised
    * sprites it draws, then only its sprites, so raised things that touch
    * don't shade each other, whatever order they are drawn in.

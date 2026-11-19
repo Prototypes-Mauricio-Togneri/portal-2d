@@ -1,5 +1,6 @@
 import {findDestroyedBoxes} from '@/game/destroyed_boxes'
 import {DELTAS, type Direction} from '@/game/direction'
+import {boxSprite} from '@/game/element_drawings'
 import {GameEvent} from '@/game/game_event'
 import {pieceNumber} from '@/game/piece_number'
 import {CARRIED_BOX_AHEAD, CARRIED_BOX_SIZE, PORTAL_SPRITES} from '@/game/renderer'
@@ -142,13 +143,14 @@ export class FizzleParticles {
     // even when a button it landed on switched the field on under the subject
     if (subjectFizzled && (before.carriedBox !== NO_BOX) && (after.carriedBox === NO_BOX) && (!events.includes(GameEvent.BOX_PUT_DOWN))) {
       const ahead = DELTAS[after.facing]
+      const sprite = boxSprite(after.chamber, before.carriedBox, after.facing)
 
       bursts.push({
-        sprite: 'box',
+        sprite: sprite.name,
         x: after.subjectX + 0.5 + (ahead.dx * CARRIED_BOX_AHEAD),
         y: after.subjectY + 0.5 + (ahead.dy * CARRIED_BOX_AHEAD),
         size: CARRIED_BOX_SIZE,
-        way: after.facing,
+        way: sprite.way,
         seed: this.burstCount++,
         startTime: time,
       })
@@ -157,7 +159,7 @@ export class FizzleParticles {
     for (const box of findDestroyedBoxes(before, after, events)) {
       if (!box.fell) {
         bursts.push({
-          sprite: 'box',
+          sprite: box.sprite,
           x: box.x,
           y: box.y,
           size: box.size,

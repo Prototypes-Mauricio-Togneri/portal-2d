@@ -1,6 +1,6 @@
 # Chamber Elements
 
-Reference for the elements a chamber file (`src/chambers/*.json`) can contain, carried over from the original game's help page with the light barrier and the blocked wall added in place of its barrier, and the slide floor and the arrow a link turns, which the original game didn't have, followed by the chamber file format, the rules and what adding an element touches.
+Reference for the elements a chamber file (`src/chambers/*.json`) can contain, carried over from the original game's help page with the light barrier and the blocked wall added in place of its barrier, and the slide floor, the arrow a link turns, the emitter, the receiver and the mirror box, which the original game didn't have, followed by the chamber file format, the rules and what adding an element touches.
 
 | # | Element | Description | Can be activated/deactivated? | Can portals go through it? | Can the subject go through it? | Quantity |
 |---|---------|-------------|-------------------------------|----------------------------|--------------------------------|----------|
@@ -18,12 +18,15 @@ Reference for the elements a chamber file (`src/chambers/*.json`) can contain, c
 | 12 | Laser | Obstructs the passage of the subject | Yes | Yes | No | 0..∞ |
 | 13 | Arrow | Limits the movement of the subject; one with a turned way is turned by a link | Yes, when linked | Yes | Yes | 0..∞ |
 | 14 | Slide floor | A floor tile that keeps the subject moving the way it entered it | No | Yes | Yes | 0..∞ |
+| 15 | Emitter | A wall tile that sends a ray from one face while it is on | Yes | No | No | 0..∞ |
+| 16 | Receiver | A wall tile that activates/deactivates other elements while a ray reaches its listening face | No | No | No | 0..∞ |
+| 17 | Mirror box | A box with a mirror, which turns a ray a quarter turn while it rests | Yes | Yes | No | 0..∞ |
 
 ## Notes
 
-- Activate/deactivate means the element changes its state when a button is pushed or a switch is turned on, if they are linked to the element.
-- Blocked walls, light barriers, ditches, doors, fizzlers, exits and lasers can be locked or unlocked by enabling their linked activator. Arrows with a turned way are turned between their own way and their turned way. Boxes, instead, are reset to their original position.
-- Buttons and switches can be linked to many objects. For example, pushing a button can unlock a door and switch off a light barrier at the same time.
+- Activate/deactivate means the element changes its state when a button is pushed, a switch is turned on or a receiver lights, if they are linked to the element.
+- Blocked walls, light barriers, ditches, doors, fizzlers, exits and lasers can be locked or unlocked by enabling their linked activator. Emitters are switched on and off. Arrows with a turned way are turned between their own way and their turned way. Boxes, mirror boxes among them, instead, are reset to their original position.
+- Buttons, switches and receivers can be linked to many objects. For example, pushing a button can unlock a door and switch off a light barrier at the same time.
 
 ## Chamber format
 
@@ -37,31 +40,33 @@ A chamber file is a JSON object in format 2 (`ChamberData` in `src/game/chamber_
 | 4 | `exit` | The exit, a single entry: `x`, `y`, and optionally `id` and `blocked`. |
 | 5 | `walls` | One tile (`x`, `y`) or a rectangle of tiles (`xFrom`, `xTo`, `yFrom`, `yTo`, both ends included, each from no greater than its to): walls, which take portals. |
 | 6 | `blockedWalls` | One tile (`x`, `y`, and optionally `id` and `blocked`) or a rectangle of tiles (corners as for `walls`, and optionally `blocked`): blocked walls, which refuse portals while blocked. Only a one-tile entry can have an `id`, so only it can be linked. |
-| 7 | `slideFloors` | One tile (`x`, `y`) or a rectangle of tiles (corners as for `walls`): slide floors, which keep the subject moving (see [a slide](#a-slide)). They have no `id` or `blocked`, so links never reach them. |
-| 8 | `ditches`, `doors`, `fizzlers` | `x`, `y`, and optionally `id` and `blocked`. |
-| 9 | `lasers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn and which walls end its run, which take no portal, and two lasers can share a tile only when they cross), and optionally `id` and `blocked`. |
-| 10 | `lightBarriers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn and which walls end its run, which take no portal), and optionally `id` and `blocked`. |
-| 11 | `boxes` | `x`, `y`, and optionally `id`. |
-| 12 | `buttons`, `switches` | `x`, `y` and `links`, all required: the ids of the elements and link groups it acts on (see [links](#links)). |
-| 13 | `arrows` | `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required: the one way the subject can enter the tile; and optionally `id` and `turnedDirection` (`UP`, `DOWN`, `LEFT` or `RIGHT`), always together, a quarter turn from `direction`: the way it points while a link holds it turned (see [links](#links)). An arrow takes no `blocked`: every one starts pointing its `direction`, so one meant to start turned swaps its two ways. |
-| 14 | `groups` | Link groups, each with an `id` and `links`, both required: the ids of the elements it stands for, never another group. |
-| 15 | `antlines` | Dotted lines on the floor, each with `link` and `path`, both required: `link` the id of the one element it leads to, never a group's, and `path` its corner tiles (`x`, `y`), at least two, from the tile of a button or switch that links that element to the element's own tile. |
-| 16 | `par` | How well the chamber can be solved, for medals: optionally `moves` and `portals`, each 0 or more. Reserved: nothing writes it yet (see `docs/solver.md`). |
+| 7 | `emitters` | `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`: the face it fires from), all required, and optionally `id` and `blocked`: emitters, wall tiles of their own that send a ray while they are on (see [rays](#rays)). An emitter's `blocked` is false when absent, so it starts on. |
+| 8 | `receivers` | `x`, `y`, `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`: the face it listens on) and `links`, all required, the links as a button's: receivers, wall tiles of their own that act on their links while a ray reaches that face (see [receivers](#receivers)). |
+| 9 | `slideFloors` | One tile (`x`, `y`) or a rectangle of tiles (corners as for `walls`): slide floors, which keep the subject moving (see [a slide](#a-slide)). They have no `id` or `blocked`, so links never reach them. |
+| 10 | `ditches`, `doors`, `fizzlers` | `x`, `y`, and optionally `id` and `blocked`. |
+| 11 | `lasers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn and which walls end its run, which take no portal, and two lasers can share a tile only when they cross), and optionally `id` and `blocked`. |
+| 12 | `lightBarriers` | `x`, `y`, `direction` (`H` or `V`: how it is drawn and which walls end its run, which take no portal), and optionally `id` and `blocked`. |
+| 13 | `boxes` | `x`, `y`, and optionally `id` and `mirror` (`/` or `\`, written `"\\"` in JSON): a box with a `mirror` is a mirror box, its mirror from corner to corner, bottom left to top right for `/` and top left to bottom right for `\`, with y growing upwards (see [rays](#rays)). |
+| 14 | `buttons`, `switches` | `x`, `y` and `links`, all required: the ids of the elements and link groups it acts on (see [links](#links)). |
+| 15 | `arrows` | `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required: the one way the subject can enter the tile; and optionally `id` and `turnedDirection` (`UP`, `DOWN`, `LEFT` or `RIGHT`), always together, a quarter turn from `direction`: the way it points while a link holds it turned (see [links](#links)). An arrow takes no `blocked`: every one starts pointing its `direction`, so one meant to start turned swaps its two ways. |
+| 16 | `groups` | Link groups, each with an `id` and `links`, both required: the ids of the elements it stands for, never another group. |
+| 17 | `antlines` | Dotted lines on the floor, each with `link` and `path`, both required: `link` the id of the one element it leads to, never a group's, and `path` its corner tiles (`x`, `y`), at least two, from the tile of a button, switch or receiver that links that element to the element's own tile. |
+| 18 | `par` | How well the chamber can be solved, for medals: optionally `moves` and `portals`, each 0 or more. Reserved: nothing writes it yet (see `docs/solver.md`). |
 
-- **`id`:** 1 or more, unique among every element and group, and needed only by what a button, switch or group links to; an element without one can't be linked.
-- **`blocked`:** true when absent (see [blocking](#blocking)).
-- **`antlines`:** only drawn, as in the original game, to show which button or switch acts on which element: they change nothing in the rules, the solver or the recorded solutions. A chamber may have none, and a link needs none; they are meant mostly for the tutorial and the early chambers. A line is lit while the element it leads to is unblocked (a door or the exit open, a laser, a light barrier or a fizzler off, a ditch bridged, a blocked wall taking portals, an arrow turned), so a line to a box never lights, and two buttons on one door both light when it opens. Each corner shares a row or a column with the one before it, so the line runs straight between them; it may run under walls, hidden there and showing again beyond, and under any element. The chamber's hash, which a recorded solution keeps, leaves them out, so adding, moving or removing one needs no new recording. How they look: `docs/sprites.md`.
+- **`id`:** 1 or more, unique among every element and group, and needed only by what a button, switch, receiver or group links to; an element without one can't be linked.
+- **`blocked`:** true when absent, but on an emitter, where it is false (see [blocking](#blocking)).
+- **`antlines`:** only drawn, as in the original game, to show which button, switch or receiver acts on which element: they change nothing in the rules, the solver or the recorded solutions. A chamber may have none, and a link needs none; they are meant mostly for the tutorial and the early chambers. A line is lit while the element it leads to is unblocked (a door or the exit open, a laser, a light barrier or a fizzler off, a ditch bridged, a blocked wall taking portals, an arrow turned, an emitter on), so a line to a box never lights, and two buttons on one door both light when it opens. Each corner shares a row or a column with the one before it, so the line runs straight between them; it may run under walls, hidden there and showing again beyond, and under any element. A line from a receiver starts on the receiver's wall tile, hidden under it up to the floor. The chamber's hash, which a recorded solution keeps, leaves them out, so adding, moving or removing one needs no new recording. How they look: `docs/sprites.md`.
 - **Other versions:** a file whose `version` is missing or not 2 is refused.
 
 ## Rules
 
-The rules the game plays, in `src/game/rules/` (`step.ts`), pinned by each chamber's recorded solution and by the behaviour fixtures (`npm run replay:check`). They follow the original game's rules apart from the [changes from the original rules](#changes-from-the-original-rules) listed at the end, and add two elements the original game didn't have, in place of its barrier: the light barrier, which plays a barrier's rules on a floor tile (fixture: `light_barrier_switches_off_and_on`), and the blocked wall, which a link can switch between refusing and taking portals, as a barrier on a wall did (fixture: `blocked_wall_switches_off_and_on`). They also add one with no counterpart there, the slide floor, which keeps the subject moving (see [a slide](#a-slide); fixtures: every `slide_*` one, and `portal_onto_slide_floor_slides`), and let a link turn an arrow (see [links](#links); fixtures: every `arrow_*` one, `slide_stops_on_turned_arrow`, `slide_stops_before_turned_back_arrow`, `portal_onto_turned_arrow` and `portal_onto_turned_back_arrow_refused`).
+The rules the game plays, in `src/game/rules/` (`step.ts`), pinned by each chamber's recorded solution and by the behaviour fixtures (`npm run replay:check`). They follow the original game's rules apart from the [changes from the original rules](#changes-from-the-original-rules) listed at the end, and add two elements the original game didn't have, in place of its barrier: the light barrier, which plays a barrier's rules on a floor tile (fixture: `light_barrier_switches_off_and_on`), and the blocked wall, which a link can switch between refusing and taking portals, as a barrier on a wall did (fixture: `blocked_wall_switches_off_and_on`). They also add one with no counterpart there, the slide floor, which keeps the subject moving (see [a slide](#a-slide); fixtures: every `slide_*` one, and `portal_onto_slide_floor_slides`), and let a link turn an arrow (see [links](#links); fixtures: every `arrow_*` one, `slide_stops_on_turned_arrow`, `slide_stops_before_turned_back_arrow`, `portal_onto_turned_arrow` and `portal_onto_turned_back_arrow_refused`). And they add three pieces with no counterpart there, which send, catch and turn rays: the emitter, the receiver and the mirror box (see [rays](#rays) and [receivers](#receivers), where their fixtures are named).
 
 Tiles are counted with x growing to the right and y growing upwards from the bottom row, so "up" is towards a higher y. Chambers the validator rejects (see [what the validator rejects](#what-the-validator-rejects)) are outside these rules.
 
 ### Blocking
 
-Blocked walls, light barriers, ditches, doors, the exit, fizzlers and lasers each have one flag, `blocked` in the chamber file (true when absent). Blocked means: a blocked wall refuses portals, a ditch is open, a door or the exit is closed, a light barrier, a fizzler or a laser is on. An arrow with a turned way has the flag too, but no `blocked` field, so it always starts blocked: blocked, it points its own way (`direction`), unblocked, its turned way. Buttons and switches change it through [links](#links); nothing else does.
+Blocked walls, light barriers, ditches, doors, the exit, fizzlers and lasers each have one flag, `blocked` in the chamber file (true when absent). Blocked means: a blocked wall refuses portals, a ditch is open, a door or the exit is closed, a light barrier, a fizzler or a laser is on. An arrow with a turned way has the flag too, but no `blocked` field, so it always starts blocked: blocked, it points its own way (`direction`), unblocked, its turned way. Emitters have it as well, but false when absent: a blocked emitter is off, so an emitter starts on unless its file says `blocked: true`. Buttons, switches and receivers change it through [links](#links); nothing else does.
 
 ### A step
 
@@ -72,14 +77,15 @@ The player gives one action per step: move or turn (up, down, left or right), sh
 3. Then, repeated until a pass changes nothing:
    1. the [fizzler rule](#the-fizzler-rule);
    2. every [button](#buttons), in the chamber's list order, with its links;
-   3. every [box lying where something blocks](#a-box-where-something-blocks), in the chamber's list order.
+   3. every [receiver](#receivers), in the chamber's list order, with its links, each judged on the rays as they are after every change made before it;
+   4. every [box lying where something blocks](#a-box-where-something-blocks), in the chamber's list order.
 
-   It always ends, because a pass moves nothing but boxes, and only ever to their start tiles. A cap of 32 passes still guards against a mistake: a 32nd pass that still changes something is an error.
+   It always ends. The subject doesn't move while a step settles, so a button changes only as a box moves, and boxes move only to their start tiles, at most once each in a step. Apart from boxes, every link a button going down or a receiver lighting acts on lets more light through (a door or the exit opens, a light barrier switches off, an emitter switches on) or changes nothing a ray meets (a ditch, a laser or a fizzler switches off, a blocked wall takes portals, an arrow turns), and every link a button coming up or a receiver going dark acts on lets less through (a door or the exit closes, a light barrier switches on, an emitter switches off, a fizzler or a blocked wall closes a portal) or changes nothing a ray meets. So no receiver can put out its own light, and settling can't flip back and forth. A cap of 32 passes still guards against a mistake: a 32nd pass that still changes something is an error.
 4. The [exit check](#the-exit).
 
 Once the chamber is completed, a step changes nothing.
 
-A chamber starts from its file's state, settled like the end of a step: with no action before them, the repeat loop runs until a pass changes nothing, then the exit check, and their events are reported. So a button under the subject or a box starts pressed, with its links acted on.
+A chamber starts from its file's state, settled like the end of a step: with no action before them, the repeat loop runs until a pass changes nothing, then the exit check, and their events are reported. So a button under the subject or a box starts pressed, and a receiver a ray reaches starts lit, each with its links acted on.
 
 Events are reported in the order they happen. The rules keep no counters: the game counts a move for each step that puts the subject on another tile (a portal crossing included, and a slide as one, however many tiles it crosses) and a portal for each portal-opened event.
 
@@ -90,8 +96,8 @@ Events are reported in the order they happen. The rules keep no counters: the ga
 On an arrow tile, the three directions other than the arrow's do nothing at all. An arrow's way, here and everywhere in these rules, is the way it points now, which a link can turn (see [links](#links)). Every other move or turn first faces the subject that way. A turn does only that, unless the subject already faced that way: then it moves like a move. The game takes a turn for a move key pressed while the turn key (Shift by default) is held. To move, it looks at the next tile in that direction:
 
 - **Outside the chamber:** a [wall that takes no portals](#outside-the-chamber).
-- **A wall, blocked or not:** if both portals are open and this wall holds one of them on the side facing the subject, the subject [crosses](#crossing-a-portal) that portal. Otherwise nothing more happens.
-- **Any other tile:** the subject steps onto it if it can enter it. It can't enter a tile with a blocked light barrier, ditch, door, exit or laser, nor a tile where a box rests, nor an arrow tile unless it moves the arrow's way. Fizzlers, buttons and switches never stop it. Walking into something it can't enter leaves it facing that way, without a sound.
+- **A wall tile** (a wall, blocked or not, an emitter or a receiver): if both portals are open and this wall holds one of them on the side facing the subject, the subject [crosses](#crossing-a-portal) that portal. Otherwise nothing more happens.
+- **Any other tile:** the subject steps onto it if it can enter it. It can't enter a tile with a blocked light barrier, ditch, door, exit or laser, nor a tile where a box rests, nor an arrow tile unless it moves the arrow's way. Fizzlers, buttons, switches and rays never stop it. Walking into something it can't enter leaves it facing that way, without a sound.
 
 Only the tile the subject moves onto is checked, never the one it leaves (see [something blocking under the subject](#something-blocking-under-the-subject), and a box sent back under it in [one box per tile](#one-box-per-tile)).
 
@@ -107,7 +113,7 @@ A subject that enters slide floor, by a move or out of a portal, keeps moving th
 
 - **A floor tile ahead** is checked like a step onto it (see [Move or turn](#move-or-turn)): an open ditch, a laser or a light barrier that is on, a closed door, the closed exit, an arrow pointing another way or a resting box stops the slide on the tile it is on. A tile it can enter, it enters: on slide floor it goes on; on any other tile, an arrow pointing its way and the open exit included, it stops there.
 - **A wall ahead** stops it, unless the wall holds a portal on the side facing the subject while the other portal is open: then it crosses (see [crossing a portal](#crossing-a-portal)) and goes on the way it came out if it came out onto slide floor, or stops there if not. A crossing onto a tile the subject can't enter stops the slide in front of the entry portal, silently, where a crossing tried from rest is `refused`.
-- **On each tile it passes**, the carried box comes along and the [fizzler rule](#the-fizzler-rule) runs: a fizzler that is on closes both portals and destroys a carried box, and the slide goes on; a wall whose portal closed is a plain wall for the rest of it. Buttons are judged only once the slide has ended, as the step goes on, so passing over a button doesn't press it, and stopping on one does.
+- **On each tile it passes**, the carried box comes along and the [fizzler rule](#the-fizzler-rule) runs: a fizzler that is on closes both portals and destroys a carried box, and the slide goes on; a wall whose portal closed is a plain wall for the rest of it. Buttons are judged only once the slide has ended, as the step goes on, so passing over a button doesn't press it, and stopping on one does. So are receivers: passing through a ray doesn't cut it, and stopping in one does (see [rays](#rays)).
 - **A loop:** a slide that would enter a tile the same way it already entered it in this slide (going round through two portals; the tile it started from doesn't count) is refused whole: nothing changes but the subject's facing, which turns to the way pressed, as a refused crossing leaves it; `refused`, and nothing settles.
 
 Loose boxes never slide; a box is put down on slide floor and picked up from it as on plain floor. A slide counts as one move, and as none when it ends back on the tile it started from; with the facing also unchanged, the step changes nothing, though its events are still reported. It reports `slideStarted` the first time the subject moves on from a slide floor tile it entered, and `slideStopped` when that slide ends; entering slide floor and stopping at once reports neither. Neither plays a sound yet. The game draws a slide along its path, showing what happens on each tile as the subject gets there and the rest once it stops (see `AGENTS.md`).
@@ -116,9 +122,9 @@ Loose boxes never slide; a box is put down on slide floor and picked up from it 
 
 While the subject stands in a fizzler that is on, the portal keys do nothing, without a sound. While it carries a box, they are refused: `refused`, with the error sound and no ripple, since no shot leaves (it can't stand in a fizzler that is on while carrying one, so the two never meet). Otherwise the shot leaves the subject's tile the way it faces and goes on tile by tile; the subject's own tile never stops it.
 
-- A fizzler or a light barrier that is on, a closed door or the closed exit stops it: a miss. Ditches, lasers, boxes, buttons, switches, arrows and anything not blocked let it through.
+- A fizzler or a light barrier that is on, a closed door or the closed exit stops it: a miss. Ditches, lasers, boxes, buttons, switches, arrows, rays and anything not blocked let it through.
 - Reaching the edge of the chamber is a miss.
-- A wall takes the portal on its side facing the subject, unless that side faces a door or the exit, open or closed, or a laser or a light barrier running towards the wall (the wall at the end of its run, behind its end plate), on or off, or it already holds a portal, of either colour, on that side or on either neighbouring side; a portal on the far side doesn't stop it. A blocked wall takes it the same way only while it isn't blocked; while it is, the shot is a miss.
+- A wall takes the portal on its side facing the subject, unless that side faces a door or the exit, open or closed, or a laser or a light barrier running towards the wall (the wall at the end of its run, behind its end plate), on or off, or it already holds a portal, of either colour, on that side or on either neighbouring side; a portal on the far side doesn't stop it. A blocked wall takes it the same way only while it isn't blocked; while it is, the shot is a miss. An emitter or a receiver takes none, on any face: the shot is a miss.
 
 A hit opens the portal of that colour there, closing it wherever it was before: `bluePortalOpened` or `orangePortalOpened`. A miss: `refused` (the game plays the shot sound instead of the error sound, and draws a ripple where the shot stopped, see `docs/sprites.md`).
 
@@ -145,16 +151,39 @@ A tile holds at most one box. The carried box, which sits on the subject's tile,
 
 A box sent back to its start tile in any of these ways while the subject stands there lands under the subject. The subject can walk off it but not back on, and picks it up only from beside it, facing it. This is the only way the subject and a resting box share a tile.
 
+### Rays
+
+An emitter or a receiver is a wall tile of its own: wherever these rules speak of a wall, it counts as one, stopping walking, shots and rays and joining the walls around it, but neither takes a portal on any face, so a shot at one misses whichever face it meets (fixture: `shots_at_devices_miss`).
+
+An emitter that is on sends a ray from its firing face. A ray isn't stored: the rules trace every ray from the state whenever settling judges a receiver (`traceRays` in `src/game/rules/rays.ts`), and the game draws them from the state it shows. Each starts on the floor tile in front of its emitter, travelling away from it, and goes on tile by tile:
+
+- **A floor tile** stops it, on that tile, while the subject stands there (with a carried box), a box with no mirror rests there, a light barrier there is on, or a door or the exit there is closed. A resting mirror box turns it (below), and it goes on from that tile. Everything else lets it through, in any state: ditches, fizzlers, lasers, buttons, switches, arrows and slide floors (fixtures: `ray_lights_receiver_from_start`, `ray_passes_floor_elements`, `ray_stopped_by_door_exit_barrier`).
+- **A wall tile** (a wall, a blocked wall in any state, an emitter, a receiver, or outside the chamber's edge) stops it at the face it meets, unless that face is a receiver's listening face, which lights that [receiver](#receivers), or holds a portal while the other portal is open: then the ray goes on from the tile in front of the other portal, travelling away from that portal's wall (fixtures: `ray_through_portals`, `ray_into_lone_portal_stops`).
+
+A mirror box plays every box rule (carried, picked up, put down, holding a button down, sent back by a link, destroyed where something blocks), and its mirror stays the same wherever it goes, through portals too. Resting, it turns a ray entering its tile, from any side, a quarter turn: with y growing upwards, `/` turns a ray going right to up, up to right, left to down and down to left; `\` turns right to down, down to right, left to up and up to left. Carried, it is on the subject's tile, where the subject stops the ray first (fixtures: `mirror_boxes_turn_rays`, `mirror_box_through_portal`, `fizzled_mirror_box_turns_ray_again`).
+
+A ray blocks nothing and harms nothing: the subject walks into, stands in and walks through one, shots pass it, a box in one isn't destroyed, and rays cross each other freely.
+
+Rays count only while a step settles and at a chamber's start, since only settling judges receivers. A slide passing through a ray doesn't cut it, and one that stops in it does. Walking into a ray, or coming out of a portal into it, darkens what it lit within that step, and walking out lights it again. A shot that opens or moves a portal routes rays through it within that step, and a portal that closes, moved away by a shot or closed by a fizzler or a blocked wall, no longer passes them. Putting a box down in a ray cuts it there, and picking the box up lets the ray on past that tile (fixtures: `subject_cuts_ray`, `subject_leaves_ray`, `box_put_down_cuts_ray`, `box_picked_up_from_ray`, `slide_through_ray_changes_nothing`, `slide_stopping_in_ray_cuts_it`). A door, the exit or a light barrier that a receiver holds open or off while that receiver's own ray crosses it closes or switches on as soon as anything cuts the ray before it, and then stops the ray itself, so it stays that way once the cut ends (fixture: `ray_held_door_closes_behind_subject`).
+
+A ray never enters a tile the same way twice, and two rays never reach one receiver at once. A ray can enter a tile a given way from one place only, fixed by the state: from the tile behind it (and only from one side of it, when a mirror box rests there) or, when that tile is a wall, out of the portal on its face; and nothing leads back onto the tile in front of an emitter, which takes no portal. So a ray's path never repeats, and two rays reaching one receiver would share every tile back to one emitter. The rules still stop a ray that would enter a tile the same way twice, a guard that never acts; a receiver two emitters can light is lit by one at a time (fixtures: `receiver_lit_by_either_emitter`, `receiver_dark_when_neither_reaches`).
+
 ### Buttons
 
 A button is held down while the subject or any box is on its tile. Each pass judges the buttons in the chamber's list order, and each one acts on its links at once, so a later button sees what an earlier one did. Going down: `buttonPressed`, then it unblocks its links in order. Coming up: `buttonReleased`, then it blocks its links in order.
 
+### Receivers
+
+A receiver is lit while a ray reaches its listening face (see [rays](#rays)), and acts as a button held down while it is lit. Each pass judges the receivers after the buttons, in the chamber's list order, and each one acts on its links at once. Lighting: `receiverLit`, then it unblocks its links in order. Going dark: `receiverUnlit`, then it blocks them in order. Neither plays a sound yet. Its lit flag is kept in the state, as a button's pressed flag is, so it acts only when that flag changes, and settling always leaves the flag matching the rays.
+
+Each receiver is judged on the rays as they are after every change made before it, not on one tracing per pass: with one per pass, two receivers that each open the other's door could flip together forever. So when a button opens the first of two such doors, both receivers light within the step, and when it comes up, both go dark (fixtures: `ray_lights_receiver_from_start`, `receivers_hold_each_others_doors`, `receivers_let_go_together`). A receiver linked to an emitter relays: lighting switches the emitter on, whose ray can light another receiver within the same step, and going dark switches it off (fixtures: `receiver_relays_to_emitter`, `cut_relay_darkens_both`; an emitter on a button instead: `button_switches_emitter_on`, `button_switches_emitter_off`). When a receiver and a button, or two receivers, link one element, the latest change wins, as for two buttons: a receiver that stays lit doesn't undo a button coming up (fixture: `receiver_and_button_latest_wins`).
+
 ### Links
 
-A button or switch names its links by element id. Only blocked walls (one tile each), light barriers, ditches, boxes, fizzlers, doors, lasers, the exit and arrows with a turned way can be linked. A link can also name a link group (format 2), which stands for its elements: they act at the group's place in the list, in the group's order.
+A button, switch or receiver names its links by element id. Only blocked walls (one tile each), light barriers, ditches, boxes, fizzlers, doors, lasers, the exit, arrows with a turned way and emitters can be linked. A link can also name a link group (format 2), which stands for its elements: they act at the group's place in the list, in the group's order.
 
-| # | Element | Unblocked (button pressed, switch used) | Blocked (button released) |
-|---|---------|-----------------------------------------|---------------------------|
+| # | Element | Unblocked (button pressed, switch used, receiver lit) | Blocked (button released, receiver dark) |
+|---|---------|-------------------------------------------------------|------------------------------------------|
 | 1 | Blocked wall | Takes portals | Refuses portals, and a portal on any of its sides closes |
 | 2 | Light barrier | Off | On |
 | 3 | Ditch | Bridged | Open |
@@ -162,12 +191,13 @@ A button or switch names its links by element id. Only blocked walls (one tile e
 | 5 | Exit | Opened: `exitOpened` | Closed: `exitClosed` |
 | 6 | Fizzler | Off | On (see [the fizzler rule](#the-fizzler-rule)), and a portal on a wall side facing it closes: `portalFizzled` |
 | 7 | Laser | Off | On |
-| 8 | Box | Back to its start tile (see [one box per tile](#one-box-per-tile)), unless it is carried | Nothing; the validator warns about a box linked to a button |
+| 8 | Box | Back to its start tile (see [one box per tile](#one-box-per-tile)), unless it is carried | Nothing; the validator warns about a box linked to a button or a receiver |
 | 9 | Arrow | Points its turned way: `arrowTurned`; a subject on it turns with it | Points its own way: `arrowTurned`; a subject on it turns with it |
+| 10 | Emitter | On: its ray leaves its firing face (see [rays](#rays)) | Off: it sends no ray |
 
 A door or the exit reports its event only when it actually opens or closes, an arrow `arrowTurned` only when it actually turns, and a fizzler reports `portalFizzled` only when it closes a portal; the others are silent.
 
-An arrow turning under the subject turns the subject with it, to face the arrow's new way, so on an arrow the subject always faces the way it points, and its shots fly that way; a carried box stays carried. It can then leave only that way. An arrow turns only as links act: as a button goes down or comes up while the step settles (a chamber's start included), or on a switch's use. A slide judges no button until it ends, so no arrow turns mid-slide, but a slide's end can turn one, under the subject too.
+An arrow turning under the subject turns the subject with it, to face the arrow's new way, so on an arrow the subject always faces the way it points, and its shots fly that way; a carried box stays carried. It can then leave only that way. An arrow turns only as links act: as a button goes down or comes up, or a receiver lights or goes dark, while the step settles (a chamber's start included), or on a switch's use. A slide judges no button or receiver until it ends, so no arrow turns mid-slide, but a slide's end can turn one, under the subject too.
 
 A blocked wall is a wall in every state: it stops walking and shots, and joins the walls around it. Blocking it closes a portal already on it, silently. A fizzler switching on closes a portal on a wall side facing its tile, one opened while it was off (a fizzler that is on stops shots and keeps the subject from shooting): `portalFizzled`, which the game shows by breaking the portal up, with no sound. A light barrier stands only on a floor tile, which never holds a portal, so switching it on closes none.
 
@@ -177,7 +207,7 @@ A step that ends with the subject on the exit completes the chamber. The subject
 
 ### Something blocking under the subject
 
-A door or the exit closing, a ditch opening, or a light barrier or a laser turning on under the subject does nothing to it: it can still turn, shoot, interact and walk off. A box it carries is kept, and no box lies there with it, since a box shares the subject's tile only on the box's start (see [one box per tile](#one-box-per-tile)), which is plain floor or a button. A fizzler turning on under the subject runs the fizzler rule in that same step. Chambers avoid this state (`docs/level_design.md`). An arrow turning under the subject turns it with it (see [links](#links)), which chambers may use.
+A door or the exit closing, a ditch opening, or a light barrier or a laser turning on under the subject does nothing to it: it can still turn, shoot, interact and walk off. A box it carries is kept, and no box lies there with it, since a box shares the subject's tile only on the box's start (see [one box per tile](#one-box-per-tile)), which is plain floor or a button. A fizzler turning on under the subject runs the fizzler rule in that same step. A receiver can do this through its own ray: stepping onto a door, a bridged ditch, or a laser or a light barrier that is off, which a receiver holds so while its own ray crosses that tile, cuts the ray and switches the tile under the subject (see [rays](#rays)). Chambers avoid this state (`docs/level_design.md`). An arrow turning under the subject turns it with it (see [links](#links)), which chambers may use.
 
 ### Outside the chamber
 
@@ -187,15 +217,16 @@ Outside the chamber's edge counts as a wall that takes no portals, and the valid
 
 A chamber file is read field by field, then checked as a whole (`src/game/rules/`, run on every chamber by `npm run chamber:check`). Each problem names its field and its tile, where it has them. Errors keep a chamber from loading:
 
-- **Fields:** a missing field, an unknown or misspelled one (an `id` on a blocked wall rectangle among them), a value of the wrong kind or out of range (see the [chamber format](#chamber-format)), a wall, blocked wall or slide floor rectangle whose from corner is past its to corner, an antline path with fewer than two corners, or a `version` other than 2.
-- **Ids and links:** an id used twice (elements, arrows with a turned way among them, and groups share the ids), a link naming an id nothing has, and a group naming another group.
+- **Fields:** a missing field, an unknown or misspelled one (an `id` on a blocked wall rectangle among them), a value of the wrong kind or out of range (a box's `mirror` other than `/` or `\` among them; see the [chamber format](#chamber-format)), a wall, blocked wall or slide floor rectangle whose from corner is past its to corner, an antline path with fewer than two corners, or a `version` other than 2.
+- **Ids and links:** an id used twice (elements, arrows with a turned way and emitters among them, and groups share the ids), a link naming an id nothing has, a receiver's links included, and a group naming another group.
 - **Arrows:** an arrow with a turned way but no `id`, or an `id` but no turned way, and a turned way that is the arrow's own way or opposite it (a half turn), so every turn is a quarter turn.
-- **Antlines:** an antline leading to an id nothing has, or to a group, since an antline leads to one element; a corner outside the chamber, the same as the corner before it, or sharing neither a row nor a column with it (only the first such corner is reported); a first corner on no button or switch that links the element, by its id or through a group; and a last corner away from the element's tile.
-- **Bounds:** anything outside the chamber, the same wall tile listed twice, by walls or blocked walls, and the same slide floor tile listed twice.
-- **What shares a tile:** a wall or blocked wall holds nothing else, so the subject, the exit and a light barrier are never inside a wall. A floor tile holds at most one of a light barrier, ditch, door, exit, fizzler, arrow, button, switch or laser, except two lasers that cross (one `H`, one `V`). A slide floor lies under what shares its tile, which can be a button, a fizzler, a laser, a light barrier, a box's start or the subject's start, but never a ditch, a door, the exit, an arrow or a switch. A box and the subject start on plain floor, slide floor or a button, with at most one box per tile, and the subject never on a box, since a box keeps it off its tile.
-- **The edge:** every tile on the chamber's edge holds a wall, a blocked wall, a door or the exit, so the chamber is enclosed, and no slide floor stands there.
+- **Emitters and receivers:** an emitter whose firing face, or a receiver whose listening face, looks outside the chamber or onto a wall tile, since it fires onto, or listens on, a floor tile inside the chamber.
+- **Antlines:** an antline leading to an id nothing has, or to a group, since an antline leads to one element; a corner outside the chamber, the same as the corner before it, or sharing neither a row nor a column with it (only the first such corner is reported); a first corner on no button, switch or receiver that links the element, by its id or through a group; and a last corner away from the element's tile.
+- **Bounds:** anything outside the chamber, the same wall tile listed twice, by walls, blocked walls, emitters or receivers, and the same slide floor tile listed twice.
+- **What shares a tile:** a wall tile (a wall, a blocked wall, an emitter or a receiver) holds nothing else, so the subject, the exit and a light barrier are never inside a wall. A floor tile holds at most one of a light barrier, ditch, door, exit, fizzler, arrow, button, switch or laser, except two lasers that cross (one `H`, one `V`). A slide floor lies under what shares its tile, which can be a button, a fizzler, a laser, a light barrier, a box's start or the subject's start, but never a ditch, a door, the exit, an arrow or a switch. A box and the subject start on plain floor, slide floor or a button, with at most one box per tile, and the subject never on a box, since a box keeps it off its tile.
+- **The edge:** every tile on the chamber's edge holds a wall, a blocked wall, an emitter, a receiver, a door or the exit, so the chamber is enclosed, and no slide floor stands there.
 
-One warning doesn't keep a chamber from loading: a button linked to a box, since releasing the button does nothing to the box.
+One warning doesn't keep a chamber from loading: a button or a receiver linked to a box, since releasing the button, or the receiver going dark, does nothing to the box.
 
 ### Changes from the original rules
 

@@ -1,0 +1,106 @@
+{
+    "version": 2,
+    "size": {
+        "width": 7,
+        "height": 9
+    },
+    "subject": {
+        "x": 1,
+        "y": 7,
+        "direction": "RIGHT"
+    },
+    "exit": {
+        "x": 3,
+        "y": 3
+    },
+    "walls": [
+        {
+            "xFrom": 0,
+            "xTo": 6,
+            "yFrom": 8,
+            "yTo": 8
+        },
+        {
+            "x": 0,
+            "y": 7
+        },
+        {
+            "x": 6,
+            "y": 7
+        },
+        {
+            "xFrom": 0,
+            "xTo": 6,
+            "yFrom": 6,
+            "yTo": 6
+        },
+        {
+            "xFrom": 0,
+            "xTo": 6,
+            "yFrom": 4,
+            "yTo": 4
+        },
+        {
+            "xFrom": 0,
+            "xTo": 6,
+            "yFrom": 2,
+            "yTo": 2
+        },
+        {
+            "xFrom": 0,
+            "xTo": 6,
+            "yFrom": 0,
+            "yTo": 0
+        }
+    ],
+    "emitters": [
+        {
+            "x": 0,
+            "y": 5,
+            "direction": "RIGHT"
+        },
+        {
+            "x": 0,
+            "y": 3,
+            "direction": "RIGHT"
+        },
+        {
+            "x": 0,
+            "y": 1,
+            "direction": "RIGHT"
+        }
+    ],
+    "receivers": [
+        {
+            "x": 6,
+            "y": 5,
+            "direction": "LEFT",
+            "links": []
+        },
+        {
+            "x": 6,
+            "y": 3,
+            "direction": "LEFT",
+            "links": []
+        },
+        {
+            "x": 6,
+            "y": 1,
+            "direction": "LEFT",
+            "links": []
+        }
+    ],
+    "lightBarriers": [
+        {
+            "x": 3,
+            "y": 1,
+            "direction": "V"
+        }
+    ],
+    "doors": [
+        {
+            "x": 3,
+            "y": 5
+        }
+    ]
+}

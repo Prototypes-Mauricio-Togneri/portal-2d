@@ -63,6 +63,23 @@ const CLOCK_INTERVAL = 64
 export const PROGRESS_INTERVAL = 4096
 
 /**
+ * Why the macro search refuses a chamber, or null when it takes it: its
+ * walks, shared shots and regions assume walking changes nothing but the
+ * subject's tile, facing and carried box, which a receiver breaks, since
+ * the subject cuts a ray by walking into it. The reference search, which
+ * takes every action through the rules' step, still runs on such a chamber.
+ * @param chamber - The chamber
+ * @returns The reason, or null
+ */
+export function macroSearchRefusal(chamber: CompiledChamber): string | null {
+  if (chamber.countOf('receiver') === 0) {
+    return null
+  }
+
+  return 'it has a receiver, and the subject cuts a ray by walking into it, which the walks, the shot lines and the regions assume changes nothing'
+}
+
+/**
  * The solver's macro search (docs/solver.md). A state is a settled state of
  * the rules with the subject turned to its tile's canonical facing for the
  * state's blocked flags, since turning is free. From each state it walks,
@@ -112,9 +129,15 @@ export class MacroSearch {
    * @param chamber - The chamber
    * @param mode - What to look for
    * @param maxStates - The most states to keep
-   * @throws Error when the chamber's key doesn't fit 64 bits, or it has too many tiles to pack
+   * @throws Error when the chamber's key doesn't fit 64 bits, it has too many tiles to pack, or the search refuses it (macroSearchRefusal)
    */
   constructor(chamber: CompiledChamber, mode: SearchMode, maxStates: number) {
+    const refusal = macroSearchRefusal(chamber)
+
+    if (refusal !== null) {
+      throw new Error(`The macro search refuses this chamber: ${refusal}`)
+    }
+
     const index = new ChamberIndex(chamber)
 
     if (index.tileCount > MAX_MACRO_TILES) {

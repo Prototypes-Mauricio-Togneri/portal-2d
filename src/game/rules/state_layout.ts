@@ -60,16 +60,20 @@ export const PORTAL_SLOTS: Readonly<Record<PortalColor, number>> = {
 /**
  * How one chamber's state is laid out as a list of 16-bit numbers: the
  * values every chamber has (StateSlot), then each box's column and row, each
- * button's pressed flag, and the blocked flag of each element a link reaches,
- * in registry order, then list order. An element no link reaches keeps its
- * blocked flag from the chamber file, so the state doesn't hold it.
+ * button's pressed flag, each receiver's lit flag, and the blocked flag of
+ * each element a link reaches, in registry order, then list order. An
+ * element no link reaches keeps its blocked flag from the chamber file, so
+ * the state doesn't hold it. A chamber with no receivers has no lit flags,
+ * so its states are laid out as before receivers.
  */
 export class StateLayout {
   readonly boxCount: number // Boxes in the chamber
   readonly buttonCount: number // Buttons in the chamber
+  readonly receiverCount: number // Receivers in the chamber
   readonly flagCount: number // Blocked flags the state holds, one per element a link reaches
   readonly boxesOffset: number // Where the boxes' columns and rows start
   readonly buttonsOffset: number // Where the buttons' pressed flags start
+  readonly receiversOffset: number // Where the receivers' lit flags start
   readonly flagsOffset: number // Where the blocked flags start
   readonly length: number // How many values a state holds
   private readonly flagOffsets = new Map<BlockableKind, Int16Array>() // Per element type, each element's flag offset, or NOT_STORED
@@ -90,9 +94,11 @@ export class StateLayout {
 
     this.boxCount = boxes.length
     this.buttonCount = (data.buttons ?? []).length
+    this.receiverCount = (data.receivers ?? []).length
     this.boxesOffset = FIXED_SLOT_COUNT
     this.buttonsOffset = this.boxesOffset + (this.boxCount * 2)
-    this.flagsOffset = this.buttonsOffset + this.buttonCount
+    this.receiversOffset = this.buttonsOffset + this.buttonCount
+    this.flagsOffset = this.receiversOffset + this.receiverCount
 
     const linkedKeys = new Set(linked.map((target) => `${target.kind}:${target.index}`))
     let nextOffset = this.flagsOffset
@@ -127,7 +133,7 @@ export class StateLayout {
   /**
    * Writes the state the chamber file describes: the subject where it starts,
    * empty-handed, both portals closed, every box on its start tile, every
-   * button up and every flag as the file sets it.
+   * button up, every receiver dark and every flag as the file sets it.
    * @param data - The chamber
    * @returns The values
    */

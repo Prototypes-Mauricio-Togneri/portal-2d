@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    An emitter that is off (docs/sprites.md), drawn on the top edge of its
+    wall tile, firing up onto the tile above; the game turns it to its
+    firing face. A dark steel housing set into the wall's bevel, its far
+    side past the tile's edge so only its inner corners are rounded, like a
+    laser's end plate; a dark bezel at the face holding the lens, dark;
+    three vents and two rivets behind it. It must match emitter_on but for
+    the lens.
+  -->
+  <defs>
+    <clipPath id="tile">
+      <rect x="0" y="0" width="256" height="256"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#tile)">
+    <!-- The housing -->
+    <rect x="74" y="-8" width="108" height="72" rx="8" fill="rgb(50, 55, 61)" stroke="rgb(176, 183, 189)" stroke-width="2.5"/>
+
+    <!-- The bezel round the lens -->
+    <rect x="88" y="-6" width="80" height="26" rx="4" fill="rgb(26, 28, 32)"/>
+
+    <!-- The lens, dark -->
+    <rect x="96" y="1" width="64" height="12" rx="2.5" fill="rgb(74, 78, 86)"/>
+    <rect x="102" y="5" width="52" height="4" rx="2" fill="rgb(96, 101, 109)"/>
+
+    <!-- Vents -->
+    <g fill="rgb(32, 35, 39)">
+      <rect x="100" y="30" width="7" height="22" rx="3.5"/>
+      <rect x="124.5" y="30" width="7" height="22" rx="3.5"/>
+      <rect x="149" y="30" width="7" height="22" rx="3.5"/>
+    </g>
+
+    <!-- Rivets -->
+    <g fill="rgb(140, 146, 153)">
+      <circle cx="85" cy="52" r="3.5"/>
+      <circle cx="171" cy="52" r="3.5"/>
+    </g>
+  </g>
+</svg>

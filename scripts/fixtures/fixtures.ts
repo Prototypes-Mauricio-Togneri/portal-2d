@@ -25,6 +25,21 @@ import portalOntoBox from '@scripts/fixtures/portal_onto_box.json'
 import portalOntoDitch from '@scripts/fixtures/portal_onto_ditch.json'
 import portalOntoFizzler from '@scripts/fixtures/portal_onto_fizzler.json'
 import portalOntoLaser from '@scripts/fixtures/portal_onto_laser.json'
+import rayDeviceShots from '@scripts/fixtures/ray_device_shots.json'
+import rayEmitterButton from '@scripts/fixtures/ray_emitter_button.json'
+import rayFloorElements from '@scripts/fixtures/ray_floor_elements.json'
+import rayMirrorFizzler from '@scripts/fixtures/ray_mirror_fizzler.json'
+import rayMirrorPortal from '@scripts/fixtures/ray_mirror_portal.json'
+import rayMirrors from '@scripts/fixtures/ray_mirrors.json'
+import rayOwnDoor from '@scripts/fixtures/ray_own_door.json'
+import rayPortals from '@scripts/fixtures/ray_portals.json'
+import rayReceiverButton from '@scripts/fixtures/ray_receiver_button.json'
+import rayReceiverDoor from '@scripts/fixtures/ray_receiver_door.json'
+import rayReceiversDoors from '@scripts/fixtures/ray_receivers_doors.json'
+import rayRelay from '@scripts/fixtures/ray_relay.json'
+import raySlide from '@scripts/fixtures/ray_slide.json'
+import rayStoppers from '@scripts/fixtures/ray_stoppers.json'
+import rayTwoEmitters from '@scripts/fixtures/ray_two_emitters.json'
 import slideArrowsExit from '@scripts/fixtures/slide_arrows_exit.json'
 import slideBlockers from '@scripts/fixtures/slide_blockers.json'
 import slideButtons from '@scripts/fixtures/slide_buttons.json'
@@ -40,7 +55,8 @@ import twoButtonsOneDoor from '@scripts/fixtures/two_buttons_one_door.json'
 // how the rules play a change from the original rules (docs/elements.md,
 // "Changes from the original rules") or an element the original game didn't
 // have (the light barrier, the blocked wall that a link switches, the slide
-// floor, the arrow that a link turns). The replay check runs them. The chambers are read without the layout
+// floor, the arrow that a link turns, and the emitter, its ray, the receiver
+// and the mirror box). The replay check runs them. The chambers are read without the layout
 // checks, so the one open at the edge still plays
 
 /**
@@ -1205,6 +1221,386 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 0,
       portals: 2,
       finalHash: 'dc93eaa2',
+    },
+  },
+  {
+    name: 'ray_lights_receiver_from_start',
+    behaviour: 'An emitter is on unless its file says otherwise, so the chamber\'s start settles with its ray lighting the receiver across the room, which opens the door it links.',
+    chamber: rayReceiverDoor,
+    actions: [],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 0,
+      finalHash: 'b31ae90f',
+    },
+  },
+  {
+    name: 'subject_cuts_ray',
+    behaviour: 'The subject stepping into a ray stops it on its tile, so the receiver goes dark and closes its door in the same step.',
+    chamber: rayReceiverDoor,
+    actions: ['up'],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: 'fcf61e06',
+    },
+  },
+  {
+    name: 'subject_leaves_ray',
+    behaviour: 'The subject stepping out of a ray lets it on to the receiver, which lights and opens its door again.',
+    chamber: rayReceiverDoor,
+    actions: [
+      'up',
+      'down',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: 'e7fc11b6',
+    },
+  },
+  {
+    name: 'box_put_down_cuts_ray',
+    behaviour: 'A box put down in a ray stops it there, so the receiver goes dark and closes its door.',
+    chamber: rayReceiverDoor,
+    actions: [
+      'turnLeft',
+      'interact',
+      'turnUp',
+      'interact',
+    ],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 0,
+      finalHash: 'e9fc8b8f',
+    },
+  },
+  {
+    name: 'box_picked_up_from_ray',
+    behaviour: 'Picking the box up again lets the ray on past its tile, so the receiver lights and opens its door.',
+    chamber: rayReceiverDoor,
+    actions: [
+      'turnLeft',
+      'interact',
+      'turnUp',
+      'interact',
+      'interact',
+    ],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 0,
+      finalHash: '852f2908',
+    },
+  },
+  {
+    name: 'ray_held_door_closes_behind_subject',
+    behaviour: 'A door that starts open lets its own receiver\'s ray through; stepping into that ray in front of it darkens the receiver, the door closes and then stops the ray itself, so it stays closed once the subject steps away.',
+    chamber: rayOwnDoor,
+    actions: [
+      'up',
+      'up',
+      'down',
+    ],
+    expected: {
+      completed: false,
+      moves: 3,
+      portals: 0,
+      finalHash: '3c9bd467',
+    },
+  },
+  {
+    name: 'ray_passes_floor_elements',
+    behaviour: 'A ray passes an open ditch, a fizzler, a laser, a button and an arrow, all of them on, and lights the receiver beyond them.',
+    chamber: rayFloorElements,
+    actions: [],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 0,
+      finalHash: 'b5747409',
+    },
+  },
+  {
+    name: 'ray_stopped_by_door_exit_barrier',
+    behaviour: 'A closed door, the closed exit and a light barrier that is on each stop a ray, so none of the three receivers lights.',
+    chamber: rayStoppers,
+    actions: [],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 0,
+      finalHash: 'caf52de2',
+    },
+  },
+  {
+    name: 'ray_through_portals',
+    behaviour: 'A ray into a portal comes out of the other one, away from its wall, and lights a receiver on that side once the subject steps out of it.',
+    chamber: rayPortals,
+    actions: [
+      'blue',
+      'down',
+      'down',
+      'left',
+      'left',
+      'turnDown',
+      'orange',
+      'left',
+    ],
+    expected: {
+      completed: false,
+      moves: 5,
+      portals: 2,
+      finalHash: '481cfc3f',
+    },
+  },
+  {
+    name: 'ray_into_lone_portal_stops',
+    behaviour: 'A ray into a portal while the other one is closed stops at its wall.',
+    chamber: rayPortals,
+    actions: [
+      'blue',
+      'down',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 1,
+      finalHash: '4187e968',
+    },
+  },
+  {
+    name: 'shots_at_devices_miss',
+    behaviour: 'An emitter or a receiver takes no portal on any face: a shot at the emitter\'s side and its firing face, and at the receiver\'s side and its listening face, each misses.',
+    chamber: rayDeviceShots,
+    actions: [
+      'blue',
+      'down',
+      'right',
+      'orange',
+      'down',
+      'right',
+      'turnUp',
+      'blue',
+      'right',
+      'up',
+      'up',
+      'up',
+      'left',
+      'turnDown',
+      'orange',
+    ],
+    expected: {
+      completed: false,
+      moves: 9,
+      portals: 0,
+      finalHash: '8e71471d',
+    },
+  },
+  {
+    name: 'slide_through_ray_changes_nothing',
+    behaviour: 'A slide passing through a ray doesn\'t cut it: rays count only once the step settles.',
+    chamber: raySlide,
+    actions: ['right'],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: '71e98203',
+    },
+  },
+  {
+    name: 'slide_stopping_in_ray_cuts_it',
+    behaviour: 'A slide that stops in a ray cuts it there, so the receiver goes dark and closes its door.',
+    chamber: raySlide,
+    actions: [
+      'down',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: '0ed0f7b0',
+    },
+  },
+  {
+    name: 'mirror_boxes_turn_rays',
+    behaviour: 'A mirror box turns a ray a quarter turn: a / turns a ray going right up, a \\ turns one going right down, each onto a receiver.',
+    chamber: rayMirrors,
+    actions: [],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 0,
+      finalHash: 'aeab30da',
+    },
+  },
+  {
+    name: 'mirror_box_through_portal',
+    behaviour: 'A mirror box keeps its mirror through a portal: carried through one and put down in a ray, it turns the ray up onto a receiver.',
+    chamber: rayMirrorPortal,
+    actions: [
+      'blue',
+      'right',
+      'right',
+      'right',
+      'turnDown',
+      'orange',
+      'up',
+      'left',
+      'left',
+      'interact',
+      'down',
+      'left',
+      'left',
+      'interact',
+    ],
+    expected: {
+      completed: false,
+      moves: 9,
+      portals: 2,
+      finalHash: 'a5f2b072',
+    },
+  },
+  {
+    name: 'fizzled_mirror_box_turns_ray_again',
+    behaviour: 'Picking up a mirror box lets the ray it turned run on to the subject, so its receiver goes dark; a fizzler destroying the carried box sends it back to its start, where it turns the ray onto the receiver again.',
+    chamber: rayMirrorFizzler,
+    actions: [
+      'interact',
+      'down',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: '5ba34694',
+    },
+  },
+  {
+    name: 'receiver_relays_to_emitter',
+    behaviour: 'A receiver linked to an emitter switches it on as it lights, so a second ray lights a second receiver, which opens a door, all while the start settles.',
+    chamber: rayRelay,
+    actions: [],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 0,
+      finalHash: '8403ff97',
+    },
+  },
+  {
+    name: 'cut_relay_darkens_both',
+    behaviour: 'Cutting the first ray darkens its receiver, which switches the second emitter off, so the second receiver goes dark and closes the door in the same step.',
+    chamber: rayRelay,
+    actions: ['up'],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: '56f5ea14',
+    },
+  },
+  {
+    name: 'button_switches_emitter_on',
+    behaviour: 'A button going down switches on the emitter it links, which starts off, and its ray lights a receiver that opens a door.',
+    chamber: rayEmitterButton,
+    actions: ['left'],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: 'bb4f5f11',
+    },
+  },
+  {
+    name: 'button_switches_emitter_off',
+    behaviour: 'The button coming up switches the emitter off again, so the receiver goes dark and closes its door.',
+    chamber: rayEmitterButton,
+    actions: [
+      'left',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: 'cd40f601',
+    },
+  },
+  {
+    name: 'receivers_hold_each_others_doors',
+    behaviour: 'Two rays, each through the door the other\'s receiver opens: a button opening the first door lights the first receiver, which opens the second door, which lights the second receiver, and settling ends with both lit.',
+    chamber: rayReceiversDoors,
+    actions: ['left'],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: '24877157',
+    },
+  },
+  {
+    name: 'receivers_let_go_together',
+    behaviour: 'The button coming up closes the first door, which darkens the first receiver, which closes the second door, and settling ends with both dark.',
+    chamber: rayReceiversDoors,
+    actions: [
+      'left',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: '7bbf365e',
+    },
+  },
+  {
+    name: 'receiver_and_button_latest_wins',
+    behaviour: 'A lit receiver and a button link one door: the button coming up closes it, the latest change, though the receiver stays lit.',
+    chamber: rayReceiverButton,
+    actions: [
+      'left',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: 'df21f199',
+    },
+  },
+  {
+    name: 'receiver_lit_by_either_emitter',
+    behaviour: 'A receiver stays lit while either of two rays reaches it: picking up the mirror box that turned one ray onto it lets the other run straight to it.',
+    chamber: rayTwoEmitters,
+    actions: ['interact'],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 0,
+      finalHash: 'eca8b041',
+    },
+  },
+  {
+    name: 'receiver_dark_when_neither_reaches',
+    behaviour: 'Stepping onto the mirror box\'s tile stops both rays, so the receiver goes dark and closes its door.',
+    chamber: rayTwoEmitters,
+    actions: [
+      'interact',
+      'down',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: '88c6c019',
     },
   },
 ]

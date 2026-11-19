@@ -1,14 +1,18 @@
 import {antlinesLitKey, drawAntlines} from '@/game/antline_drawing'
 import type {BoxFall} from '@/game/box_fall'
+import {DELTAS, Direction} from '@/game/direction'
 import {drawLaserGlows, drawTurnableArrows, ELEMENT_DRAWINGS, glowStrength} from '@/game/element_drawings'
 import type {BlockedShares, ElementTransitions} from '@/game/element_transitions'
 import type {FizzleParticles} from '@/game/fizzle_particles'
 import type {MissRipple} from '@/game/miss_ripple'
-import type {CompiledChamber} from '@/game/rules/compiled_chamber'
+import {PALETTE} from '@/game/palette'
+import {drawRayGlows, drawRays, paintRayGlows, rayRuns} from '@/game/ray_drawing'
+import type {CompiledChamber, Mirror} from '@/game/rules/compiled_chamber'
 import {DRAW_LAYERS, type DrawLayer} from '@/game/rules/draw_layer'
 import {ELEMENT_REGISTRY} from '@/game/rules/element_registry'
 import {drawPortalOpening, openingGlowShare, type PortalOpenings} from '@/game/portal_openings'
 import {PORTAL_COLORS, PortalColor} from '@/game/rules/portal_color'
+import {traceRays} from '@/game/rules/rays'
 import type {RulesState} from '@/game/rules/rules_state'
 import {NO_BOX} from '@/game/rules/state_layout'
 import type {SpriteName} from '@/game/sprite_set'
@@ -27,6 +31,20 @@ type Backdrop = {
   readonly cover: TilePainter | null // What the backdrop lays over its antlines (floor marks, then walls over their shadow), kept apart to draw it again when one changes, or null when the chamber has none
   readonly litKey: string // Which antlines the backdrop shows lit, from antlinesLitKey()
 }
+
+/**
+ * The rays' glow as painted for a tile size, kept while the rays stay where
+ * they are, since it never moves with time.
+ */
+type RayGlow = {
+  readonly key: string // Where the rays ran and the tile size it was painted for
+  readonly layer: TilePainter // The glow, on a canvas of its own
+}
+
+/**
+ * The runs of the rays as drawn.
+ */
+type RayRuns = ReturnType<typeof rayRuns>
 
 /**
  * How far a portal has opened, for the one opening, or null to draw it as
@@ -53,6 +71,36 @@ export const CARRIED_BOX_AHEAD = 0.26
 
 /** The side of the box sprite drawn where the subject's box-holding sprite shows its box, as a share of a tile, so the two boxes match */
 export const CARRIED_BOX_SIZE = 0.7
+
+/** How far the mirror marked on a carried mirror box reaches from its middle, each way across and up, in tiles */
+const CARRIED_MIRROR_REACH = 0.13
+
+/**
+ * One stroke of the mirror marked on a carried mirror box.
+ */
+type MirrorStroke = {
+  readonly colour: string // Its colour, from the palette
+  readonly width: number // Its width, in tiles; never under a pixel
+}
+
+/** The strokes the mirror marked on a carried mirror box is drawn with, bottom to top: its frame, its glass and its glint */
+const CARRIED_MIRROR_STROKES: readonly MirrorStroke[] = [
+  {
+    colour: PALETTE.carriedMirrorFrame,
+    width: 0.07,
+  },
+  {
+    colour: PALETTE.carriedMirrorGlass,
+    width: 0.045,
+  },
+  {
+    colour: PALETTE.carriedMirrorGlint,
+    width: 0.012,
+  },
+]
+
+/** The runs of a chamber with no rays */
+const NO_RUNS: RayRuns = []
 
 /** The bottom layers, which never change while a chamber is played: drawn as its backdrop with the antlines, never each frame. An arrow a link turns, on the floor marks' layer, is left out of it and drawn every frame right over it */
 const BACKDROP_LAYERS: ReadonlySet<DrawLayer> = new Set<DrawLayer>([
@@ -181,6 +229,7 @@ export function hasAmbientLife(state: RulesState): boolean {
 export class Renderer {
   private readonly painter: TilePainter // Paints the tiles
   private backdrop: Backdrop | null = null // The backdrop last drawn, kept while the chamber and tile size stay the same
+  private rayGlow: RayGlow | null = null // The rays' glow last painted, kept while the rays and the tile size stay the same
 
   /**
    * Takes over a canvas, collapsing it to 0 × 0 until setSize() is called.
@@ -292,9 +341,44 @@ export class Renderer {
    */
   private drawSubject(state: RulesState, pose: SubjectPose): void {
     const sprite = (state.carriedBox === NO_BOX) ? 'subject_holding_gun' : 'subject_holding_box'
+    const mirror = (state.carriedBox === NO_BOX) ? null : state.chamber.mirrorOf(state.carriedBox)
 
     this.painter.drawClippedToTile(pose.clip, () => {
       this.painter.drawSprite(sprite, pose.x, pose.y, pose.facing)
+
+      if (mirror !== null) {
+        this.drawCarriedMirror(pose, mirror)
+      }
+    })
+  }
+
+  /**
+   * Marks the mirror of a carried mirror box over the box in the subject's
+   * hands, the right way round in the room whichever way the subject faces,
+   * so it reads apart from a plain box.
+   * @param pose - Where the subject is drawn, from subjectPose()
+   * @param mirror - The carried box's mirror
+   */
+  private drawCarriedMirror(pose: SubjectPose, mirror: Mirror): void {
+    const ahead = DELTAS[pose.facing]
+    const middleX = pose.x + 0.5 + (ahead.dx * CARRIED_BOX_AHEAD)
+    const middleY = pose.y + 0.5 + (ahead.dy * CARRIED_BOX_AHEAD)
+    // On the canvas, rows grow downwards: a '/' rises to the right
+    const rise = (mirror === '/') ? -1 : 1
+
+    this.painter.drawInFrame(middleX, middleY, Direction.UP, (ctx, tileSize) => {
+      const reach = CARRIED_MIRROR_REACH * tileSize
+
+      ctx.lineCap = 'round'
+
+      for (const stroke of CARRIED_MIRROR_STROKES) {
+        ctx.strokeStyle = stroke.colour
+        ctx.lineWidth = Math.max(stroke.width * tileSize, 1)
+        ctx.beginPath()
+        ctx.moveTo(-reach, -rise * reach)
+        ctx.lineTo(reach, rise * reach)
+        ctx.stroke()
+      }
     })
   }
 
@@ -327,15 +411,20 @@ export class Renderer {
 
   /**
    * Draws the glows of the lasers that are on, those fading out or in part
-   * way, and of the open portals, each added to what lies beneath, a portal
-   * opening rising with it.
+   * way, of the rays, held steady, and of the open portals, each added to
+   * what lies beneath, a portal opening rising with it.
    * @param state - The state drawn
-   * @param strength - How strongly they shine, from glowStrength()
+   * @param strength - How strongly the lasers and portals shine, from glowStrength()
    * @param shares - How far on the lasers that are changing are drawn, or null to draw every one as the state says
    * @param opening - How far the portal opening is drawn, or null to draw both open
+   * @param runs - The rays' runs, from rayRuns()
    */
-  private drawGlows(state: RulesState, strength: number, shares: BlockedShares | null, opening: OpeningProgress | null): void {
+  private drawGlows(state: RulesState, strength: number, shares: BlockedShares | null, opening: OpeningProgress | null, runs: RayRuns): void {
     drawLaserGlows(this.painter, state, strength, shares)
+
+    if (runs.length > 0) {
+      drawRayGlows(this.painter, this.rayGlowOf(runs))
+    }
 
     for (const color of PORTAL_COLORS) {
       const side = state.portalSide(color)
@@ -349,9 +438,35 @@ export class Renderer {
   }
 
   /**
+   * The rays' glow, painted on its own layer, painted again only when the
+   * rays run elsewhere or the tiles change size.
+   * @param runs - The rays' runs, from rayRuns()
+   * @returns The layer
+   */
+  private rayGlowOf(runs: RayRuns): TilePainter {
+    const tileSize = this.painter.blockSize
+    const key = `${tileSize}:${runs.map((run) => `${run.from.x},${run.from.y},${run.to.x},${run.to.y}`).join(';')}`
+
+    if ((this.rayGlow !== null) && (this.rayGlow.key === key)) {
+      return this.rayGlow.layer
+    }
+
+    const layer = this.painter.createLayer()
+
+    paintRayGlows(layer, runs)
+    this.rayGlow = {
+      key: key,
+      layer: layer,
+    }
+
+    return layer
+  }
+
+  /**
    * Draws a whole frame, back to front: the backdrop, the arrows a link
    * turns, every layer above it,
-   * with the boxes falling into ditches over the ditches and a portal
+   * with the boxes falling into ditches over the ditches, the rays over the
+   * buttons and switches and under the boxes, and a portal
    * opening part way open, then the glows, the pieces of what a fizzle took
    * and a missed shot's ripple. Part way along a slide, everything but the
    * subject's pose is drawn as the state on the last tile it has reached
@@ -375,6 +490,7 @@ export class Renderer {
     const pose = subjectPose(state, transition, this.painter.blockSize)
     const shares: BlockedShares | null = ((time !== null) && (changes !== null)) ? (kind, index) => changes.blockedAt(kind, index, time) : null
     const opening: OpeningProgress | null = ((time !== null) && (openings !== null)) ? (color) => openings.progressAt(shown, color, time) : null
+    const runs = (shown.chamber.countOf('emitter') > 0) ? rayRuns(shown, traceRays(shown)) : NO_RUNS
 
     this.painter.drawLayer(this.backdropOf(shown), false)
     drawTurnableArrows(this.painter, shown, shares)
@@ -388,9 +504,14 @@ export class Renderer {
       if ((layer === 'blockers') && (time !== null) && (fall !== null)) {
         fall.draw(this.painter, time)
       }
+
+      // Over the buttons and switches, whose plates lie on the floor, and under the boxes and the subject
+      if (layer === 'fixtures') {
+        drawRays(this.painter, runs)
+      }
     }
 
-    this.drawGlows(shown, glowStrength(time), shares, opening)
+    this.drawGlows(shown, glowStrength(time), shares, opening, runs)
 
     if ((time !== null) && (fizzle !== null)) {
       fizzle.draw(this.painter, time)

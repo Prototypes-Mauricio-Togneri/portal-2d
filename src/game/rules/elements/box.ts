@@ -63,6 +63,7 @@ export const BOX_ELEMENT = defineElement<BoxData>()({
   blocksShots: 'never',
   stopsShootingFrom: 'never',
   takesPortals: 'never',
+  blocksRays: 'never',
   reactsToSubject: false,
   continuesMovement: false,
   events: [

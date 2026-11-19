@@ -1,4 +1,4 @@
-import type {AntlineData, ArrowData, BeamData, BlockableData, BlockedWallData, BoxData, ChamberData, LinkGroupData, ParData, PositionData, SubjectData, TriggerData, WallData, WallRangeData} from '@/game/chamber_data'
+import type {AntlineData, ArrowData, BeamData, BlockableData, BlockedWallData, BoxData, ChamberData, EmitterData, LinkGroupData, ParData, PositionData, ReceiverData, SubjectData, TriggerData, WallData, WallRangeData} from '@/game/chamber_data'
 import {type ChamberProblem, chamberError} from '@/game/rules/chamber_problem'
 import {isJsonObject, type JsonObject} from '@/game/rules/json_object'
 
@@ -21,6 +21,8 @@ export const CHAMBER_FIELDS = [
   'exit',
   'walls',
   'blockedWalls',
+  'emitters',
+  'receivers',
   'slideFloors',
   'lightBarriers',
   'ditches',
@@ -36,7 +38,7 @@ export const CHAMBER_FIELDS = [
   'par',
 ]
 
-/** The directions a subject or an arrow can face */
+/** The directions a subject, an arrow, an emitter or a receiver can face */
 const DIRECTIONS = [
   'UP',
   'DOWN',
@@ -91,6 +93,30 @@ const BOX_FIELDS = [
   'x',
   'y',
   'id',
+  'mirror',
+]
+
+/** The mirrors a box can hold, from corner to corner: bottom left to top right, or top left to bottom right */
+const MIRRORS = [
+  '/',
+  '\\',
+]
+
+/** The fields an emitter may have */
+const EMITTER_FIELDS = [
+  'x',
+  'y',
+  'direction',
+  'id',
+  'blocked',
+]
+
+/** The fields of a receiver, all required */
+const RECEIVER_FIELDS = [
+  'x',
+  'y',
+  'direction',
+  'links',
 ]
 
 /** The fields of a button or a switch, all required */
@@ -426,11 +452,69 @@ class ChamberParser {
     const x = this.readInteger(entry.x, fieldPath(field, 'x'), null)
     const y = this.readInteger(entry.y, fieldPath(field, 'y'), null)
     const id = this.readOptionalId(entry.id, fieldPath(field, 'id'))
+    const mirror = (entry.mirror === undefined) ? undefined : this.readChoice(entry.mirror, fieldPath(field, 'mirror'), MIRRORS)
 
-    return ((x === null) || (y === null) || (id === null)) ? null : {
+    // The mirror goes in even when absent, as undefined, which a chamber's
+    // hash leaves out, so a plain box hashes as before
+    return ((x === null) || (y === null) || (id === null) || (mirror === null)) ? null : {
       x: x,
       y: y,
       id: id,
+      mirror: mirror,
+    }
+  }
+
+  /**
+   * Reads an emitter.
+   * @param value - The value
+   * @param field - Its path
+   * @returns The emitter, or null when it is wrong
+   */
+  readEmitter(value: unknown, field: string): EmitterData | null {
+    const entry = this.readObject(value, field, EMITTER_FIELDS, DIRECTED_FIELDS)
+
+    if (entry === null) {
+      return null
+    }
+
+    const x = this.readInteger(entry.x, fieldPath(field, 'x'), null)
+    const y = this.readInteger(entry.y, fieldPath(field, 'y'), null)
+    const direction = this.readChoice(entry.direction, fieldPath(field, 'direction'), DIRECTIONS)
+    const id = this.readOptionalId(entry.id, fieldPath(field, 'id'))
+    const blocked = this.readOptionalBoolean(entry.blocked, fieldPath(field, 'blocked'))
+
+    return ((x === null) || (y === null) || (direction === null) || (id === null) || (blocked === null)) ? null : {
+      x: x,
+      y: y,
+      direction: direction,
+      id: id,
+      blocked: blocked,
+    }
+  }
+
+  /**
+   * Reads a receiver.
+   * @param value - The value
+   * @param field - Its path
+   * @returns The receiver, or null when it is wrong
+   */
+  readReceiver(value: unknown, field: string): ReceiverData | null {
+    const entry = this.readObject(value, field, RECEIVER_FIELDS, RECEIVER_FIELDS)
+
+    if (entry === null) {
+      return null
+    }
+
+    const x = this.readInteger(entry.x, fieldPath(field, 'x'), null)
+    const y = this.readInteger(entry.y, fieldPath(field, 'y'), null)
+    const direction = this.readChoice(entry.direction, fieldPath(field, 'direction'), DIRECTIONS)
+    const links = this.readLinks(entry.links, fieldPath(field, 'links'))
+
+    return ((x === null) || (y === null) || (direction === null) || (links === null)) ? null : {
+      x: x,
+      y: y,
+      direction: direction,
+      links: links,
     }
   }
 
@@ -727,6 +811,8 @@ class ChamberParser {
     const exit = this.readBlockable(file.exit, 'exit')
     const walls = this.readList(file.walls, 'walls', (entry, field) => this.readWall(entry, field))
     const blockedWalls = this.readList(file.blockedWalls, 'blockedWalls', (entry, field) => this.readBlockedWall(entry, field))
+    const emitters = this.readList(file.emitters, 'emitters', (entry, field) => this.readEmitter(entry, field))
+    const receivers = this.readList(file.receivers, 'receivers', (entry, field) => this.readReceiver(entry, field))
     const slideFloors = this.readList(file.slideFloors, 'slideFloors', (entry, field) => this.readWall(entry, field))
     const lightBarriers = this.readList(file.lightBarriers, 'lightBarriers', (entry, field) => this.readBeam(entry, field))
     const ditches = this.readList(file.ditches, 'ditches', (entry, field) => this.readBlockable(entry, field))
@@ -744,7 +830,7 @@ class ChamberParser {
     // Every wrong entry was reported and left out of its list, so the chamber
     // is only built when nothing was wrong
     if ((this.problems.length > 0) || (version === null) || (size === null) || (subject === null) || (exit === null) ||
-      (walls === null) || (blockedWalls === null) || (slideFloors === null) || (lightBarriers === null) || (ditches === null) || (boxes === null) ||
+      (walls === null) || (blockedWalls === null) || (emitters === null) || (receivers === null) || (slideFloors === null) || (lightBarriers === null) || (ditches === null) || (boxes === null) ||
       (buttons === null) || (arrows === null) || (fizzlers === null) || (doors === null) || (switches === null) ||
       (lasers === null) || (groups === null) || (antlines === null) || (par === null)) {
       return null
@@ -757,6 +843,9 @@ class ChamberParser {
       exit: exit,
       walls: walls,
       blockedWalls: blockedWalls,
+      // Undefined when the file leaves them out, so the chamber's hash is the one it had before emitters and receivers
+      emitters: emitters,
+      receivers: receivers,
       // Undefined when the file leaves it out, so the chamber's hash is the one it had before slide floors
       slideFloors: slideFloors,
       lightBarriers: lightBarriers,

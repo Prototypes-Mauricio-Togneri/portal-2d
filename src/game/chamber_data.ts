@@ -61,9 +61,11 @@ export type BlockableData = PositionData & {
 
 /**
  * A box the subject can carry; a link to it puts it back where it started.
+ * With a mirror, it turns an emitter's ray a quarter turn while it rests.
  */
 export type BoxData = PositionData & {
   readonly id?: number // Target for button and switch links; absent means it cannot be linked
+  readonly mirror?: string // '/' or '\\': the mirror it holds from corner to corner, fixed wherever it goes; absent for a plain box
 }
 
 /**
@@ -82,6 +84,25 @@ export type ArrowData = PositionData & {
   readonly direction: string // 'UP', 'DOWN', 'LEFT' or 'RIGHT': the way it points while blocked, as it starts
   readonly id?: number // Target for button and switch links; absent means it cannot be linked
   readonly turnedDirection?: string // 'UP', 'DOWN', 'LEFT' or 'RIGHT': the way it points while a link holds it turned; given with id
+}
+
+/**
+ * An emitter: a wall tile of its own that sends a ray from one face onto
+ * the floor while it is on, which a link switches on and off.
+ */
+export type EmitterData = PositionData & {
+  readonly direction: string // 'UP', 'DOWN', 'LEFT' or 'RIGHT': the face it fires from
+  readonly id?: number // Target for button, switch and receiver links; absent means it cannot be linked
+  readonly blocked?: boolean // Initial state, blocked meaning off; false when absent, so it starts on
+}
+
+/**
+ * A receiver: a wall tile of its own, lit while a ray reaches its listening
+ * face, which acts on its links as a button held down does while it is lit.
+ */
+export type ReceiverData = PositionData & {
+  readonly direction: string // 'UP', 'DOWN', 'LEFT' or 'RIGHT': the face it listens on
+  readonly links: readonly number[] // Ids of the linked elements and link groups
 }
 
 /**

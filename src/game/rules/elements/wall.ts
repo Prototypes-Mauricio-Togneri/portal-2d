@@ -14,6 +14,7 @@ export const WALL_ELEMENT = defineElement<WallData>()({
   blocksShots: 'always',
   stopsShootingFrom: 'never',
   takesPortals: 'always',
+  blocksRays: 'never',
   reactsToSubject: false,
   continuesMovement: false,
   events: [],

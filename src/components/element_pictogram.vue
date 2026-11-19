@@ -2,11 +2,12 @@
 /**
  * One kind of chamber element as a pictogram on the chamber sign: a plain
  * line drawing after the element's sprite, in the current text colour. The
- * exit and walls are in every chamber, so they have none.
+ * exit and walls are in every chamber, so they have none; a mirror box, a
+ * box with a mirror, has one of its own.
  */
 import type {ElementKind} from '@/game/rules/element_registry'
 
-export type PictogramKind = Exclude<ElementKind, 'wall' | 'exit'>
+export type PictogramKind = Exclude<ElementKind, 'wall' | 'exit'> | 'mirrorBox'
 
 export interface ElementPictogramProps {
   kind: PictogramKind // The element drawn
@@ -24,6 +25,11 @@ defineProps<ElementPictogramProps>()
     <template v-if="kind === 'box'">
       <path d="M12 8 H36 A4 4 0 0 1 40 12 V36 A4 4 0 0 1 36 40 H12 A4 4 0 0 1 8 36 V12 A4 4 0 0 1 12 8 Z M18.5 24 A5.5 5.5 0 1 0 29.5 24 A5.5 5.5 0 1 0 18.5 24" />
       <path class="pictogram-solid" d="M12.5 12.5 h6 v6 h-6 Z M29.5 12.5 h6 v6 h-6 Z M12.5 29.5 h6 v6 h-6 Z M29.5 29.5 h6 v6 h-6 Z" />
+    </template>
+    <template v-else-if="kind === 'mirrorBox'">
+      <path d="M12 8 H36 A4 4 0 0 1 40 12 V36 A4 4 0 0 1 36 40 H12 A4 4 0 0 1 8 36 V12 A4 4 0 0 1 12 8 Z" />
+      <path class="pictogram-solid" d="M12.5 12.5 h6 v6 h-6 Z M29.5 12.5 h6 v6 h-6 Z M12.5 29.5 h6 v6 h-6 Z M29.5 29.5 h6 v6 h-6 Z" />
+      <path class="pictogram-bold" d="M18.5 29.5 L29.5 18.5" />
     </template>
     <template v-else-if="kind === 'button'">
       <path d="M11 24 A13 13 0 1 0 37 24 A13 13 0 1 0 11 24" />
@@ -66,6 +72,16 @@ defineProps<ElementPictogramProps>()
       <path class="pictogram-solid" d="M5 14 h5 v20 h-5 Z M38 14 h5 v20 h-5 Z" />
       <path class="pictogram-band" d="M11.5 16.5 h25 v15 h-25 Z" />
       <path class="pictogram-hairline" d="M17.1 20 L20.5 22 L20.5 26 L17.1 28 L13.6 26 L13.6 22 Z M24 20 L27.5 22 L27.5 26 L24 28 L20.5 26 L20.5 22 Z M30.9 20 L34.4 22 L34.4 26 L30.9 28 L27.5 26 L27.5 22 Z" />
+    </template>
+    <template v-else-if="kind === 'emitter'">
+      <path d="M20 30 V36 H6 V12 H20 V18" />
+      <path class="pictogram-solid" d="M18.5 18 h4 v12 h-4 Z M36 18.5 L43 24 L36 29.5 Z" />
+      <path class="pictogram-heavy" d="M22.5 24 H36" />
+    </template>
+    <template v-else-if="kind === 'receiver'">
+      <path d="M28 18 V12 H42 V36 H28 V30 M22 24 A6 6 0 1 0 34 24 A6 6 0 1 0 22 24" />
+      <path class="pictogram-solid" d="M25.5 24 A2.5 2.5 0 1 0 30.5 24 A2.5 2.5 0 1 0 25.5 24 M12 18.5 L19 24 L12 29.5 Z" />
+      <path class="pictogram-heavy" d="M5 24 H12" />
     </template>
   </svg>
 </template>

@@ -3,6 +3,7 @@ import type {GameEvent} from '@/game/game_event'
 import type {CompiledChamber, PlacedKind} from '@/game/rules/compiled_chamber'
 import {type BlockableKind, findElementDefinition} from '@/game/rules/element_registry'
 import {PORTAL_COLORS, type PortalColor} from '@/game/rules/portal_color'
+import {type RayTrace, traceRays} from '@/game/rules/rays'
 import {RulesState} from '@/game/rules/rules_state'
 import {CLOSED_PORTAL, DIRECTION_INDEX, NO_BOX, NOT_STORED, PORTAL_SLOTS, StateSlot} from '@/game/rules/state_layout'
 import {StateReader} from '@/game/rules/state_reader'
@@ -17,6 +18,8 @@ export class StateDraft extends StateReader {
   readonly before: RulesState | null // The state the step started from, or null while a chamber settles at its start
   private readonly stepEvents: GameEvent[] = [] // What the step reported so far, in order
   private changeCount = 0 // How many times a value changed
+  private latestRays: RayTrace | null = null // The rays as last traced, or null before the step first asks for them
+  private raysTracedAt = 0 // How many times a value had changed when the rays were last traced
 
   /**
    * @param chamber - The chamber being played
@@ -45,6 +48,20 @@ export class StateDraft extends StateReader {
    */
   get changes(): number {
     return this.changeCount
+  }
+
+  /**
+   * The rays in the draft as it is now, traced again only when a value
+   * changed since they were last traced, so each receiver is judged on rays
+   * that follow every change made before it.
+   */
+  get rays(): RayTrace {
+    if ((this.latestRays === null) || (this.raysTracedAt !== this.changeCount)) {
+      this.latestRays = traceRays(this)
+      this.raysTracedAt = this.changeCount
+    }
+
+    return this.latestRays
   }
 
   /**
@@ -250,6 +267,16 @@ export class StateDraft extends StateReader {
   }
 
   /**
+   * Sets whether a receiver is lit.
+   * @param index - The receiver's index in the chamber's receiver list
+   * @param lit - Whether a ray reaches it
+   * @returns Whether it changed
+   */
+  setReceiverLit(index: number, lit: boolean): boolean {
+    return this.write(this.receiverOffset(index), lit ? 1 : 0)
+  }
+
+  /**
    * Sets an element's blocked flag.
    * @param kind - The element type
    * @param index - The element's index in the type's list
@@ -275,9 +302,10 @@ export class StateDraft extends StateReader {
   }
 
   /**
-   * Runs a button's or switch's links, in order: each linked element's
-   * linkUnblocked or linkBlocked hook, a link group's elements in its place.
-   * @param kind - The element whose links act, a button or a switch
+   * Runs a button's, switch's or receiver's links, in order: each linked
+   * element's linkUnblocked or linkBlocked hook, a link group's elements in
+   * its place.
+   * @param kind - The element whose links act, a button, a switch or a receiver
    * @param index - Its index in the type's list
    * @param unblock - True to unblock the linked elements, false to block them
    */

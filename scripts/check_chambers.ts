@@ -22,15 +22,18 @@ import {CHAMBER_CASES, type ChamberCase, FORMAT_V2_EXAMPLE} from '@scripts/fixtu
 // per chamber, case, compiled example and registry check, then any problem
 // below it, and exits non-zero on any failure
 
-/** What each button's and switch's links reach in the compiled format 2 example: its group stands for the door and the linked blocked wall, in that order, and the button also turns the arrow */
+/** What each button's, switch's and receiver's links reach in the compiled format 2 example: its group stands for the door and the linked blocked wall, in that order, the button also turns the arrow, and the receiver switches the emitter */
 const EXAMPLE_LINKS: readonly string[] = [
   'button 0: door 0, blockedWall 0, arrow 0',
   'switch 0: door 0, blockedWall 0, exit 0',
+  'receiver 0: emitter 0',
 ]
 
-/** The wall tiles of the compiled format 2 example that refuse portals for good, row by row from the bottom: the blocked wall in the middle and the top row but its linked tile (3, 4), which can take portals once unblocked */
+/** The wall tiles of the compiled format 2 example that refuse portals for good, row by row from the bottom: the emitter (0, 2), the blocked wall in the middle and the receiver (6, 2), which take none on any face, and the top row but its linked tile (3, 4), which can take portals once unblocked */
 const EXAMPLE_WALLS_REFUSING_PORTALS: readonly string[] = [
+  '(0, 2)',
   '(3, 2)',
+  '(6, 2)',
   '(0, 4)',
   '(1, 4)',
   '(2, 4)',
@@ -234,6 +237,7 @@ function checkCompiledExample(): boolean {
   const links = [
     ...(FORMAT_V2_EXAMPLE.buttons ?? []).map((_, index) => `button ${index}: ${describe(compiled.linksOf('button', index))}`),
     ...(FORMAT_V2_EXAMPLE.switches ?? []).map((_, index) => `switch ${index}: ${describe(compiled.linksOf('switch', index))}`),
+    ...(FORMAT_V2_EXAMPLE.receivers ?? []).map((_, index) => `receiver ${index}: ${describe(compiled.linksOf('receiver', index))}`),
   ]
   const refusing: string[] = []
 
@@ -347,16 +351,17 @@ function checkRegistryEvents(): boolean {
 }
 
 /**
- * Checks that each element that blocks walking, shots or shooting only
- * while blocked has a blocked flag, which the step reads; without one, the
- * step would never see it block.
+ * Checks that each element that blocks walking, shots, shooting or rays
+ * only while blocked has a blocked flag, which the step reads; without one,
+ * the step would never see it block.
  * @returns Whether every such element has a flag
  */
 function checkRegistryFlags(): boolean {
   const unflagged = DEFINITIONS.filter((definition) => (definition.defaultBlocked === null) && (
     (definition.blocksWalking === 'whenBlocked') ||
     (definition.blocksShots === 'whenBlocked') ||
-    (definition.stopsShootingFrom === 'whenBlocked')
+    (definition.stopsShootingFrom === 'whenBlocked') ||
+    (definition.blocksRays === 'whenBlocked')
   ))
 
   if (unflagged.length === 0) {

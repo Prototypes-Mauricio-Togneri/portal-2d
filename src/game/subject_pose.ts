@@ -3,7 +3,8 @@ import {DELTAS, type Direction} from '@/game/direction'
 import {GameEvent} from '@/game/game_event'
 import {PORTAL_COLORS, PortalColor} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
-import {OPPOSITES, type SlideLeg} from '@/game/rules/step'
+import {OPPOSITES} from '@/game/rules/portals'
+import type {SlideLeg} from '@/game/rules/step'
 import {legUnits, slideUnits, type StepTransition} from '@/game/step_animation'
 
 /**

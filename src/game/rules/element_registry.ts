@@ -6,26 +6,30 @@ import {BOX_ELEMENT} from '@/game/rules/elements/box'
 import {BUTTON_ELEMENT} from '@/game/rules/elements/button'
 import {DITCH_ELEMENT} from '@/game/rules/elements/ditch'
 import {DOOR_ELEMENT} from '@/game/rules/elements/door'
+import {EMITTER_ELEMENT} from '@/game/rules/elements/emitter'
 import {EXIT_ELEMENT} from '@/game/rules/elements/exit'
 import {FIZZLER_ELEMENT} from '@/game/rules/elements/fizzler'
 import {LASER_ELEMENT} from '@/game/rules/elements/laser'
 import {LIGHT_BARRIER_ELEMENT} from '@/game/rules/elements/light_barrier'
+import {RECEIVER_ELEMENT} from '@/game/rules/elements/receiver'
 import {SLIDE_FLOOR_ELEMENT} from '@/game/rules/elements/slide_floor'
 import {SWITCH_ELEMENT} from '@/game/rules/elements/switch'
 import {WALL_ELEMENT} from '@/game/rules/elements/wall'
 
-/** Every element type a chamber can hold, in drawing order: the slide floor, under everything, then the original game's order; the subject and the portals belong to the core step */
+/** Every element type a chamber can hold, in drawing order: the slide floor, under everything, then the original game's order, the emitter after the blocked wall and the receiver after the button, so receivers are judged after the buttons in each pass; the subject and the portals belong to the core step */
 export const ELEMENT_REGISTRY = [
   SLIDE_FLOOR_ELEMENT,
   ARROW_ELEMENT,
   WALL_ELEMENT,
   BLOCKED_WALL_ELEMENT,
+  EMITTER_ELEMENT,
   LIGHT_BARRIER_ELEMENT,
   DITCH_ELEMENT,
   LASER_ELEMENT,
   DOOR_ELEMENT,
   EXIT_ELEMENT,
   BUTTON_ELEMENT,
+  RECEIVER_ELEMENT,
   SWITCH_ELEMENT,
   BOX_ELEMENT,
   FIZZLER_ELEMENT,
@@ -56,7 +60,8 @@ type BlockableElement = Extract<RegisteredElement, {readonly defaultBlocked: boo
 
 /**
  * The name of an element type that has a blocked flag: an arrow, a blocked
- * wall, a light barrier, ditch, laser, door, the exit or a fizzler.
+ * wall, an emitter, a light barrier, ditch, laser, door, the exit or a
+ * fizzler.
  */
 export type BlockableKind = BlockableElement['kind']
 
