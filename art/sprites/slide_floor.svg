@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    A slide floor (docs/sprites.md): the floor tile a shade cooler, with thin
+    diagonal lines that run on across neighbouring tiles, so a run of slide
+    floor reads as one hatched surface; it keeps the floor's groove.
+  -->
+  <defs>
+    <!-- The floor's mottling and grain, a little fainter, wrapping at the tile's edges -->
+    <filter id="texture" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="11" stitchTiles="stitch" result="mottle"/>
+      <feColorMatrix in="mottle" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.06" result="softLayer"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="5" stitchTiles="stitch" result="grain"/>
+      <feColorMatrix in="grain" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.04" result="grainLayer"/>
+      <feMerge>
+        <feMergeNode in="softLayer"/>
+        <feMergeNode in="grainLayer"/>
+      </feMerge>
+    </filter>
+    <clipPath id="tile">
+      <rect x="0" y="0" width="256" height="256"/>
+    </clipPath>
+  </defs>
+
+  <!-- The tile's face -->
+  <rect x="0" y="0" width="256" height="256" fill="rgb(232, 235, 242)"/>
+  <rect x="0" y="0" width="256" height="256" filter="url(#texture)"/>
+
+  <!-- The diagonal lines, x + y = 21.33 + 42.67 k, so they repeat every tile -->
+  <g clip-path="url(#tile)" stroke="rgb(168, 173, 186)" stroke-width="6">
+    <line x1="85.33" y1="-64" x2="-64" y2="85.33"/>
+    <line x1="128" y1="-64" x2="-64" y2="128"/>
+    <line x1="170.67" y1="-64" x2="-64" y2="170.67"/>
+    <line x1="213.33" y1="-64" x2="-64" y2="213.33"/>
+    <line x1="256" y1="-64" x2="-64" y2="256"/>
+    <line x1="298.67" y1="-64" x2="-64" y2="298.67"/>
+    <line x1="341.33" y1="-64" x2="-64" y2="341.33"/>
+    <line x1="384" y1="-64" x2="-64" y2="384"/>
+    <line x1="426.67" y1="-64" x2="-64" y2="426.67"/>
+    <line x1="469.33" y1="-64" x2="-64" y2="469.33"/>
+    <line x1="512" y1="-64" x2="-64" y2="512"/>
+    <line x1="554.67" y1="-64" x2="-64" y2="554.67"/>
+  </g>
+
+  <!-- The floor's lit lip just inside the groove, and half of the groove shared with each neighbour -->
+  <rect x="5.5" y="5.5" width="245" height="245" fill="none" stroke="rgb(237, 238, 243)" stroke-width="3"/>
+  <rect x="2" y="2" width="252" height="252" fill="none" stroke="rgb(186, 187, 194)" stroke-width="4"/>
+</svg>

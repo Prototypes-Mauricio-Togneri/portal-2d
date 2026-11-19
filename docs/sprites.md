@@ -8,7 +8,7 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 
 - **Folder:** `src/assets/images/chamber/`. The loading screen downloads every file in it, so keep nothing else there.
 - **Name:** exactly as listed under [the set](#the-set), with `.webp` (smaller, preferred) or `.png`. One file per name.
-- **Transparency:** everything around the drawn object is fully transparent. The floor, the three strips, `ditch_bridged`, `door_closed` and `exit_closed` fill their tiles.
+- **Transparency:** everything around the drawn object is fully transparent. The floor, `slide_floor`, the three strips, `ditch_bridged`, `door_closed` and `exit_closed` fill their tiles.
 - **Weight:** WebP at high quality; the whole set is about 200 KB.
 
 ## Size
@@ -84,31 +84,32 @@ Every sprite is 256 px, or 384 px when it overhangs, except the three strips (12
 | # | File | What it shows |
 |---|------|---------------|
 | 1 | `floor` | A floor tile. It repeats across the whole chamber, so its edges tile seamlessly |
-| 2 | `wall` | The wall strip (see [joins](#joins)). Walls stop walking and take portals |
-| 3 | `blocked_wall` | The strip of a blocked wall, which refuses portals: the wall's shape in brushed steel, darker than the wall, riveted in the middle of each quarter, so it reads apart from the wall at a glance |
-| 4 | `ditch` | The open ditch strip: a pit. It stops walking but lets shots through |
-| 5 | `ditch_bridged` | A ditch bridged over: walkable |
-| 6 | `light_barrier_on` | A light barrier that is on: stops walking and shots. A see-through band of pale teal hard light, 96 px wide (teal at 64 % over a faint deep teal rim), with a faint honeycomb and bright edges, so it reads as a surface of light rather than a ray. It is light, not a solid block, so it casts no shadow. One that is off isn't drawn (its connectors are); switched, it fades out or in over about 0.25 s, as a laser does. Drawn over floor only |
-| 7 | `light_barrier_end_on` | A light barrier's connector while it is on: a dark steel plate where the band starts or stops, a little taller than the band, its slot as long as the band and lit. Drawn at both ends of each run of light barriers, over the bands, fading with its band |
-| 8 | `light_barrier_end_off` | The same connector with its slot dark: drawn at both ends of each run, on or off, under `light_barrier_end_on`, so the two must match but for the slot |
-| 9 | `door_closed` | A closed door: stops walking and shots. Its two leaves meet on the tile's middle line (see [sliding](#sliding)). An open door isn't drawn, so its tile shows the floor |
-| 10 | `exit_closed` | The exit, closed. Its two leaves meet on the tile's middle line, as a door's do. The open exit isn't drawn, so its tile shows the floor; walking onto it completes the chamber |
-| 11 | `button_up` | A floor button, released |
-| 12 | `button_pressed` | A floor button, held down by the subject or a box. A box on a button is drawn as on the floor, over it |
-| 13 | `switch` | A switch, used with the interact key. It has no on or off |
-| 14 | `box` | A box. Carried, it isn't drawn: the subject's `subject_holding_box` shows it in its hands |
-| 15 | `fizzler_on` | A fizzler that is on: the subject walks through it and loses its portals and any box it carries; it stops shots. Drawn over the subject and every other element, so keep it see-through. A fizzler that is off isn't drawn (see [fizzle](#fizzle)) |
-| 16 | `laser_on` | A laser beam that is on: stops walking, lets shots through. A beam that is off isn't drawn (its end plates are); switched, it fades out or in over about 0.25 s, its glow with it |
-| 17 | `laser_glow` | The beam's glow (see [glow](#glow)) |
-| 18 | `laser_end_on` | A laser's end plate while the laser is on: a small plate where the beam starts or stops, its slot lit. Drawn at both ends of each run of lasers, over the beams, fading with its beam |
-| 19 | `laser_end_off` | The same plate with its slot dark: drawn at both ends of each run, on or off, under `laser_end_on`, so the two must match but for the slot |
-| 20 | `arrow` | A floor arrow |
-| 21 | `portal_blue` | The blue portal |
-| 22 | `portal_orange` | The orange portal |
-| 23 | `portal_blue_glow` | The blue portal's glow |
-| 24 | `portal_orange_glow` | The orange portal's glow |
-| 25 | `subject_holding_gun` | The test subject seen from above, facing up: an orange jumpsuit, holding the portal gun pointing the way it faces, which makes the facing unmistakable. Drawn while its hands are free. Painted (see [the subject](#the-subject)) |
-| 26 | `subject_holding_box` | The same subject holding a box out in front of it in both hands, with no portal gun. Drawn while it carries a box. Painted (see [the subject](#the-subject)) |
+| 2 | `slide_floor` | A slide floor tile: the floor a shade cooler (232, 235, 242 against the floor's 239, 241, 248) under the floor's texture, a little fainter, crossed by thin grey diagonal lines (168, 173, 186), six to a tile's width, that run on across neighbouring tiles, so a run of slide floor reads as one hatched surface. It keeps the floor's lip and groove, so every tile still reads as a tile, and its edges tile seamlessly |
+| 3 | `wall` | The wall strip (see [joins](#joins)). Walls stop walking and take portals |
+| 4 | `blocked_wall` | The strip of a blocked wall, which refuses portals: the wall's shape in brushed steel, darker than the wall, riveted in the middle of each quarter, so it reads apart from the wall at a glance |
+| 5 | `ditch` | The open ditch strip: a pit. It stops walking but lets shots through |
+| 6 | `ditch_bridged` | A ditch bridged over: walkable |
+| 7 | `light_barrier_on` | A light barrier that is on: stops walking and shots. A see-through band of pale teal hard light, 96 px wide (teal at 64 % over a faint deep teal rim), with a faint honeycomb and bright edges, so it reads as a surface of light rather than a ray. It is light, not a solid block, so it casts no shadow. One that is off isn't drawn (its connectors are); switched, it fades out or in over about 0.25 s, as a laser does. Drawn over floor only |
+| 8 | `light_barrier_end_on` | A light barrier's connector while it is on: a dark steel plate where the band starts or stops, a little taller than the band, its slot as long as the band and lit. Drawn at both ends of each run of light barriers, over the bands, fading with its band |
+| 9 | `light_barrier_end_off` | The same connector with its slot dark: drawn at both ends of each run, on or off, under `light_barrier_end_on`, so the two must match but for the slot |
+| 10 | `door_closed` | A closed door: stops walking and shots. Its two leaves meet on the tile's middle line (see [sliding](#sliding)). An open door isn't drawn, so its tile shows the floor |
+| 11 | `exit_closed` | The exit, closed. Its two leaves meet on the tile's middle line, as a door's do. The open exit isn't drawn, so its tile shows the floor; walking onto it completes the chamber |
+| 12 | `button_up` | A floor button, released |
+| 13 | `button_pressed` | A floor button, held down by the subject or a box. A box on a button is drawn as on the floor, over it |
+| 14 | `switch` | A switch, used with the interact key. It has no on or off |
+| 15 | `box` | A box. Carried, it isn't drawn: the subject's `subject_holding_box` shows it in its hands |
+| 16 | `fizzler_on` | A fizzler that is on: the subject walks through it and loses its portals and any box it carries; it stops shots. Drawn over the subject and every other element, so keep it see-through. A fizzler that is off isn't drawn (see [fizzle](#fizzle)) |
+| 17 | `laser_on` | A laser beam that is on: stops walking, lets shots through. A beam that is off isn't drawn (its end plates are); switched, it fades out or in over about 0.25 s, its glow with it |
+| 18 | `laser_glow` | The beam's glow (see [glow](#glow)) |
+| 19 | `laser_end_on` | A laser's end plate while the laser is on: a small plate where the beam starts or stops, its slot lit. Drawn at both ends of each run of lasers, over the beams, fading with its beam |
+| 20 | `laser_end_off` | The same plate with its slot dark: drawn at both ends of each run, on or off, under `laser_end_on`, so the two must match but for the slot |
+| 21 | `arrow` | A floor arrow |
+| 22 | `portal_blue` | The blue portal |
+| 23 | `portal_orange` | The orange portal |
+| 24 | `portal_blue_glow` | The blue portal's glow |
+| 25 | `portal_orange_glow` | The orange portal's glow |
+| 26 | `subject_holding_gun` | The test subject seen from above, facing up: an orange jumpsuit, holding the portal gun pointing the way it faces, which makes the facing unmistakable. Drawn while its hands are free. Painted (see [the subject](#the-subject)) |
+| 27 | `subject_holding_box` | The same subject holding a box out in front of it in both hands, with no portal gun. Drawn while it carries a box. Painted (see [the subject](#the-subject)) |
 
 ## Order
 
@@ -116,7 +117,7 @@ The game draws from the bottom up, each later row over the earlier ones:
 
 | # | Drawn | Sprites |
 |---|-------|---------|
-| 1 | Floor | `floor` |
+| 1 | Floor | `floor`, then `slide_floor` over it on the slide floors |
 | 2 | Antlines | None: dotted lines, drawn in code (see [antlines](#antlines)) |
 | 3 | Floor marks | `arrow` |
 | 4 | Structure | `wall`, `blocked_wall` for the blocked walls no link reaches |
