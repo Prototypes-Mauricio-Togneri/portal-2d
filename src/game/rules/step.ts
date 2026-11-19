@@ -9,22 +9,51 @@ import {destroyBoxesOnBlockedTiles} from '@/game/rules/elements/box'
 import {PORTAL_COLORS, PortalColor} from '@/game/rules/portal_color'
 import type {RulesState} from '@/game/rules/rules_state'
 import {StateDraft} from '@/game/rules/state_draft'
-import {NO_BOX} from '@/game/rules/state_layout'
+import {DIRECTION_INDEX, DIRECTIONS, NO_BOX} from '@/game/rules/state_layout'
 import type {StateReader} from '@/game/rules/state_reader'
 
 // The rules as a pure step, as docs/elements.md writes them under "Rules":
-// an action, then the carried box follows, then passes of the fizzler rule
-// and the buttons until one changes nothing, then the exit check. What
-// blocks walking and shots is read from the element definitions, and what an
-// element does beyond that from its hooks
+// an action (a move onto a slide floor slides on), then the carried box
+// follows, then passes of the fizzler rule and the buttons until one changes
+// nothing, then the exit check. What blocks walking and shots is read from
+// the element definitions, and what an element does beyond that from its
+// hooks
 
 /**
- * What a step gives: the state after it and what happened in it.
+ * One tile a slide entered: the move or crossing that began the slide, then
+ * each tile after it, until it stopped.
+ */
+export type SlideLeg = {
+  readonly x: number // Column of the tile entered
+  readonly y: number // Row of the tile entered
+  readonly direction: Direction // The way the subject moved onto it, which it faces there
+  readonly crossed: boolean // Whether it came out of a portal onto it
+  readonly events: readonly GameEvent[] // What happened from entering it until moving on, or stopping, in order; the slide's stop and settling come after the last leg
+  readonly state: RulesState // The state once the subject entered it and passed what lies there (a fizzler), before settling
+}
+
+/**
+ * What a step gives: the state after it, what happened in it and, when it
+ * slid, the tiles the slide entered.
  */
 export type StepResult = {
   readonly state: RulesState // The state after the step; the same object when nothing changed
   readonly events: readonly GameEvent[] // What happened, in order
+  readonly path: readonly SlideLeg[] // Each tile a slide entered, in order; NO_PATH, empty, unless the step slid
 }
+
+/**
+ * A tile the subject can come onto next, and how.
+ */
+type Arrival = {
+  readonly x: number // Column
+  readonly y: number // Row
+  readonly direction: Direction // The way it faces on arriving
+  readonly crossed: boolean // Whether it comes out of a portal
+}
+
+/** The path of every step that didn't slide, shared so that such a step allocates none */
+export const NO_PATH: readonly SlideLeg[] = []
 
 /**
  * A hook of one element type, with the type.
@@ -103,6 +132,11 @@ const SHOT_BLOCKED_ALWAYS: readonly PlacedKind[] = FLOOR_ELEMENTS
 /** Types that keep the portal keys from shooting while the subject stands on them blocked (fizzlers) */
 const SHOOTING_STOPPED_WHEN_BLOCKED: readonly BlockableKind[] = BLOCKABLE_ELEMENTS
   .filter((definition: ElementDefinition) => definition.stopsShootingFrom === 'whenBlocked')
+  .map((definition) => definition.kind)
+
+/** Types that keep the subject moving the same way once it enters their tile (slide floors) */
+const MOVEMENT_CONTINUING: readonly PlacedKind[] = PLACED_ELEMENTS
+  .filter((definition: ElementDefinition) => definition.continuesMovement)
   .map((definition) => definition.kind)
 
 /**
@@ -229,6 +263,68 @@ export function portalEntrance(draft: StateReader, wallX: number, wallY: number,
 }
 
 /**
+ * Where walking into a wall comes out, when the wall holds a portal on its
+ * side facing the subject (portalEntrance): in front of the other portal,
+ * facing away from its wall. Whether the subject can arrive there isn't
+ * checked.
+ * @param draft - The state, a step's draft or a settled state
+ * @param wallX - Column of the wall
+ * @param wallY - Row of the wall
+ * @param direction - The way the subject walks
+ * @returns The tile and the way out, or null when the move enters no portal
+ */
+function portalExit(draft: StateReader, wallX: number, wallY: number, direction: Direction): Arrival | null {
+  const entrance = portalEntrance(draft, wallX, wallY, direction)
+
+  if (entrance === null) {
+    return null
+  }
+
+  const exit = (entrance === PortalColor.BLUE) ? PortalColor.ORANGE : PortalColor.BLUE
+  const exitSide = draft.portalSide(exit)
+
+  // Both portals are open, so this never returns
+  if (exitSide === null) {
+    return null
+  }
+
+  const delta = DELTAS[exitSide]
+
+  return {
+    x: draft.portalX(exit) + delta.dx,
+    y: draft.portalY(exit) + delta.dy,
+    direction: exitSide,
+    crossed: true,
+  }
+}
+
+/**
+ * Whether the subject can come onto a tile: it can enter it the way it
+ * arrives (canEnter) and no box rests there.
+ * @param draft - The state, a step's draft or a settled state
+ * @param arrival - The tile and the way it arrives
+ * @returns True when it can
+ */
+function canArrive(draft: StateReader, arrival: Arrival): boolean {
+  return canEnter(draft, arrival.x, arrival.y, arrival.direction) && (!boxBlocksEntry(draft, arrival.x, arrival.y))
+}
+
+/**
+ * Puts the subject on a tile it can arrive at, facing the way it arrives,
+ * and reports a portal crossing.
+ * @param draft - The step's state
+ * @param arrival - The tile and the way it arrives
+ */
+function arrive(draft: StateDraft, arrival: Arrival): void {
+  draft.moveSubject(arrival.x, arrival.y)
+  draft.face(arrival.direction)
+
+  if (arrival.crossed) {
+    draft.emit(GameEvent.CROSSED)
+  }
+}
+
+/**
  * Walks into a wall: if both portals are open and this wall holds one of
  * them on the side facing the subject, the subject comes out in front of the
  * other, facing away from its wall, when it can enter that tile and no box
@@ -237,50 +333,189 @@ export function portalEntrance(draft: StateReader, wallX: number, wallY: number,
  * @param wallX - Column of the wall
  * @param wallY - Row of the wall
  * @param direction - The way the subject walks
+ * @returns True when the subject came out of the other portal
  */
-function crossPortal(draft: StateDraft, wallX: number, wallY: number, direction: Direction): void {
-  const entrance = portalEntrance(draft, wallX, wallY, direction)
+function crossPortal(draft: StateDraft, wallX: number, wallY: number, direction: Direction): boolean {
+  const exit = portalExit(draft, wallX, wallY, direction)
 
-  if (entrance === null) {
-    return
+  if (exit === null) {
+    return false
   }
 
-  const exit = (entrance === PortalColor.BLUE) ? PortalColor.ORANGE : PortalColor.BLUE
-  const exitSide = draft.portalSide(exit)
-
-  // Both portals are open, so this never returns
-  if (exitSide === null) {
-    return
-  }
-
-  const delta = DELTAS[exitSide]
-  const x = draft.portalX(exit) + delta.dx
-  const y = draft.portalY(exit) + delta.dy
-
-  if (canEnter(draft, x, y, exitSide) && (!boxBlocksEntry(draft, x, y))) {
-    draft.moveSubject(x, y)
-    draft.face(exitSide)
-    draft.emit(GameEvent.CROSSED)
-  } else {
+  if (!canArrive(draft, exit)) {
     draft.emit(GameEvent.REFUSED)
+
+    return false
   }
+
+  arrive(draft, exit)
+
+  return true
+}
+
+/**
+ * Whether something on a tile keeps the subject moving once it enters it (a
+ * slide floor).
+ * @param draft - The state, a step's draft or a settled state
+ * @param x - Column
+ * @param y - Row
+ * @returns True when it does
+ */
+function keepsMoving(draft: StateReader, x: number, y: number): boolean {
+  for (const kind of MOVEMENT_CONTINUING) {
+    if (draft.chamber.elementAt(kind, x, y) !== NO_ELEMENT) {
+      return true
+    }
+  }
+
+  return false
+}
+
+/**
+ * Where a sliding subject comes onto next, going on the way it faces: the
+ * tile ahead, or, when that is a wall holding a portal on its side facing
+ * the subject, the tile in front of the other portal (portalExit), as long
+ * as it can arrive there (canArrive). A crossing it can't come out of stops
+ * the slide, silently.
+ * @param draft - The step's state
+ * @param x - Column of the subject's tile
+ * @param y - Row of the subject's tile
+ * @param direction - The way it slides
+ * @returns The tile and the way it arrives, or null when the slide stops here
+ */
+function nextArrival(draft: StateReader, x: number, y: number, direction: Direction): Arrival | null {
+  const targetX = x + DELTAS[direction].dx
+  const targetY = y + DELTAS[direction].dy
+  const arrival = draft.chamber.isWall(targetX, targetY) ? portalExit(draft, targetX, targetY, direction) : {
+    x: targetX,
+    y: targetY,
+    direction: direction,
+    crossed: false,
+  }
+
+  return ((arrival !== null) && canArrive(draft, arrival)) ? arrival : null
+}
+
+/**
+ * A tile entered a way, as one number, so a slide can tell when it would
+ * enter a tile the same way twice.
+ * @param draft - The step's state
+ * @param arrival - The tile and the way it is entered
+ * @returns The number, unique within the chamber
+ */
+function entryKey(draft: StateReader, arrival: Arrival): number {
+  return (((arrival.y * draft.chamber.width) + arrival.x) * DIRECTIONS.length) + DIRECTION_INDEX[arrival.direction]
+}
+
+/**
+ * The subject passes over the tile it stands on while sliding: the carried
+ * box follows it there and the elements there act (the fizzler rule), then
+ * it goes on if that tile keeps it moving (a slide floor) and it can arrive
+ * at the next one (nextArrival). The tile where it stops is passed over too;
+ * settling then runs the fizzler rule there again, which changes nothing
+ * more.
+ * @param draft - The step's state
+ * @returns Where it goes on to, or null when it stops here
+ */
+function passOver(draft: StateDraft): Arrival | null {
+  const x = draft.subjectX
+  const y = draft.subjectY
+
+  draft.carryBoxAlong()
+  runSubjectInsideHooks(draft, x, y)
+
+  return keepsMoving(draft, x, y) ? nextArrival(draft, x, y, draft.facing) : null
+}
+
+/**
+ * The tile the subject stands on, as a leg of its slide.
+ * @param draft - The step's state, the subject on the tile and past what lies there
+ * @param crossed - Whether it came out of a portal onto the tile
+ * @param eventStart - How many events the step had reported when the subject entered the tile
+ * @returns The leg
+ */
+function createLeg(draft: StateDraft, crossed: boolean, eventStart: number): SlideLeg {
+  return {
+    x: draft.subjectX,
+    y: draft.subjectY,
+    direction: draft.facing,
+    crossed: crossed,
+    events: draft.events.slice(eventStart),
+    state: draft.toState(),
+  }
+}
+
+/**
+ * Keeps the subject moving after it entered a tile that keeps it moving (a
+ * slide floor): it passes over each tile it enters (passOver) and goes on
+ * the way it faces, through portals, until it can't or it enters a tile that
+ * doesn't keep it moving. Buttons and everything else settling judges react
+ * only to the tile where it stops. Reports slideStarted as it first goes on,
+ * and slideStopped once it stops after that.
+ * @param draft - The step's state, the subject on the tile it just entered
+ * @param crossed - Whether it came out of a portal onto that tile
+ * @param eventStart - How many events the step had reported before it entered that tile
+ * @returns Each tile it entered, from that one, when it went on; NO_PATH when it stopped there at once; null when it would enter a tile the same way twice, a loop through portals
+ */
+function slide(draft: StateDraft, crossed: boolean, eventStart: number): readonly SlideLeg[] | null {
+  const entered = new Set<number>([
+    entryKey(draft, {
+      x: draft.subjectX,
+      y: draft.subjectY,
+      direction: draft.facing,
+      crossed: crossed,
+    }),
+  ])
+  const legs: SlideLeg[] = []
+  let legCrossed = crossed
+  let legStart = eventStart
+
+  for (let arrival = passOver(draft); arrival !== null; arrival = passOver(draft)) {
+    if (legs.length === 0) {
+      draft.emit(GameEvent.SLIDE_STARTED)
+    }
+
+    legs.push(createLeg(draft, legCrossed, legStart))
+
+    const key = entryKey(draft, arrival)
+
+    if (entered.has(key)) {
+      return null
+    }
+
+    entered.add(key)
+    legStart = draft.events.length
+    legCrossed = arrival.crossed
+    arrive(draft, arrival)
+  }
+
+  if (legs.length === 0) {
+    return NO_PATH
+  }
+
+  legs.push(createLeg(draft, legCrossed, legStart))
+  draft.emit(GameEvent.SLIDE_STOPPED)
+
+  return legs
 }
 
 /**
  * Moves or turns: on a one-way tile only its way acts. The subject faces
  * the way first; a turn stops there unless it already faced that way. Then
  * it steps onto the next tile if it can enter it and no box rests there, or
- * crosses a portal on a wall there.
+ * crosses a portal on a wall there, and slides on from a tile that keeps it
+ * moving (a slide floor).
  * @param draft - The step's state
  * @param movement - The way, and whether it is a turn
+ * @returns Each tile a slide entered, NO_PATH when it didn't slide, or null when the slide would loop, which refuses the whole move
  */
-function move(draft: StateDraft, movement: Movement): void {
+function move(draft: StateDraft, movement: Movement): readonly SlideLeg[] | null {
   const x = draft.subjectX
   const y = draft.subjectY
   const direction = movement.direction
 
   if (!allowsWay(draft, x, y, direction)) {
-    return
+    return NO_PATH
   }
 
   const turnOnly = movement.turn && (draft.facing !== direction)
@@ -288,17 +523,27 @@ function move(draft: StateDraft, movement: Movement): void {
   draft.face(direction)
 
   if (turnOnly) {
-    return
+    return NO_PATH
   }
 
   const targetX = x + DELTAS[direction].dx
   const targetY = y + DELTAS[direction].dy
+  const eventStart = draft.events.length
+  let crossed = false
 
   if (draft.chamber.isWall(targetX, targetY)) {
-    crossPortal(draft, targetX, targetY, direction)
+    if (!crossPortal(draft, targetX, targetY, direction)) {
+      return NO_PATH
+    }
+
+    crossed = true
   } else if (canEnter(draft, targetX, targetY, direction) && (!boxBlocksEntry(draft, targetX, targetY))) {
     draft.moveSubject(targetX, targetY)
+  } else {
+    return NO_PATH
   }
+
+  return keepsMoving(draft, draft.subjectX, draft.subjectY) ? slide(draft, crossed, eventStart) : NO_PATH
 }
 
 /**
@@ -585,14 +830,13 @@ function interact(draft: StateDraft): void {
  * Carries out an action.
  * @param draft - The step's state
  * @param action - The action
+ * @returns Each tile a slide entered, NO_PATH when the action didn't slide, or null when a move's slide would loop, which refuses the whole move
  */
-function runAction(draft: StateDraft, action: Action): void {
+function runAction(draft: StateDraft, action: Action): readonly SlideLeg[] | null {
   const movement = MOVEMENTS[action]
 
   if (movement !== null) {
-    move(draft, movement)
-
-    return
+    return move(draft, movement)
   }
 
   switch (action) {
@@ -608,6 +852,23 @@ function runAction(draft: StateDraft, action: Action): void {
       interact(draft)
       break
   }
+
+  return NO_PATH
+}
+
+/**
+ * Runs the hooks of the elements on a tile the subject stands in (the
+ * fizzler rule).
+ * @param draft - The step's state
+ * @param x - Column of the subject's tile
+ * @param y - Row of the subject's tile
+ */
+function runSubjectInsideHooks(draft: StateDraft, x: number, y: number): void {
+  for (const insideHook of SUBJECT_INSIDE_HOOKS) {
+    for (let index = draft.chamber.elementAt(insideHook.kind, x, y); index !== NO_ELEMENT; index = draft.chamber.nextOnTile(insideHook.kind, index)) {
+      insideHook.hook(draft, index)
+    }
+  }
 }
 
 /**
@@ -618,14 +879,7 @@ function runAction(draft: StateDraft, action: Action): void {
  * @param draft - The step's state
  */
 function runPass(draft: StateDraft): void {
-  const x = draft.subjectX
-  const y = draft.subjectY
-
-  for (const insideHook of SUBJECT_INSIDE_HOOKS) {
-    for (let index = draft.chamber.elementAt(insideHook.kind, x, y); index !== NO_ELEMENT; index = draft.chamber.nextOnTile(insideHook.kind, index)) {
-      insideHook.hook(draft, index)
-    }
-  }
+  runSubjectInsideHooks(draft, draft.subjectX, draft.subjectY)
 
   for (const passHook of EVERY_PASS_HOOKS) {
     const count = draft.chamber.countOf(passHook.kind)
@@ -677,17 +931,42 @@ export function startChamber(chamber: CompiledChamber): StepResult {
   return {
     state: draft.toState(),
     events: draft.events,
+    path: NO_PATH,
+  }
+}
+
+/**
+ * A move whose slide would loop through portals, refused whole: the state
+ * before it, but for the subject facing the way pressed, as a refused
+ * crossing leaves it, and only the refusal reported. Nothing settles, since
+ * only the facing can have changed.
+ * @param chamber - The chamber being played
+ * @param state - The state before the step
+ * @param direction - The way pressed
+ * @returns The state, the same object when the subject already faced that way, and the refusal
+ */
+function refuseLoop(chamber: CompiledChamber, state: RulesState, direction: Direction): StepResult {
+  const draft = new StateDraft(chamber, state)
+
+  draft.face(direction)
+  draft.emit(GameEvent.REFUSED)
+
+  return {
+    state: (draft.changes === 0) ? state : draft.toState(),
+    events: draft.events,
+    path: NO_PATH,
   }
 }
 
 /**
  * One step of the rules: the action, then the carried box follows the
- * subject, then the repeat loop and the exit check. Once the chamber is
+ * subject, then the repeat loop and the exit check. A move whose slide would
+ * loop through portals is refused whole (refuseLoop). Once the chamber is
  * completed, a step changes nothing.
  * @param chamber - The chamber being played
  * @param state - The state before the step, which is left unchanged
  * @param action - What the player does
- * @returns The state after the step and what happened, in order
+ * @returns The state after the step, what happened, in order, and the tiles a slide entered
  * @throws Error when the state belongs to another chamber, or the step doesn't settle within PASS_CAP passes
  */
 export function step(chamber: CompiledChamber, state: RulesState, action: Action): StepResult {
@@ -699,12 +978,18 @@ export function step(chamber: CompiledChamber, state: RulesState, action: Action
     return {
       state: state,
       events: [],
+      path: NO_PATH,
     }
   }
 
   const draft = new StateDraft(chamber, state)
+  const path = runAction(draft, action)
 
-  runAction(draft, action)
+  if (path === null) {
+    // Only a move slides, so the action is one and its way is never missing
+    return refuseLoop(chamber, state, MOVEMENTS[action]?.direction ?? state.facing)
+  }
+
   draft.carryBoxAlong()
   settle(draft)
 
@@ -715,5 +1000,6 @@ export function step(chamber: CompiledChamber, state: RulesState, action: Action
     // subject stands in a fizzler that is on goes straight back to its start
     state: ((next !== state) && (next.key === state.key)) ? state : next,
     events: draft.events,
+    path: path,
   }
 }
