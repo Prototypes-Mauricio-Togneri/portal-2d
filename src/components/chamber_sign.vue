@@ -2,9 +2,9 @@
 /**
  * The chamber's sign at the top of the chamber screen's rail, a white plate
  * framed in grey: the chamber's number, its place in the list beside whatever
- * the screen puts in the slot (the clock), a rule, then a row of pictograms,
- * one for each kind of element a chamber can hold, dark when this chamber has
- * it and faint when it hasn't.
+ * the screen puts in the slot (the clock), a rule, then two rows of
+ * pictograms, one for each kind of element a chamber can hold, dark when this
+ * chamber has it and faint when it hasn't.
  */
 import {computed} from 'vue'
 import ElementPictogram from '@/components/element_pictogram.vue'
@@ -55,6 +55,11 @@ const SIGN_ELEMENTS: readonly SignElement[] = [
     kind: 'arrow',
     field: 'arrows',
     name: 'Arrow',
+  },
+  {
+    kind: 'slideFloor',
+    field: 'slideFloors',
+    name: 'Slide floor',
   },
   {
     kind: 'ditch',
@@ -182,10 +187,10 @@ function formatSignNumber(chamberNumber: number | null): string {
   background: var(--color-ink);
 }
 
-/* The elements, all in one row */
+/* The elements, in rows of seven, with room in the second for the kinds still to come */
 .sign-elements {
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 0.25rem;
   margin-top: 0.25rem;
 }

@@ -41,6 +41,10 @@ defineProps<ElementPictogramProps>()
       <path class="pictogram-bold" d="M12 26 L24 14 L36 26" />
       <path class="pictogram-bold pictogram-faded" d="M12 37 L24 25 L36 37" />
     </template>
+    <template v-else-if="kind === 'slideFloor'">
+      <path d="M8 8 h32 v32 h-32 Z" />
+      <path class="pictogram-fine" d="M8 24 L24 8 M8 40 L40 8 M24 40 L40 24" />
+    </template>
     <template v-else-if="kind === 'ditch'">
       <path d="M8 8 h32 v32 h-32 Z" />
       <path class="pictogram-fine" d="M9 9 L17 17 M39 9 L31 17 M9 39 L17 31 M39 39 L31 31" />
