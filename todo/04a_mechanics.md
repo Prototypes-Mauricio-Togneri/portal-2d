@@ -135,6 +135,14 @@ Decisions 1–19 were made while this stage and stage 04b were one stage (README
 | 33 | 2026-11-19 | Slide start and slide stop play no sound until real sound files exist: both events map to no `Sound`, and no audio file is added |
 | 34 | 2026-11-19 | After a slide onto the open exit, the chamber-complete dialog opens when the slide's drawing ends; the clock still stops at the press, so the time shown is unchanged |
 | 35 | 2026-11-19 | A load or a reset while a slide is drawn drops what the slide still has waiting (its sounds, effects and completion), as a load already clears every other effect; only a press plays it all first. Firing it, as plan step 6 first said, would have saved and reported a completion for the run being thrown away |
+| 36 | 2026-11-19 | The solver works out each tile's allowed ways and canonical facing per set of blocked flags, as it does its walk edges, so chambers with turnable arrows stay fully checked instead of skipped (decision 18's skip stays unbuilt) |
+| 37 | 2026-11-19 | A turning arrow rotates to its new way over about 0.3 s, like the doors and grates; with reduced motion it switches at once. Chosen over switching at once and over a fade |
+| 38 | 2026-11-19 | An arrow may turn under the subject, an exception to `docs/level_design.md`'s "Never switch something under the subject": it neither looks broken nor lets the subject past anything. Both ways it can point must always lead to a tile the subject can enter. The twist chamber idea stays |
+| 39 | 2026-11-19 | An arrow's turn plays no sound until real sound files exist, as decision 33: the button or switch that turns it already sounds in that step |
+| 40 | 2026-11-19 | A turnable arrow is today's chevron on a round turntable plate, which shows that it turns but not which way, instead of the draft's notch showing its other way or a faint second chevron |
+| 41 | 2026-11-19 | The chamber check rejects a turned way without an id, an id without a turned way, a turned way equal to the arrow's way, and a half turn, so every turn is a quarter turn |
+| 42 | 2026-11-19 | An arrow turning under the subject turns the subject with it, so on an arrow the subject always faces the way it points, as today, and shots, the solver and the drawing need no special case. Keeping the old facing would have left shots flying a way the arrow no longer allows |
+| 43 | 2026-11-19 | While an arrow rotates under the subject, the subject faces its new way at once, as every turn does, instead of rotating with the plate |
 
 ## Steps
 
@@ -350,22 +358,94 @@ Built 2026-11-19; the author's cold playtest the same day finished both with no 
 
 ### Phase 2 — Rotating arrows
 
-Draft spec:
-- An arrow gains an optional link `id` and an optional `turnedDirection`. Arrows without an id behave exactly as today, so no upgrade is needed.
-- Activated through a link, it points `turnedDirection`; deactivated, it points its original direction. A button holds it turned while pressed; a switch turns it for good (switches only ever activate).
-- If the subject stands on the arrow when it turns, it stays, and can then leave only in the new direction. As today, the other three directions, moves and turns alike, do nothing on it.
-- Slides stop on arrows (Phase 1).
-- State: the arrow's link flag, the same kind as a blocked wall's.
+**Where this stands (2026-11-19).** Planned below, with decisions 36–43, in one session that will not be around to explain it, so this section is meant to be enough on its own; "The code as it is" saves exploring again. Nothing is built yet. Next is plan step 2, once the author approves the plan.
 
-Chambers. Teach: an arrow corridor that only leads away from the exit until a switch turns the last arrow. Twist: the button that turns the arrow is the tile you stand on, so stepping off turns it back behind you, a one-way trap. The test and combine ideas are stage 04b's.
+#### Spec
 
-- [ ] **R1 Spec.** Finalise the spec above and fill the rotating arrow's row.
-- [ ] **R2 Element and format.** Make arrows linkable; add the optional `id` and `turnedDirection`.
-- [ ] **R3 Drawing and sounds.** A small notch showing the other direction; a turn event.
-- [ ] **R4 Fixtures.** Turned by a button and back, turned by a switch for good, turning while the subject stands on it, a slide ending on a turned arrow.
-- [ ] **R5 Solver check.** Each linked arrow adds a blocked flag, one more key bit. If the turn is stored as that flag and walking reads it through `allowsWay`, the check likely passes as it is. `npm run verify` passes with the arrow chambers in (decision 18).
-- [ ] **R6 Docs.** Update the arrow's row: "Can be activated/deactivated?" becomes "Yes, when linked".
-- [ ] **R7 Chambers.** Teach and twist chambers, solutions, a cold playtest.
+The draft, with decisions 36–43 folded in. Names are working names (decision 1): the fields `id` and `turnedDirection`, the event `arrowTurned`, the sprite `turntable`.
+
+- An arrow gains an optional `id` and an optional `turnedDirection`, always given together, the turned way a quarter turn from its way (decision 41). An arrow without them behaves exactly as today, so every chamber keeps its hash and every recorded solution and fixture passes unchanged.
+- State: the arrow's blocked flag, stored only when a link reaches it, as for every linkable element. Blocked, it points its own way; unblocked, its turned way. Arrows take no `blocked` field, so each starts pointing its own way. A button turns it while pressed and back when released; a switch turns it for good (switches only ever unblock). `arrowTurned` is reported each time one actually turns, with no sound yet (decision 39).
+- Everything that reads an arrow's way reads the way it points now: entering it, moving and turning on it, coming out of a portal onto it, a slide stopping on it or before it, and putting a box down or picking one up across it.
+- If the subject stands on the arrow when it turns, it stays and turns with it, facing the new way (decision 42), so on an arrow the subject always faces the arrow's way. It can then leave only the new way; as today, the other three directions, moves and turns alike, do nothing on it. A carried box stays carried.
+- An arrow turns only as links act: as a button goes down or comes up while the step settles, or on a switch's use. A slide judges no button until it ends, so no arrow turns mid-slide; slides stop on arrows as Phase 1 settled, reading the way they point.
+- An antline to a turnable arrow lights while the arrow is turned (unblocked), as for any linked element.
+- Chamber validation (decision 41): a turned way without an id, an id without a turned way, a turned way equal to the arrow's way, and a turned way opposite it (a half turn) are errors. An arrow's id joins the ids every element and group share: unique, and a target for links, groups and antlines.
+- Level design (decision 38): an arrow may turn under the subject, an exception to "Never switch something under the subject"; both ways a turnable arrow can point must always lead to a tile the subject can enter while it can stand on the arrow (guideline 16).
+- Look (decisions 37, 40, 43): a turnable arrow is today's chevron on a round turntable plate, which shows that it turns but not which way. As it turns, the chevron rotates the quarter turn over about 0.3 s, eased like the doors, from where it is drawn when it turns back part way; a subject on it faces its new way at once. With reduced motion, in the home menu's map and in the gallery, it is drawn as its state.
+- Solver (decision 36): each tile's allowed ways and canonical facing are worked out per set of blocked flags, as the walk edges are, so chambers with turnable arrows stay fully checked. Each linked arrow adds one bit to the state key.
+
+#### The code as it is (found 2026-11-19)
+
+Line numbers drift; the names don't. Phase 1's notes above still hold.
+
+- **The arrow** (`elements/arrow.ts`): `linkable: false`, `defaultBlocked: null`, `blocksWalking: 'alongDirection'`, no events or hooks, on layer `floorMarks`, the only element there. It is 2nd in `ELEMENT_REGISTRY`, so a linked arrow's flag comes first among the stored flags; no chamber links one, so no layout or hash changes. `ArrowData` (`chamber_data.ts`) is `PositionData & {direction}`; the linkable entries use `BlockableData` (`id?`, `blocked?`). `Direction` is in `src/game/direction.ts` and `OPPOSITES` in `step.ts`; there is no quarter-turn helper.
+- **Flags.** `StateLayout` (`state_layout.ts`) stores a flag only for an element a button's or switch's link reaches, groups expanded; the rest read their file's `blocked`, or `defaultBlocked`, through `isBlockedAtStart`. `isBlocked(kind, index)` (`state_reader.ts`) takes a `BlockableKind` (`defaultBlocked` not null). `setBlocked` (`state_draft.ts`) returns whether the flag changed, and throws for an element nothing links. Link hooks run through `StateDraft.applyLinks`; the door's `openDoor` is the pattern for a hook that reports its event only on a real change. `face()` is called only by the core step; settling never changes the facing today.
+- **Where the way is read.** Only `allowsWay` (`step.ts`) reads an arrow's way, through `ONE_WAY` and `chamber.directionOf` (the chamber alone). `canEnter`, `canArrive` (crossings and slides), `move` and `reachesAhead` (pick-up, put-down, `canInteract`) all go through it. `shoot` uses `draft.facing` with no `allowsWay` check, relying on the subject on an arrow always facing its way, which decision 42 keeps true. `directionOf` is filled by `readDirection` in `compiled_chamber.ts`; `PlacedEntry` (`chamber_entries.ts`) has `direction?` and no turned way.
+- **Reader and hash.** `readArrow` (`chamber_parser.ts`) reads `DIRECTED_FIELDS` (x, y and direction, shared with the subject and beams), so an `id` on an arrow is an unknown field today. Optional values go into the parsed object as `undefined`, which `getChamberHash` (`replay_data.ts`, `JSON.stringify` of the parsed chamber) drops, so `id` and `turnedDirection` added after `direction`, `undefined` when absent, keep every hash. There is no optional `readChoice`; `readPar` reads its optional numbers inline.
+- **Validator** (`validate_chamber.ts`). `collectTargets` adds ids by hand, in a fixed order (blocked walls, light barriers, ditches, boxes, fizzlers, doors, lasers, the exit, groups), through `addElements`; arrows aren't among them. Links and antlines resolve through `this.targets`, so an arrow added there becomes a link and antline target with nothing more. A problem is `chamberError(field, tile, message)`, printed `error arrows[0] at (x, y): message`, lower case, no full stop. `collectLinkIds` (`compiled_chamber.ts`) walks every `linkable` definition, so the compiled chamber picks arrows up by itself.
+- **Checks.** `checkRegistryEvents` (`scripts/check_chambers.ts`) needs one owner per event; `checkRegistryFlags` doesn't concern arrows. `checkCompiledExample` pins the format example's links (`EXAMPLE_LINKS`), which grow when the example links an arrow; `scripts/fixtures/format_v2_example.json` has no arrows. Arrow fixtures today: `box_out_of_reach`, `box_reached_from_fizzler_destroyed`, `slide_stops_before_wrong_way_arrow`, `slide_stops_on_arrow`, `slide_onto_open_exit_completes`; solver fixtures `arrow_trap` and `free_hands`.
+- **Solver.** `WalkGraph`'s constructor fills `allowedWays` and `facings` once, from the settled start (it is built in `macro_search.ts` and twice in `scripts/check_solver.ts`), while `edgesFor` already builds edges per flags number (`codec.flagsOf`: linked flags only, at most 32). `facingOf` is called by `shot_lines.ts` (`shoot`'s reuse path; `begin` gets the flags but doesn't keep them), `macro_route.ts` (`encodeCanonical`, `foldSubject`), `macro_search.ts` (`placeStored`, which takes no flags, and `expand`, which has them) and `check_solver.ts` (walks, shots, skips); `allowsWayFrom` by `macro_search.ts` (the ways to shoot) and `check_solver.ts` (turns, shots, skips). The action filter already reads `allowsWay` per state or per flags. `checkWalks`' turn check would catch a stale facing on a turned arrow, but only a fixture with a linked arrow exercises it, and `docs/solver.md` asks a new mechanic for a solver fixture with hand-counted pars.
+- **Drawing.** Arrows are drawn into the backdrop's cover (`drawBackdropCover` in `renderer.ts`): the floor marks, then the walls laid over them with their shadow. The cover is drawn once per chamber and tile size and never again (an antline lighting recomposes only the floor and antlines under it), so an arrow drawn there can't change. Per-frame layers draw over the backdrop, out of the walls' shadow, as buttons do; the shadow reaches about 0.18 tile onto a neighbouring floor tile, and the chevron keeps 0.24 tile from the edges. `drawArrows` (`element_drawings.ts`) reads `chamber.directionOf`. `TilePainter` (`tile_painter.ts`) turns sprites only in quarter turns, by a canvas transform at draw time over one unturned scaled canvas per tile size, so an angle needs a new method, not a new cache. `ElementTransitions` (`element_transitions.ts`) finds switches from two states' blocked flags (`TransitionKind`, `TRANSITION_KINDS`, `TRANSITION_STYLES`; doors 300 ms, eased) and hands drawings a share through the renderer's `shares`, in per-frame layers only. `isAntlineLit` (`antline_drawing.ts`) needs every linkable kind but the box to be a `BlockableKind`. `Level.playStep` starts transitions after any step, a slide's end included; the home menu's map and the gallery render with no time. The button and switch sprites already use round plates (a white plate with a dark rim); `docs/sprites.md` lists the colours to keep clear of.
+- **Sign, gallery and playground.** The chamber sign shows the arrow's pictogram whenever `arrows` isn't empty, so it needs nothing. The gallery's specimen (`specimenData(on)` in `src/dev/gallery_layouts.ts`, 10 × 8) has arrows at (1,1), (2,1), (1,2) and (2,2), buttons at (5,1), pressed by a box, and (5,2), both linking nothing, and free tiles at (3,1), (3,2) and (1,4) to (3,4); column 4 and row 3 stay clear. The playground's middle room holds a pinwheel of four arrows, (6,9) right, (9,8) down, (8,5) left and (5,6) up, with free tiles at (5,5), (9,5), (6,6), (5,8) and (5,9).
+
+#### Plan
+
+Steps in order; each says what it changes and how it is checked. After every step that changes code: `npm run lint:fix`, then `npm run build`. Every existing recorded solution and fixture must keep passing unchanged throughout.
+
+1. **R1, the spec.** Done 2026-11-19: decisions 36–43 and the spec above. R1 is ticked once the interaction table holds the arrow's new rules (step 9).
+2. **The sprite** (with the `frontend-design` skill). `art/sprites/turntable.svg`: a round plate set into the floor, under the chevron, which stays the `arrow` sprite drawn over it, turned. The plate keeps the chevron on it at any angle, sits in the button's and switch's family without copying them, and takes no colour `docs/sprites.md` keeps for a meaning. Export it with alpha (not `-alpha off`), add `turntable: 'tile'` after `arrow` in `SPRITE_SHAPES`, and add it to `docs/sprites.md` (the set, the count sentence, "Turning": its chevron turns by any angle while it rotates, and "Order"). Checked by `npm run assets:check` and the sprite gallery.
+3. **R2, the element and the format.**
+   - `chamber_data.ts`: `ArrowData` gains `id?` and `turnedDirection?`; `chamber_entries.ts`: `PlacedEntry` gains `turnedDirection?`.
+   - `chamber_parser.ts`: arrows get their own field list (x, y and direction required, id and turnedDirection optional), the turned way read like the way when present; both `undefined` when absent, after `direction`, so hashes hold.
+   - `compiled_chamber.ts`: each element's turned way, read like its way (`turnedDirectionOf`, null when none).
+   - `elements/arrow.ts`: `linkable: true`, `defaultBlocked: true`, `events: [GameEvent.ARROW_TURNED]`; its hooks come in step 4. `game_event.ts`: `ARROW_TURNED`; `level.ts`: its `SOUNDS` entry, `null`.
+   - `validate_chamber.ts`: arrows in `collectTargets` (after the exit, before groups, so existing messages keep their order), and the four problems of decision 41 for each arrow, at its tile.
+   - Comments that list the linkable or blockable kinds (`element_registry.ts`, `chamber_data.ts`, `validate_chamber.ts`) or describe `alongDirection` (`element_definition.ts`).
+   - `scripts/fixtures/format_examples.ts`: a broken case with one arrow per new problem; `format_v2_example.json` gains a turnable arrow that its button or switch links, and `EXAMPLE_LINKS` in `check_chambers.ts` its line.
+   - Checked by the build, `npm run chamber:check` (each new case reports exactly its problems, `arrowTurned` has one owner), and `npm run replay:check`, `npm run smoke:engine` and `npm run random:walk` passing unchanged.
+4. **The turn rule** (`step.ts`, `state_reader.ts`, `elements/arrow.ts`).
+   - A reader method for the way a one-way element points now: its turned way while unblocked, else its way. `allowsWay` reads it instead of `directionOf`, which carries every check under "Where the way is read".
+   - The arrow's link hooks set its flag and, when it changed, report `arrowTurned` and, if the subject stands on its tile, face the subject its new way (decision 42).
+   - Checked by the build, step 3's checks unchanged, and step 5's fixtures.
+5. **R4, the fixtures** (`scripts/fixtures/fixtures.ts`, small chambers in `scripts/fixtures/arrow_*.json`, a `behaviour` line each). One per spec bullet: turned by a button and back; turned by a switch for good; its old way doing nothing once turned; stepping off its button onto it, turned back under the subject, which faces the new way and leaves only that way; a box put down on its button from the arrow, turning it under the subject, then a shot the new way; a slide stopping on a turned arrow pointing its way, and before one pointing another; a crossing onto a turned arrow, allowed and refused; a box picked up across a turned arrow. Each hash as Phase 1's "Fixtures" note says, after checking its outcome. Checked by `npm run replay:check` passing, and failing once with the rule deliberately broken (say, the subject not turned), then reverted.
+6. **R5, the solver** (decision 36).
+   - `walk_graph.ts`: the allowed ways and canonical facings built per flags number, with the edges, and cached with them; `facingOf` and `allowsWayFrom` take the flags. Their callers pass them: `macro_search.ts` (`placeStored` gains them), `shot_lines.ts` (`begin` keeps them), `macro_route.ts` (`encodeCanonical` reads them from the key it just packed; `foldSubject` has them) and `check_solver.ts`. The comments that say arrows don't depend on the state.
+   - A solver fixture in `scripts/solver_fixtures/`: a tiny chamber with a turnable arrow, passing the layout checks, with a fewest-moves and a fewest-portals route counted by hand, each with a short argument.
+   - `docs/solver.md`: facings per flags, the new fixture, linked arrows among what adds key bits.
+   - Checked by `npm run solver:check` and `npm run replay:check` (the fixture's routes).
+7. **R3, drawing and motion.**
+   - `tile_painter.ts`: drawing a sprite turned by any angle about its tile's middle, from the same scaled canvas.
+   - `element_drawings.ts`: `drawArrows` keeps drawing the arrows without a turned way into the backdrop; a new drawing draws each arrow with one, its turntable then its chevron, at the way it points now or part way through a turn from its share. `renderer.ts` calls it every frame right after copying the backdrop, under every per-frame layer.
+   - `element_transitions.ts`: `'arrow'` in `TransitionKind`, `TRANSITION_KINDS` and `TRANSITION_STYLES` (300 ms, eased); the drawing turns the share into an angle along the quarter turn.
+   - The subject snaps (decision 43), so `subject_pose.ts` doesn't change. Comments in `renderer.ts`, `element_drawings.ts`, `element_transitions.ts` and `level.ts` that list what switches.
+   - Checked in the browser (AGENTS.md, "Testing in the browser") on the playground once step 8 is done: turned by a button and back, turned back part way, turned under the subject, at pixel ratio 1 and 2 and with reduced motion; and the gallery.
+8. **Playground and gallery.**
+   - `src/dev/playground.json`: one arrow of the middle room's pinwheel made turnable, by a new button on a free tile beside it, with an antline, placed so the button turns it back and forth and can turn it under the subject. Its description in AGENTS.md (Chambers) and in `chamber_catalogue.ts`'s comment.
+   - `src/dev/gallery_layouts.ts`: a turnable arrow on a free tile of the specimen, linked by the pressed button at (5,1) in the "off" specimen only, so it points its own way in one and its turned way in the other; the specimen's description in `sprite_gallery.html` and `docs/sprites.md`.
+   - Checked by `npm run chamber:check`, `npm run smoke:engine`, `npm run random:walk`, and both pages in the browser.
+9. **R6, the docs.**
+   - `docs/elements.md`: the arrow's row ("Yes, when linked"); `arrows` under "Chamber format"; blocking; "Move or turn" and crossings reading the way it points now; the links list and table (an arrow: its turned way, or its own way, `arrowTurned`); something under the subject (the subject turns with it); the new problems under "What the validator rejects"; the interaction table (new rules, say A1 for a link turning it and A2 for the subject turning with it, in the subject's, the button's and the switch's cells, and arrows in K1's list); "Adding an element", step 7 (turnable arrows drawn every frame, so not every floor mark is fixed).
+   - `docs/level_design.md`: the exception to "Never switch something under the subject" (decision 38), guideline 16 for both ways, the "Frozen on an arrow" state, and a tip that a turntable doesn't show which way it turns.
+   - `docs/game_summary.md`: the arrow in the tiles table and in "How each tile looks".
+   - AGENTS.md: the renderer's backdrop and per-frame drawing, the element transitions, `arrowTurned` among the events with no sound, the playground, the gallery's specimen, the fixtures.
+   - This file: the arrow's row in the sounds and colours table.
+   - Checked by reading each against the code.
+10. **Wrap-up.** `npm run verify`, then the `delta-review` skill on every changed file. Tick R2, R3, R4 and R6; R1 once the table holds the arrow's rules; R5 after R7.
+
+#### After R1–R6
+
+R7, once the author has tried turnable arrows in the playground, as Phase 1 did (decision 25): a teach and a twist chamber, ids 6 and 7 (the next free ids), each in `src/services/chamber_catalogue.ts` and `scripts/chamber_files.ts`, with a recorded solution made with Download solution; then `npm run verify` with them in (R5), and the author's cold playtest, with teach notes in stage 04b's campaign plan table.
+
+Chambers. Teach: an arrow corridor that only leads away from the exit until a switch turns the last arrow. Twist: the button that turns the arrow is the tile you stand on, so stepping off turns it back behind you, a one-way trap (decision 38 allows it, as long as the way it turns back to leads somewhere). The test and combine ideas are stage 04b's.
+
+- [ ] **R1 Spec.** Finalise the spec above and fill the rotating arrow's row. The spec is final (decisions 36–43); the row waits for plan step 9.
+- [ ] **R2 Element and format.** Make arrows linkable; add the optional `id` and `turnedDirection`. Plan steps 3 and 4.
+- [ ] **R3 Drawing and sounds.** The chevron on a turntable (decision 40), rotating over about 0.3 s (decision 37); a turn event, silent for now (decision 39). Plan steps 2 and 7.
+- [ ] **R4 Fixtures.** Turned by a button and back, turned by a switch for good, turning while the subject stands on it, a slide ending on a turned arrow, plus the other cases in plan step 5.
+- [ ] **R5 Solver check.** Each linked arrow adds a blocked flag, one more key bit, and the solver works out allowed ways and facings per set of flags (decision 36), with a solver fixture. `npm run verify` passes with the arrow chambers in (decision 18). Plan step 6; ticked after R7.
+- [ ] **R6 Docs.** The arrow's row ("Can be activated/deactivated?" becomes "Yes, when linked"), its rules and interactions in `docs/elements.md`, and the level design exception. Plan step 9.
+- [ ] **R7 Chambers.** Teach and twist chambers, solutions, a cold playtest. After R1–R6, as decision 25.
 
 ### Phase 3 — Live lasers (emitters, beams, receivers, mirror boxes)
 
