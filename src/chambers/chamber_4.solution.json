@@ -1,0 +1,27 @@
+{
+    "chamberHash": "d4351223",
+    "actions": [
+        "down",
+        "down",
+        "right",
+        "right",
+        "turnUp",
+        "orange",
+        "up",
+        "up",
+        "up",
+        "up",
+        "up",
+        "up",
+        "turnLeft",
+        "blue",
+        "up",
+        "up"
+    ],
+    "expected": {
+        "completed": true,
+        "moves": 12,
+        "portals": 2,
+        "finalHash": "9d23c99f"
+    }
+}

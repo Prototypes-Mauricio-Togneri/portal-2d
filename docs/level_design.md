@@ -37,7 +37,7 @@ Only Restart chamber gets the player out (guideline 15).
 ### The puzzle is bypassed
 
 - **A box delivered by its start tile:** a box sent back lands on its start tile wherever that is, so a start beyond a barrier delivers it past the barrier, and a start on a button presses the button from anywhere (guideline 6).
-- **A portal route the design didn't intend:** shots fly over lasers, ditches, boxes and arrows, so a portal can skip a laser, a ditch or a one-way passage (guidelines 14 and 27).
+- **A portal route the design didn't intend:** shots fly over lasers, ditches, boxes and arrows, so a portal can skip a laser, a ditch or a one-way passage (guidelines 14 and 28).
 - **A pass through a blocked element:** a closed door, an open ditch, or a laser or a light barrier that is on, switched under the subject, lets it walk out the far side without holding the button (guidelines 1, 2 and 22).
 
 The rules already keep out the rest, so a design never needs to guard against them: the subject coming out of a portal onto a tile it couldn't walk onto, into a doorway or onto the exit; a box lying in a closed door, over an open ditch, or in a laser, a light barrier or a fizzler that is on; a box on the exit or a switch, two boxes on one tile, or the subject on a box, but for a box sent back to its start under it; a carried box inside a fizzler that is on; and the subject leaving the chamber. A layout that starts in a broken state is rejected by the chamber check.
@@ -62,7 +62,7 @@ Releasing a button closes or switches back on what it holds open, even under the
 8. A box is put down only on the tile the subject faces; when that tile can't take it, the key is refused. Holding the turn key faces the subject any way without moving, so a box can go on any tile next to one the subject can stand on, if that tile can take it; only an arrow tile, where the subject can face nothing but the arrow's way, limits which way it faces. Don't count on the way the subject walked in to keep a box off a tile.
 9. A box bars its tile: a box put down, or sent back, in a one-tile passage, a doorway or on a button closes that tile to the subject until it is picked up from beside it. Make sure a tile beside it, from which the subject can face it and pick it up, stays reachable; on an arrow tile the subject faces only the arrow's way.
 10. Send a box back with a switch, not a button: a button sends it back when pressed, but releasing it does nothing (the chamber check warns).
-11. Keep the chamber within the solver's state key, 64 bits: `npm run solve` prints each chamber's width (today's use 29 to 53 bits). Each box adds about 8 bits, and each element a link reaches 1.
+11. Keep the chamber within the solver's state key, 64 bits: `npm run solve` prints each chamber's width (today's use 20 to 53 bits). Each box adds about 8 bits, and each element a link reaches 1.
 
 ## Portals
 
@@ -85,12 +85,13 @@ Releasing a button closes or switches back on what it holds open, even under the
 22. Guideline 1 reaches along every lane that starts next to a button: sliding off a button, the subject can end its slide on an element the button links (an open door, a bridged ditch, or a laser or a light barrier that is off on a tile that isn't slide floor), which then switches under it as the slide ends.
 23. From rest on slide floor, a move onto more slide floor slides again, so the subject stops only where something stops it. Make sure every tile a slide can stop on has a move off it that leads somewhere new, so a room or lane of slide floor can't trap the subject in slides that only bring it back (guideline 15).
 24. A slide that would enter the same tile the same way twice, looping through two portals, is refused as a whole: the error sound plays and the subject only turns the way pressed, which reads as a bug unless the chamber shows it. Don't let a chamber's natural moves set up such a loop by surprise.
+25. A portal can only be shot at a wall from that wall's own row or column, so the portal that starts a slide into a lane is aimed from somewhere on the lane's line. If the subject should reach the lane only out of that portal, the spot to aim from must lie past something shots fly over but the subject can't cross, such as a ditch at the lane's far end; from anywhere else on the line it could simply walk or slide into the lane. The slide out of the portal then stops at the ditch, so put the way on (the exit, or the next spot to aim from) beside that tile.
 
 ## Antlines
 
-25. Draw antlines in the tutorial and the early chambers, from each button or switch to what it links, so the player learns how links work; later chambers can leave them out.
+26. Draw antlines in the tutorial and the early chambers, from each button or switch to what it links, so the player learns how links work; later chambers can leave them out.
 
 ## Checking a chamber
 
-26. Record its solution by playing it through (Download solution in the completion dialog, in `npm run dev`), and record it again after any change to the chamber but its antlines.
-27. Run `npm run chamber:check` and `npm run replay:check`. `npm run solve -- --par src/chambers/chamber_N.json --max-states=40000000` finds the fewest moves and the fewest portals, which shows any shortcut the design didn't intend.
+27. Record its solution by playing it through (Download solution in the completion dialog, in `npm run dev`), and record it again after any change to the chamber but its antlines.
+28. Run `npm run chamber:check` and `npm run replay:check`. `npm run solve -- --par src/chambers/chamber_N.json --max-states=40000000` finds the fewest moves and the fewest portals, which shows any shortcut the design didn't intend.

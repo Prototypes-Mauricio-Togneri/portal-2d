@@ -1,0 +1,149 @@
+{
+    "version": 2,
+    "size": {
+        "width": 9,
+        "height": 13
+    },
+    "subject": {
+        "x": 5,
+        "y": 9,
+        "direction": "DOWN"
+    },
+    "exit": {
+        "x": 0,
+        "y": 7,
+        "blocked": false
+    },
+    "walls": [
+        {
+            "xFrom": 0,
+            "xTo": 8,
+            "yFrom": 12,
+            "yTo": 12
+        },
+        {
+            "xFrom": 0,
+            "xTo": 8,
+            "yFrom": 0,
+            "yTo": 0
+        },
+        {
+            "xFrom": 0,
+            "xTo": 0,
+            "yFrom": 8,
+            "yTo": 11
+        },
+        {
+            "xFrom": 0,
+            "xTo": 0,
+            "yFrom": 1,
+            "yTo": 4
+        },
+        {
+            "xFrom": 0,
+            "xTo": 0,
+            "yFrom": 6,
+            "yTo": 6
+        },
+        {
+            "xFrom": 8,
+            "xTo": 8,
+            "yFrom": 1,
+            "yTo": 11
+        },
+        {
+            "xFrom": 2,
+            "xTo": 2,
+            "yFrom": 7,
+            "yTo": 11
+        },
+        {
+            "xFrom": 4,
+            "xTo": 7,
+            "yFrom": 6,
+            "yTo": 6
+        },
+        {
+            "xFrom": 5,
+            "xTo": 7,
+            "yFrom": 1,
+            "yTo": 5
+        },
+        {
+            "xFrom": 1,
+            "xTo": 1,
+            "yFrom": 1,
+            "yTo": 3
+        },
+        {
+            "xFrom": 2,
+            "xTo": 2,
+            "yFrom": 2,
+            "yTo": 3
+        },
+        {
+            "xFrom": 4,
+            "xTo": 4,
+            "yFrom": 2,
+            "yTo": 3
+        }
+    ],
+    "blockedWalls": [
+        {
+            "x": 0,
+            "y": 5
+        },
+        {
+            "x": 4,
+            "y": 5
+        },
+        {
+            "x": 4,
+            "y": 4
+        },
+        {
+            "x": 1,
+            "y": 4
+        },
+        {
+            "x": 2,
+            "y": 4
+        },
+        {
+            "x": 2,
+            "y": 6
+        },
+        {
+            "x": 2,
+            "y": 1
+        },
+        {
+            "x": 4,
+            "y": 1
+        }
+    ],
+    "slideFloors": [
+        {
+            "xFrom": 3,
+            "xTo": 3,
+            "yFrom": 1,
+            "yTo": 4
+        },
+        {
+            "xFrom": 1,
+            "xTo": 1,
+            "yFrom": 8,
+            "yTo": 11
+        }
+    ],
+    "ditches": [
+        {
+            "x": 1,
+            "y": 6
+        },
+        {
+            "x": 3,
+            "y": 6
+        }
+    ]
+}

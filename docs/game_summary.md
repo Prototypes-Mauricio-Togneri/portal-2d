@@ -112,7 +112,7 @@ Every chamber is closed in by walls (or blocked walls, doors and the exit) along
 
 ## Chambers and progress
 
-- Four chambers so far: the Tutorial (12 × 10 tiles), then chambers 1 (20 × 20), 2 (23 × 13) and 3 (23 × 17). The roadmap aims for 20.
+- Six chambers so far: the Tutorial (12 × 10 tiles), then chambers 1 (20 × 20), 2 (23 × 13) and 3 (23 × 17), and chambers 4 (13 × 9) and 5 (9 × 13), which teach and test slide floors. The roadmap aims for 20.
 - The timer starts with the first press of a move, portal or interact key in a chamber and stops when the chamber is complete. The only score is the time: there are no medals or move targets.
 - Finishing a chamber shows the time and the best time (or "New best time"), with Next chamber, Play again and Back to menu (after the last chamber, only Back to menu and Play again).
 - The pause menu offers Continue, Restart chamber and Exit chamber; restarting or leaving asks for confirmation first.
