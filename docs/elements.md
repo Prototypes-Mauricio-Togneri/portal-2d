@@ -217,6 +217,94 @@ Every way these rules differ from the original game's, which this game played un
 18. **`box_put_down_in_front`** — Interact puts a carried box down on the tile the subject faces, when that tile can take it (a move that way could step onto it, no fizzler there is on, no box rests there, and it holds neither the exit nor a switch), and otherwise refuses it, with the error sound, never putting it on the subject's own tile (`box_blocks_its_tile`). The original rules put it down only on the subject's own tile. Every recorded solution had to be recorded again, since each put a box down facing a tile that could take it; four solver fixtures' fewest moves dropped: a box through a portal from 7 to 5, a box on a button from 11 to 9, a box round a fizzler from 10 to 8 (and from 13 to 11 with no portal), and putting a box down to free the hands from 18 to 14. Fixtures: `box_put_down_in_front`, `box_not_put_down_facing_exit`, `box_not_put_down_facing_switch`, `box_not_put_down_facing_a_box`, `box_not_put_down_facing_fizzler`, `box_kept_on_switch`.
 19. **`box_blocks_its_tile`** — A resting box keeps the subject off its tile: walking into it only turns the subject that way, without a sound, and a crossing that would come out on it is refused, with the error sound; the carried box doesn't count, and shots still pass boxes. Boxes are picked up and put down only on the tile the subject faces, never on its own, so the subject shares a tile with a resting box only when that box is sent back to its start under it. The original rules let the subject walk onto boxes, and picked up and put down a box only on its own tile. Every recorded solution had to be recorded again, since each picked up or put down a box underfoot; the solver fixture with a box round a fizzler had its box moved off the subject's start tile, its pars unchanged (8 moves with 2 portals, 11 with none). Fixtures: `box_blocks_walking`, `portal_onto_box_refused`, `box_sent_home_under_subject`, `box_not_put_down_facing_wall`.
 
+## Interactions
+
+Every element against every other. Each cell names the rules below that bring the two together: what one does to the other, on the same tile or beside it, and what the validator forbids (the V rules), a case that can't happen in a chamber that loads. `·` would mean that nothing does, which holds for no pair today, and `—` that a chamber holds only one of it. The portals and the carried box have rows of their own, and the box's row is a box resting on the floor. A new element adds its row and column; a cell not yet decided reads *to do* until its rule is written, and none does now.
+
+| # | Element | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
+|---|---------|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Subject | — | P1 P5 | M1 V1 | M1 V1 | M2 U1 V4 | M2 U1 V4 | M4 B3 V4 | M6 | M5 K3 | M5 K4 V4 | M2 U1 V4 | M5 F1 V4 | M2 X1 V4 | M2 U1 V4 | M3 V4 | SL1 |
+| 2 | Portal | P1 P5 | P1 P5 | P1 P5 | P2 P5 | P3 P5 P7 | P4 P5 | P4 P5 | P5 P8 | P4 | P4 | P3 P6 | P3 F1 F2 | P3 P6 | P4 P5 P7 | P4 P5 | P4 SL3 SL6 |
+| 3 | Wall | M1 V1 | P1 P5 | V1 | V1 | P7 V1 | V1 | V1 | B2 | V1 | V1 | P6 V1 | F2 V1 | P6 V1 | P7 V1 | V1 | SL2 V1 |
+| 4 | Blocked wall | M1 V1 | P2 P5 | V1 | V1 | P7 V1 | V1 | V1 | B2 | K1 V1 | K1 V1 | P6 V1 | F2 V1 | P6 V1 | P7 V1 | V1 | SL2 V1 |
+| 5 | Light barrier | M2 U1 V4 | P3 P5 P7 | P7 V1 | P7 V1 | V2 | V2 | B1 V4 | B2 U1 | K1 V2 | K1 V2 | V2 | V2 | V2 | V2 | V2 | SL2 |
+| 6 | Ditch | M2 U1 V4 | P4 P5 | V1 | V1 | V2 | V2 | B1 V4 | B2 U1 | K1 V2 | K1 V2 | V2 | V2 | V2 | V2 | V2 | SL2 V3 |
+| 7 | Box | M4 B3 V4 | P4 P5 | V1 | V1 | B1 V4 | B1 V4 | B4 V4 | B2 B4 | B5 B6 | B2 B6 K4 V4 | B1 V4 | B1 B3 V4 | B2 V4 | B1 V4 | B3 V4 | SL2 SL7 |
+| 8 | Carried box | M6 | P5 P8 | B2 | B2 | B2 U1 | B2 U1 | B2 B4 | — | B6 | B2 B6 K4 | B2 U1 | F1 B2 | B2 | B2 U1 | B2 | SL7 |
+| 9 | Button | M5 K3 | P4 | V1 | K1 V1 | K1 V2 | K1 V2 | B5 B6 | B6 | K2 V2 | V2 | K1 V2 | K1 V2 | K1 V2 | K1 V2 | V2 | SL5 |
+| 10 | Switch | M5 K4 V4 | P4 | V1 | K1 V1 | K1 V2 | K1 V2 | B2 B6 K4 V4 | B2 B6 K4 | V2 | V2 | K1 V2 | K1 V2 | K1 V2 | K1 V2 | V2 | SL2 V3 |
+| 11 | Door | M2 U1 V4 | P3 P6 | P6 V1 | P6 V1 | V2 | V2 | B1 V4 | B2 U1 | K1 V2 | K1 V2 | V2 | V2 | V2 | V2 | V2 | SL2 V3 |
+| 12 | Fizzler | M5 F1 V4 | P3 F1 F2 | F2 V1 | F2 V1 | V2 | V2 | B1 B3 V4 | F1 B2 | K1 V2 | K1 V2 | V2 | F3 V2 | V2 | V2 | V2 | SL4 |
+| 13 | Exit | M2 X1 V4 | P3 P6 | P6 V1 | P6 V1 | V2 | V2 | B2 V4 | B2 | K1 V2 | K1 V2 | V2 | V2 | — | V2 | V2 | SL2 V3 |
+| 14 | Laser | M2 U1 V4 | P4 P5 P7 | P7 V1 | P7 V1 | V2 | V2 | B1 V4 | B2 U1 | K1 V2 | K1 V2 | V2 | V2 | V2 | L1 V2 | V2 | SL2 |
+| 15 | Arrow | M3 V4 | P4 P5 | V1 | V1 | V2 | V2 | B3 V4 | B2 | V2 | V2 | V2 | V2 | V2 | V2 | V2 | SL2 V3 |
+| 16 | Slide floor | SL1 | P4 SL3 SL6 | SL2 V1 | SL2 V1 | SL2 | SL2 V3 | SL2 SL7 | SL7 | SL5 | SL2 V3 | SL2 V3 | SL4 | SL2 V3 | SL2 | SL2 V3 | SL1 V3 |
+
+Moving ([move or turn](#move-or-turn)):
+
+- **M1:** the subject never steps into a wall or a blocked wall, outside the edge included; walking into one only turns it, unless a portal there takes it through (P5).
+- **M2:** the subject can't step onto a light barrier or a laser that is on, an open ditch, or a closed door or exit, and can once it isn't blocked; walking into one only turns it.
+- **M3:** an arrow lets the subject onto its tile only moving its way, and on it only moves and turns its way do anything.
+- **M4:** a resting box keeps the subject off its tile; the two share a tile only when the box is sent back to its start under the subject.
+- **M5:** a button, a switch or a fizzler never stops the subject.
+- **M6:** the carried box rides on the subject's tile wherever it goes, through portals and along slides.
+
+Portals ([shoot blue or orange](#shoot-blue-or-orange), [crossing a portal](#crossing-a-portal)):
+
+- **P1:** a shot leaves the subject's tile the way it faces and opens its portal on the first wall it reaches, on the side facing the subject, when that side takes portals and neither portal is on it or on a neighbouring side of that wall; a portal opened elsewhere closes where it was.
+- **P2:** a blocked wall takes a portal only while it isn't blocked, and blocking it closes a portal on it.
+- **P3:** a light barrier or a fizzler that is on, a closed door and the closed exit stop a shot: a miss. A shot past an open door or the open exit on the chamber's edge leaves the chamber, and misses too.
+- **P4:** shots pass over ditches, lasers, boxes, buttons, switches, arrows and slide floors, whatever their state.
+- **P5:** walking into a wall side that holds one portal, with the other open, brings the subject out in front of the other, facing away from its wall, with a carried box, when it could step onto that tile; otherwise the crossing is refused, so an open ditch, a light barrier or a laser that is on, a resting box or an arrow pointing another way in front of the far portal refuses it.
+- **P6:** no wall side facing a door or the exit takes a portal, open or closed, so no portal leads into a doorway or onto the exit.
+- **P7:** a wall side facing a laser or a light barrier that runs towards it, behind its end plate, takes no portal, on or off; a wall alongside one does.
+- **P8:** the portal keys don't shoot while the subject carries a box: `refused`.
+
+Fizzlers ([the fizzler rule](#the-fizzler-rule), [links](#links)):
+
+- **F1:** while the subject stands in a fizzler that is on, both portals close and a carried box is destroyed, back to its start; from there the portal keys do nothing.
+- **F2:** a fizzler switching on closes a portal on a wall side facing its tile.
+- **F3:** nothing remembers a field: walking from a fizzler that is off into one that is on fizzles, as walking in from plain floor does.
+
+Boxes ([interact](#interact), [a box where something blocks](#a-box-where-something-blocks), [one box per tile](#one-box-per-tile)):
+
+- **B1:** a box lying where a door closes, a ditch opens, or a laser, a light barrier or a fizzler switches on is destroyed, back to its start.
+- **B2:** a carried box goes down only on the tile faced, where a move could step now, no fizzler is on and no box rests, and never on the exit or a switch; facing anything else, a wall included, interact is refused.
+- **B3:** a box is picked up from the tile faced only where a move could step onto it but for the box and no fizzler there is on; one picked up while the subject stands in a fizzler that is on is destroyed at once.
+- **B4:** a tile holds one resting box: a box sent back to its start sends the box resting there back to its own start, and so on.
+- **B5:** a box on a button holds it down, and picking it up releases the button in the same step.
+- **B6:** a button or a switch linked to a box sends it back to its start when it unblocks it, unless it is carried; releasing a button does nothing to it.
+
+Buttons, switches and links ([buttons](#buttons), [links](#links), [interact](#interact)):
+
+- **K1:** a button unblocks its links as it goes down and blocks them as it comes up, so another button sharing a link can undo it while it stays down; a switch unblocks them each time it is used. Links reach one-tile blocked walls, light barriers, ditches, doors, fizzlers, lasers and the exit, and boxes (B6).
+- **K2:** each pass judges the buttons in list order, each acting at once, so a later one sees what an earlier one did.
+- **K3:** a button is held down while the subject stands on it.
+- **K4:** standing on a switch, interact uses it, any number of times, so it never picks up the box in front; while a box is carried it is refused, and the box stays carried.
+
+The exit, lasers and what switches under the subject ([the exit](#the-exit), [something blocking under the subject](#something-blocking-under-the-subject)):
+
+- **X1:** a step that ends with the subject on the exit completes the chamber, even when the exit closes in that step.
+- **L1:** two lasers share a tile only when they cross, and either keeps the subject out while it is on.
+- **U1:** a door closing, a ditch opening, or a light barrier or a laser switching on under the subject does nothing to it or to a box it carries; it can still walk off. The exit never closes under it, since a step that ends there completes the chamber (X1).
+
+Slides ([a slide](#a-slide)):
+
+- **SL1:** entering slide floor keeps the subject moving its way within the step, tile by tile, until it enters a tile that isn't slide floor, where it stops, or can't enter the next; at rest on slide floor, a move onto more slide floor slides again, and turning only turns.
+- **SL2:** a slide stops in front of a wall it can't cross, a light barrier or a laser that is on, an open ditch, a closed door or exit, an arrow pointing another way or a resting box, and on an arrow pointing its way, a bridged ditch, an open door, a switch or the open exit, which completes the chamber.
+- **SL3:** a slide crosses portals as a walk does and goes on when it comes out onto slide floor; a crossing it can't come out of stops it in front of the portal, silently.
+- **SL4:** the fizzler rule runs on each tile a slide passes, and the slide goes on.
+- **SL5:** buttons are judged only where a slide stops, so passing over one doesn't press it.
+- **SL6:** a slide that would enter a tile the same way twice, looping through portals, is refused whole: the subject only turns.
+- **SL7:** loose boxes don't slide, and go down on and come up from slide floor as from plain floor; a carried box slides with the subject.
+
+Can't happen ([what the validator rejects](#what-the-validator-rejects)):
+
+- **V1:** a wall or a blocked wall holds nothing else, and no wall tile is listed twice, by walls or by blocked walls.
+- **V2:** a floor tile holds at most one of a light barrier, ditch, door, exit, fizzler, arrow, button, switch or laser, but for two lasers that cross.
+- **V3:** a slide floor never shares a tile with a ditch, a door, the exit, an arrow or a switch, and no slide floor tile is listed twice; it may share one with a button, a fizzler, a laser, a light barrier, a box's start and the subject's start.
+- **V4:** the subject and the boxes start on plain floor, slide floor or a button, one box to a tile and never one under the subject.
+
 ## Adding an element
 
 Element types are described by data in `src/game/rules/`, but a new one still touches several files, because the chamber file reader, the validator, the walls' portal taking and the switching animation list elements by hand:
@@ -228,7 +316,7 @@ Element types are described by data in `src/game/rules/`, but a new one still to
 5. **Validator:** its kind in `validate_chamber.ts`, placed on its tiles, and in the lists of what may share a tile, what may stand on the edge and what links can reach; a kind whose name is more than one word also needs its wording in the inside-a-wall message (`describeKind`), or it reads "a lightBarrier".
 6. **Events:** each new one in `src/game/game_event.ts`, with its sound in `Level` (`src/game/level.ts`), or none.
 7. **Drawing:** its entry in `ELEMENT_DRAWINGS` (`src/game/element_drawings.ts`), drawing its sprite for each state; each new sprite in the set (`src/game/sprite_set.ts` and `docs/sprites.md`), drawn in code as an SVG in `art/sprites/` and exported to its file in `src/assets/images/chamber/` (as `AGENTS.md` says) before it joins the set, since `npm run assets:check` requires every sprite's file, and in `RAISED_SPRITES` when it stands raised, so it gets the shared drop shadow; in `GAP_SIDE_KINDS` when it lines a gap that a door, the exit or a fizzler turns to fill (see `docs/sprites.md`, turning); and, when links switch it, its kind in `TRANSITION_KINDS` and `TRANSITION_STYLES` (`src/game/element_transitions.ts`), with its drawing part way through the change, or it switches at once. The floor, floor marks and structure layers are drawn once per chamber as its backdrop, the floor layer's elements (the slide floors) under the antlines and the other two over them (`src/game/renderer.ts`), so an element on them must look the same in every state. An antline to a linkable element lights while the element is unblocked; one with no blocked flag, as the box, needs its own answer in the antline drawing (`src/game/antline_drawing.ts`), which the build asks for.
-8. **Docs and fixtures:** its row in the table at the top, its field under [chamber format](#chamber-format), its rule under [rules](#rules) and [what the validator rejects](#what-the-validator-rejects); behaviour fixtures in `scripts/fixtures/fixtures.ts`, and a case in `scripts/fixtures/format_examples.ts` for each new validator problem.
+8. **Docs and fixtures:** its row in the table at the top, its field under [chamber format](#chamber-format), its rule under [rules](#rules) and [what the validator rejects](#what-the-validator-rejects), its row and column in the [interaction table](#interactions), every cell a rule, a case the validator forbids or *to do*, and any rule they need; behaviour fixtures in `scripts/fixtures/fixtures.ts`, and a case in `scripts/fixtures/format_examples.ts` for each new validator problem.
 9. **Playground:** a place in the development-only playground (`src/dev/playground.json`, see `AGENTS.md`), switched by a button when it can be, so it can be tried by hand.
 10. **Chamber sign:** its pictogram in `src/components/element_pictogram.vue` and its line in the sign's list (`src/components/chamber_sign.vue`), where it is shown dark in the chambers that hold it; it lays them out in rows of seven (the column count is fixed in the sign's styles), with room for fourteen, so a fifteenth starts a third row and makes the sign taller.
 
