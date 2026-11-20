@@ -1,7 +1,7 @@
 {
     "version": 2,
     "size": {
-        "width": 7,
+        "width": 11,
         "height": 4
     },
     "subject": {
@@ -10,13 +10,13 @@
         "direction": "UP"
     },
     "exit": {
-        "x": 6,
+        "x": 10,
         "y": 3
     },
     "walls": [
         {
             "xFrom": 0,
-            "xTo": 6,
+            "xTo": 10,
             "yFrom": 0,
             "yTo": 0
         },
@@ -25,7 +25,7 @@
             "y": 1
         },
         {
-            "x": 6,
+            "x": 10,
             "y": 1
         },
         {
@@ -34,13 +34,13 @@
         },
         {
             "xFrom": 2,
-            "xTo": 6,
+            "xTo": 10,
             "yFrom": 2,
             "yTo": 2
         },
         {
             "xFrom": 0,
-            "xTo": 5,
+            "xTo": 9,
             "yFrom": 3,
             "yTo": 3
         }
@@ -73,12 +73,42 @@
             "links": [
                 2
             ]
+        },
+        {
+            "x": 5,
+            "y": 1,
+            "links": [
+                3
+            ]
+        },
+        {
+            "x": 7,
+            "y": 1,
+            "links": [
+                4
+            ]
         }
     ],
     "boxes": [
         {
             "x": 1,
             "y": 2
+        }
+    ],
+    "lasers": [
+        {
+            "x": 6,
+            "y": 1,
+            "direction": "V",
+            "id": 3
+        }
+    ],
+    "lightBarriers": [
+        {
+            "x": 8,
+            "y": 1,
+            "direction": "V",
+            "id": 4
         }
     ]
 }

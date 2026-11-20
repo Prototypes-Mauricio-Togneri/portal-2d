@@ -14,6 +14,7 @@ import boxOutOfReach from '@scripts/fixtures/box_out_of_reach.json'
 import boxPutDownInFront from '@scripts/fixtures/box_put_down_in_front.json'
 import boxPutDownOnOpenDitch from '@scripts/fixtures/box_put_down_on_open_ditch.json'
 import buttonBehindCarriedBox from '@scripts/fixtures/button_behind_carried_box.json'
+import buttonBox from '@scripts/fixtures/button_box.json'
 import carriedBoxLink from '@scripts/fixtures/carried_box_link.json'
 import crossingLasers from '@scripts/fixtures/crossing_lasers.json'
 import exitAndDitch from '@scripts/fixtures/exit_and_ditch.json'
@@ -1712,8 +1713,8 @@ export const FIXTURES: readonly Fixture[] = [
     },
   },
   {
-    name: 'shots_over_switch_and_out_of_open_edge',
-    behaviour: 'A shot passes over a switch to the wall beyond; shots out through an open door or the open exit on the chamber\'s edge leave it and open nothing.',
+    name: 'shots_over_switch_and_button_out_of_open_edge',
+    behaviour: 'A shot passes over a switch and a button to the wall beyond; shots out through an open door or the open exit on the chamber\'s edge leave it and open nothing.',
     chamber: shotEdges,
     actions: [
       'blue',
@@ -1726,7 +1727,7 @@ export const FIXTURES: readonly Fixture[] = [
       completed: false,
       moves: 0,
       portals: 1,
-      finalHash: '5588081e',
+      finalHash: '6ce5a04e',
     },
   },
   {
@@ -1868,8 +1869,8 @@ export const FIXTURES: readonly Fixture[] = [
     },
   },
   {
-    name: 'door_and_ditch_switch_under_subject',
-    behaviour: 'A door closing and a ditch opening under the subject, as it steps off their buttons, leave it and the box it carries alone, and it walks off.',
+    name: 'blockers_switch_under_subject',
+    behaviour: 'A door closing, a ditch opening, and a laser and a light barrier switching on under the subject, as it steps off their buttons, leave it and the box it carries alone, and it walks off.',
     chamber: underSubject,
     actions: [
       'interact',
@@ -1877,12 +1878,75 @@ export const FIXTURES: readonly Fixture[] = [
       'right',
       'right',
       'right',
+      'right',
+      'right',
+      'right',
+      'right',
     ],
     expected: {
       completed: false,
-      moves: 4,
+      moves: 8,
       portals: 0,
-      finalHash: 'cb5b231a',
+      finalHash: '0f906baa',
+    },
+  },
+  {
+    name: 'receiver_going_dark_leaves_boxes',
+    behaviour: 'A receiver linked to boxes going dark, as the subject steps into its ray, leaves them where they were put down.',
+    chamber: rayReceiverBoxes,
+    actions: [
+      'interact',
+      'up',
+      'turnLeft',
+      'interact',
+      'down',
+      'right',
+      'interact',
+      'up',
+      'turnRight',
+      'interact',
+      'up',
+    ],
+    expected: {
+      completed: false,
+      moves: 5,
+      portals: 0,
+      finalHash: '0d7c4bca',
+    },
+  },
+  {
+    name: 'button_release_leaves_box',
+    behaviour: 'A button linked to a box coming up, as the subject steps off it, leaves the box where it was put down.',
+    chamber: buttonBox,
+    actions: [
+      'interact',
+      'turnUp',
+      'interact',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 0,
+      finalHash: 'c3b3f3dc',
+    },
+  },
+  {
+    name: 'button_press_sends_box_back',
+    behaviour: 'A button linked to a box going down, as the subject steps back onto it, sends the box back to its start.',
+    chamber: buttonBox,
+    actions: [
+      'interact',
+      'turnUp',
+      'interact',
+      'right',
+      'left',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 0,
+      finalHash: '7d921da3',
     },
   },
 ]
