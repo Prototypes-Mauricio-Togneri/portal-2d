@@ -16,7 +16,6 @@ The game already reports these events, but they play no sound:
 
 These have an animation but no event and no sound:
 
-- A blocked wall's steel sliding open or shut
 - A ditch's grate sliding in or out
 - A fizzler field forming or crumbling away when it's switched on or off
 - A laser or light barrier switching on or off

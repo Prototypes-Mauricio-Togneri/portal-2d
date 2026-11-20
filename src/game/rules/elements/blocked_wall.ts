@@ -1,27 +1,34 @@
 import type {BlockedWallData} from '@/game/chamber_data'
+import {GameEvent} from '@/game/game_event'
 import {defineElement} from '@/game/rules/element_definition'
 import type {StateDraft} from '@/game/rules/state_draft'
 
 /**
- * Unblocks a blocked wall, when a link unblocks it, so it takes portals.
+ * Unblocks a blocked wall, when a link unblocks it, so it takes portals,
+ * reporting it only if it switched.
  * @param draft - The step's state
  * @param index - The blocked wall's index in the chamber's blocked wall list
  */
 function unblockWall(draft: StateDraft, index: number): void {
-  draft.setBlocked('blockedWall', index, false)
+  if (draft.setBlocked('blockedWall', index, false)) {
+    draft.emit(GameEvent.BLOCKED_WALL_SWITCHED)
+  }
 }
 
 /**
  * Blocks a blocked wall, when a link blocks it, closing a portal on any of
- * its sides. Only a one-tile blocked wall can be linked, so its tile is the
- * whole wall.
+ * its sides, reporting it only if it switched. Only a one-tile blocked wall
+ * can be linked, so its tile is the whole wall.
  * @param draft - The step's state
  * @param index - The blocked wall's index in the chamber's blocked wall list
  */
 function blockWall(draft: StateDraft, index: number): void {
   const position = draft.chamber.positionOf('blockedWall', index)
 
-  draft.setBlocked('blockedWall', index, true)
+  if (draft.setBlocked('blockedWall', index, true)) {
+    draft.emit(GameEvent.BLOCKED_WALL_SWITCHED)
+  }
+
   draft.closePortalsAt(position.x, position.y)
 }
 
@@ -41,7 +48,7 @@ export const BLOCKED_WALL_ELEMENT = defineElement<BlockedWallData>()({
   blocksRays: 'never',
   reactsToSubject: false,
   continuesMovement: false,
-  events: [],
+  events: [GameEvent.BLOCKED_WALL_SWITCHED],
   hooks: {
     linkUnblocked: unblockWall,
     linkBlocked: blockWall,

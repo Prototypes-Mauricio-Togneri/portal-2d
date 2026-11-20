@@ -1,3 +1,4 @@
+import blockedWallUrl from '@/assets/audio/sound/blocked_wall.mp3'
 import boxUrl from '@/assets/audio/sound/box.mp3'
 import {createAudioPlayer} from '@/game/audio_sources'
 import buttonOffUrl from '@/assets/audio/sound/button_off.mp3'
@@ -35,6 +36,7 @@ export class Sound {
   static readonly ERROR = new Sound(errorUrl, 0.13) // Action refused
   static readonly SWITCH = new Sound(switchUrl, 0.72) // Switch used
   static readonly TURNABLE_ARROW = new Sound(turnableArrowUrl, 0.28) // A turnable arrow turned, by a link, to its turned way or back
+  static readonly BLOCKED_WALL = new Sound(blockedWallUrl, 0.18) // A blocked wall switched, by a link, to take portals or to refuse them
   static readonly MENU_BUTTON = new Sound(menuButtonUrl, 0.17) // Menu or dialog button pressed, setting changed or pause menu opened; played by the screens, not the game
   static readonly START = new Sound(startUrl, 0.31) // Chamber picked on the home screen; played by the screens, not the game
 

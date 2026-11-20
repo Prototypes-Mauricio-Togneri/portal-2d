@@ -184,7 +184,7 @@ A button, switch or receiver names its links by element id. Only blocked walls (
 
 | # | Element | Unblocked (button pressed, switch used, receiver lit) | Blocked (button released, receiver dark) |
 |---|---------|-------------------------------------------------------|------------------------------------------|
-| 1 | Blocked wall | Takes portals | Refuses portals, and a portal on any of its sides closes |
+| 1 | Blocked wall | Takes portals: `blockedWallSwitched` | Refuses portals, and a portal on any of its sides closes: `blockedWallSwitched` |
 | 2 | Light barrier | Off | On |
 | 3 | Ditch | Bridged | Open |
 | 4 | Door | Opened: `doorOpened` | Closed: `doorClosed` |
@@ -195,7 +195,7 @@ A button, switch or receiver names its links by element id. Only blocked walls (
 | 9 | Arrow | Points its turned way: `arrowTurned`; a subject on it turns with it | Points its own way: `arrowTurned`; a subject on it turns with it |
 | 10 | Emitter | On: its ray leaves its firing face (see [rays](#rays)) | Off: it sends no ray |
 
-A door or the exit reports its event only when it actually opens or closes, an arrow `arrowTurned` only when it actually turns, and a fizzler reports `portalFizzled` only when it closes a portal; the others are silent.
+A door or the exit reports its event only when it actually opens or closes, an arrow `arrowTurned` only when it actually turns, a blocked wall `blockedWallSwitched` only when it actually switches, and a fizzler reports `portalFizzled` only when it closes a portal; the others are silent.
 
 An arrow turning under the subject turns the subject with it, to face the arrow's new way, so on an arrow the subject always faces the way it points, and its shots fly that way; a carried box stays carried. It can then leave only that way. An arrow turns only as links act: as a button goes down or comes up, or a receiver lights or goes dark, while the step settles (a chamber's start included), or on a switch's use. A slide judges no button or receiver until it ends, so no arrow turns mid-slide, but a slide's end can turn one, under the subject too.
 
@@ -291,7 +291,7 @@ Moving ([move or turn](#move-or-turn)):
 Portals ([shoot blue or orange](#shoot-blue-or-orange), [crossing a portal](#crossing-a-portal)):
 
 - **P1:** a shot leaves the subject's tile the way it faces and opens its portal on the first wall it reaches, on the side facing the subject, when that side takes portals and neither portal is on it or on a neighbouring side of that wall; a portal opened elsewhere closes where it was (fixtures: `portal_refused_on_or_beside_a_portal`, `no_portal_beside_door_or_exit`).
-- **P2:** a blocked wall takes a portal only while it isn't blocked, and blocking it closes a portal on it (fixture: `blocked_wall_switches_off_and_on`).
+- **P2:** a blocked wall takes a portal only while it isn't blocked, and blocking it closes a portal on it, `blockedWallSwitched` when it switches either way (fixture: `blocked_wall_switches_off_and_on`).
 - **P3:** a light barrier or a fizzler that is on, a closed door and the closed exit stop a shot: a miss. A shot past an open door or the open exit on the chamber's edge leaves the chamber, and misses too (fixtures: `shots_stopped_until_switched_off`, `shots_over_switch_and_button_out_of_open_edge`, `light_barrier_switches_off_and_on`).
 - **P4:** shots pass over ditches, lasers, boxes, buttons, switches, arrows and slide floors, whatever their state (fixtures: `shots_over_switch_and_button_out_of_open_edge`, `portal_onto_open_ditch_refused`, `portal_onto_active_laser_refused`, `portal_onto_box_refused`, `blocked_wall_switches_off_and_on`, `portal_onto_turned_arrow`, `slide_through_portal_slides_on`).
 - **P5:** walking into a wall side that holds one portal, with the other open, brings the subject out in front of the other, facing away from its wall, with a carried box, when it could step onto that tile; otherwise the crossing is refused, so an open ditch, a light barrier or a laser that is on, a resting box or an arrow pointing another way in front of the far portal refuses it (fixtures: `portal_onto_open_ditch_refused`, `portal_onto_active_laser_refused`, `portal_onto_box_refused`, `portal_onto_turned_back_arrow_refused`, `portal_onto_turned_arrow`, `portal_onto_fizzler_fizzles_at_once`, `portal_onto_slide_floor_slides`, `mirror_box_through_portal`).

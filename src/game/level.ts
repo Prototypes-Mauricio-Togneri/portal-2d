@@ -102,6 +102,7 @@ export class Level {
     [GameEvent.SLIDE_STARTED]: null,
     [GameEvent.SLIDE_STOPPED]: null,
     [GameEvent.ARROW_TURNED]: Sound.TURNABLE_ARROW,
+    [GameEvent.BLOCKED_WALL_SWITCHED]: Sound.BLOCKED_WALL,
     [GameEvent.RECEIVER_LIT]: null,
     [GameEvent.RECEIVER_UNLIT]: null,
   }
