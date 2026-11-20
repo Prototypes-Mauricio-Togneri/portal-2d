@@ -1,0 +1,41 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;background:#202020;color:#ddd;font:13px sans-serif;display:flex;flex-wrap:wrap;gap:10px;padding:10px}
+figure{margin:0}figcaption{padding:3px 0}canvas{display:block}
+</style></head><body>
+<script src="engine.js"></script><script src="../config.js"></script><script src="../effects.js"></script>
+<script>
+const q = new URLSearchParams(location.search)
+const chamber = Number(q.get('c') ?? 1), T = Number(q.get('t') ?? 45)
+const crop = (q.get('crop') ?? '').split(',').map(Number)
+const list = (q.get('list') ?? 'original').split(',')
+const amount = q.get('a'), density = q.get('d'), seed = Number(q.get('seed') ?? 1)
+Engine.ready.then(() => {
+  for (const name of list) {
+    let settings
+    const preset = PRESETS.find((p) => p.id === name)
+    if (name === 'original') settings = null
+    else if (preset) settings = preset.make()
+    else if (name === 'all') settings = settingsWith(TECHNIQUES.map((t) => t.id))
+    else settings = settingsWith(name.split('+'))
+    if (settings) {
+      settings.seed = seed
+      if (amount !== null) for (const id of Object.keys(settings.amount)) settings.amount[id] = Number(amount)
+      if (density !== null) for (const id of Object.keys(settings.density)) settings.density[id] = Number(density)
+    }
+    const full = document.createElement('canvas')
+    const t0 = performance.now()
+    drawChamber(full, chamber, T, settings)
+    const ms = Math.round(performance.now() - t0)
+    let shown = full
+    if (crop.length === 4) {
+      shown = document.createElement('canvas')
+      shown.width = crop[2] * T; shown.height = crop[3] * T
+      shown.getContext('2d').drawImage(full, -crop[0] * T, -crop[1] * T)
+    }
+    const figure = document.createElement('figure'), caption = document.createElement('figcaption')
+    caption.textContent = `${name} (${ms} ms)`
+    figure.append(shown, caption); document.body.append(figure)
+  }
+  document.title = 'done'
+}).catch((error) => { document.body.textContent = String(error && error.stack || error) })
+</script></body></html>

@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#202020}canvas{display:block}</style></head><body>
+<script src="engine.js"></script><script src="../config.js"></script><script src="../effects.js"></script>
+<script>
+const q = new URLSearchParams(location.search)
+const chosen = settingsWith(['floorShade','floorPatches','roomLight','grime','floorScratches','floorCracks','floorChips','wallShade','wallPatches','wallScratches'],
+  {floorShade:50,floorPatches:100,roomLight:50,grime:50,floorScratches:15,floorCracks:5,floorChips:15,wallShade:20,wallPatches:30,wallScratches:10},
+  {floorScratches:30,floorCracks:30,floorChips:30,wallScratches:30})
+Engine.ready.then(() => {
+  const canvas = document.createElement('canvas')
+  drawChamber(canvas, Number(q.get('c') ?? 1), Number(q.get('t') ?? 45), chosen)
+  document.body.append(canvas)
+})
+</script></body></html>

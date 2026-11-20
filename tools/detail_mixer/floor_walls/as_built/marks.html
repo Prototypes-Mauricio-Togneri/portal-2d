@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#202020;padding:8px;color:#ccc;font:12px sans-serif}canvas{display:block;margin-bottom:6px}</style></head><body>
+<script src="engine.js"></script><script src="../config.js"></script><script src="../effects.js"></script>
+<script>
+const q = new URLSearchParams(location.search)
+const strength = Number(q.get('k') ?? 0.96)
+for (const T of [110, 45]) {
+  for (const onWall of [false, true]) {
+    const names = Object.keys(MARKS).filter((n) => MARKS[n][onWall ? 'wall' : 'floor'] > 0)
+    const cols = Math.floor(1700 / T)
+    const canvas = document.createElement('canvas')
+    canvas.width = cols * T; canvas.height = names.length * T
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = onWall ? 'rgb(148,150,158)' : 'rgb(239,241,248)'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    names.forEach((name, row) => {
+      for (let c = 0; c < cols; c++) {
+        ctx.save(); ctx.translate(c * T, row * T)
+        ctx.strokeStyle = onWall ? 'rgba(255,255,255,0.25)' : 'rgba(150,155,170,0.5)'; ctx.lineWidth = 1; ctx.strokeRect(0.5, 0.5, T - 1, T - 1)
+        if (MARKS[name].kept) { ctx.beginPath(); ctx.rect(0, 0, T, T); ctx.clip() }
+        MARKS[name].draw(ctx, T, randomFrom(7, c, row, 42), strength, onWall)
+        ctx.restore()
+      }
+    })
+    document.body.append(names.join(' / ') + (onWall ? ' on wall' : ' on floor') + ' @' + T, canvas)
+  }
+}
+</script></body></html>

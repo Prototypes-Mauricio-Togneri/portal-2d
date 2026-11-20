@@ -8,7 +8,10 @@ import globals from 'globals'
 // type-aware rules, which read the projects referenced by tsconfig.json
 export default withVueTs(
   {
-    ignores: ['dist/'],
+    ignores: [
+      'dist/',
+      'tools/detail_mixer/',
+    ],
   },
   js.configs.recommended,
   vueTsConfigs.recommendedTypeChecked,
