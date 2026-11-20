@@ -1,5 +1,5 @@
 import {Direction} from '@/game/direction'
-import {PALETTE} from '@/game/palette'
+import {PALETTE, withAlpha} from '@/game/palette'
 import {NO_ELEMENT} from '@/game/rules/compiled_chamber'
 import type {RayLine, RayPoint, RayTrace} from '@/game/rules/rays'
 import type {RulesState} from '@/game/rules/rules_state'
@@ -49,16 +49,6 @@ const BARRIER_RIM = 50 / 256
 
 /** How strongly the rays' glow is added: held steady, where the lasers' and portals' pulse */
 const GLOW_STRENGTH = 0.8
-
-/**
- * A palette colour at another opacity.
- * @param colour - The colour, as rgba() with its channels
- * @param alpha - The opacity, from 0 to 1
- * @returns The colour at that opacity, as rgba()
- */
-function withAlpha(colour: string, alpha: number): string {
-  return colour.replace(/,\s*[\d.]+\)$/, `, ${alpha})`)
-}
 
 /**
  * A palette colour multiplied by an opacity and drawn opaque, so drawing it

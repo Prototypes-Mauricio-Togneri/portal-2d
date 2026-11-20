@@ -1,6 +1,7 @@
 import {Direction} from '@/game/direction'
 import {PALETTE, withAlpha} from '@/game/palette'
 import {type CompiledChamber, NO_ELEMENT} from '@/game/rules/compiled_chamber'
+import {makeCanvas} from '@/game/sprite_scaling'
 import {chamberSeed, clampShare, cloudNoise, smoothStep, tileNumber} from '@/game/surface_noise'
 import type {TilePainter} from '@/game/tile_painter'
 
@@ -14,14 +15,6 @@ import type {TilePainter} from '@/game/tile_painter'
 // it is faint and grey, and the same in every state, so the renderer draws
 // it into its backdrop: the floor's under the antlines, the walls' before
 // their shadow is made
-
-/**
- * A canvas to paint a soft layer on, with its 2D context.
- */
-type SoftCanvas = {
-  readonly canvas: HTMLCanvasElement // The canvas
-  readonly context: CanvasRenderingContext2D // Its 2D context
-}
 
 /**
  * One part of a soft layer: a colour, and how much of it each sample takes.
@@ -190,31 +183,6 @@ function keptSoftLayer(name: string, chamber: CompiledChamber, seed: number, pai
 }
 
 /**
- * Makes a canvas to paint a soft layer on.
- * @param width - Its width, in pixels
- * @param height - Its height, in pixels
- * @returns The canvas and its context
- * @throws Error when the canvas cannot provide a 2D context
- */
-function makeSoftCanvas(width: number, height: number): SoftCanvas {
-  const canvas = document.createElement('canvas')
-
-  canvas.width = width
-  canvas.height = height
-
-  const context = canvas.getContext('2d')
-
-  if (context === null) {
-    throw new Error('The canvas has no 2D context')
-  }
-
-  return {
-    canvas: canvas,
-    context: context,
-  }
-}
-
-/**
  * One sweep over the samples, each taking the shortest way to a wall
  * through the samples the sweep has already passed.
  * @param steps - How far each sample lies from a wall, in samples, as known so far; shortened in place
@@ -284,8 +252,8 @@ function wallDistances(chamber: CompiledChamber): Float32Array {
 function paintSoftLayer(chamber: CompiledChamber, parts: readonly SoftPart[]): HTMLCanvasElement {
   const width = chamber.width * SAMPLES_PER_TILE
   const height = chamber.height * SAMPLES_PER_TILE
-  const layer = makeSoftCanvas(width, height)
-  const tinted = makeSoftCanvas(width, height)
+  const layer = makeCanvas(width, height)
+  const tinted = makeCanvas(width, height)
 
   for (const part of parts) {
     const shares = tinted.context.createImageData(width, height)

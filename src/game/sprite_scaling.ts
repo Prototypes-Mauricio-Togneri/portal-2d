@@ -21,7 +21,7 @@ export type ScaledSprite = {
 /**
  * A canvas to draw on, with its 2D context.
  */
-type DrawingCanvas = {
+export type DrawingCanvas = {
   readonly canvas: HTMLCanvasElement // The canvas
   readonly context: CanvasRenderingContext2D // Its 2D context
 }
@@ -45,7 +45,7 @@ const shadowsBySize = new Map<number, Map<SpriteName, ScaledSprite | null>>() //
  * @returns The canvas and its context
  * @throws Error when the canvas cannot provide a 2D context
  */
-function makeCanvas(width: number, height: number): DrawingCanvas {
+export function makeCanvas(width: number, height: number): DrawingCanvas {
   const canvas = document.createElement('canvas')
 
   canvas.width = width
