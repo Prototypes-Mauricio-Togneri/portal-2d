@@ -4,7 +4,7 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 
 ## The view
 
-- Seen from straight above, with no perspective: the chamber is a grid of square tiles. Walls and other raised things cast a soft shadow.
+- Seen from straight above, with no perspective: the chamber is a grid of square tiles. Walls and other raised things cast a soft shadow. The floor and the walls carry faint tone and wear, which change nothing in play, so no stretch of them looks stamped from one tile.
 - The camera never moves: the whole chamber is always on screen, scaled to fit and centred, but its tiles never grow larger than a chamber 16 tiles each way would get, so a small chamber leaves more of the room around it. There is no scrolling and nothing outside the chamber to explore.
 - Beside the chamber, a side panel shows the chamber's sign (its number, its place in the list, a timer and an icon for each kind of element, dark for those the chamber holds) and the controls, drawn as the player's own keys.
 
@@ -57,9 +57,9 @@ Every chamber is closed in by walls (or blocked walls, emitters, receivers, door
 
 | #   | Tile             | Looks like                                                                                          |
 | --- | ---------------- | --------------------------------------------------------------------------------------------------- |
-| 1   | Floor            | Very light grey                                                                                     |
+| 1   | Floor            | Very light grey, each tile a slightly different shade, darker towards the walls and brighter in the open, with faint scratches, cracks and chipped corners here and there |
 | 2   | Slide floor      | The floor a shade cooler, crossed by thin grey diagonal lines that run on across neighbouring tiles; it keeps the floor's groove, so each tile still shows |
-| 3   | Wall             | Mid-grey raised blocks with bevelled edges; neighbouring walls join into one mass                   |
+| 3   | Wall             | Mid-grey raised blocks with bevelled edges; neighbouring walls join into one mass, each flat top a plate of a slightly different shade, with faint scratches |
 | 4   | Blocked wall     | Blocked: darker, riveted steel. Unblocked: a plain wall, with no mark that it can switch            |
 | 5   | Emitter          | A dark steel housing on the wall's face it fires from, with a slit lens: lit pale gold while on, dark while off |
 | 6   | Receiver         | The same housing with a round eye in place of the slit, lit pale gold while a ray reaches it, fading as it lights or goes dark |

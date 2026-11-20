@@ -43,3 +43,30 @@ Every effect so far takes about 6 % of a frame at pixel ratio 2, and no frame mi
 ## High-DPI check (2026-11-13)
 
 Stage 03's "Check high-DPI again" step: Chrome at 200 % zoom on the same 1080p screen, so a pixel ratio of 2 and a 960 × 455 page. Each canvas's size in device pixels, as Chrome reports it (`devicePixelContentBoxSize`), matched its own pixels exactly, so every canvas pixel lands on one screen pixel: chamber 3 at 1035 × 765 (45 px tiles), and the home menu's map. Seen at full resolution, the walls with their bevels and shadows, the subject at rest and part way through a glide, and the pieces of a fizzle are all sharp. Zooming back to 100 % with chamber 3 open refit it at once, without a reload, to 1127 × 833, again one to one. At 200 % the page is too small for the home menu's map, which draws only 12 × 10 pixels; a real high-DPI screen gives it far more room. Sprites are only enlarged past their 256 px for the tutorial on a 6K-class screen (an estimate from the stage's margins: 434 page pixels across and 66 down). The author accepted 200 % zoom in place of a real high-DPI screen.
+
+## Surface detail check (2026-11-20)
+
+The surface detail (`docs/sprites.md`) is drawn into the backdrop, so it costs nothing per frame: what it adds is to building the backdrop, once per chamber load and per tile size, and to each drawing of the home menu's map. Same machine, Chrome 155, a page at pixel ratio 1 in `npm run dev`; a renderer made afresh for each run and timed on the main thread over its first frame, then each part of the detail drawn on its own (medians of 9 runs).
+
+Most of the cost is working out the soft layers (the floor's patches, room light and grime, and the walls' patches), 8 samples to a tile's side, not painting, so it hardly grows with the tile size. With the soft layers worked out on every run:
+
+| # | Chamber | Tile | First frame, backdrop built | Later frame | Floor tone | Floor wear | Wall tone | Wall wear |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 1 (20 × 20) | 45 px | 32.0 ms | 0.5 ms | 14.0 ms | 4.1 ms | 6.4 ms | 1.3 ms |
+| 2 | 1 (20 × 20) | 90 px | 39.5 ms | 0.6 ms | 14.6 ms | 3.5 ms | 7.4 ms | 1.5 ms |
+| 3 | 3 (23 × 17) | 59 px | 31.8 ms | 1.4 ms | 13.5 ms | 2.7 ms | 6.5 ms | 1.2 ms |
+| 4 | 3 (23 × 17) | 119 px | 34.6 ms | 0.8 ms | 15.1 ms | 2.7 ms | 6.2 ms | 1.2 ms |
+| 5 | Tutorial (12 × 10) | 56 px | 10.2 ms | 0.1 ms | 5.9 ms | 0.8 ms | 2.4 ms | 0.9 ms |
+
+That is about 24 to 27 ms of a large chamber's first frame. Two things got it there: the cloudy noise works its grids out once and only blends them at each sample (working them out at every sample, the four parts took about 42 ms on chamber 1), and the soft layers are stretched with the plainest smoothing, with no banding seen at these strengths.
+
+The soft layers depend only on a chamber's size and walls, not on the tile size, so they are kept once painted (24 at once, two to a chamber) and shared by the home menu's map, the chamber screen and every resize. With them kept, and the home menu's map (632 × 474 px) drawn for the first time in the visit, then again:
+
+| # | Chamber | First frame, backdrop built, at the game's tile / at twice it | Floor tone | Floor wear | Wall tone | Wall wear | Menu map, first / again |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 (20 × 20) | 15.2 / 16.8 ms | 1.4 ms | 4.1 ms | 0.7 ms | 2.6 ms | 58.5 / 14.1 ms |
+| 2 | 3 (23 × 17) | 11.9 / 11.6 ms | 1.4 ms | 3.4 ms | 0.7 ms | 1.3 ms | 60.2 / 17.3 ms |
+| 3 | 2 (23 × 13) | 9.8 / 10.6 ms | 0.8 ms | 3.2 ms | 0.5 ms | 1.7 ms | 34.5 / 9.4 ms |
+| 4 | Tutorial (12 × 10) | 5.0 / 4.5 ms | 0.3 ms | 1.4 ms | 0.3 ms | 1.6 ms | 26.5 / 5.1 ms |
+
+So a large chamber's detail costs about 25 ms the first time it is drawn in a visit, in the menu's map as a rule, and about 6 to 9 ms after that, on the map and when the chamber opens. The map's first drawing of a chamber also shrinks every sprite to a new tile size, as it did before the detail, so that column isn't the detail's cost alone; with the soft layers worked out every time, drawing chamber 1's map again took 31.3 ms. Replaying the tutorial's recorded solution on one renderer, the frames where an antline lit up or went dark took 0.6 to 3.1 ms, since the floor with its detail is kept apart and only copied, and the others 0.4 ms on average.

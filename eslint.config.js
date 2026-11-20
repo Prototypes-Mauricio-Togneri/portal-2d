@@ -207,6 +207,9 @@ export default withVueTs(
             '@/game/sprite_set',
             '@/game/sprite_sources',
             '@/game/sprite_scaling',
+            '@/game/surface_noise',
+            '@/game/surface_tone',
+            '@/game/wear_marks',
           ],
           patterns: [
             '@/chambers/*',
@@ -261,6 +264,9 @@ export default withVueTs(
             '@/game/sprite_set',
             '@/game/sprite_sources',
             '@/game/sprite_scaling',
+            '@/game/surface_noise',
+            '@/game/surface_tone',
+            '@/game/wear_marks',
           ],
           patterns: [
             '@/chambers/*',

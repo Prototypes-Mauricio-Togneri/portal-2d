@@ -24,7 +24,7 @@ The game draws the chamber and the home menu's map from these files. A sprite wh
 - **Light:** from directly overhead, so every side of an object is shaded the same: no highlight on one side, no shadow on the other.
 - **Shadows:** don't draw a shadow falling outside the object. The game adds one shared drop shadow, made from each sprite's shape, under what stands raised (walls, blocked walls, closed doors, the closed exit, switches, boxes, the subject): a soft dark rim all round, with no offset, since the light is overhead. Walls cast theirs as one mass, so a run of walls has one shadow along its open sides.
 - **Readable small:** every sprite must still read at 40 px. On and off must differ at a glance, and the subject's facing must show from its shape alone.
-- **Colours:** the ones that carry a meaning are listed here and copied by hand into the CSS tokens (`src/assets/styles.css`), since the menus use the same colours (crimson, teal, cyan, amber and pale gold, which they don't use, have no token). Keep blue and orange off every other sprite, so nothing is mistaken for a portal; the exceptions are the fizzler's see-through cobalt (30, 80, 210 at 62 %), deeper than the blue portal and with no edge lines, and the subject's orange jumpsuit and blue-lit portal gun (see [the subject](#the-subject)). The antlines, drawn in code, keep off them too: their cyan is clear of the blue portal and of the light barrier's teal, and their amber yellower than the orange portal. Changing one of these means redrawing the sprites that use it, along with its CSS token.
+- **Colours:** the ones that carry a meaning are listed here and copied by hand into the CSS tokens (`src/assets/styles.css`), since the menus use the same colours (crimson, teal, cyan, amber and pale gold, which they don't use, have no token). Keep blue and orange off every other sprite, so nothing is mistaken for a portal; the exceptions are the fizzler's see-through cobalt (30, 80, 210 at 62 %), deeper than the blue portal and with no edge lines, and the subject's orange jumpsuit and blue-lit portal gun (see [the subject](#the-subject)). The surface detail, drawn in code, is grey and faint throughout, so it carries no meaning (see [surface detail](#surface-detail)). The antlines, drawn in code, keep off them too: their cyan is clear of the blue portal and of the light barrier's teal, and their amber yellower than the orange portal. Changing one of these means redrawing the sprites that use it, along with its CSS token.
 
 | # | Colour | RGB | Used for |
 |---|--------|-----|----------|
@@ -86,7 +86,7 @@ Every sprite is 256 px, or 384 px when it overhangs, except the three strips (12
 
 | # | File | What it shows |
 |---|------|---------------|
-| 1 | `floor` | A floor tile. It repeats across the whole chamber, so its edges tile seamlessly |
+| 1 | `floor` | A floor tile. It repeats across the whole chamber, so its edges tile seamlessly; the surface detail drawn over it keeps the tiles from reading alike (see [surface detail](#surface-detail)) |
 | 2 | `slide_floor` | A slide floor tile: the floor a shade cooler (232, 235, 242 against the floor's 239, 241, 248) under the floor's texture, a little fainter, crossed by thin grey diagonal lines (168, 173, 186), six to a tile's width, that run on across neighbouring tiles, so a run of slide floor reads as one hatched surface. It keeps the floor's lip and groove, so every tile still reads as a tile, and its edges tile seamlessly |
 | 3 | `wall` | The wall strip (see [joins](#joins)). Walls stop walking and take portals |
 | 4 | `blocked_wall` | The strip of a blocked wall, which refuses portals: the wall's shape in brushed steel, darker than the wall, riveted in the middle of each quarter, so it reads apart from the wall at a glance |
@@ -127,10 +127,10 @@ The game draws from the bottom up, each later row over the earlier ones:
 
 | # | Drawn | Sprites |
 |---|-------|---------|
-| 1 | Floor | `floor`, then `slide_floor` over it on the slide floors |
+| 1 | Floor | `floor`, then `slide_floor` over it on the slide floors, then the floor's surface detail, drawn in code (see [surface detail](#surface-detail)) |
 | 2 | Antlines | None: dotted lines, drawn in code (see [antlines](#antlines)) |
 | 3 | Floor marks | `arrow` |
-| 4 | Structure | `wall`, `blocked_wall` for the blocked walls no link reaches |
+| 4 | Structure | `wall`, `blocked_wall` for the blocked walls no link reaches, then the walls' surface detail, drawn in code, before their shadow is made |
 | 5 | Turnable arrows | `turntable`, then `turntable_arrow` over it, at the way the arrow points or part way through a turn, drawn every frame over the rows above |
 | 6 | Blockers | `blocked_wall` over the blocked walls a link reaches while blocked, `emitter_on` or `emitter_off`, `light_barrier_on`, then `light_barrier_end_*` over the bands, `ditch`, `ditch_bridged`, `laser_on`, then `laser_end_*` over the beams, `door_closed`, `exit_closed`, `receiver_dark`, then `receiver_lit` over it |
 | 7 | Fall | `box` or `box_mirror`, falling into an open ditch (see [fall](#fall)) |
@@ -176,6 +176,34 @@ An emitter's ray is drawn by the game in code, from no sprite, from the rays as 
 
 A ray starts at its emitter's face and ends at the face it meets of a wall, a receiver, a closed door or the closed exit; at a portal, at the wall's face, meeting the oval's near rim without painting over it, starting again at the other portal's face; at the middle of the subject's or a plain box's tile, which stand over its end; at a light barrier whose band runs across it, at the band's near rim, 50 px of 256 short of the tile's middle (`light_barrier_on`'s rim, so change it in `src/game/ray_drawing.ts` too if the band's width changes), or at the tile's edge when the band runs along it. It turns at a mirror box's middle, the corner hidden under the box. A ray changes at once with the step that cuts or frees it, with its emitter's lens, while a receiver's eye fades over about 0.25 s; the home menu's map and the gallery draw rays too.
 
+## Surface detail
+
+So the floor and the walls don't read as one tile stamped everywhere, the game lays a surface detail over them, drawn in code from no sprite (`src/game/surface_tone.ts` and `src/game/wear_marks.ts`), into the backdrop: the floor's over the floor and the slide floors and under the antlines, the walls' on the walls before their shadow is made. All of it is grey and faint and the same in every state, and its marks and plates keep off the walls' bevels, where portals open; only the walls' patches, the faintest of it, run over them. Where each part lands comes from the chamber's size and walls and each tile's place (`src/game/surface_noise.ts`), so a chamber looks the same every time it is drawn, at any tile size, and no two chambers alike. Its colours are in the palette; how strongly each is drawn is listed here, as its opacity where it is strongest.
+
+Tones, on every tile:
+
+| # | Tone | What it does | Colour | Strongest |
+|---|------|--------------|--------|-----------|
+| 1 | Tile shade | Each floor tile is shaded a little apart from the next, most near the middle shade; one in fourteen is clearly darker, like a panel replaced later | Between a cool tint (26, 36, 62) and a warm one (66, 56, 42), a mix of its own for each tile | 6.5 %; 7.5 to 10.7 % for the odd ones |
+| 2 | Patches | Soft darker areas about 4 tiles wide, so a large empty room isn't one flat colour | 34, 40, 60 | 14 % |
+| 3 | Room light | The floor darkens towards the walls, down to about a third 0.85 of a tile out, and is lifted towards white in the open, from 1.1 tiles from the nearest wall, in full from 2.6 | 20, 26, 44; white | 11 %; 24.2 % |
+| 4 | Grime | Dirt along the foot of the walls, out to 0.4 of a tile, about a third of it even and the rest in blotches | 60, 54, 46 | 15 % |
+| 5 | Wall plates | Each wall's flat top, inside its bevels, a plate a little lighter or darker than the next; not on a blocked wall | White; black | 3.2 %; 4 % |
+| 6 | Wall patches | Soft lighter and darker areas about 3.6 tiles wide across every wall drawn in the backdrop, bevels included, and the blocked walls no link reaches; the steel painted over a blocked wall a link reaches, while it is blocked, carries none | White; black | 3.6 %; 4.8 % |
+
+The patches, the room light and the grime are painted as one soft layer, 8 samples to a tile's side, and stretched over the chamber; the walls' patches the same way, showing only on the walls.
+
+Wear marks, each kind on 30 % of the tiles that take it, picked on its own, so a tile can get more than one; each mark is shaped from its own tile's numbers, so no two are alike:
+
+| # | Mark | What it shows | Colour | Opacity |
+|---|------|---------------|--------|---------|
+| 1 | Scratches, floor | Two to four thin lines side by side, as something dragged leaves, trailing off at both ends, each with a lit edge beside it; they may run on over the next tile | 58, 64, 82; edge white | 5.8 %; 13.2 % |
+| 2 | Cracks | A jagged line in from one edge of the tile, with one short branch a quarter fainter, and a lit edge beside both; cut off at its tile's edge | 34, 38, 50; edge white | 4.8 %; 4.4 % |
+| 3 | Chipped corners | A small jagged piece off one corner, 0.08 to 0.18 of a tile each way, with a broken edge round it; cut off at its tile's edge | 122, 127, 140; edge 52, 57, 70 | 14.4 %; 9.6 % |
+| 4 | Scratches, walls | As on the floor, but bright on the grey with a shaded edge, only on the flat tops of plain walls, cut off at the bevels | 238, 241, 248; edge black | 4.8 %; 3.2 % |
+
+A scratch is 0.009 of a tile wide, a crack 0.013 and a chip's edge 0.008, none thinner than a pixel. No mark is placed on a tile that holds a button, a switch, an arrow, a slide floor, a ditch, a door or the exit, where it would confuse or never show, nor on a blocked wall; a scratch on the floor tile beside one may still trail up to a third of a tile onto it. The home menu's map and the gallery show the surface detail too; nothing about it moves, so reduced motion changes nothing.
+
 ## Sliding
 
 When a door or the exit opens or closes, it slides over about 0.3 s: the game draws `door_closed` (or `exit_closed`) cut down its middle over the floor, each half slid out to its side and cut off at the tile's edge, as if going into the wall, until nothing is left. So the closed sprite's two leaves must meet on the tile's middle line.
@@ -209,7 +237,7 @@ convert art/sprites/subject_holding_box.png -channel A -level 3%,98% +channel -b
 
 ## Not in the set yet
 
-- **Decorations** not tied to the rules, such as lights along the outer wall, hazard stripes at wall ends and scuffs on the floor.
+- **Decorations** not tied to the rules, such as lights along the outer wall and hazard stripes at wall ends. Wear on the floor and the walls is drawn in code, from no sprite (see [surface detail](#surface-detail)).
 - **Animation frames:** sprites are still images, and the game moves them.
 
 ## Trying a sprite

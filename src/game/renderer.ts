@@ -20,7 +20,9 @@ import {spriteOf} from '@/game/sprite_sources'
 import {shownState, type StepTransition} from '@/game/step_animation'
 import {subjectPose, type SubjectPose} from '@/game/subject_pose'
 import type {SubjectTurn} from '@/game/subject_turn'
+import {drawFloorTone, drawWallTone} from '@/game/surface_tone'
 import {TilePainter} from '@/game/tile_painter'
+import {drawFloorWear, drawWallWear} from '@/game/wear_marks'
 
 /**
  * A chamber's backdrop as drawn for a tile size.
@@ -29,6 +31,7 @@ type Backdrop = {
   readonly chamber: CompiledChamber // The chamber it was drawn for
   readonly tileSize: number // The tile size it was drawn at, in pixels
   readonly layer: TilePainter // The backdrop, on a canvas of its own
+  readonly floor: TilePainter | null // What the backdrop lays under its antlines (the floor, the slide floors and their surface detail), kept apart to draw it again when one changes, or null when the chamber has none
   readonly cover: TilePainter | null // What the backdrop lays over its antlines (floor marks, then walls over their shadow), kept apart to draw it again when one changes, or null when the chamber has none
   readonly litKey: string // Which antlines the backdrop shows lit, from antlinesLitKey()
 }
@@ -127,7 +130,8 @@ function drawElementsOn(painter: TilePainter, state: RulesState, layer: DrawLaye
 
 /**
  * Draws the background, the floor of every tile, then the floor layer's
- * elements over it (the slide floors), all under the antlines.
+ * elements over it (the slide floors), then the floor's surface detail,
+ * its tones and its wear marks, drawn by code, all under the antlines.
  * @param painter - Paints on the canvas, already sized for the chamber
  * @param state - A state of the chamber
  */
@@ -141,11 +145,14 @@ function drawFloor(painter: TilePainter, state: RulesState): void {
   }
 
   drawElementsOn(painter, state, 'floor')
+  drawFloorTone(painter, state.chamber)
+  drawFloorWear(painter, state.chamber)
 }
 
 /**
  * Draws what the backdrop lays over the antlines: the floor marks, then the
- * walls, painted apart and laid down over the shared drop shadow of their
+ * walls, painted apart with their surface detail, its tones and its wear
+ * marks, drawn by code, and laid down over the shared drop shadow of their
  * whole mass.
  * @param painter - Paints on the canvas, already sized for the chamber
  * @param state - A state of the chamber
@@ -156,14 +163,16 @@ function drawBackdropCover(painter: TilePainter, state: RulesState): void {
   const structure = painter.createLayer()
 
   drawElementsOn(structure, state, 'structure')
+  drawWallTone(structure, state.chamber)
+  drawWallWear(structure, state.chamber)
   painter.drawLayer(structure, true)
 }
 
 /**
  * Draws a chamber's backdrop, the layers that change only when an antline
  * lights up or goes dark while it is played: the background, the floor of
- * every tile and the slide floors, the antlines and the floor marks, then the walls, painted
- * apart and laid down over the shared drop shadow of their whole mass.
+ * every tile and the slide floors with the floor's surface detail, the antlines and the floor marks, then the walls, painted
+ * apart with theirs and laid down over the shared drop shadow of their whole mass.
  * @param painter - Paints on the canvas, already sized for the chamber
  * @param state - The state whose antlines are drawn; the rest is the same for every state of the chamber
  */
@@ -177,11 +186,12 @@ export function drawBackdrop(painter: TilePainter, state: RulesState): void {
  * Draws a backdrop from its parts: the floor, a state's antlines, then the
  * cover laid over them.
  * @param layer - The backdrop's layer, drawn over in full
+ * @param floor - The floor, the slide floors and their surface detail, from drawFloor()
  * @param cover - The floor marks and the walls over their shadow, from drawBackdropCover()
  * @param state - The state whose antlines are drawn
  */
-function composeBackdrop(layer: TilePainter, cover: TilePainter, state: RulesState): void {
-  drawFloor(layer, state)
+function composeBackdrop(layer: TilePainter, floor: TilePainter, cover: TilePainter, state: RulesState): void {
+  layer.drawLayer(floor, false)
   drawAntlines(layer, state)
   layer.drawLayer(cover, false)
 }
@@ -209,8 +219,8 @@ export function hasAmbientLife(state: RulesState): boolean {
 
 /**
  * Draws a state of the rules onto a canvas from the chamber sprites
- * (docs/sprites.md): the chamber's backdrop (floor and slide floors, antlines,
- * floor marks and walls), drawn once per chamber and tile size, and again when an
+ * (docs/sprites.md): the chamber's backdrop (floor and slide floors with the floor's surface detail, antlines,
+ * floor marks and walls with theirs), drawn once per chamber and tile size, and again when an
  * antline lights up or goes dark, and copied every frame, then each
  * other draw layer back to front. The core step's layers (floor, portals,
  * subject) are drawn here; every other layer draws its element types in
@@ -267,8 +277,8 @@ export class Renderer {
    * The backdrop of a state's chamber at the current tile size, drawn the
    * first time it is asked for and kept until the chamber or the tile size
    * changes. When an antline lights up or goes dark, the backdrop is drawn
-   * again from its floor, the antlines and its cover, kept apart, so the
-   * walls' shadow isn't made again.
+   * again from its floor, the antlines and its cover, both kept apart, so
+   * neither the surface detail nor the walls' shadow is made again.
    * @param state - The state drawn
    * @returns The backdrop's layer
    */
@@ -279,19 +289,23 @@ export class Renderer {
 
     if ((backdrop === null) || (backdrop.chamber !== state.chamber) || (backdrop.tileSize !== tileSize)) {
       const layer = this.painter.createLayer()
-      const cover = (state.chamber.antlines.length > 0) ? this.painter.createLayer() : null
+      const hasAntlines = state.chamber.antlines.length > 0
+      const floor = hasAntlines ? this.painter.createLayer() : null
+      const cover = hasAntlines ? this.painter.createLayer() : null
 
-      if (cover === null) {
+      if ((floor === null) || (cover === null)) {
         drawBackdrop(layer, state)
       } else {
+        drawFloor(floor, state)
         drawBackdropCover(cover, state)
-        composeBackdrop(layer, cover, state)
+        composeBackdrop(layer, floor, cover, state)
       }
 
       this.backdrop = {
         chamber: state.chamber,
         tileSize: tileSize,
         layer: layer,
+        floor: floor,
         cover: cover,
         litKey: litKey,
       }
@@ -299,8 +313,8 @@ export class Renderer {
       return layer
     }
 
-    if ((backdrop.cover !== null) && (backdrop.litKey !== litKey)) {
-      composeBackdrop(backdrop.layer, backdrop.cover, state)
+    if ((backdrop.floor !== null) && (backdrop.cover !== null) && (backdrop.litKey !== litKey)) {
+      composeBackdrop(backdrop.layer, backdrop.floor, backdrop.cover, state)
       this.backdrop = {
         ...backdrop,
         litKey: litKey,

@@ -3,7 +3,9 @@
  * colours: the background behind the floor, the shared drop shadow, a
  * missed shot's ripple in each portal's colour, the antlines' dots, unlit
  * and lit, each with its border, an emitter's ray, from its dark rim to its
- * white-hot core, and the mirror marked on a carried mirror box. Everything
+ * white-hot core, the mirror marked on a carried mirror box, and the surface
+ * detail laid over the floor and the walls' tops, its tones and its wear
+ * marks, each drawn faint (how faint is the drawing's to say). Everything
  * else is drawn
  * from the sprites' files, whose meaning colours are listed in
  * docs/sprites.md. The background and the portals' colours are mirrored by
@@ -27,4 +29,26 @@ export const PALETTE = {
   carriedMirrorFrame: 'rgba(44, 48, 54, 1)', // A carried mirror box's mirror, drawn over the box in the subject's hands: its dark frame
   carriedMirrorGlass: 'rgba(226, 231, 238, 1)', // Its glass
   carriedMirrorGlint: 'rgba(255, 255, 255, 1)', // The glint along it
+  floorShadeCool: 'rgba(26, 36, 62, 1)', // The surface detail (docs/sprites.md): a floor tile shaded a little darker than the next, its cooler tint
+  floorShadeWarm: 'rgba(66, 56, 42, 1)', // Its warmer tint; each tile is shaded somewhere between the two
+  floorPatch: 'rgba(34, 40, 60, 1)', // The soft darker patches, several tiles wide, on the floor
+  floorWallShade: 'rgba(20, 26, 44, 1)', // The floor darkening towards the walls
+  floorGrime: 'rgba(60, 54, 46, 1)', // The dirt gathered along the foot of the walls
+  floorScratch: 'rgba(58, 64, 82, 1)', // A scratch on the floor
+  floorCrack: 'rgba(34, 38, 50, 1)', // A crack in a floor tile
+  floorChip: 'rgba(122, 127, 140, 1)', // What shows where a floor tile's corner is chipped off
+  floorChipEdge: 'rgba(52, 57, 70, 1)', // The broken edge round it
+  wallScratch: 'rgba(238, 241, 248, 1)', // A scratch on a wall's top, bright on the grey
+  surfaceLight: 'rgba(255, 255, 255, 1)', // What lightens a surface: the open floor far from every wall, the lit edge of a scratch or a crack on the floor, a wall plate or patch a shade lighter
+  surfaceDark: 'rgba(0, 0, 0, 1)', // What darkens a wall: a plate or patch a shade darker, the shaded edge of a scratch
 } as const
+
+/**
+ * A palette colour at another opacity.
+ * @param colour - The colour, as rgba() with its channels
+ * @param alpha - The opacity, from 0 to 1
+ * @returns The colour at that opacity, as rgba()
+ */
+export function withAlpha(colour: string, alpha: number): string {
+  return colour.replace(/,\s*[\d.]+\)$/, `, ${alpha})`)
+}
