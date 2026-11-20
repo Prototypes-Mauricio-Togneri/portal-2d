@@ -369,20 +369,17 @@ export class TilePainter {
 
   /**
    * Draws a sprite over a tile turned by any angle about the tile's middle,
-   * without a shadow: the one sprite turned by other than quarter turns, a
-   * turnable arrow's chevron part way through its turn. At rest it is drawn
-   * with drawSprite(), whose quarter turns are exact. Nothing is drawn while
-   * only shadows are painted.
-   * @param name - The sprite, one that isn't raised
-   * @param x - Column
-   * @param y - Row
+   * and a raised one over its shadow, turned with it, since the light is
+   * overhead: the sprites turned by other than quarter turns, a turnable
+   * arrow's chevron part way through its turn and the subject part way
+   * through a turn. At rest each is drawn with drawSprite(), whose quarter
+   * turns are exact.
+   * @param name - The sprite
+   * @param x - Column, part way between two while something glides
+   * @param y - Row, part way between two while something glides
    * @param angle - How far it is turned from facing up as drawn, in radians, clockwise on the canvas: a quarter turn to the right is π/2
    */
   drawSpriteRotated(name: SpriteName, x: number, y: number, angle: number): void {
-    if (this.pass === 'shadows') {
-      return
-    }
-
     const size = this.tileSize
     const sprite = scaledSprite(name, size)
 
@@ -390,16 +387,16 @@ export class TilePainter {
       return
     }
 
-    const half = size / 2
+    const middleX = Math.round(x * size) + (size / 2)
+    const middleY = Math.round(this.tileTop(y)) + (size / 2)
+    const shadow = (RAISED_SPRITES.has(name) && (this.pass !== 'sprites')) ? scaledShadow(name, size) : null
 
-    this.context.save()
+    if (shadow !== null) {
+      this.drawRotated(shadow, middleX, middleY, size, angle)
+    }
 
-    try {
-      this.context.translate(Math.round(x * size) + half, Math.round(this.tileTop(y)) + half)
-      this.context.rotate(angle)
-      this.context.drawImage(sprite.image, -half - sprite.margin, -half - sprite.margin)
-    } finally {
-      this.context.restore()
+    if (this.pass !== 'shadows') {
+      this.drawRotated(sprite, middleX, middleY, size, angle)
     }
   }
 
@@ -680,6 +677,29 @@ export class TilePainter {
 
     if (this.pass !== 'shadows') {
       this.drawTurned(sprite, left, top, size, way)
+    }
+  }
+
+  /**
+   * Draws a shrunk sprite over a square, with its overhang around it,
+   * turned by any angle about the square's middle.
+   * @param sprite - The sprite, shrunk to the square's size
+   * @param middleX - The square's middle, in pixels from the left
+   * @param middleY - The square's middle, in pixels from the top
+   * @param size - The square's side, in pixels
+   * @param angle - How far it is turned from facing up as drawn, in radians, clockwise on the canvas
+   */
+  private drawRotated(sprite: ScaledSprite, middleX: number, middleY: number, size: number, angle: number): void {
+    const half = size / 2
+
+    this.context.save()
+
+    try {
+      this.context.translate(middleX, middleY)
+      this.context.rotate(angle)
+      this.context.drawImage(sprite.image, -half - sprite.margin, -half - sprite.margin)
+    } finally {
+      this.context.restore()
     }
   }
 

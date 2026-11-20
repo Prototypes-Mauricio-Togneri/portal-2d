@@ -19,6 +19,7 @@ import type {SpriteName} from '@/game/sprite_set'
 import {spriteOf} from '@/game/sprite_sources'
 import {shownState, type StepTransition} from '@/game/step_animation'
 import {subjectPose, type SubjectPose} from '@/game/subject_pose'
+import type {SubjectTurn} from '@/game/subject_turn'
 import {TilePainter} from '@/game/tile_painter'
 
 /**
@@ -333,36 +334,44 @@ export class Renderer {
   }
 
   /**
-   * Draws the subject turned to the way it faces, holding a box it carries
-   * or else its portal gun, at its pose: where it stands, or part way
-   * through the step being drawn.
+   * Draws the subject turned to the way it faces, or part way through a
+   * turn, holding a box it carries or else its portal gun, at its pose:
+   * where it stands, or part way through the step being drawn.
    * @param state - The state drawn, which says whether it carries a box
    * @param pose - Where it is drawn, from subjectPose()
+   * @param angle - How far it is turned part way through a turn, in radians clockwise on the canvas from facing up, or null to turn it squarely the way its pose faces
    */
-  private drawSubject(state: RulesState, pose: SubjectPose): void {
+  private drawSubject(state: RulesState, pose: SubjectPose, angle: number | null): void {
     const sprite = (state.carriedBox === NO_BOX) ? 'subject_holding_gun' : 'subject_holding_box'
     const mirror = (state.carriedBox === NO_BOX) ? null : state.chamber.mirrorOf(state.carriedBox)
 
     this.painter.drawClippedToTile(pose.clip, () => {
-      this.painter.drawSprite(sprite, pose.x, pose.y, pose.facing)
+      if (angle === null) {
+        this.painter.drawSprite(sprite, pose.x, pose.y, pose.facing)
+      } else {
+        this.painter.drawSpriteRotated(sprite, pose.x, pose.y, angle)
+      }
 
       if (mirror !== null) {
-        this.drawCarriedMirror(pose, mirror)
+        this.drawCarriedMirror(pose, angle, mirror)
       }
     })
   }
 
   /**
    * Marks the mirror of a carried mirror box over the box in the subject's
-   * hands, the right way round in the room whichever way the subject faces,
-   * so it reads apart from a plain box.
+   * hands, the right way round in the room whichever way the subject faces
+   * or turns, so it reads apart from a plain box.
    * @param pose - Where the subject is drawn, from subjectPose()
+   * @param angle - How far the subject is turned part way through a turn, in radians clockwise on the canvas from facing up, or null when it faces its pose's way squarely
    * @param mirror - The carried box's mirror
    */
-  private drawCarriedMirror(pose: SubjectPose, mirror: Mirror): void {
-    const ahead = DELTAS[pose.facing]
-    const middleX = pose.x + 0.5 + (ahead.dx * CARRIED_BOX_AHEAD)
-    const middleY = pose.y + 0.5 + (ahead.dy * CARRIED_BOX_AHEAD)
+  private drawCarriedMirror(pose: SubjectPose, angle: number | null, mirror: Mirror): void {
+    // Rows grow upwards, so a turn clockwise on the canvas from up leads right, then down
+    const aheadX = (angle === null) ? DELTAS[pose.facing].dx : Math.sin(angle)
+    const aheadY = (angle === null) ? DELTAS[pose.facing].dy : Math.cos(angle)
+    const middleX = pose.x + 0.5 + (aheadX * CARRIED_BOX_AHEAD)
+    const middleY = pose.y + 0.5 + (aheadY * CARRIED_BOX_AHEAD)
     // On the canvas, rows grow downwards: a '/' rises to the right
     const rise = (mirror === '/') ? -1 : 1
 
@@ -389,10 +398,11 @@ export class Renderer {
    * @param state - The state drawn
    * @param layer - The layer
    * @param pose - Where the subject is drawn, from subjectPose()
+   * @param angle - How far the subject is turned part way through a turn, from SubjectTurn, or null to turn it squarely the way its pose faces
    * @param shares - How far blocked the blocked walls, the ditches, the doors, the exit, the fizzlers, the lasers and the light barriers that are changing are drawn, or null to draw every one as the state says
    * @param opening - How far the portal opening is drawn, or null to draw both open
    */
-  private drawLayer(state: RulesState, layer: DrawLayer, pose: SubjectPose, shares: BlockedShares | null, opening: OpeningProgress | null): void {
+  private drawLayer(state: RulesState, layer: DrawLayer, pose: SubjectPose, angle: number | null, shares: BlockedShares | null, opening: OpeningProgress | null): void {
     this.painter.drawShadowsFirst(() => {
       switch (layer) {
         case 'portals':
@@ -401,7 +411,7 @@ export class Renderer {
           break
 
         case 'subject':
-          this.drawSubject(state, pose)
+          this.drawSubject(state, pose, angle)
           break
       }
 
@@ -470,7 +480,8 @@ export class Renderer {
    * opening part way open, then the glows, the pieces of what a fizzle took
    * and a missed shot's ripple. Part way along a slide, everything but the
    * subject's pose is drawn as the state on the last tile it has reached
-   * (shownState), and the state after the step once the slide ends.
+   * (shownState), and the state after the step once the slide ends. The
+   * subject is drawn part way through its turn while it turns.
    * @param state - The state to draw
    * @param transition - The step being drawn, ending on the state drawn, or null (the default) to draw the state as it is
    * @param time - Now, in milliseconds on the frame clock, for what moves with time alone, or null (the default) to hold it still
@@ -479,8 +490,9 @@ export class Renderer {
    * @param ripple - Where the latest missed shot stopped, rippling, or null (the default) when none can
    * @param fall - The boxes falling into ditches, or null (the default) when none can
    * @param openings - The portals opening, or null (the default) when none can
+   * @param turn - The subject's turn, followed every frame drawn with a time, or null (the default) to draw it squarely the way it faces
    */
-  render(state: RulesState, transition: StepTransition | null = null, time: number | null = null, fizzle: FizzleParticles | null = null, changes: ElementTransitions | null = null, ripple: MissRipple | null = null, fall: BoxFall | null = null, openings: PortalOpenings | null = null): void {
+  render(state: RulesState, transition: StepTransition | null = null, time: number | null = null, fizzle: FizzleParticles | null = null, changes: ElementTransitions | null = null, ripple: MissRipple | null = null, fall: BoxFall | null = null, openings: PortalOpenings | null = null, turn: SubjectTurn | null = null): void {
     // A canvas not yet sized for a chamber has nothing to draw
     if (this.painter.blockSize <= 0) {
       return
@@ -488,6 +500,7 @@ export class Renderer {
 
     const shown = ((transition === null) || (transition.to !== state)) ? state : shownState(transition)
     const pose = subjectPose(state, transition, this.painter.blockSize)
+    const angle = ((time !== null) && (turn !== null)) ? turn.angleFor(state, pose, time) : null
     const shares: BlockedShares | null = ((time !== null) && (changes !== null)) ? (kind, index) => changes.blockedAt(kind, index, time) : null
     const opening: OpeningProgress | null = ((time !== null) && (openings !== null)) ? (color) => openings.progressAt(shown, color, time) : null
     const runs = (shown.chamber.countOf('emitter') > 0) ? rayRuns(shown, traceRays(shown)) : NO_RUNS
@@ -497,7 +510,7 @@ export class Renderer {
 
     for (const layer of DRAW_LAYERS) {
       if (!BACKDROP_LAYERS.has(layer)) {
-        this.drawLayer(shown, layer, pose, shares, opening)
+        this.drawLayer(shown, layer, pose, angle, shares, opening)
       }
 
       // Down in the pit, over the grate sliding away and under everything standing on the floor

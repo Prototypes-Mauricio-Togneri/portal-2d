@@ -9,14 +9,17 @@ import {legUnits, slideUnits, type StepTransition} from '@/game/step_animation'
 
 /**
  * Where the subject is drawn in a frame: its tile, part way between two
- * while a step is being drawn, the way it faces, and the one tile it shows
- * inside while it slides through a portal.
+ * while a step is being drawn, the way it faces, the one tile it shows
+ * inside while it slides through a portal, and how many portals it still
+ * has to pass through, so its turn (SubjectTurn) can tell coming out of a
+ * portal from turning.
  */
 export type SubjectPose = {
   readonly x: number // Column, part way between two while it glides
   readonly y: number // Row, part way between two while it glides
   readonly facing: Direction // The way it faces
   readonly clip: PositionData | null // The tile it shows only inside, or null to show it whole
+  readonly portalsAhead: number // The portals it has yet to come out of in the step being drawn: 0 at rest
 }
 
 /**
@@ -40,6 +43,7 @@ export function subjectPose(state: RulesState, transition: StepTransition | null
     y: state.subjectY,
     facing: state.facing,
     clip: null,
+    portalsAhead: 0,
   }
 
   if ((transition === null) || (transition.to !== state)) {
@@ -62,7 +66,8 @@ export function subjectPose(state: RulesState, transition: StepTransition | null
 /**
  * Where the subject is drawn part way along a slide: on the leg it has got
  * to, gliding onto that leg's tile from the one before it, or passing
- * through a portal onto it (crossingPose).
+ * through a portal onto it (crossingPose), with the portals of the legs
+ * after it still ahead.
  * @param from - The state before the step
  * @param path - Each tile the slide entered, in order, at least one
  * @param travelled - How far along the path the drawing has gone, in units (legUnits)
@@ -81,8 +86,13 @@ function slidePose(from: RulesState, path: readonly SlideLeg[], travelled: numbe
 
     if ((travelled < (unitsBefore + units)) || (index === (path.length - 1))) {
       const along = Math.min(Math.max(travelled - unitsBefore, 0), units)
+      const pose = leg.crossed ? crossingPose(before, leg.state, along / units, tileSize) : glidePose(before, leg.state, units - along, tileSize)
+      const portalsAfter = path.slice(index + 1).filter((later) => later.crossed).length
 
-      return leg.crossed ? crossingPose(before, leg.state, along / units, tileSize) : glidePose(before, leg.state, units - along, tileSize)
+      return (pose === null) ? null : {
+        ...pose,
+        portalsAhead: pose.portalsAhead + portalsAfter,
+      }
     }
 
     unitsBefore += units
@@ -117,6 +127,7 @@ function glidePose(from: RulesState, to: RulesState, remaining: number, tileSize
     y: to.subjectY - (dy * behind),
     facing: to.facing,
     clip: null,
+    portalsAhead: 0,
   }
 }
 
@@ -153,6 +164,7 @@ function crossingPose(from: RulesState, to: RulesState, progress: number, tileSi
         x: from.subjectX,
         y: from.subjectY,
       },
+      portalsAhead: 1,
     }
   }
 
@@ -167,6 +179,7 @@ function crossingPose(from: RulesState, to: RulesState, progress: number, tileSi
       x: to.subjectX,
       y: to.subjectY,
     },
+    portalsAhead: 0,
   }
 }
 

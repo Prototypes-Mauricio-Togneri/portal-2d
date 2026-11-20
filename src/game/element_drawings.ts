@@ -1,4 +1,4 @@
-import {Direction} from '@/game/direction'
+import {Direction, WAY_ANGLES} from '@/game/direction'
 import type {BlockedShares} from '@/game/element_transitions'
 import {pieceNumber} from '@/game/piece_number'
 import {type BeamKind, type BeamOrientation, type CompiledChamber, NO_ELEMENT, type PlacedKind} from '@/game/rules/compiled_chamber'
@@ -357,17 +357,6 @@ function drawArrows(painter: TilePainter, state: RulesState): void {
       painter.drawSprite('arrow', position.x, position.y, direction)
     }
   }
-}
-
-/**
- * How far a sprite drawn facing up is turned to face each way, in radians,
- * clockwise on the canvas.
- */
-const WAY_ANGLES: Readonly<Record<Direction, number>> = {
-  [Direction.UP]: 0,
-  [Direction.RIGHT]: Math.PI / 2,
-  [Direction.DOWN]: Math.PI,
-  [Direction.LEFT]: -Math.PI / 2,
 }
 
 /**

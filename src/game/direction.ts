@@ -42,6 +42,17 @@ export const DELTAS: Readonly<Record<Direction, Delta>> = {
 }
 
 /**
+ * How far a sprite drawn facing up is turned to face each way, in radians,
+ * clockwise on the canvas.
+ */
+export const WAY_ANGLES: Readonly<Record<Direction, number>> = {
+  [Direction.UP]: 0,
+  [Direction.RIGHT]: Math.PI / 2,
+  [Direction.DOWN]: Math.PI,
+  [Direction.LEFT]: -Math.PI / 2,
+}
+
+/**
  * Narrows a direction read from chamber JSON.
  * @param value - The direction string from the data
  * @returns The same value, typed as a Direction

@@ -21,6 +21,7 @@ import type {RulesState} from '@/game/rules/rules_state'
 import {startChamber, step, type StepResult} from '@/game/rules/step'
 import {Sound} from '@/game/sound'
 import {legReach, slideUnits, StepAnimation} from '@/game/step_animation'
+import {SubjectTurn} from '@/game/subject_turn'
 
 /**
  * Something a slide being drawn still has waiting: what happened on one of
@@ -118,6 +119,7 @@ export class Level {
   private readonly ripple = new MissRipple() // Where the latest missed portal shot stopped, rippling over a few frames, if anywhere
   private readonly fall = new BoxFall() // The boxes the latest step dropped into ditches, falling over a few frames, if any
   private readonly openings = new PortalOpenings() // The portals shots opened lately, opening over a few frames, if any
+  private readonly turn = new SubjectTurn() // The subject's facing as drawn, turning over a few frames whenever it comes to face another way
   private slideBeats: SlideBeat[] = [] // What the slide being drawn still has waiting, in order; empty when none is
   private frameTime = 0 // The latest frame's time, in milliseconds on the frame clock; redraws outside a frame use it, so a step being drawn never goes back
   private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time something could be drawn over time
@@ -178,6 +180,7 @@ export class Level {
     this.ripple.clear()
     this.fall.clear()
     this.openings.clear()
+    this.turn.clear()
 
     this.countPortals(start.events)
     this.playSounds(start.events)
@@ -318,7 +321,7 @@ export class Level {
   /**
    * Draws the current state, part way through the step being drawn, if any,
    * with what moves with time alone at this time, what breaks up or falls, a portal
-   * opening, a missed shot's ripple and the arrows, the blocked walls, the ditches, the doors,
+   * opening, a missed shot's ripple, the subject turning and the arrows, the blocked walls, the ditches, the doors,
    * the exit, the fizzlers, the lasers and the light barriers changing included, or held still when the player asks for
    * reduced motion.
    * @param time - Now, in milliseconds on the frame clock
@@ -328,7 +331,7 @@ export class Level {
       const frameStats = this.frameStats
       const drawStart = (frameStats === null) ? 0 : performance.now()
 
-      this.renderer.render(this.state, this.animation.transitionAt(time), this.reducedMotion.matches ? null : time, this.fizzle, this.changes, this.ripple, this.fall, this.openings)
+      this.renderer.render(this.state, this.animation.transitionAt(time), this.reducedMotion.matches ? null : time, this.fizzle, this.changes, this.ripple, this.fall, this.openings, this.turn)
       frameStats?.recordDraw(performance.now() - drawStart)
     }
   }
@@ -642,9 +645,9 @@ export class Level {
       stateUpdated = this.update(delta, this.input, time)
     }
 
-    // So does anything that glows, breaks up, falls, changes, opens or ripples,
+    // So does anything that glows, breaks up, falls, changes, opens, ripples or turns,
     // paused or not, and the first frame after it stops, which draws it still
-    const ambient = (this.state !== null) && !this.reducedMotion.matches && (hasAmbientLife(this.state) || this.fizzle.isRunningAt(time) || this.fall.isRunningAt(time) || this.changes.isRunningAt(time) || this.openings.isRunningAt(time) || this.ripple.isRunningAt(time))
+    const ambient = (this.state !== null) && !this.reducedMotion.matches && (hasAmbientLife(this.state) || this.fizzle.isRunningAt(time) || this.fall.isRunningAt(time) || this.changes.isRunningAt(time) || this.openings.isRunningAt(time) || this.ripple.isRunningAt(time) || this.turn.isRunningAt(time))
 
     if (stateUpdated || wasAnimating || ambient || this.ambientDrawn) {
       this.render(time)

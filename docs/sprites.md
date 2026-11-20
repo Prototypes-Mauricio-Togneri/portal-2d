@@ -44,7 +44,7 @@ A sprite with a direction is drawn once, one way, and the game turns it in quart
 
 | # | Sprites | Drawn | Turned |
 |---|---------|-------|--------|
-| 1 | `subject_holding_gun`, `subject_holding_box` | Facing up, towards the top of the screen | To the way the subject faces |
+| 1 | `subject_holding_gun`, `subject_holding_box` | Facing up, towards the top of the screen | To the way the subject faces, and by any angle, with its shadow, while it turns |
 | 2 | `arrow`, `turntable_arrow` | Pointing up: the one way the subject may enter its tile | To the way the arrow points. `turntable_arrow` is also turned by any angle while a link turns its arrow (see [turning arrows](#turning-arrows)), the one sprite turned by other than quarter turns; its `turntable` is never turned |
 | 3 | `portal_blue`, `portal_orange` and their glows | On the top edge of its wall tile, opening up onto the tile above: a flat oval lying on the wall's slope, from just inside the tile's edge to the slope's lit lip, short enough to stay clear of the diagonals where two slopes meet at a wall's end; the glow centred on it | To the side of the wall it opens on |
 | 4 | `emitter_on`, `emitter_off`, `receiver_lit`, `receiver_dark` | On the top edge of its wall tile, working face up, firing or listening onto the tile above: a housing on the wall's 48 px bevel, reaching 64 px into the tile, clear of the 128 px midlines where wall quarters join | To the face it fires from or listens on, as a portal is: as drawn for up, a quarter turn right for right, a half turn for down, a quarter turn left for left |
