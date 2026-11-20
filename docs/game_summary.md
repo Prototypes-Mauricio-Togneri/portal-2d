@@ -129,7 +129,7 @@ Every chamber is closed in by walls (or blocked walls, emitters, receivers, door
 
 ## Chambers and progress
 
-- Eight chambers so far: the Tutorial (12 × 10 tiles), then chambers 1 (20 × 20), 2 (23 × 13) and 3 (23 × 17), chambers 4 (13 × 9) and 5 (9 × 13), which teach and test slide floors, and chambers 6 (10 × 7) and 7 (10 × 9), which teach and twist turnable arrows. The roadmap aims for 20.
+- Ten chambers so far: the Tutorial (12 × 10 tiles), then chambers 1 (20 × 20), 2 (23 × 13) and 3 (23 × 17), chambers 4 (13 × 9) and 5 (9 × 13), which teach and test slide floors, chambers 6 (10 × 7) and 7 (10 × 9), which teach and twist turnable arrows, and chambers 8 and 9 (both 9 × 7), which teach and test rays through portals. The roadmap aims for 20.
 - The timer starts with the first press of a move, portal or interact key in a chamber and stops when the chamber is complete. The only score is the time: there are no medals or move targets.
 - Finishing a chamber shows the time and the best time (or "New best time"), with Next chamber, Play again and Back to menu (after the last chamber, only Back to menu and Play again).
 - The pause menu offers Continue, Restart chamber and Exit chamber; restarting or leaving asks for confirmation first.
