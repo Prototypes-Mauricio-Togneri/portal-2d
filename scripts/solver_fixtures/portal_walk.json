@@ -10,7 +10,7 @@
         "direction": "DOWN"
     },
     "exit": {
-        "x": 5,
+        "x": 6,
         "y": 2,
         "blocked": false
     },
@@ -46,7 +46,7 @@
         {
             "xFrom": 6,
             "xTo": 6,
-            "yFrom": 2,
+            "yFrom": 3,
             "yTo": 4
         },
         {

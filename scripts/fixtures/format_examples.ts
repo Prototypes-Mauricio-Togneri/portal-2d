@@ -7,6 +7,8 @@ import brokenDevices from '@scripts/fixtures/broken_devices.json'
 import brokenChamberFields from '@scripts/fixtures/broken_chamber_fields.json'
 import brokenChamberLayout from '@scripts/fixtures/broken_chamber_layout.json'
 import brokenSlideFloors from '@scripts/fixtures/broken_slide_floors.json'
+import exitInCorner from '@scripts/fixtures/exit_in_corner.json'
+import exitInside from '@scripts/fixtures/exit_inside.json'
 import formatV2Example from '@scripts/fixtures/format_v2_example.json'
 import lightBarrierDirection from '@scripts/fixtures/light_barrier_direction.json'
 import lightBarrierInWall from '@scripts/fixtures/light_barrier_in_wall.json'
@@ -142,7 +144,7 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
   },
   {
     name: 'broken_slide_floors',
-    // The second row's slide floor shares its tiles with the subject's start, a button with a box's start, a fizzler, a laser and a light barrier, which is right; the first row's shares each of its tiles with an element it can't
+    // The second row's slide floor shares its tiles with the subject's start, a button with a box's start, a fizzler, a laser and a light barrier, which is right; the first row's shares each of its tiles with an element it can't, the exit among them, which is inside the chamber
     data: brokenSlideFloors,
     problems: [
       'error slideFloors[3] at (2, 3): lists a slide floor tile that another slide floor entry already lists',
@@ -152,6 +154,7 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
       'error slideFloors[0] at (3, 1): a slide floor can\'t share a tile with the exit',
       'error slideFloors[0] at (4, 1): a slide floor can\'t share a tile with an arrow',
       'error slideFloors[0] at (5, 1): a slide floor can\'t share a tile with a switch',
+      'error exit at (3, 1): the exit must be in the chamber\'s outer wall, away from its corners, so it leads out of the chamber',
     ],
   },
   {
@@ -196,5 +199,17 @@ export const CHAMBER_CASES: readonly ChamberCase[] = [
     // An arrow's turned way is one of the four ways, like its own
     data: arrowTurnedDirectionValue,
     problems: ['error arrows[0].turnedDirection: is not one of UP, DOWN, LEFT, RIGHT'],
+  },
+  {
+    name: 'exit_inside',
+    // The exit leads out of the chamber, so it stands in the outer wall, not on a floor tile inside it
+    data: exitInside,
+    problems: ['error exit at (3, 1): the exit must be in the chamber\'s outer wall, away from its corners, so it leads out of the chamber'],
+  },
+  {
+    name: 'exit_in_corner',
+    // A corner of the outer wall has no floor beside it to walk in from, so the exit can't be there
+    data: exitInCorner,
+    problems: ['error exit at (4, 2): the exit must be in the chamber\'s outer wall, away from its corners, so it leads out of the chamber'],
   },
 ]

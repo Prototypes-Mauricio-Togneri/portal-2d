@@ -1,6 +1,8 @@
 import {BoxFall} from '@/game/box_fall'
 import type {ChamberData} from '@/game/chamber_data'
+import type {Direction} from '@/game/direction'
 import {ElementTransitions} from '@/game/element_transitions'
+import {exitOuterSide} from '@/game/exit_shadow'
 import {FizzleParticles} from '@/game/fizzle_particles'
 import {GameEvent} from '@/game/game_event'
 import {GameKey} from '@/game/game_key'
@@ -20,7 +22,7 @@ import {runRulesReplay} from '@/game/rules/replay_runner'
 import type {RulesState} from '@/game/rules/rules_state'
 import {startChamber, step, type StepResult} from '@/game/rules/step'
 import {Sound} from '@/game/sound'
-import {legReach, slideUnits, StepAnimation} from '@/game/step_animation'
+import {legReach, StepAnimation} from '@/game/step_animation'
 import {SubjectTurn} from '@/game/subject_turn'
 
 /**
@@ -57,8 +59,12 @@ type SlideBeat = {
  * and what happens on each tile it enters (a fizzle, a portal crossing) waits
  * until the subject gets there, its stop and settling (buttons, doors, the
  * completion) until the slide ends; the next press first plays all that is
- * still waiting, and a load drops it. Every press it acts on is logged, so the run
- * since the last load can be replayed without a browser.
+ * still waiting, and a load drops it. A step drawn over time that puts the
+ * subject on the exit, moving out through the chamber's edge, walks it on
+ * out of the chamber, and the completion waits until it is out of sight;
+ * once the chamber is completed, no press is taken and none waits. Every
+ * press it acts on is logged, so the run since the last load can be replayed
+ * without a browser.
  */
 export class Level {
   /** Keys that start the clock: moving, both portals and interacting */
@@ -100,7 +106,7 @@ export class Level {
     [GameEvent.RECEIVER_UNLIT]: null,
   }
 
-  onCompleted: (() => void) | null = null // Called once per load when the subject reaches the exit
+  onCompleted: (() => void) | null = null // Called once per load when the subject reaches the exit, or, when it walks on out of the chamber, once it is out of sight
   frameStats: FrameStats | null = null // Development only: told of each frame, each drawing and each rules step, which are timed only while it is set
 
   private chamber: CompiledChamber | null = null // The chamber being played, null before the first load
@@ -121,6 +127,7 @@ export class Level {
   private readonly openings = new PortalOpenings() // The portals shots opened lately, opening over a few frames, if any
   private readonly turn = new SubjectTurn() // The subject's facing as drawn, turning over a few frames whenever it comes to face another way
   private slideBeats: SlideBeat[] = [] // What the slide being drawn still has waiting, in order; empty when none is
+  private completionTime: number | null = null // When the completion is told after a step that didn't slide and walks the subject out of the chamber, once it is out of sight, in milliseconds on the frame clock; null when none waits
   private frameTime = 0 // The latest frame's time, in milliseconds on the frame clock; redraws outside a frame use it, so a step being drawn never goes back
   private readonly reducedMotion: MediaQueryList // Whether the player asks for reduced motion, read each time something could be drawn over time
   private ambientDrawn = false // Whether the latest frame was drawn for what moves with time alone, so the frame after it ends draws it still
@@ -173,8 +180,9 @@ export class Level {
     this.stepCount = 0
     this.portalCount = 0
     this.animation.finish()
-    // What a slide of the run being dropped still had waiting goes with it, its completion included
+    // What a slide of the run being dropped still had waiting goes with it, its completion included, and so does a walk-out's
     this.slideBeats = []
+    this.completionTime = null
     this.fizzle.clear()
     this.changes.clear()
     this.ripple.clear()
@@ -393,8 +401,9 @@ export class Level {
 
   /**
    * Runs one frame: takes the oldest waiting press, if any, ends the step
-   * being drawn and runs the rules' step for it. Then forgets which keys went
-   * down during the frame, for the clock.
+   * being drawn and runs the rules' step for it; once the chamber is
+   * completed, forgets every waiting press instead. Then forgets which keys
+   * went down during the frame, for the clock.
    * @param delta - Seconds since the previous frame
    * @param input - The keyboard
    * @param time - The frame's time, in milliseconds on the frame clock
@@ -414,15 +423,21 @@ export class Level {
     }
 
     if ((this.chamber !== null) && (this.state !== null)) {
-      const press = input.takePress()
+      if (this.state.completed) {
+        // Nothing more runs, so no press is taken, and none is left waiting:
+        // a held key's repeats can't cut short a walk-out or a slide onto the exit
+        input.forgetPresses()
+      } else {
+        const press = input.takePress()
 
-      // A press never waits for the step being drawn: it ends it at once,
-      // even when the press itself changes nothing, after playing all that a
-      // slide still has waiting
-      if (press !== null) {
-        this.playSlideBeats(time, true)
-        this.animation.finish()
-        updated = this.updateRules(this.chamber, this.state, press, time)
+        // A press never waits for the step being drawn: it ends it at once,
+        // even when the press itself changes nothing, after playing all that a
+        // slide still has waiting
+        if (press !== null) {
+          this.playSlideBeats(time, true)
+          this.animation.finish()
+          updated = this.updateRules(this.chamber, this.state, press, time)
+        }
       }
     }
 
@@ -457,7 +472,9 @@ export class Level {
    * breaking up when it fizzled, each box it destroyed breaking up or falling, a portal it opened opening, and a ripple
    * where a portal shot it refused stopped, and plays the sounds of what happened, a missed portal shot's own.
    * A step that slid and is drawn over time leaves all but the log and the
-   * counts waiting until the subject gets to each tile, and the end of the slide.
+   * counts waiting until the subject gets to each tile, and the end of the
+   * slide. A step drawn over time that walks the subject out of the chamber
+   * leaves the completion waiting until the subject is out of sight.
    * @param state - The state before the step
    * @param action - The action stepped
    * @param result - What the rules' step gave for it
@@ -470,6 +487,7 @@ export class Level {
     // error sound, with no ripple
     const shot = ((action === Action.BLUE) || (action === Action.ORANGE)) && !state.isCarrying
     const drawn = (next !== state) && !this.reducedMotion.matches
+    const walkOut = drawn ? Level.walkOutWay(result) : null
 
     this.logStep(action, next)
 
@@ -482,22 +500,48 @@ export class Level {
     this.state = next
 
     if (drawn) {
-      this.animation.start(state, next, result.events, result.path, time)
+      this.animation.start(state, next, result.events, result.path, walkOut, time)
     }
 
     if (drawn && (result.path.length > 0)) {
       this.queueSlideBeats(state, result)
     } else {
-      this.playStep(state, next, result.events, shot ? action : null, time)
+      this.playStep(state, next, result.events, shot ? action : null, time, false, walkOut === null)
+
+      if (walkOut !== null) {
+        this.completionTime = this.animation.endTime ?? time
+      }
     }
 
     return next !== state
   }
 
   /**
+   * The way the subject walks on out of the chamber after a step: the way it
+   * moved onto the exit, when that leads out through the chamber's edge.
+   * Moving onto the exit along the edge, from beside it, it stays there.
+   * @param result - What the rules' step gave
+   * @returns The way, or null when the step didn't complete the chamber or the subject moved onto the exit along the chamber's edge
+   */
+  private static walkOutWay(result: StepResult): Direction | null {
+    const next = result.state
+
+    if (!next.completed) {
+      return null
+    }
+
+    // Along a slide, its last leg's way; a step that didn't slide faces the subject the way it moved onto the exit, onto
+    // the next tile or out of a portal, and nothing on the exit's tile turns it as the step settles
+    const arrival = result.path.at(-1)?.direction ?? next.facing
+
+    return (arrival === exitOuterSide(next.chamber)) ? arrival : null
+  }
+
+  /**
    * Leaves what a slide being drawn did waiting: what happened on each tile
    * it entered until the subject is half way into that tile, or through the
-   * portal onto it, and its stop and settling until the slide ends.
+   * portal onto it, and its stop and settling until the slide ends, or, when
+   * it walks the subject out of the chamber, until it is out of sight.
    * @param state - The state before the step
    * @param result - What the rules' step gave for it, a slide
    */
@@ -524,7 +568,7 @@ export class Level {
     }
 
     this.slideBeats.push({
-      time: this.animation.momentAt(slideUnits(path)) ?? this.frameTime,
+      time: this.animation.endTime ?? this.frameTime,
       before: before,
       after: result.state,
       events: result.events.slice(legEvents),
@@ -551,15 +595,17 @@ export class Level {
    * light barrier switched starts changing, what a fizzle took breaks up, each box
    * destroyed breaks up or falls, a portal opened opens and a refused portal
    * shot ripples, all only when motion is allowed; then the sounds play, and
-   * the completion is told when the chamber is completed.
+   * the completion is told when the chamber is completed, unless it waits
+   * for a walk-out.
    * @param before - The state before
    * @param after - The state after
    * @param events - What happened, in order
    * @param shot - The colour of the portal shot that made it happen, or null for anything else
    * @param time - When it happened, in milliseconds on the frame clock
    * @param joinsBreakUp - Whether what it breaks up joins what an earlier part of the same step broke up, rather than replacing it
+   * @param tellsCompletion - Whether the completion is told now, rather than left waiting until a walk-out ends
    */
-  private playStep(before: RulesState, after: RulesState, events: readonly GameEvent[], shot: PortalColor | null, time: number, joinsBreakUp = false): void {
+  private playStep(before: RulesState, after: RulesState, events: readonly GameEvent[], shot: PortalColor | null, time: number, joinsBreakUp = false, tellsCompletion = true): void {
     if (!this.reducedMotion.matches) {
       if (after !== before) {
         this.changes.start(before, after, time)
@@ -588,7 +634,19 @@ export class Level {
 
     this.playSounds(events, shot !== null)
 
-    if (after.completed) {
+    if (after.completed && tellsCompletion) {
+      this.onCompleted?.()
+    }
+  }
+
+  /**
+   * Tells the completion a walk-out left waiting, once the subject is out of
+   * sight.
+   * @param time - Now, in milliseconds on the frame clock
+   */
+  private tellWaitingCompletion(time: number): void {
+    if ((this.completionTime !== null) && (this.completionTime <= time)) {
+      this.completionTime = null
       this.onCompleted?.()
     }
   }
@@ -638,8 +696,10 @@ export class Level {
     const wasAnimating = this.animation.running
     let stateUpdated = false
 
-    // What a slide being drawn has waiting plays as the subject gets there, paused or not
+    // What a slide being drawn has waiting plays as the subject gets there, paused or not, and the completion a walk-out
+    // left waiting is told as the subject goes out of sight
     this.playSlideBeats(time)
+    this.tellWaitingCompletion(time)
 
     if (!this.isPaused) {
       stateUpdated = this.update(delta, this.input, time)

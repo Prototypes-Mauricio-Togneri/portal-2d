@@ -114,8 +114,8 @@ function tileKey(x: number, y: number): string {
  * Checks how the parts of a format 2 chamber fit together: everything inside
  * the chamber, at most one fixed element per tile, emitters and receivers
  * facing the floor, ids unique and links naming something, antlines leading
- * from a button, switch or receiver to an element it links, and an enclosed
- * edge.
+ * from a button, switch or receiver to an element it links, an enclosed
+ * edge, and the exit in that edge, away from its corners.
  */
 class ChamberValidator {
   readonly problems: ChamberProblem[] = [] // Every problem found so far
@@ -641,6 +641,33 @@ class ChamberValidator {
   }
 
   /**
+   * Checks that the exit sits in the chamber's edge, away from its corners,
+   * so it leads out of the chamber. An exit outside the chamber is already
+   * reported where it is placed.
+   */
+  private checkExit(): void {
+    const exit = this.chamber.exit
+
+    if (!this.isInside(exit.x, exit.y)) {
+      return
+    }
+
+    const lastX = this.chamber.size.width - 1
+    const lastY = this.chamber.size.height - 1
+    const inEdgeColumn = (exit.x === 0) || (exit.x === lastX)
+    const inEdgeRow = (exit.y === 0) || (exit.y === lastY)
+    const onEdge = inEdgeColumn || inEdgeRow
+    const inCorner = inEdgeColumn && inEdgeRow
+
+    if ((!onEdge) || inCorner) {
+      this.problems.push(chamberError('exit', {
+        x: exit.x,
+        y: exit.y,
+      }, 'the exit must be in the chamber\'s outer wall, away from its corners, so it leads out of the chamber'))
+    }
+  }
+
+  /**
    * Runs every check.
    */
   validate(): void {
@@ -654,6 +681,7 @@ class ChamberValidator {
     this.checkArrows()
     this.chamber.antlines?.forEach((antline, index) => this.checkAntline(antline, `antlines[${index}]`))
     this.checkEdge()
+    this.checkExit()
   }
 }
 

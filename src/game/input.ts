@@ -95,6 +95,13 @@ export class Input {
   }
 
   /**
+   * Forgets every press still waiting, keeping the keys held down.
+   */
+  forgetPresses(): void {
+    this.presses.length = 0
+  }
+
+  /**
    * Takes the oldest waiting press.
    * @returns What the rules read for it (its key, and whether the turn key
    * was held as it went down), or null when no press is waiting

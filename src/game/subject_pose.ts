@@ -29,9 +29,10 @@ export type SubjectPose = {
  * tile it left, then out of the exit portal, shown only inside the tile it
  * reached, each half one tile's travel at the pace of a glide. Along a
  * slide, it goes the same way leg by leg, gliding onto each tile and passing
- * through each portal on its path. The distance still to go is rounded to
- * whole canvas pixels, so its edges stay sharp. Every other step, and a
- * frame drawing no step, shows it where it stands.
+ * through each portal on its path. Walking out of the chamber, it goes on
+ * past the exit the way it walks out. The distance still to go, or gone past
+ * the exit, is rounded to whole canvas pixels, so its edges stay sharp.
+ * Every other step, and a frame drawing no step, shows it where it stands.
  * @param state - The state drawn
  * @param transition - The step being drawn, ending on the state drawn, or null
  * @param tileSize - Side of a tile, in canvas pixels
@@ -48,6 +49,10 @@ export function subjectPose(state: RulesState, transition: StepTransition | null
 
   if ((transition === null) || (transition.to !== state)) {
     return rest
+  }
+
+  if ((transition.walkOut !== null) && (transition.beyond > 0)) {
+    return walkOutPose(state, transition.walkOut, transition.beyond, tileSize)
   }
 
   const from = transition.from
@@ -126,6 +131,29 @@ function glidePose(from: RulesState, to: RulesState, remaining: number, tileSize
     x: to.subjectX - (dx * behind),
     y: to.subjectY - (dy * behind),
     facing: to.facing,
+    clip: null,
+    portalsAhead: 0,
+  }
+}
+
+/**
+ * Where the subject is drawn walking on out of the chamber past the exit
+ * after the step that put it there: from the exit's tile on the way it walks
+ * out, facing it, shown whole, since the canvas ends at the chamber's edge.
+ * @param state - The state after the step, the subject on the exit
+ * @param way - The way it walks out
+ * @param beyond - How far past the exit's tile it has gone, in tiles
+ * @param tileSize - Side of a tile, in canvas pixels
+ * @returns The pose
+ */
+function walkOutPose(state: RulesState, way: Direction, beyond: number, tileSize: number): SubjectPose {
+  const out = DELTAS[way]
+  const ahead = toWholePixels(beyond, tileSize)
+
+  return {
+    x: state.subjectX + (out.dx * ahead),
+    y: state.subjectY + (out.dy * ahead),
+    facing: way,
     clip: null,
     portalsAhead: 0,
   }

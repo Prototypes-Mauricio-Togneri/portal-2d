@@ -3,15 +3,14 @@
  * colours: the background behind the floor, the shared drop shadow, a
  * missed shot's ripple in each portal's colour, the antlines' dots, unlit
  * and lit, each with its border, an emitter's ray, from its dark rim to its
- * white-hot core, the mirror marked on a carried mirror box, and the surface
- * detail laid over the floor and the walls' tops, its tones and its wear
- * marks, each drawn faint (how faint is the drawing's to say). Everything
- * else is drawn
- * from the sprites' files, whose meaning colours are listed in
- * docs/sprites.md. The background and the portals' colours are mirrored by
- * hand in the CSS tokens on `:root` in `src/assets/styles.css`, and the
- * portals' colours in the sprites too, as their comments say: change them
- * together.
+ * white-hot core, the mirror marked on a carried mirror box, the open exit's
+ * shadow, and the surface detail laid over the floor and the walls' tops,
+ * its tones and its wear marks, each drawn faint (how faint is the
+ * drawing's to say). Everything else is drawn from the sprites' files,
+ * whose meaning colours are listed in docs/sprites.md. The background and
+ * the portals' colours are mirrored by hand in the CSS tokens on `:root` in
+ * `src/assets/styles.css`, and the portals' colours in the sprites too, as
+ * their comments say: change them together.
  */
 export const PALETTE = {
   chamber: 'rgba(32, 32, 32, 1)', // Background behind the floor; mirrored by --color-chamber
@@ -29,6 +28,7 @@ export const PALETTE = {
   carriedMirrorFrame: 'rgba(44, 48, 54, 1)', // A carried mirror box's mirror, drawn over the box in the subject's hands: its dark frame
   carriedMirrorGlass: 'rgba(226, 231, 238, 1)', // Its glass
   carriedMirrorGlint: 'rgba(255, 255, 255, 1)', // The glint along it
+  exitShadow: 'rgba(0, 0, 0, 1)', // The open exit's shadow at its darkest, at the chamber's edge
   floorShadeCool: 'rgba(26, 36, 62, 1)', // The surface detail (docs/sprites.md): a floor tile shaded a little darker than the next, its cooler tint
   floorShadeWarm: 'rgba(66, 56, 42, 1)', // Its warmer tint; each tile is shaded somewhere between the two
   floorPatch: 'rgba(34, 40, 60, 1)', // The soft darker patches, several tiles wide, on the floor

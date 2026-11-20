@@ -107,7 +107,11 @@ Arrows are the exception: an arrow a link turns may turn under the subject. The 
 
 32. Draw antlines in the tutorial and the early chambers, from each button, switch or receiver to what it links, so the player learns how links work; later chambers can leave them out.
 
+## The exit
+
+33. The exit stands in the chamber's outer wall, away from its corners (the chamber check rejects it anywhere else), and the subject walks out through it, on past the chamber's edge, only when it steps onto it heading out of the chamber. Give it a straight way in from the tile inside it, and don't put a door in the outer wall beside it: stepping sideways from that doorway onto the exit, the subject just stops there.
+
 ## Checking a chamber
 
-33. Record its solution by playing it through (Download solution in the completion dialog, in `npm run dev`), and record it again after any change to the chamber but its antlines.
-34. Run `npm run chamber:check` and `npm run replay:check`. `npm run solve -- --par src/chambers/chamber_N.json --max-states=40000000` finds the fewest moves and the fewest portals, which shows any shortcut the design didn't intend. To check that no route skips an element, solve a copy of the chamber with the links to it removed, using `--solvable`: it should come back unsolvable. The macro search behind `--par` and `--solvable` refuses a chamber with a receiver, since the subject cuts rays by walking: there, look for shortcuts with `--baseline` where it finishes, and by hand where it doesn't. A chamber the solver can't finish, or refuses, is solved and checked by hand as `docs/solving_by_hand.md` describes.
+34. Record its solution by playing it through (Download solution in the completion dialog, in `npm run dev`), and record it again after any change to the chamber but its antlines.
+35. Run `npm run chamber:check` and `npm run replay:check`. `npm run solve -- --par src/chambers/chamber_N.json --max-states=40000000` finds the fewest moves and the fewest portals, which shows any shortcut the design didn't intend. To check that no route skips an element, solve a copy of the chamber with the links to it removed, using `--solvable`: it should come back unsolvable. The macro search behind `--par` and `--solvable` refuses a chamber with a receiver, since the subject cuts rays by walking: there, look for shortcuts with `--baseline` where it finishes, and by hand where it doesn't. A chamber the solver can't finish, or refuses, is solved and checked by hand as `docs/solving_by_hand.md` describes.

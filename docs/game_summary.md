@@ -51,7 +51,7 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 | 16  | Switch        | Interact to use it (not while carrying a box); it changes its linked elements, and using it again repeats that                                  | Yes                                                  | Yes                                                             | No                                          |
 | 17  | Arrow         | One-way: the subject can enter only in the arrow's direction, and can only move or turn that way while on it; a turnable one turns a quarter turn when a link acts on it, turning a subject on it too | Only in its direction                                | Yes                                                             | Yes, a turnable one                         |
 
-Every chamber is closed in by walls (or blocked walls, emitters, receivers, doors and the exit) along its edge, and has exactly one exit. Beyond the edge counts as a wall that takes no portals.
+Every chamber is closed in by walls (or blocked walls, emitters, receivers, doors and the exit) along its edge, and has exactly one exit, in that outer wall and away from its corners. Beyond the edge counts as a wall that takes no portals.
 
 ## How each tile looks
 
@@ -66,7 +66,7 @@ Every chamber is closed in by walls (or blocked walls, emitters, receivers, door
 | 7   | Light barrier    | On: a wide see-through pale teal band across the tile, horizontal or vertical, neighbours joined, a dark connector at each end. Off: only the connectors |
 | 8   | Ditch            | Open: a deep pit, neighbours joined into one. Bridged: a steel grate over it                        |
 | 9   | Door             | Closed: a burgundy panel with glowing pink strips and a ring. Open: plain floor                     |
-| 10  | Exit             | Closed: shaped like a door, but dark steel with white lights. Open: plain floor (in today's chambers, a gap in the outer wall) |
+| 10  | Exit             | Closed: shaped like a door, but dark steel with white lights. Open: a gap in the outer wall, its floor darkening to black towards the chamber's edge |
 | 11  | Fizzler          | On: a see-through cobalt-blue field with sparkles, over whatever is under it. Off: not shown        |
 | 12  | Laser            | On: a glowing crimson beam, horizontal or vertical, neighbours joined, an end plate at each end. Off: only the end plates |
 | 13  | Box              | A grey plated cube, a little smaller than its tile, so a button under it still shows                |
@@ -79,9 +79,10 @@ Every chamber is closed in by walls (or blocked walls, emitters, receivers, door
 | 20  | Ray              | A narrow pale gold beam with a dark rim and a white-hot core, glowing steadily, from the emitter's face to whatever stops it; it bends under a mirror box |
 
 - A step glides the subject one tile; a crossing slides it into one portal and out of the other; a slide glides it along its whole path, about 60 ms a tile, through any portals on the way, easing into its last tile. Whenever the subject comes to face another way (turning in place, moving another way, walking into a wall, turning with the arrow it stands on) it turns there, the shorter way round and a half turn clockwise, in about 0.1 s a quarter turn and 0.15 s a half; a key pressed mid-turn never waits, and the next turn carries on smoothly from where the last had got to. Coming out of a portal it faces its new way at once.
-- During a slide, what happens on the way shows as the subject gets there (a fizzler breaking up the portals, a crossing's sound), and what its stop sets off (a button, a door, the chamber's completion) when it stops: after a slide onto the exit, the completion dialog opens as the slide ends, though the timer stopped at the key press. A key pressed during a slide ends it at once, showing all it still had waiting.
+- During a slide, what happens on the way shows as the subject gets there (a fizzler breaking up the portals, a crossing's sound), and what its stop sets off (a button, a door) when it stops. A key pressed during a slide ends it at once, showing all it still had waiting.
+- Reaching the exit, the subject doesn't stop: it walks on the same way, darkening under the exit's shadow, and out past the chamber's edge, a step at about 0.18 s a tile or a slide at its own pace. The completion dialog opens once it's gone, though the timer stopped at the key press, and no key cuts the walk short. Arriving sideways, from a door in the same wall, it stays on the exit instead.
 - When switched, doors, the exit and blocked walls slide open or shut, a turnable arrow's chevron swings round its quarter turn, a ditch's grate slides in or out, a fizzler crumbles away or forms, a laser or light barrier fades, and a receiver's eye fades as it lights or goes dark; an emitter's lens and its ray change at once. A fizzle breaks the lost portals and a carried box into pieces, and so does a fizzler switching on with a portal facing it (silently), and a door closing or a laser, light barrier or fizzler switching on with a box lying there (silently); a box on a ditch that opens falls into the pit (silently), a missed shot ripples, a portal a shot opens grows open on its wall, and lasers and portals glow with a slow pulse; a ray's glow holds steady.
-- With reduced motion, nothing animates: everything changes at once and the glows hold steady.
+- With reduced motion, nothing animates: everything changes at once and the glows hold steady; the subject stays on the exit and the dialog opens at once.
 - Each event has a sound: a portal opening (one per colour), a missed shot, a box picked up or put down (the same sound), a fizzle, a crossing, a door or the exit opening or closing, a button pressed or released, a switch used; a slide, an arrow turning and a receiver lighting or going dark have no sound of their own yet. Any refused action plays an error sound: a crossing, shooting or using a switch while carrying a box, or putting a box down facing a tile that can't take it.
 
 ## Buttons, switches and links

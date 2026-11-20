@@ -13,7 +13,8 @@ import type {PiecePlacer, TilePainter} from '@/game/tile_painter'
 // element is drawn as its sprite for its state (docs/sprites.md), switched
 // off as well as on, except an open door or exit, a fizzler that is off, and
 // a laser's or a light barrier's beam that is off, which aren't drawn at
-// all; their end plates show where a beam ends, lit or not. Walls, blocked
+// all; their end plates show where a beam ends, lit or not, and the open
+// exit's shadow is painted with the floor (exit_shadow). Walls, blocked
 // walls and open ditches join their neighbours, quarter by quarter (a blocked
 // wall a link reaches is drawn in the backdrop as a wall, its blocked surface
 // painted over it while it is blocked), and doors, the exit and
@@ -109,7 +110,7 @@ const LATEST_CRUMBLE_START = 0.55
 /** How far a piece of a crumbling field has shrunk, as a share of its own change, when it has become a full circle: it starts square, so the whole field joins without a seam */
 const CRUMBLE_ROUNDED_BY = 0.15
 
-/** Element types that, besides walls and the chamber's edge, line a gap that a door, the exit or a fizzler fills */
+/** Element types that, besides walls, line a gap that a door, the exit or a fizzler fills */
 const GAP_SIDE_KINDS: readonly PlacedKind[] = [
   'door',
   'exit',
@@ -233,14 +234,21 @@ function drawJoinedTile(painter: TilePainter, name: SpriteName, joins: JoinTest,
 }
 
 /**
- * Whether a tile lines a gap: a wall, blocked or not, outside the chamber,
- * or a door, the exit, a fizzler, a light barrier or a ditch, in any state.
+ * Whether a tile lines a gap: a wall inside the chamber, blocked or not, or
+ * a door, the exit, a fizzler, a light barrier or a ditch, in any state.
+ * Outside the chamber counts as open, as it does where walls join: a door's
+ * or the exit's way through in the chamber's edge leads out of the chamber.
  * @param chamber - The chamber
  * @param x - Column
  * @param y - Row
  * @returns True when it lines a gap
  */
 function linesGap(chamber: CompiledChamber, x: number, y: number): boolean {
+  // The chamber answers wall outside its edge, so the edge is ruled out first
+  if ((x < 0) || (y < 0) || (x >= chamber.width) || (y >= chamber.height)) {
+    return false
+  }
+
   return chamber.isWall(x, y) || GAP_SIDE_KINDS.some((kind) => chamber.elementAt(kind, x, y) !== NO_ELEMENT)
 }
 
@@ -291,8 +299,10 @@ function crumblePlacer(share: number, seed: number): PiecePlacer {
 /**
  * Builds a drawing for a type that slides open and shut in a gap in a wall:
  * each closed element's sprite, turned to the walls beside it; one that is
- * open isn't drawn. One sliding is drawn part way: its sprite cut down the
- * middle, each half slid into the wall beside it.
+ * open isn't drawn, though the open exit's shadow, painted with the floor,
+ * shows there. One sliding is drawn part way: its sprite cut down the
+ * middle, each half slid into the wall beside it, the exit's shadow showing
+ * between them.
  * @param kind - The element type
  * @param closedSprite - Its sprite while closed
  * @returns The drawing

@@ -37,7 +37,7 @@ A chamber file is a JSON object in format 2 (`ChamberData` in `src/game/chamber_
 | 1 | `version` | The format's version: `2`. |
 | 2 | `size` | `width` and `height`, in tiles, each 1 or more. |
 | 3 | `subject` | Where the subject starts: `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`), all required. |
-| 4 | `exit` | The exit, a single entry: `x`, `y`, and optionally `id` and `blocked`. |
+| 4 | `exit` | The exit, a single entry: `x`, `y`, and optionally `id` and `blocked`. It stands in the chamber's outer wall, away from its corners. |
 | 5 | `walls` | One tile (`x`, `y`) or a rectangle of tiles (`xFrom`, `xTo`, `yFrom`, `yTo`, both ends included, each from no greater than its to): walls, which take portals. |
 | 6 | `blockedWalls` | One tile (`x`, `y`, and optionally `id` and `blocked`) or a rectangle of tiles (corners as for `walls`, and optionally `blocked`): blocked walls, which refuse portals while blocked. Only a one-tile entry can have an `id`, so only it can be linked. |
 | 7 | `emitters` | `x`, `y` and `direction` (`UP`, `DOWN`, `LEFT` or `RIGHT`: the face it fires from), all required, and optionally `id` and `blocked`: emitters, wall tiles of their own that send a ray while they are on (see [rays](#rays)). An emitter's `blocked` is false when absent, so it starts on. |
@@ -224,7 +224,7 @@ A chamber file is read field by field, then checked as a whole (`src/game/rules/
 - **Antlines:** an antline leading to an id nothing has, or to a group, since an antline leads to one element; a corner outside the chamber, the same as the corner before it, or sharing neither a row nor a column with it (only the first such corner is reported); a first corner on no button, switch or receiver that links the element, by its id or through a group; and a last corner away from the element's tile.
 - **Bounds:** anything outside the chamber, the same wall tile listed twice, by walls, blocked walls, emitters or receivers, and the same slide floor tile listed twice.
 - **What shares a tile:** a wall tile (a wall, a blocked wall, an emitter or a receiver) holds nothing else, so the subject, the exit and a light barrier are never inside a wall. A floor tile holds at most one of a light barrier, ditch, door, exit, fizzler, arrow, button, switch or laser, except two lasers that cross (one `H`, one `V`). A slide floor lies under what shares its tile, which can be a button, a fizzler, a laser, a light barrier, a box's start or the subject's start, but never a ditch, a door, the exit, an arrow or a switch. A box and the subject start on plain floor, slide floor or a button, with at most one box per tile, and the subject never on a box, since a box keeps it off its tile.
-- **The edge:** every tile on the chamber's edge holds a wall, a blocked wall, an emitter, a receiver, a door or the exit, so the chamber is enclosed, and no slide floor stands there.
+- **The edge:** every tile on the chamber's edge holds a wall, a blocked wall, an emitter, a receiver, a door or the exit, so the chamber is enclosed, and no slide floor stands there. The exit stands on the edge, so it leads out of the chamber, and not on a corner, where two sides meet.
 
 One warning doesn't keep a chamber from loading: a button or a receiver linked to a box, since releasing the button, or the receiver going dark, does nothing to the box.
 

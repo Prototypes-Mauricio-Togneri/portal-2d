@@ -52,7 +52,7 @@ A sprite with a direction is drawn once, one way, and the game turns it in quart
 | 6 | `laser_on`, `laser_glow` | A beam running left to right through the tile's middle, touching both side edges, so neighbouring laser tiles make one beam | A quarter turn for a vertical laser; two lasers crossing on a tile are both drawn |
 | 7 | `light_barrier_on` | A band running left to right through the tile's middle, touching both side edges, so neighbouring light barriers make one band | A quarter turn for a vertical light barrier |
 | 8 | `laser_end_on`, `laser_end_off`, `light_barrier_end_on`, `light_barrier_end_off` | At the left end of a beam or band running left to right: the plate on the tile's left edge, centred on it | To each end of each run of lasers, or of light barriers, on the run's end tile: as drawn at a left end, a half turn at a right end, a quarter turn at a top or bottom end |
-| 9 | `door_closed`, `exit_closed`, `fizzler_on` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when more of what lines the gap lies above and below it than left and right: walls (blocked or not), the chamber's edge, doors, the exit, fizzlers, light barriers and ditches |
+| 9 | `door_closed`, `exit_closed`, `fizzler_on` | Across a gap in a wall running left to right: walls on its left and right, the way through going up and down | A quarter turn when more of what lines the gap lies above and below it than left and right: walls (blocked or not), doors, the exit, fizzlers, light barriers and ditches. Outside the chamber lines no gap, since the way through a door or the exit in the edge leads out of it, so one in the edge is always turned along its wall |
 
 ## Joins
 
@@ -100,7 +100,7 @@ Every sprite is 256 px, or 384 px when it overhangs, except the three strips (12
 | 12 | `light_barrier_end_on` | A light barrier's connector while it is on: a dark steel plate where the band starts or stops, a little taller than the band, its slot as long as the band and lit. Drawn at both ends of each run of light barriers, over the bands, fading with its band |
 | 13 | `light_barrier_end_off` | The same connector with its slot dark: drawn at both ends of each run, on or off, under `light_barrier_end_on`, so the two must match but for the slot |
 | 14 | `door_closed` | A closed door: stops walking and shots. Its two leaves meet on the tile's middle line (see [sliding](#sliding)). An open door isn't drawn, so its tile shows the floor |
-| 15 | `exit_closed` | The exit, closed. Its two leaves meet on the tile's middle line, as a door's do. The open exit isn't drawn, so its tile shows the floor; walking onto it completes the chamber |
+| 15 | `exit_closed` | The exit, closed. Its two leaves meet on the tile's middle line, as a door's do. The open exit isn't drawn, so its tile shows the floor under the exit's shadow (see [exit shadow](#exit-shadow)); walking onto it completes the chamber |
 | 16 | `button_up` | A floor button, released |
 | 17 | `button_pressed` | A floor button, held down by the subject or a box. A box on a button is drawn as on the floor, over it |
 | 18 | `switch` | A switch, used with the interact key. It has no on or off |
@@ -127,7 +127,7 @@ The game draws from the bottom up, each later row over the earlier ones:
 
 | # | Drawn | Sprites |
 |---|-------|---------|
-| 1 | Floor | `floor`, then `slide_floor` over it on the slide floors, then the floor's surface detail, drawn in code (see [surface detail](#surface-detail)) |
+| 1 | Floor | `floor`, then `slide_floor` over it on the slide floors, then the floor's surface detail, drawn in code (see [surface detail](#surface-detail)), then the exit's shadow, drawn in code (see [exit shadow](#exit-shadow)) |
 | 2 | Antlines | None: dotted lines, drawn in code (see [antlines](#antlines)) |
 | 3 | Floor marks | `arrow` |
 | 4 | Structure | `wall`, `blocked_wall` for the blocked walls no link reaches, then the walls' surface detail, drawn in code, before their shadow is made |
@@ -204,9 +204,13 @@ Wear marks, each kind on 30 % of the tiles that take it, picked on its own, so a
 
 A scratch is 0.009 of a tile wide, a crack 0.013 and a chip's edge 0.008, none thinner than a pixel. No mark is placed on a tile that holds a button, a switch, an arrow, a slide floor, a ditch, a door or the exit, where it would confuse or never show, nor on a blocked wall; a scratch on the floor tile beside one may still trail up to a third of a tile onto it. The home menu's map and the gallery show the surface detail too; nothing about it moves, so reduced motion changes nothing.
 
+## Exit shadow
+
+The exit's tile is shaded by the game in code, from no sprite, so the open exit reads as the way out of the chamber, into the dark, and never as an open door: black, as opaque as the square of how far across the tile it lies, clear at the tile's inner edge and fully black at its outer edge, on the chamber's edge, so it stays light over most of the tile and darkens fast near the edge. It is painted with the floor, over its surface detail and under the antlines (which stop short of the exit's tile), the walls and their shadow, and the same in every state: the closed exit's opaque `exit_closed` hides it, and it shows between the leaves as they slide. Only an exit in one outer wall, away from the corners, has one, which the chamber check requires of every chamber. The home menu's map and the gallery show it too; nothing about it moves, so reduced motion changes nothing. The subject on the exit, which it only reaches as the chamber is completed, is drawn under it too, so it darkens as it walks out (see [the subject](#the-subject)).
+
 ## Sliding
 
-When a door or the exit opens or closes, it slides over about 0.3 s: the game draws `door_closed` (or `exit_closed`) cut down its middle over the floor, each half slid out to its side and cut off at the tile's edge, as if going into the wall, until nothing is left. So the closed sprite's two leaves must meet on the tile's middle line.
+When a door or the exit opens or closes, it slides over about 0.3 s: the game draws `door_closed` (or `exit_closed`) cut down its middle over the floor (and, for the exit, its shadow), each half slid out to its side and cut off at the tile's edge, as if going into the wall, until nothing is left. So the closed sprite's two leaves must meet on the tile's middle line.
 
 A blocked wall a link reaches slides the same way when it is switched, over about 0.3 s: its `blocked_wall` tile, joined as it is drawn, is cut down its middle over the wall beneath it, each half slid into the wall beside it, along the run of walls it lies in (up and down when more walls lie above and below it than left and right), until only the wall is left, and back when it is blocked again.
 
@@ -222,7 +226,7 @@ When a link turns an arrow, its `turntable_arrow` rotates the quarter turn about
 
 The subject's two sprites are the only ones not drawn in code. They are painted images that break this spec on purpose: their light is painted, not straight overhead; the subject wears orange and its portal gun glows blue, the portals' colours; and their sources are the painted PNGs `art/sprites/subject_holding_gun.png` and `art/sprites/subject_holding_box.png` (1526 × 1526 px each), with no SVG.
 
-Each is one still image: the subject glides from tile to tile and through portals, with no walking frames. It holds its portal gun while its hands are free and a box, with no gun, while it carries one, the game swapping the sprite as it picks the box up or puts it down.
+Each is one still image: the subject glides from tile to tile and through portals, with no walking frames. Reaching the exit, it glides on out past the chamber's edge, drawn on a layer of its own with the exit's shadow laid over it, so it darkens across the exit and is cut off at the canvas's edge (see [exit shadow](#exit-shadow)). It holds its portal gun while its hands are free and a box, with no gun, while it carries one, the game swapping the sprite as it picks the box up or puts it down.
 
 Both are exported the same way, so the figure keeps its size and its head stays in place when they swap: centred as painted, padded to a 1648 px square so the figure stands 238 px tall in the 256 px tile, cleared of faint stray pixels (alpha under 3 %) and shrunk to the tile. The portal gun, or the box held out, makes the painting top-heavy, so the subject turns about a point on its head, a little above the head's middle. The painted box sits 0.26 of a tile ahead of the tile's middle, and the game draws the box's own sprite there at 0.7 of a tile (`CARRIED_BOX_AHEAD` and `CARRIED_BOX_SIZE` in `src/game/renderer.ts`) when it breaks up or falls from the subject's hands (`box`, or `box_mirror` with its mirror the right way round in the room), and marks a carried mirror box's mirror there, so repaint the box there or change those two.
 

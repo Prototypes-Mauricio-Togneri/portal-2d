@@ -5,7 +5,7 @@ How to solve a chamber by reasoning rather than by search, and how to prove the 
 - **Too large to finish.** The solver gives up on chambers 1 and 2, and finds only a long route for chamber 3 (`docs/solver.md`).
 - **A receiver.** The solver's fast search refuses any chamber with one, since the subject cuts a ray by walking into it.
 - **Proving a new chamber solvable** before its solution is recorded.
-- **Arguing that something can't be done.** For example, that no route skips an element, or that a shortcut doesn't exist (`docs/level_design.md`, guideline 34).
+- **Arguing that something can't be done.** For example, that no route skips an element, or that a shortcut doesn't exist (`docs/level_design.md`, guideline 35).
 
 The approach: treat the chamber as a set of regions joined by walking, by portal shots and by boxes, work back from the exit to what each step needs, write the route forward, then play it through the game's own rules with a short script. A route that plays to completion is a proof that the chamber is solvable, since the script runs the same `step` the game runs.
 

@@ -1,18 +1,22 @@
-import type {GameEvent} from '@/game/game_event'
+import type {Direction} from '@/game/direction'
+import {GameEvent} from '@/game/game_event'
 import type {RulesState} from '@/game/rules/rules_state'
-import type {SlideLeg} from '@/game/rules/step'
+import {NO_PATH, type SlideLeg} from '@/game/rules/step'
 
 /**
  * A step of the rules as drawn part way through: the states before and after
- * it, what happened during it, the tiles a slide entered, and how far the
- * drawing has gone.
+ * it, what happened during it, the tiles a slide entered, how far the
+ * drawing has gone, and how far the subject has walked on past the step's
+ * last tile, out of the chamber through the exit.
  */
 export type StepTransition = {
   readonly from: RulesState // The state before the step
   readonly to: RulesState // The state after the step, the one the frame ends on
   readonly events: readonly GameEvent[] // What happened during the step, in order
   readonly path: readonly SlideLeg[] // Each tile a slide entered, in order; empty when the step didn't slide
-  readonly progress: number // How far the drawing has gone, eased: from 0 up to, never reaching, 1; along a slide, the share of its path's units travelled
+  readonly progress: number // How far the drawing has gone, eased: from 0 up to, never reaching, 1; along a slide, the share of its path's units travelled; for a step the subject walks out of the chamber after, at an even pace, reaching 1 once it is on the exit
+  readonly walkOut: Direction | null // The way the subject walks on out of the chamber through the exit after the step, or null when it doesn't
+  readonly beyond: number // How far past the step's last tile, the exit's, the subject has walked on, in tiles: 0 until it is on the exit, and for every step it doesn't walk out after
 }
 
 /**
@@ -24,6 +28,7 @@ type RunningStep = {
   readonly events: readonly GameEvent[] // What happened during the step, in order
   readonly path: readonly SlideLeg[] // Each tile a slide entered, in order; empty when the step didn't slide
   readonly units: number // The slide's length in units (slideUnits), or 0 when it didn't slide
+  readonly walkOut: Direction | null // The way the subject walks on out of the chamber through the exit after the step, or null when it doesn't
   readonly duration: number // How long it takes to draw, in milliseconds
   readonly startTime: number // When the drawing started, in milliseconds on the frame clock
 }
@@ -34,8 +39,17 @@ const STEP_MILLISECONDS = 120
 /** A slide's pace, in milliseconds per unit: a tile glided, or half of a portal crossing */
 const SLIDE_UNIT_MILLISECONDS = 60
 
+/** A walk-out's pace after a step that didn't slide, in milliseconds per tile: the subject crosses the exit and walks on out of sight at an even pace, slower than a step, so it reads as leaving */
+const WALK_OUT_TILE_MILLISECONDS = 180
+
+/** How far past the exit's tile a walk-out takes the subject, in tiles: its middle one tile past the exit's, so the whole tile it is drawn on lies past the chamber's edge */
+const WALK_OUT_TILES = 1
+
 /** How far back a step's drawing starts, in milliseconds: one frame at 60 Hz, so the frame that takes the press already shows part of it */
 const FIRST_FRAME_LEAD_MILLISECONDS = 1000 / 60
+
+/** What a walk-out held at its end still has happening: nothing */
+const NO_EVENTS: readonly GameEvent[] = []
 
 /**
  * How many units a leg of a slide takes: one for a tile glided onto, two for
@@ -78,8 +92,9 @@ export function legReach(path: readonly SlideLeg[], index: number): number {
 /**
  * The state a frame shows part way through a step: along a slide, the state
  * on the last tile the subject has reached (legReach), or the state before
- * the step until it reaches the first; for any other step, the state after
- * it.
+ * the step until it reaches the first, and the state on the exit while it
+ * walks on out of the chamber, until the slide's stop and settling play as
+ * the walk-out ends; for any other step, the state after it.
  * @param transition - The step being drawn
  * @returns The state shown
  */
@@ -114,10 +129,17 @@ export function shownState(transition: StepTransition): RulesState {
  * one step runs; starting another replaces it. A slide is drawn along its
  * path at an even pace, one unit (legUnits) every SLIDE_UNIT_MILLISECONDS,
  * easing out over its last unit, so a six-tile slide takes about 0.42 s;
- * every other step takes STEP_MILLISECONDS, eased out.
+ * every other step takes STEP_MILLISECONDS, eased out. A step that puts the
+ * subject on the exit, moving out through the chamber's edge, walks it on
+ * out of the chamber, never stopping on the exit: a slide at its own pace,
+ * its last unit not eased, any other step at WALK_OUT_TILE_MILLISECONDS a
+ * tile, then on WALK_OUT_TILES past the exit at the same pace. Once drawn to
+ * its end, a walk-out is held there, the subject out of sight, until the
+ * next step starts or finish().
  */
 export class StepAnimation {
   private runningStep: RunningStep | null = null // The step being drawn, null when none is
+  private walkedOut: StepTransition | null = null // The latest walk-out, held at its end once drawn there: the state after it, the subject past the chamber's edge; null when none is
 
   /**
    * Whether a step is being drawn and has not yet drawn its end.
@@ -127,33 +149,50 @@ export class StepAnimation {
   }
 
   /**
-   * Starts drawing a step, replacing any step still being drawn.
+   * When the step being drawn draws its end, in milliseconds on the frame
+   * clock: a slide's stop, or the end of a walk-out, the subject out of
+   * sight; null when no step is being drawn.
+   */
+  get endTime(): number | null {
+    const running = this.runningStep
+
+    return (running === null) ? null : running.startTime + running.duration
+  }
+
+  /**
+   * Starts drawing a step, replacing any step still being drawn and a
+   * walk-out held at its end.
    * @param from - The state before the step
    * @param to - The state after the step
    * @param events - What happened during the step, in order
    * @param path - Each tile a slide entered, in order; empty when the step didn't slide
+   * @param walkOut - The way the subject walks on out of the chamber through the exit after the step, or null when it doesn't
    * @param time - Now, in milliseconds on the frame clock
    */
-  start(from: RulesState, to: RulesState, events: readonly GameEvent[], path: readonly SlideLeg[], time: number): void {
+  start(from: RulesState, to: RulesState, events: readonly GameEvent[], path: readonly SlideLeg[], walkOut: Direction | null, time: number): void {
     const units = slideUnits(path)
+    const stepDuration = (path.length === 0) ? STEP_MILLISECONDS : StepAnimation.slideElapsed(units, units)
 
+    this.walkedOut = null
     this.runningStep = {
       from: from,
       to: to,
       events: events,
       path: path,
       units: units,
-      duration: (path.length === 0) ? STEP_MILLISECONDS : StepAnimation.slideElapsed(units, units),
+      walkOut: walkOut,
+      duration: (walkOut === null) ? stepDuration : (StepAnimation.walkLength(path, events) + WALK_OUT_TILES) * StepAnimation.walkPace(path),
       startTime: time - FIRST_FRAME_LEAD_MILLISECONDS,
     }
   }
 
   /**
    * Ends the step being drawn at once, so the next frame draws the state
-   * after it as it is.
+   * after it as it is, and lets go of a walk-out held at its end.
    */
   finish(): void {
     this.runningStep = null
+    this.walkedOut = null
   }
 
   /**
@@ -168,32 +207,61 @@ export class StepAnimation {
       return null
     }
 
-    return running.startTime + StepAnimation.slideElapsed(distance, running.units)
+    // A slide the subject walks out of the chamber after never eases out
+    const elapsed = (running.walkOut === null) ? StepAnimation.slideElapsed(distance, running.units) : distance * SLIDE_UNIT_MILLISECONDS
+
+    return running.startTime + elapsed
   }
 
   /**
    * The step being drawn as it looks at a time. Once the time reaches its
    * end the step is over: it ends, and the frame draws the state after it as
-   * it is.
+   * it is, or, after a walk-out, with the subject held out of sight.
    * @param time - The frame's time, in milliseconds on the frame clock
-   * @returns The step part way through, or null when none is being drawn
+   * @returns The step part way through, a walk-out held at its end, or null when neither is being drawn
    */
   transitionAt(time: number): StepTransition | null {
     const running = this.runningStep
 
     if (running === null) {
-      return null
+      return this.walkedOut
     }
 
     const elapsed = time - running.startTime
 
     if (elapsed >= running.duration) {
       this.runningStep = null
+      // Nothing of the step is left to draw but where the subject went: the
+      // state after it, the subject held past the chamber's edge
+      this.walkedOut = (running.walkOut === null) ? null : {
+        from: running.to,
+        to: running.to,
+        events: NO_EVENTS,
+        path: NO_PATH,
+        progress: 1,
+        walkOut: running.walkOut,
+        beyond: WALK_OUT_TILES,
+      }
 
-      return null
+      return this.walkedOut
     }
 
     const sinceStart = Math.max(elapsed, 0)
+
+    if (running.walkOut !== null) {
+      const length = StepAnimation.walkLength(running.path, running.events)
+      const travelled = sinceStart / StepAnimation.walkPace(running.path)
+
+      return {
+        from: running.from,
+        to: running.to,
+        events: running.events,
+        path: running.path,
+        progress: Math.min(travelled / length, 1),
+        walkOut: running.walkOut,
+        beyond: Math.max(travelled - length, 0),
+      }
+    }
 
     return {
       from: running.from,
@@ -201,7 +269,36 @@ export class StepAnimation {
       events: running.events,
       path: running.path,
       progress: (running.path.length === 0) ? StepAnimation.easeOut(sinceStart / STEP_MILLISECONDS) : StepAnimation.slideDistance(sinceStart, running.units) / running.units,
+      walkOut: null,
+      beyond: 0,
     }
+  }
+
+  /**
+   * How far the subject travels in a step it walks out of the chamber after,
+   * up to the exit's tile, in units at its walk-out's pace (walkPace): a
+   * slide's length, two for a portal crossing, into one portal and out of
+   * the other, or else one tile.
+   * @param path - Each tile a slide entered, in order; empty when the step didn't slide
+   * @param events - What happened during the step, in order
+   * @returns The distance, in units
+   */
+  private static walkLength(path: readonly SlideLeg[], events: readonly GameEvent[]): number {
+    if (path.length > 0) {
+      return slideUnits(path)
+    }
+
+    return events.includes(GameEvent.CROSSED) ? 2 : 1
+  }
+
+  /**
+   * The pace of a walk-out: a slide's own, or WALK_OUT_TILE_MILLISECONDS
+   * after any other step.
+   * @param path - Each tile a slide entered, in order; empty when the step didn't slide
+   * @returns Its pace, in milliseconds per unit
+   */
+  private static walkPace(path: readonly SlideLeg[]): number {
+    return (path.length > 0) ? SLIDE_UNIT_MILLISECONDS : WALK_OUT_TILE_MILLISECONDS
   }
 
   /**

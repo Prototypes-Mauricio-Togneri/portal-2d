@@ -242,6 +242,14 @@ export class TilePainter {
   }
 
   /**
+   * Makes the whole canvas see-through again, so a layer kept from frame to
+   * frame can be painted afresh.
+   */
+  erase(): void {
+    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
+  }
+
+  /**
    * Runs a drawing clipped to one tile, so nothing it draws shows outside
    * that tile, or unclipped when no tile is given. The clip never outlasts
    * the drawing.

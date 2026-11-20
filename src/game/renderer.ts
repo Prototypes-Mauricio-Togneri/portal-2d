@@ -3,6 +3,7 @@ import type {BoxFall} from '@/game/box_fall'
 import {DELTAS, Direction} from '@/game/direction'
 import {drawLaserGlows, drawTurnableArrows, ELEMENT_DRAWINGS, glowStrength} from '@/game/element_drawings'
 import type {BlockedShares, ElementTransitions} from '@/game/element_transitions'
+import {drawExitShadow} from '@/game/exit_shadow'
 import type {FizzleParticles} from '@/game/fizzle_particles'
 import type {MissRipple} from '@/game/miss_ripple'
 import {PALETTE} from '@/game/palette'
@@ -31,7 +32,7 @@ type Backdrop = {
   readonly chamber: CompiledChamber // The chamber it was drawn for
   readonly tileSize: number // The tile size it was drawn at, in pixels
   readonly layer: TilePainter // The backdrop, on a canvas of its own
-  readonly floor: TilePainter | null // What the backdrop lays under its antlines (the floor, the slide floors and their surface detail), kept apart to draw it again when one changes, or null when the chamber has none
+  readonly floor: TilePainter | null // What the backdrop lays under its antlines (the floor, the slide floors, their surface detail and the open exit's shadow), kept apart to draw it again when one changes, or null when the chamber has none
   readonly cover: TilePainter | null // What the backdrop lays over its antlines (floor marks, then walls over their shadow), kept apart to draw it again when one changes, or null when the chamber has none
   readonly litKey: string // Which antlines the backdrop shows lit, from antlinesLitKey()
 }
@@ -43,6 +44,16 @@ type Backdrop = {
 type RayGlow = {
   readonly key: string // Where the rays ran and the tile size it was painted for
   readonly layer: TilePainter // The glow, on a canvas of its own
+}
+
+/**
+ * The layer the subject is drawn on while the chamber is completed, kept
+ * from frame to frame while the chamber and the tile size stay the same.
+ */
+type SubjectLayer = {
+  readonly chamber: CompiledChamber // The chamber it was sized for
+  readonly tileSize: number // The tile size it was sized for, in pixels
+  readonly layer: TilePainter // The layer, on a canvas of its own
 }
 
 /**
@@ -131,7 +142,8 @@ function drawElementsOn(painter: TilePainter, state: RulesState, layer: DrawLaye
 /**
  * Draws the background, the floor of every tile, then the floor layer's
  * elements over it (the slide floors), then the floor's surface detail,
- * its tones and its wear marks, drawn by code, all under the antlines.
+ * its tones and its wear marks, and last the open exit's shadow, drawn by
+ * code, all under the antlines. The closed exit's sprite hides the shadow.
  * @param painter - Paints on the canvas, already sized for the chamber
  * @param state - A state of the chamber
  */
@@ -147,6 +159,7 @@ function drawFloor(painter: TilePainter, state: RulesState): void {
   drawElementsOn(painter, state, 'floor')
   drawFloorTone(painter, state.chamber)
   drawFloorWear(painter, state.chamber)
+  drawExitShadow(painter, state.chamber)
 }
 
 /**
@@ -171,8 +184,10 @@ function drawBackdropCover(painter: TilePainter, state: RulesState): void {
 /**
  * Draws a chamber's backdrop, the layers that change only when an antline
  * lights up or goes dark while it is played: the background, the floor of
- * every tile and the slide floors with the floor's surface detail, the antlines and the floor marks, then the walls, painted
- * apart with theirs and laid down over the shared drop shadow of their whole mass.
+ * every tile and the slide floors with the floor's surface detail and the
+ * open exit's shadow, the antlines and the floor marks, then the walls,
+ * painted apart with theirs and laid down over the shared drop shadow of
+ * their whole mass.
  * @param painter - Paints on the canvas, already sized for the chamber
  * @param state - The state whose antlines are drawn; the rest is the same for every state of the chamber
  */
@@ -186,7 +201,7 @@ export function drawBackdrop(painter: TilePainter, state: RulesState): void {
  * Draws a backdrop from its parts: the floor, a state's antlines, then the
  * cover laid over them.
  * @param layer - The backdrop's layer, drawn over in full
- * @param floor - The floor, the slide floors and their surface detail, from drawFloor()
+ * @param floor - The floor, the slide floors, their surface detail and the open exit's shadow, from drawFloor()
  * @param cover - The floor marks and the walls over their shadow, from drawBackdropCover()
  * @param state - The state whose antlines are drawn
  */
@@ -219,7 +234,7 @@ export function hasAmbientLife(state: RulesState): boolean {
 
 /**
  * Draws a state of the rules onto a canvas from the chamber sprites
- * (docs/sprites.md): the chamber's backdrop (floor and slide floors with the floor's surface detail, antlines,
+ * (docs/sprites.md): the chamber's backdrop (floor and slide floors with the floor's surface detail and the open exit's shadow, antlines,
  * floor marks and walls with theirs), drawn once per chamber and tile size, and again when an
  * antline lights up or goes dark, and copied every frame, then each
  * other draw layer back to front. The core step's layers (floor, portals,
@@ -235,12 +250,15 @@ export function hasAmbientLife(state: RulesState): boolean {
  * still fading out or in, drawn part way, and a portal opening drawn part way open. Last, over everything, the lasers' and portals' glows are added
  * to what lies beneath, pulsing, an opening portal's rising with it, what a fizzle took breaks up and a missed
  * shot ripples where it stopped; at no time given, nothing changes over
- * time, the glows hold steady and nothing breaks up or ripples.
+ * time, the glows hold steady and nothing breaks up or ripples. While the
+ * chamber is completed, the subject, on the exit or walking out past it, is
+ * drawn under the open exit's shadow.
  */
 export class Renderer {
   private readonly painter: TilePainter // Paints the tiles
   private backdrop: Backdrop | null = null // The backdrop last drawn, kept while the chamber and tile size stay the same
   private rayGlow: RayGlow | null = null // The rays' glow last painted, kept while the rays and the tile size stay the same
+  private subjectLayer: SubjectLayer | null = null // The layer the subject was last drawn on while the chamber was completed, kept while the chamber and tile size stay the same
 
   /**
    * Takes over a canvas, collapsing it to 0 × 0 until setSize() is called.
@@ -327,11 +345,12 @@ export class Renderer {
   /**
    * Draws an open portal over its wall tile, turned to the side it opens to,
    * part way open while it is opening.
+   * @param painter - Paints on the canvas, or on a layer of its own
    * @param state - The state drawn
    * @param color - The portal
    * @param opening - How far the portal opening is drawn, or null to draw both open
    */
-  private drawPortal(state: RulesState, color: PortalColor, opening: OpeningProgress | null): void {
+  private drawPortal(painter: TilePainter, state: RulesState, color: PortalColor, opening: OpeningProgress | null): void {
     const side = state.portalSide(color)
 
     if (side === null) {
@@ -341,9 +360,9 @@ export class Renderer {
     const progress = (opening === null) ? null : opening(color)
 
     if (progress === null) {
-      this.painter.drawSprite(PORTAL_SPRITES[color], state.portalX(color), state.portalY(color), side)
+      painter.drawSprite(PORTAL_SPRITES[color], state.portalX(color), state.portalY(color), side)
     } else {
-      drawPortalOpening(this.painter, PORTAL_SPRITES[color], state.portalX(color), state.portalY(color), side, progress)
+      drawPortalOpening(painter, PORTAL_SPRITES[color], state.portalX(color), state.portalY(color), side, progress)
     }
   }
 
@@ -351,23 +370,24 @@ export class Renderer {
    * Draws the subject turned to the way it faces, or part way through a
    * turn, holding a box it carries or else its portal gun, at its pose:
    * where it stands, or part way through the step being drawn.
+   * @param painter - Paints on the canvas, or on a layer of its own
    * @param state - The state drawn, which says whether it carries a box
    * @param pose - Where it is drawn, from subjectPose()
    * @param angle - How far it is turned part way through a turn, in radians clockwise on the canvas from facing up, or null to turn it squarely the way its pose faces
    */
-  private drawSubject(state: RulesState, pose: SubjectPose, angle: number | null): void {
+  private drawSubject(painter: TilePainter, state: RulesState, pose: SubjectPose, angle: number | null): void {
     const sprite = (state.carriedBox === NO_BOX) ? 'subject_holding_gun' : 'subject_holding_box'
     const mirror = (state.carriedBox === NO_BOX) ? null : state.chamber.mirrorOf(state.carriedBox)
 
-    this.painter.drawClippedToTile(pose.clip, () => {
+    painter.drawClippedToTile(pose.clip, () => {
       if (angle === null) {
-        this.painter.drawSprite(sprite, pose.x, pose.y, pose.facing)
+        painter.drawSprite(sprite, pose.x, pose.y, pose.facing)
       } else {
-        this.painter.drawSpriteRotated(sprite, pose.x, pose.y, angle)
+        painter.drawSpriteRotated(sprite, pose.x, pose.y, angle)
       }
 
       if (mirror !== null) {
-        this.drawCarriedMirror(pose, angle, mirror)
+        this.drawCarriedMirror(painter, pose, angle, mirror)
       }
     })
   }
@@ -376,11 +396,12 @@ export class Renderer {
    * Marks the mirror of a carried mirror box over the box in the subject's
    * hands, the right way round in the room whichever way the subject faces
    * or turns, so it reads apart from a plain box.
+   * @param painter - Paints on the canvas, or on a layer of its own
    * @param pose - Where the subject is drawn, from subjectPose()
    * @param angle - How far the subject is turned part way through a turn, in radians clockwise on the canvas from facing up, or null when it faces its pose's way squarely
    * @param mirror - The carried box's mirror
    */
-  private drawCarriedMirror(pose: SubjectPose, angle: number | null, mirror: Mirror): void {
+  private drawCarriedMirror(painter: TilePainter, pose: SubjectPose, angle: number | null, mirror: Mirror): void {
     // Rows grow upwards, so a turn clockwise on the canvas from up leads right, then down
     const aheadX = (angle === null) ? DELTAS[pose.facing].dx : Math.sin(angle)
     const aheadY = (angle === null) ? DELTAS[pose.facing].dy : Math.cos(angle)
@@ -389,7 +410,7 @@ export class Renderer {
     // On the canvas, rows grow downwards: a '/' rises to the right
     const rise = (mirror === '/') ? -1 : 1
 
-    this.painter.drawInFrame(middleX, middleY, Direction.UP, (ctx, tileSize) => {
+    painter.drawInFrame(middleX, middleY, Direction.UP, (ctx, tileSize) => {
       const reach = CARRIED_MIRROR_REACH * tileSize
 
       ctx.lineCap = 'round'
@@ -409,6 +430,7 @@ export class Renderer {
    * Draws one layer above the backdrop: the core step's own, or every
    * element type on it, in registry order. The shadows of the raised things
    * on it go down before any of them, so touching ones don't shade each other.
+   * @param painter - Paints on the canvas, or on a layer of its own
    * @param state - The state drawn
    * @param layer - The layer
    * @param pose - Where the subject is drawn, from subjectPose()
@@ -416,21 +438,69 @@ export class Renderer {
    * @param shares - How far blocked the blocked walls, the ditches, the doors, the exit, the fizzlers, the lasers and the light barriers that are changing are drawn, or null to draw every one as the state says
    * @param opening - How far the portal opening is drawn, or null to draw both open
    */
-  private drawLayer(state: RulesState, layer: DrawLayer, pose: SubjectPose, angle: number | null, shares: BlockedShares | null, opening: OpeningProgress | null): void {
-    this.painter.drawShadowsFirst(() => {
+  private drawLayer(painter: TilePainter, state: RulesState, layer: DrawLayer, pose: SubjectPose, angle: number | null, shares: BlockedShares | null, opening: OpeningProgress | null): void {
+    painter.drawShadowsFirst(() => {
       switch (layer) {
         case 'portals':
-          this.drawPortal(state, PortalColor.BLUE, opening)
-          this.drawPortal(state, PortalColor.ORANGE, opening)
+          this.drawPortal(painter, state, PortalColor.BLUE, opening)
+          this.drawPortal(painter, state, PortalColor.ORANGE, opening)
           break
 
         case 'subject':
-          this.drawSubject(state, pose, angle)
+          this.drawSubject(painter, state, pose, angle)
           break
       }
 
-      drawElementsOn(this.painter, state, layer, shares)
+      drawElementsOn(painter, state, layer, shares)
     })
+  }
+
+  /**
+   * Draws one layer above the backdrop, as drawLayer() does, on a layer of
+   * its own, darkens what it drew under the open exit's shadow, and lays it
+   * down: the subject's while the chamber is completed, so the subject on
+   * the exit, or walking out across it, darkens towards the chamber's edge as
+   * the floor beneath it does, its drop shadow with it.
+   * @param state - The state drawn
+   * @param layer - The layer
+   * @param pose - Where the subject is drawn, from subjectPose()
+   * @param angle - How far the subject is turned part way through a turn, from SubjectTurn, or null to turn it squarely the way its pose faces
+   * @param shares - How far blocked the blocked walls, the ditches, the doors, the exit, the fizzlers, the lasers and the light barriers that are changing are drawn, or null to draw every one as the state says
+   * @param opening - How far the portal opening is drawn, or null to draw both open
+   */
+  private drawLayerUnderExitShadow(state: RulesState, layer: DrawLayer, pose: SubjectPose, angle: number | null, shares: BlockedShares | null, opening: OpeningProgress | null): void {
+    const own = this.subjectLayerOf(state.chamber)
+
+    own.erase()
+    this.drawLayer(own, state, layer, pose, angle, shares, opening)
+    drawExitShadow(own, state.chamber, 'source-atop')
+    this.painter.drawLayer(own, false)
+  }
+
+  /**
+   * The layer the subject is drawn on while the chamber is completed, made
+   * the first time it is asked for and kept until the chamber or the tile
+   * size changes.
+   * @param chamber - The chamber drawn
+   * @returns The layer, as last painted
+   */
+  private subjectLayerOf(chamber: CompiledChamber): TilePainter {
+    const tileSize = this.painter.blockSize
+    const kept = this.subjectLayer
+
+    if ((kept !== null) && (kept.chamber === chamber) && (kept.tileSize === tileSize)) {
+      return kept.layer
+    }
+
+    const layer = this.painter.createLayer()
+
+    this.subjectLayer = {
+      chamber: chamber,
+      tileSize: tileSize,
+      layer: layer,
+    }
+
+    return layer
   }
 
   /**
@@ -495,7 +565,9 @@ export class Renderer {
    * and a missed shot's ripple. Part way along a slide, everything but the
    * subject's pose is drawn as the state on the last tile it has reached
    * (shownState), and the state after the step once the slide ends. The
-   * subject is drawn part way through its turn while it turns.
+   * subject is drawn part way through its turn while it turns, and, while
+   * the state drawn is completed, on a layer of its own under the open
+   * exit's shadow.
    * @param state - The state to draw
    * @param transition - The step being drawn, ending on the state drawn, or null (the default) to draw the state as it is
    * @param time - Now, in milliseconds on the frame clock, for what moves with time alone, or null (the default) to hold it still
@@ -523,8 +595,12 @@ export class Renderer {
     drawTurnableArrows(this.painter, shown, shares)
 
     for (const layer of DRAW_LAYERS) {
-      if (!BACKDROP_LAYERS.has(layer)) {
-        this.drawLayer(shown, layer, pose, angle, shares, opening)
+      // While the chamber is completed the subject is on the exit or walks out past it, under the exit's shadow; read from
+      // the state after the step, not the state shown, so a slide onto the exit darkens as it enters the exit's tile
+      if ((layer === 'subject') && state.completed) {
+        this.drawLayerUnderExitShadow(shown, layer, pose, angle, shares, opening)
+      } else if (!BACKDROP_LAYERS.has(layer)) {
+        this.drawLayer(this.painter, shown, layer, pose, angle, shares, opening)
       }
 
       // Down in the pit, over the grate sliding away and under everything standing on the floor
