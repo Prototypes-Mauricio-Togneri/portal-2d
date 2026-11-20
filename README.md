@@ -16,7 +16,6 @@ The game already reports these events, but they play no sound:
 
 These have an animation but no event and no sound:
 
-- A ditch's grate sliding in or out
 - A fizzler field forming or crumbling away when it's switched on or off
 - A laser or light barrier switching on or off
 - An emitter switching on or off, and a ray bouncing off a mirror box (new elements)

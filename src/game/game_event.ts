@@ -23,6 +23,7 @@ export type GameEvent =
   | 'slideStopped'
   | 'arrowTurned'
   | 'blockedWallSwitched'
+  | 'ditchSwitched'
   | 'receiverLit'
   | 'receiverUnlit'
 
@@ -50,6 +51,7 @@ export const GameEvent = {
   SLIDE_STOPPED: 'slideStopped', // A slide that started ended
   ARROW_TURNED: 'arrowTurned', // An arrow turned, by a link, to its turned way or back
   BLOCKED_WALL_SWITCHED: 'blockedWallSwitched', // A blocked wall switched, by a link, to take portals or to refuse them
+  DITCH_SWITCHED: 'ditchSwitched', // A ditch switched, by a link, to be bridged or to open
   RECEIVER_LIT: 'receiverLit', // A ray reached a receiver, which acts on its links as a button going down
   RECEIVER_UNLIT: 'receiverUnlit', // A receiver no ray reaches any more went dark, which acts on its links as a button coming up
 } as const

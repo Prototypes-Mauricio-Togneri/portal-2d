@@ -186,7 +186,7 @@ A button, switch or receiver names its links by element id. Only blocked walls (
 |---|---------|-------------------------------------------------------|------------------------------------------|
 | 1 | Blocked wall | Takes portals: `blockedWallSwitched` | Refuses portals, and a portal on any of its sides closes: `blockedWallSwitched` |
 | 2 | Light barrier | Off | On |
-| 3 | Ditch | Bridged | Open |
+| 3 | Ditch | Bridged: `ditchSwitched` | Open: `ditchSwitched` |
 | 4 | Door | Opened: `doorOpened` | Closed: `doorClosed` |
 | 5 | Exit | Opened: `exitOpened` | Closed: `exitClosed` |
 | 6 | Fizzler | Off | On (see [the fizzler rule](#the-fizzler-rule)), and a portal on a wall side facing it closes: `portalFizzled` |
@@ -195,7 +195,7 @@ A button, switch or receiver names its links by element id. Only blocked walls (
 | 9 | Arrow | Points its turned way: `arrowTurned`; a subject on it turns with it | Points its own way: `arrowTurned`; a subject on it turns with it |
 | 10 | Emitter | On: its ray leaves its firing face (see [rays](#rays)) | Off: it sends no ray |
 
-A door or the exit reports its event only when it actually opens or closes, an arrow `arrowTurned` only when it actually turns, a blocked wall `blockedWallSwitched` only when it actually switches, and a fizzler reports `portalFizzled` only when it closes a portal; the others are silent.
+A door or the exit reports its event only when it actually opens or closes, an arrow `arrowTurned` only when it actually turns, a blocked wall `blockedWallSwitched` and a ditch `ditchSwitched` only when it actually switches, and a fizzler reports `portalFizzled` only when it closes a portal; the others are silent.
 
 An arrow turning under the subject turns the subject with it, to face the arrow's new way, so on an arrow the subject always faces the way it points, and its shots fly that way; a carried box stays carried. It can then leave only that way. An arrow turns only as links act: as a button goes down or comes up, or a receiver lights or goes dark, while the step settles (a chamber's start included), or on a switch's use. A slide judges no button or receiver until it ends, so no arrow turns mid-slide, but a slide's end can turn one, under the subject too.
 

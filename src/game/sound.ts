@@ -4,6 +4,7 @@ import {createAudioPlayer} from '@/game/audio_sources'
 import buttonOffUrl from '@/assets/audio/sound/button_off.mp3'
 import buttonOnUrl from '@/assets/audio/sound/button_on.mp3'
 import crossUrl from '@/assets/audio/sound/cross.mp3'
+import ditchGrateUrl from '@/assets/audio/sound/ditch_grate.mp3'
 import doorCloseUrl from '@/assets/audio/sound/door_close.mp3'
 import doorOpenUrl from '@/assets/audio/sound/door_open.mp3'
 import errorUrl from '@/assets/audio/sound/error.mp3'
@@ -37,6 +38,7 @@ export class Sound {
   static readonly SWITCH = new Sound(switchUrl, 0.72) // Switch used
   static readonly TURNABLE_ARROW = new Sound(turnableArrowUrl, 0.28) // A turnable arrow turned, by a link, to its turned way or back
   static readonly BLOCKED_WALL = new Sound(blockedWallUrl, 0.18) // A blocked wall switched, by a link, to take portals or to refuse them
+  static readonly DITCH_GRATE = new Sound(ditchGrateUrl, 0.12) // A ditch's grate slid in or out, a link bridging or opening it
   static readonly MENU_BUTTON = new Sound(menuButtonUrl, 0.17) // Menu or dialog button pressed, setting changed or pause menu opened; played by the screens, not the game
   static readonly START = new Sound(startUrl, 0.31) // Chamber picked on the home screen; played by the screens, not the game
 
