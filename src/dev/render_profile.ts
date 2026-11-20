@@ -8,7 +8,7 @@ import {loadSprites} from '@/game/sprite_sources'
 
 // Development only (src/dev/render_profile.html, served by `npm run dev`,
 // never built): the baseline for the 60 fps checks, its numbers kept in
-// todo/04a_mechanics.md under "From stage 03". Draws chamber 3,
+// docs/performance.md. Draws chamber 3,
 // the largest, at its settled start with the game's renderer, sized as the
 // chamber screen sizes it in a 1920 × 1080 window, and redraws it on every
 // animation frame, with what moves with time alone (the glows) at that

@@ -1,7 +1,7 @@
 # Stage 05 — Creator platform
 
 Status: Draft
-Last revised: 2026-11-16
+Last revised: 2026-11-20
 
 ## Goal
 
@@ -17,11 +17,13 @@ This stage assumes the following exist when it starts. Re-check each when revisi
   - The pure step: `step(chamber, state, action)` gives the next state and its events. The replay format is compact: `ReplayData` (`src/game/replay_data.ts`), a list of actions with the expected result and the hash of the chamber it was recorded on.
   - An engine that loads under Node with no browser (the rules report events and play no sounds). A link's replay runs headless in the browser, and the local checks run the same code under Node.
   - Releasing a button linked to a box does nothing to the box. The validator warns about a button linked to a box but still loads the chamber, so the editor can show that warning, or forbid the link if it chooses.
-  - "Moves" is settled: each step that puts the subject on another tile (README decision 8). Stage 04 dropped medals (decision 17, now in `04a_mechanics.md`), so there are no ranked runs.
+  - "Moves" is settled: each step that puts the subject on another tile (README decision 8). Stage 04 dropped medals (README decision 14), so there are no ranked runs.
   - JSON imports widen string literals to `string`, which is why format 2 keeps one optional list per element type rather than one list told apart by a `type` string, which would need a cast.
 - **Stage 02 (solver)**, stopped (README decision 10): no par and no shortcut report. The author's replay alone proves a chamber solvable.
 - **Stage 03 (look and sound)**, done 2026-11-14
   - The reworked renderer, with the high-DPI fix from stage 00. The editor draws with it.
+- **Stage 04a (mechanics)**, done 2026-11-20
+  - Slide floors, turnable arrows, emitters, receivers and mirror boxes, in the element registry and format 2 (`docs/elements.md`). Left by its notes for the editor: a palette entry for each element, placement checked by the same rules as the chamber loader, and link editing for receivers (which link elements as buttons and switches do) and for turnable arrows.
 - **Stage 04b (campaign)**
   - A home menu that scales and has room for an Editor entry.
   - Chamber links by position (`/chamber/N`, README decision 13, which settled open decision 6), so the new routes don't collide with them.

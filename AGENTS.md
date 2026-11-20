@@ -2,7 +2,7 @@
 
 Portal 2D — a desktop-only, keyboard-driven puzzle game: the player crosses grid-based test chambers using a pair of portals (Vite + Vue 3, TypeScript, Composition API with `<script setup>`, vue-router, ESLint + @stylistic + type-aware typescript-eslint via @vue/eslint-config-typescript). It is a static site on Firebase Hosting; there is no backend.
 
-`todo/` holds the author's roadmap: an overview (`README.md`) and one file per stage (`04a_mechanics.md`, `04b_campaign.md` and `05_creator_platform.md`; stages 00, 01 and 03 are done, stage 02 stopped after its prototype, and their files are removed; what stage 02 learned is in `docs/solver.md`; stage 04a is done, its file kept because 04b cites its decisions). They are not planned work; do not build any of it unless asked, and only tick a stage's checkboxes for steps you were asked to do and finished.
+`todo/` holds the author's roadmap: an overview (`README.md`) and one file per stage (`04b_campaign.md` and `05_creator_platform.md`; stages 00, 01, 03 and 04a are done, stage 02 stopped after its prototype, and their files are removed; what stage 02 learned is in `docs/solver.md`; the 04a decisions 04b cites are copied into it), and `future.md`, ideas for mechanics beyond the plan and how a mechanic was built. They are not planned work; do not build any of it unless asked, and only tick a stage's checkboxes for steps you were asked to do and finished.
 
 ## Layout
 
@@ -24,6 +24,7 @@ art/sprites/                      sources of every chamber sprite, SVGs drawn in
 docs/elements.md                  what each chamber element does, the chamber file format, then the rules and how they differ from the original game's, and what adding an element touches
 docs/game_summary.md              the whole game in plain words, for a reader new to it: the view, the turns, the subject, portals, each tile (what it does and how it looks), links, fizzlers, slide floors and rays in detail, the chambers and progress, and the screens
 docs/level_design.md              guidelines for designing a chamber, beyond what the chamber check rejects: the states a chamber should never let the player reach, then never switching something under the subject, links, boxes, portals, dead ends, slide floors, turnable arrows, rays, antlines, and checking a chamber
+docs/performance.md               the checks that the chamber drawing holds 60 fps (the render profile's baseline, the chamber screen, the glows, high DPI): what was measured, on what machine, and how to run the render profile again
 docs/solver.md                    the solver: how to run it, how it works and is checked, what was measured, why stage 02 stopped after its prototype, and what a revisit would start from
 docs/sprites.md                   the chamber sprites the game draws: each file, its size, the view and light, which sprites the game turns, how walls and ditches join, and the drawing order
 public/                           favicon only

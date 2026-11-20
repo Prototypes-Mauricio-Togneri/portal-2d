@@ -19,7 +19,7 @@
 | 2 | `01_engine_v2.md` (file removed) | Done | Sounds out of the rules, engine runnable without a browser, replays on today's engine, recorded solutions and a local replay check, input rewrite (remappable keys), v2 rules and chamber format, the three inherited bugs fixed, v2 checked against the old rules, old engine deleted |
 | 3 | `02_solver.md` (file removed; see `docs/solver.md`) | Stopped | Solver prototype on the current chambers (go/no-go: no-go on 2026-11-08, decision 10); the rest was dropped: solvability and par in the local checks, shortcut finder, dead-end warning, hints, generated chambers |
 | 4 | `03_look_and_sound.md` (file removed) | Done | Visual rework, one tutorial chamber (chamber 0) |
-| 5 | `04a_mechanics.md` (file kept, decision 16) | Done | Lasers through portals, slide floors and rotating arrows, each with a teach and a proof chamber |
+| 5 | `04a_mechanics.md` (file removed, decision 17) | Done | Lasers through portals, slide floors and rotating arrows, each with a teach and a proof chamber |
 | 6 | `04b_campaign.md` | Draft | The campaign completed at 20 chambers, a menu and catalogue that scale, chamber numbering and links |
 | 7 | `05_creator_platform.md` | Draft | Editor, sharing in the link, share only what you solved |
 ## The idea
@@ -109,6 +109,7 @@ These replace the rougher claims in the original roadmap. Re-check them when rev
 | 14 | 2026-11-15 | Stage 04 settles its open decisions (its decisions 16–18): the campaign's new mechanics are slide floors, rotating arrows and live lasers; echo, timed buttons and push blocks are dropped, and so are medals, so the time stays the only score (open decisions 1 and 3 settled) |
 | 15 | 2026-11-16 | Stage 04 splits in two. 04a (`04a_mechanics.md`) builds slide floors, rotating arrows and live lasers, each with its rules, fixtures, docs and a teach and a proof chamber that prove it in play. 04b (`04b_campaign.md`) builds the rest of the 16 new chambers and their order, and the catalogue, links and Play menu that scale to 20. Stage 04's decisions 1–19 stay in 04a with their numbers, and 04b cites them as "04a decision N". 04b's parts that need no new mechanic (lab chambers, chambers for the existing elements, catalogue, links, menu) may start before 04a is done. Earlier decisions here that name stage 04 mean both halves |
 | 16 | 2026-11-20 | Stage 04a is done: slide floors, turnable arrows and live lasers each shipped with their rules, fixtures, docs and a teach and a proof chamber (chambers 4 to 9). Its file is kept, unlike the files of the stages done before it, because 04b cites its decisions by number |
+| 17 | 2026-11-20 | `04a_mechanics.md` is removed after all, as the files of the stages done before it were. What later stages still need moved out first: the decisions 04b cites, into 04b's "Decisions made" with their 04a numbers; a summary of chambers 4–9, into 04b; the editor's needs, into stage 05; stage 03's profiling numbers, into `docs/performance.md`; that settling's end is argued, not proven, into `docs/elements.md`; and the way a mechanic was built, step by step, into `future.md`. The rest (each mechanic's spec, plan and the code as found, and what each decision was chosen over) is in `docs/` as built, or in git history |
 
 ## Open decisions
 

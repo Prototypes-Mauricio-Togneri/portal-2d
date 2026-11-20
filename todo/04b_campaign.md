@@ -1,11 +1,11 @@
 # Stage 04b — Campaign
 
 Status: Draft
-Last revised: 2026-11-16
+Last revised: 2026-11-20
 
 ## Goal
 
-The campaign grows to its full length: 20 handcrafted chambers in total, numbered 0–19 (stage 03's tutorial as chamber 0, today's three chambers, and 16 new ones built around stage 04a's mechanics and the existing elements, six of them the teach and proof chambers 04a builds with its mechanics), in one list with no wings, with a catalogue, links and a Play menu that scale to that many, and an order set by playtests (the friends' analytics informing them). This stage and stage 04a (`04a_mechanics.md`) were one stage until README decision 15 split them.
+The campaign grows to its full length: 20 handcrafted chambers in total, numbered 0–19 (stage 03's tutorial as chamber 0, today's three chambers, and 16 new ones built around stage 04a's mechanics and the existing elements, six of them the teach and proof chambers 04a builds with its mechanics), in one list with no wings, with a catalogue, links and a Play menu that scale to that many, and an order set by playtests (the friends' analytics informing them). This stage and stage 04a were one stage until README decision 15 split them.
 
 ## Depends on
 
@@ -39,7 +39,20 @@ Stages 00, 01 and 03 are done, and stage 02 stopped after its prototype (README 
 
 ## Decisions made
 
-None of its own yet. The decisions made while this stage and stage 04a were one stage stay in `04a_mechanics.md` with their numbers, cited here as "04a decision N". Those that shape this stage: 6 (each mechanic's chambers join the campaign: its teach and proof chamber built in 04a, the rest of its run here), 10 (20 chambers, numbered 0–19, in one list with no wings), 13 (no compatibility work: links stay by position with no redirects, settling 7, and the order comes from playtests, the friends' analytics informing them), 16 (about 4 chambers for each new mechanic and about 4 for the existing elements), 18 (unfinished chambers go straight into the catalogue while only the author plays, and into a development-only lab list once friends play) and 19 (chambers stay imported by hand in `src/services/chamber_catalogue.ts`).
+None of its own yet. The decisions below are stage 04a's, kept with their numbers and cited here as "04a decision N". Decisions 6–19 were made while this stage and stage 04a were one stage (README decision 15), so "this stage" and "here" in them mean both; 20 is 04a's own, cited by a chamber idea below. The rest of 04a's decisions settled the mechanics as built (now in `docs/elements.md`, `docs/sprites.md` and `docs/solver.md`); all of them, with what each was chosen over, are in git history in `todo/04a_mechanics.md` (removed 2026-11-20, README decision 17).
+
+| # | Date | Decision |
+|---|---|---|
+| 6 | 2026-11-08 | A mechanic's chambers go into the campaign in this same stage: its teach chamber and the rest of its run, as the campaign plan sets (replaces "a teach and a proof chamber per mechanic; full wings are stage 04's job"). Since README decision 15, this stage builds each mechanic's teach and proof chamber (R7), and stage 04b the rest of its run |
+| 7 | 2026-11-06 | Chamber links (`/chamber/N`, by position) stay as they are until this stage picks the numbering scheme (README decision 4); stage 03 only made the count start at 0 for the tutorial. Settled by README decision 13: links stay by position, with no redirects |
+| 10 | 2026-11-08 | The campaign is 20 chambers in total, numbered 0–19: the tutorial (0), today's three (1–3) and 16 new ones built here. No wings: one ordered list, with no wing manifest, wing menu level, wing unlocking, wing music or wing analytics parameter (replaces about 120 chambers in about 10 wings) |
+| 13 | 2026-11-09 | The author is the only player during development, and a few friends play later (README decision 13): no compatibility work, so links stay by position with no redirect table, no retired-id list and no migration of stored progress. Difficulty from player data and the histogram are dropped, since a few friends are far below any useful sample: the chamber order comes from playtests, with the friends' analytics informing them. Analytics stays. Lab chambers matter once friends play (decision 18) |
+| 16 | 2026-11-15 | The campaign's new mechanics are slide floors, rotating arrows and live lasers, about 4 chambers each, with about 4 for the existing elements. Echo, timed buttons and push blocks are dropped from the plan, with their phases, the open decisions only they needed (echo, what counts as a tick) and their go/no-go points; their specs stay in git history (README open decision 3 settled). The phases and open decisions left were renumbered |
+| 18 | 2026-11-15 | The other open decisions settled as recommended: today's laser tiles stay their own element; unfinished chambers go straight into the catalogue while only the author plays, and into a development-only lab list once friends play; a beam stops at the subject, which it leaves unharmed; a mirror box's angle is fixed in the chamber file; and the solver check skips, and names, each chamber it can't handle. With every open decision settled, the section was removed; their options stay in git history |
+| 19 | 2026-11-15 | Loading chambers without a hand-kept list dropped: it would only save one import line per chamber, the play order stays a hand-typed list anyway, the engine scripts can't use Vite's loading and keep their own list, and TypeScript would stop checking each chamber file against the chamber type. Chambers stay imported by hand in `src/services/chamber_catalogue.ts`; the catalogue check stays |
+| 20 | 2026-11-17 | The subject can walk into, stand in and cross a beam. A beam blocks nothing; it stops at the subject and leaves it unharmed (decision 18), so standing in a beam switches its receiver off until the subject steps out. Today's laser tiles stay the light that blocks walking, and a beam is only a signal, so the two differ in what they do, not only in colour. This replaces the draft rule that a beam blocks walking like a lit laser field. That rule repeated the laser tiles, and it came bundled with decision 18's option without being weighed on its own |
+
+Stage 04a later named an emitter's light a ray, keeping "beam" for a laser's or a light barrier's light; decisions 18 and 20 and the chamber ideas below still say beam.
 
 ## Steps
 
@@ -64,6 +77,19 @@ The existing elements need chambers too (portal basics, boxes and buttons, doors
 | 3 | Rotating arrows | About 4 | Chambers 6 (teach) and 7 (twist), stage 04a's cold playtest of 2026-11-19: no confusion seen |
 | 4 | Live lasers | About 4 | Chambers 8 (teach) and 9 (test), stage 04a's cold playtest of 2026-11-20: liked, no confusion reported |
 | 5 | Total | 16 (20 with chambers 0–3) | |
+
+**Chambers built by stage 04a** (each mechanic's first two, from layouts the author approved; what designing them taught became guidelines 25 and 27–29 in `docs/level_design.md`):
+
+| # | Chamber | Mechanic, part | What it asks | Best routes (moves, portals) |
+|---|---|---|---|---|
+| 1 | 4 | Slide floors, teach | The first step slides across a slide room to a ledge, from which a portal is aimed across a ditch at the far end of the exit lane; the slide out of it stops under the exit | Fewest portals: 2 portals |
+| 2 | 5 | Slide floors, test | The same move twice, where the second lane is entered only by sliding back into the portal just come out of, so the other portal is the one to move | Both: 3 portals |
+| 3 | 6 | Rotating arrows, teach (10 × 7) | The start room's way out is a gate arrow pointing into the wall until the switch, with an antline to it, turns it for good, onto a run of fixed arrows to the exit | Both: 12 moves, 0 portals |
+| 4 | 7 | Rotating arrows, twist (10 × 9) | Standing on the button beside the arrow turns it; stepping onto it releases the button, so it turns back under the subject and sends it into a lower corridor, whose exit door needs the box on its own button. Neither 6 nor 7 can be solved with the links to its turnable arrow removed | Fewest portals: 25 moves, 0 portals; fewest moves: 13 moves, 4 portals |
+| 5 | 8 | Live lasers, teach (9 × 7) | A portal pair through a stub sends the emitter's ray to a receiver in the right wall, which opens the exit | Fewest portals: 15 moves, 2 portals; fewest moves: 10 moves, 3 portals |
+| 6 | 9 | Live lasers, test (9 × 7) | The same room: the receiver is in the bottom wall, so the ray must come down from a portal on the ceiling, where chamber 8's answer only runs it into the right wall | Fewest portals: 14 moves, 2 portals; fewest moves: 11 moves, 3 portals |
+
+Neither laser chamber uses the mirror box; this stage's combine chamber is the first to need it.
 
 **Chamber ideas left by stage 04a** (its slide floor phase builds the teach and test chambers, its rotating arrow phase the teach and twist, its live laser phase the teach and test):
 
@@ -128,7 +154,7 @@ The existing elements need chambers too (portal basics, boxes and buttons, doors
 
 ## Go/no-go points
 
-None: stage 04's two go/no-go points, the hook check and laser oscillation, are about the mechanics and stay in stage 04a.
+None: stage 04's two go/no-go points, the hook check and laser oscillation, were about the mechanics, and stage 04a closed both.
 
 ## Risks
 
