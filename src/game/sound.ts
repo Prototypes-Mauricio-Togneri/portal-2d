@@ -13,6 +13,7 @@ import portalOrangeUrl from '@/assets/audio/sound/portal_orange.mp3'
 import shootUrl from '@/assets/audio/sound/shoot.mp3'
 import startUrl from '@/assets/audio/sound/start.mp3'
 import switchUrl from '@/assets/audio/sound/switch.mp3'
+import turnableArrowUrl from '@/assets/audio/sound/turnable_arrow.mp3'
 
 /**
  * A sound effect. Each effect is a single shared instance that restarts from
@@ -33,6 +34,7 @@ export class Sound {
   static readonly DOOR_CLOSE = new Sound(doorCloseUrl, 0.15) // Door or exit closed
   static readonly ERROR = new Sound(errorUrl, 0.13) // Action refused
   static readonly SWITCH = new Sound(switchUrl, 0.72) // Switch used
+  static readonly TURNABLE_ARROW = new Sound(turnableArrowUrl, 0.28) // A turnable arrow turned, by a link, to its turned way or back
   static readonly MENU_BUTTON = new Sound(menuButtonUrl, 0.17) // Menu or dialog button pressed, setting changed or pause menu opened; played by the screens, not the game
   static readonly START = new Sound(startUrl, 0.31) // Chamber picked on the home screen; played by the screens, not the game
 

@@ -12,7 +12,6 @@ The game already reports these events, but they play no sound:
 
 - A box destroyed, either breaking up where a door closes or a laser, light barrier or fizzler switches on, or falling into a ditch
 - The subject starting a slide on a slide floor, and stopping at the end of it
-- An arrow turned by a button or switch
 - A receiver lighting up or going dark (the new element in your uncommitted changes)
 
 These have an animation but no event and no sound:

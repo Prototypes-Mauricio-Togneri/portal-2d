@@ -101,7 +101,7 @@ export class Level {
     [GameEvent.SWITCH_USED]: Sound.SWITCH,
     [GameEvent.SLIDE_STARTED]: null,
     [GameEvent.SLIDE_STOPPED]: null,
-    [GameEvent.ARROW_TURNED]: null,
+    [GameEvent.ARROW_TURNED]: Sound.TURNABLE_ARROW,
     [GameEvent.RECEIVER_LIT]: null,
     [GameEvent.RECEIVER_UNLIT]: null,
   }
