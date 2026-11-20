@@ -2,7 +2,6 @@
 
 ## TODO
 
-- Solve chambers with AI?
 - show hints for tutorial
   - how to shot portals
   - show a hint when standing on a button
