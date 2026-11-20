@@ -42,6 +42,7 @@ reset = ('<meta charset="utf-8"><meta name="viewport" content="width=device-widt
          '<style>:root{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>')
 
 for theme in ('light', 'dark'):
-    (build / f'{name}_test_{theme}.html').write_text(f'<!doctype html><html data-theme="{theme}"><head>{reset}</head><body>{page}</body></html>')
+    # The image holds the load open while the sprites decode, when served by harness/serve.py
+    (build / f'{name}_test_{theme}.html').write_text(f'<!doctype html><html data-theme="{theme}"><head>{reset}</head><body><img src="/wait?ms=4000" alt="" hidden>{page}</body></html>')
 
 print(f'{name}.html: {len(page)} bytes, {count} files included')

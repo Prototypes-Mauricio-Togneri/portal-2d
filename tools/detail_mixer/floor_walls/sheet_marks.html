@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Wear marks sheet</title>
+<style>
+  body { margin: 0; padding: 8px; background: rgba(32, 32, 32, 1); color: rgba(204, 204, 204, 1); font: 12px sans-serif; }
+  canvas { display: block; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<!-- Every kind of wear mark of the first mixer, many times over, on a flat floor and a flat wall colour,
+     at two tile sizes: the sheet the marks were tuned on, before any was shown in a chamber.
+     harness/shot.sh 'floor_walls/sheet_marks.html?k=0.96' build/marks.png 1720 1400
+     (k is the strength, 0.96 being a slider at 60) -->
+<img src="/wait?ms=1500" alt="" hidden>
+<script src="../build/engine.js"></script><script src="config.js"></script><script src="effects.js"></script>
+<script>
+const query = new URLSearchParams(location.search)
+const strength = Number(query.get('k') ?? 0.96)
+
+for (const tile of [110, 45]) {
+  for (const onWall of [false, true]) {
+    // Cracks and chipped corners are floor marks only
+    const names = Object.keys(MARK_DRAWINGS).filter((name) => !onWall || !KEPT_IN_TILE.has(name))
+    const columns = Math.floor(1700 / tile)
+    const canvas = document.createElement('canvas')
+    canvas.width = columns * tile
+    canvas.height = names.length * tile
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = onWall ? 'rgba(148, 150, 158, 1)' : 'rgba(239, 241, 248, 1)'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    names.forEach((name, row) => {
+      for (let column = 0; column < columns; column++) {
+        ctx.save()
+        ctx.translate(column * tile, row * tile)
+        ctx.strokeStyle = onWall ? 'rgba(255, 255, 255, 0.25)' : 'rgba(150, 155, 170, 0.5)'
+        ctx.lineWidth = 1
+        ctx.strokeRect(0.5, 0.5, tile - 1, tile - 1)
+
+        if (KEPT_IN_TILE.has(name)) {
+          ctx.beginPath()
+          ctx.rect(0, 0, tile, tile)
+          ctx.clip()
+        }
+
+        MARK_DRAWINGS[name](ctx, tile, randomFrom(7, column, row, 42), strength, onWall)
+        ctx.restore()
+      }
+    })
+
+    document.body.append(`${names.join(' / ')} on the ${onWall ? 'wall' : 'floor'}, ${tile} px tiles`, canvas)
+  }
+}
+</script>
+</body>
+</html>

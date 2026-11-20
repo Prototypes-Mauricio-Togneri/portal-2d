@@ -601,10 +601,14 @@ function wallHook(info, settings) {
   }
 }
 
-/** Draws a chamber as the game does, with the detail layers the settings switch on. */
+/**
+ * Draws a chamber as the game does, with the detail layers the settings switch on.
+ * The game now draws its own surface detail, the one chosen with this very mixer, so it is switched
+ * off here: "Original" stays the floor and the walls as they were, and the layers are the mock-up's own.
+ */
 function drawChamber(canvas, index, tileSize, settings) {
   if (settings === null) {
-    Engine.render(canvas, index, tileSize)
+    Engine.render(canvas, index, tileSize, {surfaceDetail: false})
 
     return
   }
@@ -612,7 +616,10 @@ function drawChamber(canvas, index, tileSize, settings) {
   const info = chamberInfo(index)
 
   Engine.render(canvas, index, tileSize, {
-    floor: floorHook(info, settings),
-    walls: wallHook(info, settings),
+    surfaceDetail: false,
+    hooks: {
+      floor: floorHook(info, settings),
+      walls: wallHook(info, settings),
+    },
   })
 }

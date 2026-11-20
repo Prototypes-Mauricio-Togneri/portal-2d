@@ -92,6 +92,15 @@ function chamberOf(index: number): CompiledChamber {
   return chamber
 }
 
+/** A flag the game keeps for some element types only: null for a type, or an element, that has none. */
+function flagOf(read: () => boolean): boolean | null {
+  try {
+    return read()
+  } catch (_error) {
+    return null
+  }
+}
+
 /** The state after a number of the recorded solution's actions, played with the game's own rules. */
 function stateAt(index: number, stepNumber = 0): RulesState {
   const chamber = chamberOf(index)
@@ -190,8 +199,8 @@ export function instances(index: number, stepNumber = 0): unknown {
         xTo: entry.xTo ?? entry.x,
         yTo: entry.yTo ?? entry.y,
         // Whether a link reaches it, so its blocked flag can change while the chamber is played; null for a type with no such flag
-        linked: ('defaultBlocked' in definition) ? chamber.stateLayout.flagOffset(kind as never, i) !== NOT_STORED : null,
-        blocked: ('defaultBlocked' in definition) ? state.isBlocked(kind as never, i) : null,
+        linked: flagOf(() => chamber.stateLayout.flagOffset(kind as never, i) !== NOT_STORED),
+        blocked: flagOf(() => state.isBlocked(kind as never, i)),
         pressed: (kind === 'button') ? state.isButtonPressed(i) : null,
         pointing: (kind === 'arrow') ? state.pointingWay('arrow', i) : null,
       })

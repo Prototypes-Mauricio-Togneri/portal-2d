@@ -2,7 +2,12 @@
 body{margin:0;background:#202020;color:#ddd;font:13px sans-serif;display:flex;flex-wrap:wrap;gap:10px;padding:10px}
 figure{margin:0}figcaption{padding:3px 0}canvas{display:block}
 </style></head><body>
-<script src="engine.js"></script><script src="../config.js"></script><script src="../effects.js"></script>
+<!-- A contact sheet of the first mixer's layers: one drawing per name in `list`, of the whole chamber or a crop.
+     harness/shot.sh 'floor_walls/sheet_layers.html?c=1&t=45&crop=0,8,10,8&list=original,floorShade,roomLight,pick' build/layers.png 1900 900
+     c chamber, t tile size, crop x,row,width,height in tiles, list of: original, a preset's id, all, or layer ids joined by +,
+     a amount for every layer (0 to 100), d tiles marked for every wear layer, seed placement -->
+<img src="/wait?ms=4000" alt="" hidden>
+<script src="../build/engine.js"></script><script src="config.js"></script><script src="effects.js"></script>
 <script>
 const q = new URLSearchParams(location.search)
 const chamber = Number(q.get('c') ?? 1), T = Number(q.get('t') ?? 45)

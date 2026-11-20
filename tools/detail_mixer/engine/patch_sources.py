@@ -75,33 +75,24 @@ patch('sprite_sources.ts', [
 # ---------- renderer.ts: surface detail on or off, and the two layer hooks ----------
 
 patch('renderer.ts', [
-    ('floor detail and hook', '''  drawElementsOn(painter, state, 'floor')
-  drawFloorTone(painter, state.chamber)
+    # Anchored on the two calls alone, so whatever the game draws before or after them can change freely
+    ('floor detail and hook', '''  drawFloorTone(painter, state.chamber)
   drawFloorWear(painter, state.chamber)
-}
-''', '''  drawElementsOn(painter, state, 'floor')
-
-  if (mixerSurfaceDetail()) {
+''', '''  if (mixerSurfaceDetail()) {
     drawFloorTone(painter, state.chamber)
     drawFloorWear(painter, state.chamber)
   }
 
   runMixerLayerHook('floor', painter, state)
-}
 '''),
-    ('wall detail and hook', '''  drawElementsOn(structure, state, 'structure')
-  drawWallTone(structure, state.chamber)
+    ('wall detail and hook', '''  drawWallTone(structure, state.chamber)
   drawWallWear(structure, state.chamber)
-  painter.drawLayer(structure, true)
-''', '''  drawElementsOn(structure, state, 'structure')
-
-  if (mixerSurfaceDetail()) {
+''', '''  if (mixerSurfaceDetail()) {
     drawWallTone(structure, state.chamber)
     drawWallWear(structure, state.chamber)
   }
 
   runMixerLayerHook('walls', structure, state)
-  painter.drawLayer(structure, true)
 '''),
     ('helpers', '''/**
  * Draws every element type on a layer, in registry order.''', '''/**

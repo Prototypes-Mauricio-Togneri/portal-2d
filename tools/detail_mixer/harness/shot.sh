@@ -1,26 +1,34 @@
 #!/bin/sh
-# Screenshots a local page with headless Chrome, at one canvas pixel per
-# screen pixel, after its scripts and timers have run.
+# Screenshots a page of this folder with headless Chrome, one canvas pixel per
+# screen pixel, once it has loaded and its timers have run.
 #
-#   harness/shot.sh <page or URL> <out.png> [width] [height]
+#   harness/shot.sh <page> <out.png> [width] [height]
 #
-# A path is opened as a file:// page; add a query after it as you would in a
-# URL ("harness/smoke.html?c=1"). The window is as tall as you ask: headless
-# Chrome captures only the window, so make it tall enough for the whole page.
-# Chrome's window is never narrower than about 500 px, so for a phone-width
-# check put the page in a 400 px wide <iframe> of a wider page instead.
-# Timers run on a virtual clock here, so performance.now() does not advance
-# during them: time things with harness/slow_server.py instead.
+# <page> is a path inside tools/detail_mixer/, with a query if you like
+# ("harness/smoke.html?c=1&t=40", "build/floor_walls_test_light.html"), and
+# <out.png> is taken from tools/detail_mixer/ too, wherever you call this
+# from ("build/smoke.png"). The page is opened through harness/serve.py,
+# started here when nothing listens on port 8765, so a page that holds
+# <img src="/wait?ms=4000" alt="" hidden> is captured only after the sprites
+# are decoded (serve.py says why). If the picture shows an error page, or a
+# page that isn't yours, something else holds that port, or the server,
+# which stops itself after ten minutes, went away mid-shot: run it again.
+#
+# Headless Chrome captures only its window: ask for one tall enough for the
+# whole page. Its window is never narrower than about 500 px, so for a
+# phone-width check put the page in a 400 px wide <iframe> of a wider page.
 set -e
+cd "$(dirname "$0")/.."
 page="$1"
 out="$2"
 width="${3:-1600}"
 height="${4:-1200}"
-case "$page" in
-  http://*|https://*|file://*) url="$page" ;;
-  /*) url="file://$page" ;;
-  *) url="file://$(pwd)/$page" ;;
-esac
+
+if ! (ss -ltn 2>/dev/null | grep -q ':8765 '); then
+  (timeout 600 python3 harness/serve.py >/dev/null 2>&1 &)
+  sleep 1
+fi
+
 google-chrome --headless=new --no-sandbox --disable-gpu --hide-scrollbars --force-device-scale-factor=1 \
-  --window-size="$width,$height" --virtual-time-budget=15000 --screenshot="$out" "$url" >/dev/null 2>&1
+  --window-size="$width,$height" --virtual-time-budget=15000 --screenshot="$out" "http://127.0.0.1:8765/$page" >/dev/null 2>&1
 ls -l "$out"
