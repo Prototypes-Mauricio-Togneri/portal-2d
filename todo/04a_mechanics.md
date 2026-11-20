@@ -1,7 +1,7 @@
 # Stage 04a — Mechanics
 
-Status: In progress
-Last revised: 2026-11-19
+Status: Done
+Last revised: 2026-11-20
 
 ## Goal
 
@@ -853,11 +853,11 @@ Built 2026-11-20 from layouts the author approved; the author's cold playtest th
 
 ### Phase 4 — Wrap-up
 
-- [ ] **Interaction table complete.** No "to do" cells left; each cell is backed by a rule fixture or forbidden by chamber validation.
-- [ ] **Docs and AGENTS.md.** `docs/elements.md` covers every element; AGENTS.md's layout and rules mention the new elements.
-- [ ] **Sounds and colours table.** Fill it in with the real results. Verify: every row the plan keeps is filled in.
-- [ ] **README.** Update the stage status and record any new decisions.
-- [ ] **Status.** Set this file to Done once every *Done when* box is ticked.
+- [x] **Interaction table complete.** No "to do" cells left; each cell is backed by a rule fixture or forbidden by chamber validation. Done 2026-11-20: no cell read "to do", but 40 rules named no fixture, and 13 of them (M1, M2, P1, P3, P4, F1, B6, K1, K4, X1, U1, SL2 and A1) had a clause no fixture played. 13 new fixtures play those clauses, on chambers of their own in `scripts/fixtures/`, and every rule now names its fixtures.
+- [x] **Docs and AGENTS.md.** `docs/elements.md` covers every element; AGENTS.md's layout and rules mention the new elements. Done 2026-11-20: both already did (fifteen definition files, the wall and fourteen elements, and fourteen sign pictograms, as AGENTS.md counts them); AGENTS.md now says 04a is done and fixtures also pin interaction rules.
+- [x] **Sounds and colours table.** Fill it in with the real results. Verify: every row the plan keeps is filled in. Done 2026-11-20: every row was filled in during its phase; the live lasers' colours were checked against the sprite sources and the palette, and the receiver events against the level's sounds (none).
+- [x] **README.** Update the stage status and record any new decisions. Done 2026-11-20: 04a is Done, and README decision 16 keeps this file, since 04b cites its decisions.
+- [x] **Status.** Set this file to Done once every *Done when* box is ticked. Done 2026-11-20.
 
 ## Local checks added
 
@@ -869,12 +869,16 @@ Built 2026-11-20 from layouts the author approved; the author's cold playtest th
 
 ## Done when
 
-- [ ] Slide floors, rotating arrows and live lasers (emitter, receiver, mirror box) have each passed R1–R7.
-- [ ] The interaction table is complete, each cell backed by a fixture or forbidden by validation.
-- [ ] No mechanic needed engine changes outside its own files beyond the hooks added in Phase 0, or the exceptions are listed here.
-- [ ] The sounds and colours table is filled in.
-- [ ] Local checks pass: every chamber and fixture replays with its expected outcome; every chamber and fixture settles within the pass cap (the oscillation warning was dropped by decision 45).
-- [ ] `docs/elements.md`, AGENTS.md and `todo/README.md` are up to date.
+- [x] Slide floors, rotating arrows and live lasers (emitter, receiver, mirror box) have each passed R1–R7.
+- [x] The interaction table is complete, each cell backed by a fixture or forbidden by validation.
+- [x] No mechanic needed engine changes outside its own files beyond the hooks added in Phase 0, or the exceptions are listed here. Phase 0 added no hook (its hook check found them all in place or planned in a mechanic's own phase), so the exceptions are every engine change (`src/game/rules/`, `src/solver/`) outside a mechanic's element files, found 2026-11-20; none reshaped the step:
+  - **Every mechanic:** its element registered in the chamber format, the parser, the validator and the registry (`chamber_data.ts`, `chamber_parser.ts`, `validate_chamber.ts`, `element_registry.ts`), as `docs/elements.md`'s "Adding an element" expects.
+  - **Slide floors:** `continuesMovement` on every element definition (`element_definition.ts`); the slide loop inside a move in `step.ts`, which runs the fizzler rule on each tile, refuses a loop (decision 28), stops silently at a crossing it can't come out of (decision 29) and returns the slide's path (decision 22); slide floors' tile sharing in the validator (decision 26).
+  - **Turnable arrows:** the way an arrow points now, read from its blocked flag (`pointingWay` in `state_reader.ts`, `allowsWay` in `step.ts`, `compiled_chamber.ts`, `chamber_entries.ts`); the solver's allowed ways and facings worked out per set of blocked flags (`walk_graph.ts` and its callers `macro_search.ts`, `macro_route.ts` and `shot_lines.ts`, decision 36).
+  - **Live lasers:** `blocksRays` on every element definition; each receiver's lit flag in the state (`state_layout.ts`, `state_reader.ts`, and `state_draft.ts`, which also keeps the rays it traced until a value changes); the portal lookup moved out of `step.ts` into `portals.ts`, shared with the rays; emitters and receivers as wall tiles that take no portal, and the mirror on boxes (`compiled_chamber.ts`, decisions 48 and 56); the receiver registered right after the button, so receivers settle after buttons; the solver tracing rays to unpack a key (`state_key_codec.ts`) and refusing a chamber with a receiver (`macro_search.ts`, decision 47).
+- [x] The sounds and colours table is filled in.
+- [x] Local checks pass: every chamber and fixture replays with its expected outcome; every chamber and fixture settles within the pass cap (the oscillation warning was dropped by decision 45).
+- [x] `docs/elements.md`, AGENTS.md and `todo/README.md` are up to date.
 
 ## Go/no-go points
 

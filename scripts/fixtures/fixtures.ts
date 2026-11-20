@@ -16,6 +16,9 @@ import boxPutDownOnOpenDitch from '@scripts/fixtures/box_put_down_on_open_ditch.
 import buttonBehindCarriedBox from '@scripts/fixtures/button_behind_carried_box.json'
 import carriedBoxLink from '@scripts/fixtures/carried_box_link.json'
 import crossingLasers from '@scripts/fixtures/crossing_lasers.json'
+import exitAndDitch from '@scripts/fixtures/exit_and_ditch.json'
+import exitButton from '@scripts/fixtures/exit_button.json'
+import fizzlerShot from '@scripts/fixtures/fizzler_shot.json'
 import fizzlersInARow from '@scripts/fixtures/fizzlers_in_a_row.json'
 import lightBarrier from '@scripts/fixtures/light_barrier.json'
 import noPortalBehindEndPlate from '@scripts/fixtures/no_portal_behind_end_plate.json'
@@ -25,6 +28,7 @@ import portalOntoBox from '@scripts/fixtures/portal_onto_box.json'
 import portalOntoDitch from '@scripts/fixtures/portal_onto_ditch.json'
 import portalOntoFizzler from '@scripts/fixtures/portal_onto_fizzler.json'
 import portalOntoLaser from '@scripts/fixtures/portal_onto_laser.json'
+import portalPillar from '@scripts/fixtures/portal_pillar.json'
 import rayDeviceShots from '@scripts/fixtures/ray_device_shots.json'
 import rayEmitterButton from '@scripts/fixtures/ray_emitter_button.json'
 import rayFloorElements from '@scripts/fixtures/ray_floor_elements.json'
@@ -33,6 +37,8 @@ import rayMirrorPortal from '@scripts/fixtures/ray_mirror_portal.json'
 import rayMirrors from '@scripts/fixtures/ray_mirrors.json'
 import rayOwnDoor from '@scripts/fixtures/ray_own_door.json'
 import rayPortals from '@scripts/fixtures/ray_portals.json'
+import rayReceiverArrow from '@scripts/fixtures/ray_receiver_arrow.json'
+import rayReceiverBoxes from '@scripts/fixtures/ray_receiver_boxes.json'
 import rayReceiverButton from '@scripts/fixtures/ray_receiver_button.json'
 import rayReceiverDoor from '@scripts/fixtures/ray_receiver_door.json'
 import rayReceiversDoors from '@scripts/fixtures/ray_receivers_doors.json'
@@ -40,6 +46,8 @@ import rayRelay from '@scripts/fixtures/ray_relay.json'
 import raySlide from '@scripts/fixtures/ray_slide.json'
 import rayStoppers from '@scripts/fixtures/ray_stoppers.json'
 import rayTwoEmitters from '@scripts/fixtures/ray_two_emitters.json'
+import shotEdges from '@scripts/fixtures/shot_edges.json'
+import shotStoppers from '@scripts/fixtures/shot_stoppers.json'
 import slideArrowsExit from '@scripts/fixtures/slide_arrows_exit.json'
 import slideBlockers from '@scripts/fixtures/slide_blockers.json'
 import slideButtons from '@scripts/fixtures/slide_buttons.json'
@@ -48,16 +56,23 @@ import slideFizzler from '@scripts/fixtures/slide_fizzler.json'
 import slideLane from '@scripts/fixtures/slide_lane.json'
 import slideLoop from '@scripts/fixtures/slide_loop.json'
 import slidePortals from '@scripts/fixtures/slide_portals.json'
+import slideRingBlocked from '@scripts/fixtures/slide_ring_blocked.json'
+import slideRingOpen from '@scripts/fixtures/slide_ring_open.json'
+import switchBox from '@scripts/fixtures/switch_box.json'
 import twoBoxesFizzler from '@scripts/fixtures/two_boxes_fizzler.json'
 import twoButtonsOneDoor from '@scripts/fixtures/two_buttons_one_door.json'
+import underSubject from '@scripts/fixtures/under_subject.json'
+import wallTiles from '@scripts/fixtures/wall_tiles.json'
 
 // Short replays on tiny chambers (the JSON files next to this one): each pins
 // how the rules play a change from the original rules (docs/elements.md,
 // "Changes from the original rules") or an element the original game didn't
 // have (the light barrier, the blocked wall that a link switches, the slide
 // floor, the arrow that a link turns, and the emitter, its ray, the receiver
-// and the mirror box). The replay check runs them. The chambers are read without the layout
-// checks, so the one open at the edge still plays
+// and the mirror box), or a rule of the interaction table (docs/elements.md,
+// "Interactions") that no other fixture plays, so that every rule there names
+// the fixtures that play it. The replay check runs them. The chambers are read
+// without the layout checks, so the one open at the edge still plays
 
 /**
  * A replay pinning one behaviour of the rules.
@@ -1601,6 +1616,273 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 1,
       portals: 0,
       finalHash: '88c6c019',
+    },
+  },
+  {
+    name: 'walking_into_wall_tiles_only_turns',
+    behaviour: 'Walking into a wall, a blocked wall, an emitter or a receiver only turns the subject: it stays on its tile.',
+    chamber: wallTiles,
+    actions: [
+      'up',
+      'left',
+      'right',
+      'down',
+    ],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 0,
+      finalHash: 'b7fa16d6',
+    },
+  },
+  {
+    name: 'open_ditch_and_closed_exit_refuse_until_switched',
+    behaviour: 'Walking into an open ditch or the closed exit only turns the subject; once a switch bridges the ditch and opens the exit, it walks onto both, and the exit completes the chamber.',
+    chamber: exitAndDitch,
+    actions: [
+      'right',
+      'up',
+      'left',
+      'interact',
+      'right',
+      'right',
+      'left',
+      'up',
+    ],
+    expected: {
+      completed: true,
+      moves: 5,
+      portals: 0,
+      finalHash: '1e3fc83e',
+    },
+  },
+  {
+    name: 'portal_refused_on_or_beside_a_portal',
+    behaviour: 'A wall side holding a portal, or beside one on the same wall tile, refuses the other portal, while the far side takes it; a portal shot elsewhere closes where it was.',
+    chamber: portalPillar,
+    actions: [
+      'blue',
+      'orange',
+      'left',
+      'left',
+      'up',
+      'up',
+      'turnRight',
+      'orange',
+      'up',
+      'up',
+      'right',
+      'right',
+      'turnDown',
+      'orange',
+      'turnLeft',
+      'blue',
+    ],
+    expected: {
+      completed: false,
+      moves: 8,
+      portals: 3,
+      finalHash: '1e5dc461',
+    },
+  },
+  {
+    name: 'shots_stopped_until_switched_off',
+    behaviour: 'A closed door, a fizzler that is on and the closed exit each stop a shot; once a switch opens them and switches the fizzler off, shots pass them to the walls beyond.',
+    chamber: shotStoppers,
+    actions: [
+      'blue',
+      'turnLeft',
+      'blue',
+      'turnRight',
+      'blue',
+      'down',
+      'interact',
+      'up',
+      'blue',
+      'turnLeft',
+      'orange',
+      'turnRight',
+      'blue',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 3,
+      finalHash: '33309cf3',
+    },
+  },
+  {
+    name: 'shots_over_switch_and_out_of_open_edge',
+    behaviour: 'A shot passes over a switch to the wall beyond; shots out through an open door or the open exit on the chamber\'s edge leave it and open nothing.',
+    chamber: shotEdges,
+    actions: [
+      'blue',
+      'turnDown',
+      'orange',
+      'turnUp',
+      'orange',
+    ],
+    expected: {
+      completed: false,
+      moves: 0,
+      portals: 1,
+      finalHash: '5588081e',
+    },
+  },
+  {
+    name: 'no_shot_from_inside_fizzler',
+    behaviour: 'Inside a fizzler that is on, the portal keys do nothing; a step out of it, the next shot opens its portal.',
+    chamber: fizzlerShot,
+    actions: [
+      'right',
+      'blue',
+      'right',
+      'orange',
+    ],
+    expected: {
+      completed: false,
+      moves: 2,
+      portals: 1,
+      finalHash: '847073fb',
+    },
+  },
+  {
+    name: 'switch_sends_box_back_each_use',
+    behaviour: 'Standing on a switch, interact uses it rather than pick up the box in front, and each use sends its linked box back to its start; while a box is carried it is refused.',
+    chamber: switchBox,
+    actions: [
+      'interact',
+      'left',
+      'interact',
+      'right',
+      'up',
+      'turnLeft',
+      'interact',
+      'down',
+      'left',
+      'turnUp',
+      'interact',
+      'right',
+      'interact',
+      'up',
+      'turnLeft',
+      'interact',
+      'down',
+      'left',
+      'turnUp',
+      'interact',
+    ],
+    expected: {
+      completed: false,
+      moves: 9,
+      portals: 0,
+      finalHash: '31350335',
+    },
+  },
+  {
+    name: 'receiver_sends_boxes_back',
+    behaviour: 'A receiver linked to boxes, a mirror box among them, sends them back to their starts when it lights again; going dark does nothing to them.',
+    chamber: rayReceiverBoxes,
+    actions: [
+      'interact',
+      'up',
+      'turnLeft',
+      'interact',
+      'down',
+      'right',
+      'interact',
+      'up',
+      'turnRight',
+      'interact',
+      'up',
+      'down',
+    ],
+    expected: {
+      completed: false,
+      moves: 6,
+      portals: 0,
+      finalHash: '4a3ab27b',
+    },
+  },
+  {
+    name: 'exit_closing_as_subject_steps_on_completes',
+    behaviour: 'Stepping from the exit\'s button onto the exit completes the chamber, though the button coming up closes the exit in the same step.',
+    chamber: exitButton,
+    actions: ['up'],
+    expected: {
+      completed: true,
+      moves: 1,
+      portals: 0,
+      finalHash: '5e3c7af0',
+    },
+  },
+  {
+    name: 'slide_stops_before_closed_door_exit_and_devices',
+    behaviour: 'A slide stops in front of a closed door, the closed exit, an emitter and a receiver, each slide starting where the last one stopped.',
+    chamber: slideRingBlocked,
+    actions: [
+      'right',
+      'up',
+      'left',
+      'down',
+    ],
+    expected: {
+      completed: false,
+      moves: 4,
+      portals: 0,
+      finalHash: 'b7fa16d6',
+    },
+  },
+  {
+    name: 'slide_stops_on_switch_open_door_and_bridged_ditch',
+    behaviour: 'A slide stops on a switch, an open door and a bridged ditch, and in front of a blocked wall, each slide starting where the last one stopped.',
+    chamber: slideRingOpen,
+    actions: [
+      'right',
+      'up',
+      'left',
+      'down',
+    ],
+    expected: {
+      completed: false,
+      moves: 4,
+      portals: 0,
+      finalHash: '1cfea966',
+    },
+  },
+  {
+    name: 'receiver_turns_arrow',
+    behaviour: 'A lit receiver holds its arrow turned; stepping onto the arrow cuts the ray, so the arrow turns back under the subject, and stepping out of the ray turns it again.',
+    chamber: rayReceiverArrow,
+    actions: [
+      'up',
+      'up',
+      'right',
+      'down',
+    ],
+    expected: {
+      completed: false,
+      moves: 4,
+      portals: 0,
+      finalHash: '483c0c96',
+    },
+  },
+  {
+    name: 'door_and_ditch_switch_under_subject',
+    behaviour: 'A door closing and a ditch opening under the subject, as it steps off their buttons, leave it and the box it carries alone, and it walks off.',
+    chamber: underSubject,
+    actions: [
+      'interact',
+      'right',
+      'right',
+      'right',
+      'right',
+    ],
+    expected: {
+      completed: false,
+      moves: 4,
+      portals: 0,
+      finalHash: 'cb5b231a',
     },
   },
 ]
