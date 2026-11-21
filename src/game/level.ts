@@ -154,7 +154,8 @@ export class Level {
    * @param screenHeight - Height available to the chamber, in canvas pixels
    */
   constructor(canvas: HTMLCanvasElement, bindings: KeyBindings, screenWidth: number, screenHeight: number) {
-    this.renderer = new Renderer(canvas, screenWidth, screenHeight, Level.MINIMUM_TILES)
+    // The open exit fades the canvas out, so the stage behind it shows through with no step at the chamber's edge
+    this.renderer = new Renderer(canvas, screenWidth, screenHeight, Level.MINIMUM_TILES, true)
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     this.input = new Input(bindings)
     document.addEventListener('visibilitychange', this.onVisibilityChange)

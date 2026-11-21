@@ -50,7 +50,6 @@ export interface ChamberScreenProps {
 
 const props = defineProps<ChamberScreenProps>()
 
-const CANVAS_BORDER_PIXELS = 1 // Matches the canvas border in the styles below
 const SOLUTION_ADDRESS_LIFETIME = 10_000 // Milliseconds a downloaded solution's temporary address stays valid
 
 const router = useRouter()
@@ -84,13 +83,13 @@ let abandonReported = false // Whether the page going away has already been repo
 /**
  * Measures the space the chamber may fill inside the stage.
  * @param element - The stage element
- * @returns Available width and height in page pixels, excluding padding and the canvas border
+ * @returns Available width and height in page pixels, excluding padding
  */
 function availableSize(element: HTMLElement): StageSize {
   const style = getComputedStyle(element)
   return {
-    width: element.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - CANVAS_BORDER_PIXELS * 2,
-    height: element.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - CANVAS_BORDER_PIXELS * 2,
+    width: element.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+    height: element.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom),
   }
 }
 
@@ -637,10 +636,9 @@ onBeforeUnmount(() => {
     radial-gradient(ellipse closest-side at center, var(--color-ink) 50%, var(--color-stage-edge));
 }
 
-/* The script sets its size to the drawing alone, so the border goes outside it */
+/* The script sets its size to the drawing alone. No border, so the open exit, which fades the canvas
+   out, runs straight into the stage */
 .chamber-canvas {
-  box-sizing: content-box;
   display: block;
-  border: 1px solid var(--color-chamber);
 }
 </style>

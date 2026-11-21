@@ -33,7 +33,7 @@ type Backdrop = {
   readonly chamber: CompiledChamber // The chamber it was drawn for
   readonly tileSize: number // The tile size it was drawn at, in pixels
   readonly layer: TilePainter // The backdrop, on a canvas of its own
-  readonly floor: TilePainter | null // What the backdrop lays under its antlines (the floor, the slide floors, their surface detail and the open exit's shadow), kept apart to draw it again when one changes, or null when the chamber has none
+  readonly floor: TilePainter | null // What the backdrop lays under its antlines (the floor, the slide floors, their surface detail and, unless the exit is see-through, the open exit's shadow), kept apart to draw it again when one changes, or null when the chamber has none
   readonly cover: TilePainter | null // What the backdrop lays over its antlines (floor marks, then walls over their shadow), kept apart to draw it again when one changes, or null when the chamber has none
   readonly litKey: string // Which antlines the backdrop shows lit, from antlinesLitKey()
 }
@@ -143,12 +143,14 @@ function drawElementsOn(painter: TilePainter, state: RulesState, layer: DrawLaye
 /**
  * Draws the background, the floor of every tile, then the floor layer's
  * elements over it (the slide floors), then the floor's surface detail,
- * its tones and its wear marks, and last the open exit's shadow, drawn by
- * code, all under the antlines. The closed exit's sprite hides the shadow.
+ * its tones and its wear marks, and last, unless the exit is see-through,
+ * the open exit's shadow, drawn by code, all under the antlines. The closed
+ * exit's sprite hides the shadow.
  * @param painter - Paints on the canvas, already sized for the chamber
  * @param state - A state of the chamber
+ * @param seeThroughExit - Whether the exit fades the backdrop out instead, once it is whole (cutExitOpening), so the shadow is left out here
  */
-function drawFloor(painter: TilePainter, state: RulesState): void {
+function drawFloor(painter: TilePainter, state: RulesState, seeThroughExit: boolean): void {
   painter.clear()
 
   for (let x = 0; x < state.chamber.width; x++) {
@@ -160,7 +162,22 @@ function drawFloor(painter: TilePainter, state: RulesState): void {
   drawElementsOn(painter, state, 'floor')
   drawFloorTone(painter, state.chamber)
   drawFloorWear(painter, state.chamber)
-  drawExitShadow(painter, state.chamber)
+
+  if (!seeThroughExit) {
+    drawExitShadow(painter, state.chamber)
+  }
+}
+
+/**
+ * Fades a whole backdrop out across the open exit's tile, as the exit's
+ * shadow would darken it, so whatever lies behind the canvas shows through
+ * towards the chamber's edge. Laid last, it fades the walls' shadow falling
+ * on the tile with the floor, so nothing darkens what shows through.
+ * @param painter - The backdrop, drawn in full
+ * @param chamber - The chamber
+ */
+function cutExitOpening(painter: TilePainter, chamber: CompiledChamber): void {
+  drawExitShadow(painter, chamber, 'destination-out')
 }
 
 /**
@@ -188,28 +205,40 @@ function drawBackdropCover(painter: TilePainter, state: RulesState): void {
  * every tile and the slide floors with the floor's surface detail and the
  * open exit's shadow, the antlines and the floor marks, then the walls,
  * painted apart with theirs and laid down over the shared drop shadow of
- * their whole mass.
+ * their whole mass; with a see-through exit, the whole of it faded out
+ * across the exit's tile instead of the shadow.
  * @param painter - Paints on the canvas, already sized for the chamber
  * @param state - The state whose antlines are drawn; the rest is the same for every state of the chamber
+ * @param seeThroughExit - Whether the exit fades the backdrop out instead of darkening it (cutExitOpening); false by default
  */
-export function drawBackdrop(painter: TilePainter, state: RulesState): void {
-  drawFloor(painter, state)
+export function drawBackdrop(painter: TilePainter, state: RulesState, seeThroughExit = false): void {
+  drawFloor(painter, state, seeThroughExit)
   drawAntlines(painter, state)
   drawBackdropCover(painter, state)
+
+  if (seeThroughExit) {
+    cutExitOpening(painter, state.chamber)
+  }
 }
 
 /**
  * Draws a backdrop from its parts: the floor, a state's antlines, then the
- * cover laid over them.
- * @param layer - The backdrop's layer, drawn over in full
- * @param floor - The floor, the slide floors, their surface detail and the open exit's shadow, from drawFloor()
+ * cover laid over them, and with a see-through exit, the exit's fade cut
+ * out of it all.
+ * @param layer - The backdrop's layer, drawn over in full: the floor is opaque everywhere, so it covers what the exit's fade let through before
+ * @param floor - The floor, the slide floors, their surface detail and, unless the exit is see-through, the open exit's shadow, from drawFloor()
  * @param cover - The floor marks and the walls over their shadow, from drawBackdropCover()
  * @param state - The state whose antlines are drawn
+ * @param seeThroughExit - Whether the exit fades the backdrop out (cutExitOpening)
  */
-function composeBackdrop(layer: TilePainter, floor: TilePainter, cover: TilePainter, state: RulesState): void {
+function composeBackdrop(layer: TilePainter, floor: TilePainter, cover: TilePainter, state: RulesState, seeThroughExit: boolean): void {
   layer.drawLayer(floor, false)
   drawAntlines(layer, state)
   layer.drawLayer(cover, false)
+
+  if (seeThroughExit) {
+    cutExitOpening(layer, state.chamber)
+  }
 }
 
 /**
@@ -253,10 +282,14 @@ export function hasAmbientLife(state: RulesState): boolean {
  * shot ripples where it stopped; at no time given, nothing changes over
  * time, the glows hold steady and nothing breaks up or ripples. While the
  * chamber is completed, the subject, on the exit or walking out past it, is
- * drawn under the open exit's shadow.
+ * drawn under the open exit's shadow. With a see-through exit, the exit's
+ * tile fades the canvas itself out towards the chamber's edge instead of
+ * darkening it, so whatever lies behind the canvas shows through, and the
+ * subject walking out fades out with it.
  */
 export class Renderer {
   private readonly painter: TilePainter // Paints the tiles
+  private readonly seeThroughExit: boolean // Whether the open exit fades the canvas out instead of darkening it
   private backdrop: Backdrop | null = null // The backdrop last drawn, kept while the chamber and tile size stay the same
   private rayGlow: RayGlow | null = null // The rays' glow last painted, kept while the rays and the tile size stay the same
   private subjectLayer: SubjectLayer | null = null // The layer the subject was last drawn on while the chamber was completed, kept while the chamber and tile size stay the same
@@ -267,10 +300,12 @@ export class Renderer {
    * @param screenWidth - Width available to the chamber, in pixels
    * @param screenHeight - Height available to the chamber, in pixels
    * @param minimumTiles - Fewest tiles the tiles are sized for each way; a smaller chamber is drawn with the tiles a chamber this size would get, leaving the rest of the area empty
+   * @param seeThroughExit - Whether the open exit fades the canvas out towards the chamber's edge, showing what lies behind it, instead of darkening it to black; false by default
    * @throws Error when the canvas cannot provide a 2D context
    */
-  constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number, minimumTiles = 1) {
+  constructor(canvas: HTMLCanvasElement, screenWidth: number, screenHeight: number, minimumTiles = 1, seeThroughExit = false) {
     this.painter = new TilePainter(canvas, screenWidth, screenHeight, minimumTiles)
+    this.seeThroughExit = seeThroughExit
   }
 
   /**
@@ -313,11 +348,11 @@ export class Renderer {
       const cover = hasAntlines ? this.painter.createLayer() : null
 
       if ((floor === null) || (cover === null)) {
-        drawBackdrop(layer, state)
+        drawBackdrop(layer, state, this.seeThroughExit)
       } else {
-        drawFloor(floor, state)
+        drawFloor(floor, state, this.seeThroughExit)
         drawBackdropCover(cover, state)
-        composeBackdrop(layer, floor, cover, state)
+        composeBackdrop(layer, floor, cover, state, this.seeThroughExit)
       }
 
       this.backdrop = {
@@ -333,7 +368,7 @@ export class Renderer {
     }
 
     if ((backdrop.floor !== null) && (backdrop.cover !== null) && (backdrop.litKey !== litKey)) {
-      composeBackdrop(backdrop.layer, backdrop.floor, backdrop.cover, state)
+      composeBackdrop(backdrop.layer, backdrop.floor, backdrop.cover, state, this.seeThroughExit)
       this.backdrop = {
         ...backdrop,
         litKey: litKey,
@@ -464,7 +499,8 @@ export class Renderer {
    * its own, darkens what it drew under the open exit's shadow, and lays it
    * down: the subject's while the chamber is completed, so the subject on
    * the exit, or walking out across it, darkens towards the chamber's edge as
-   * the floor beneath it does, its drop shadow with it.
+   * the floor beneath it does, its drop shadow with it. With a see-through
+   * exit it fades out there instead, as the floor does.
    * @param state - The state drawn
    * @param layer - The layer
    * @param pose - Where the subject is drawn, from subjectPose()
@@ -477,7 +513,7 @@ export class Renderer {
 
     own.erase()
     this.drawLayer(own, state, layer, pose, angle, shares, opening)
-    drawExitShadow(own, state.chamber, 'source-atop')
+    drawExitShadow(own, state.chamber, this.seeThroughExit ? 'destination-out' : 'source-atop')
     this.painter.drawLayer(own, false)
   }
 
@@ -571,7 +607,8 @@ export class Renderer {
    * (shownState), and the state after the step once the slide ends. The
    * subject is drawn part way through its turn while it turns, and, while
    * the state drawn is completed, on a layer of its own under the open
-   * exit's shadow.
+   * exit's shadow. With a see-through exit the canvas is cleared first, as
+   * the backdrop lets what lies behind the canvas show through the exit.
    * @param state - The state to draw
    * @param transition - The step being drawn, ending on the state drawn, or null (the default) to draw the state as it is
    * @param time - Now, in milliseconds on the frame clock, for what moves with time alone, or null (the default) to hold it still
@@ -594,6 +631,11 @@ export class Renderer {
     const shares: BlockedShares | null = ((time !== null) && (changes !== null)) ? (kind, index) => changes.blockedAt(kind, index, time) : null
     const opening: OpeningProgress | null = ((time !== null) && (openings !== null)) ? (color) => openings.progressAt(shown, color, time) : null
     const runs = (shown.chamber.countOf('emitter') > 0) ? rayRuns(shown, traceRays(shown)) : NO_RUNS
+
+    // The backdrop is see-through across the exit, so the last frame's pixels there must go first
+    if (this.seeThroughExit) {
+      this.painter.erase()
+    }
 
     this.painter.drawLayer(this.backdropOf(shown), false)
     drawTurnableArrows(this.painter, shown, shares)

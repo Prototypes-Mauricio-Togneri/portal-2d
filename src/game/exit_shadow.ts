@@ -8,7 +8,10 @@ import type {TilePainter} from '@/game/tile_painter'
 // its tile darkens towards the chamber's edge, clear at its inner edge and
 // black at its outer one. It is the same in every state, so the renderer
 // paints it with the floor, into its backdrop; the closed exit's opaque
-// sprite hides it, and it shows between the exit's halves as they slide
+// sprite hides it, and it shows between the exit's halves as they slide.
+// The chamber screen's renderer makes the exit see-through instead: the same
+// fade cuts the backdrop out, once it is whole, so the stage behind the
+// canvas shows through towards the chamber's edge
 
 /** How many even steps the gradient takes from the tile's outer edge to its inner one, with a colour stop at each step's ends, so it follows the shadow's curve closely */
 const SHADOW_STEPS = 16
@@ -41,7 +44,7 @@ export function exitOuterSide(chamber: CompiledChamber): Direction | null {
  * none.
  * @param painter - Paints on the canvas
  * @param chamber - The chamber
- * @param composite - How it is laid over what is drawn: over everything (the default), or 'source-atop' to darken only the pixels already painted, such as something drawn alone on a layer of its own
+ * @param composite - How it is laid over what is drawn: over everything (the default), 'source-atop' to darken only the pixels already painted, such as something drawn alone on a layer of its own, or 'destination-out' to fade what is painted out instead, by the same amounts, so whatever lies behind the canvas shows through
  */
 export function drawExitShadow(painter: TilePainter, chamber: CompiledChamber, composite: GlobalCompositeOperation = 'source-over'): void {
   const outerSide = exitOuterSide(chamber)

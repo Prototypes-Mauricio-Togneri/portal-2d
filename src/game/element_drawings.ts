@@ -16,7 +16,8 @@ import type {PiecePlacer, TilePainter} from '@/game/tile_painter'
 // a laser's or a light barrier's beam that is off, which aren't drawn at
 // all; their end plates show where a beam ends, and a fizzler's connectors
 // where its field meets the wall, lit or not, and the open
-// exit's shadow is painted with the floor (exit_shadow). Walls, blocked
+// exit's shadow is painted with the floor, or cut out of the backdrop when
+// the exit is see-through (exit_shadow). Walls, blocked
 // walls and open ditches join their neighbours, quarter by quarter (a blocked
 // wall a link reaches is drawn in the backdrop as a wall, its blocked surface
 // painted over it while it is blocked), and doors, the exit and
@@ -293,10 +294,10 @@ function crumblePlacer(share: number, seed: number): PiecePlacer {
 /**
  * Builds a drawing for a type that slides open and shut in a gap in a wall:
  * each closed element's sprite, turned to the walls beside it; one that is
- * open isn't drawn, though the open exit's shadow, painted with the floor,
- * shows there. One sliding is drawn part way: its sprite cut down the
- * middle, each half slid into the wall beside it, the exit's shadow showing
- * between them.
+ * open isn't drawn, though the open exit's shadow, painted with the floor
+ * (or its see-through fade, cut out of the backdrop), shows there. One
+ * sliding is drawn part way: its sprite cut down the middle, each half slid
+ * into the wall beside it, the exit's shadow showing between them.
  * @param kind - The element type
  * @param closedSprite - Its sprite while closed
  * @returns The drawing
