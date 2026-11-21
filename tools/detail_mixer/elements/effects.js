@@ -1187,15 +1187,23 @@ function destructionCounts(index, step) {
     return kept
   }
 
-  const counts = new Map()
-  destructions.set(`${index}:${step}`, counts)
-  let before = Engine.instances(index, 0)
+  // From the nearest step already counted, so walking along the solution counts each step once
+  let from = step - 1
 
-  for (let s = 1; s <= step; s++) {
+  while ((from > 0) && !destructions.has(`${index}:${from}`)) {
+    from--
+  }
+
+  let counts = (from > 0) ? destructions.get(`${index}:${from}`) : new Map()
+  let before = Engine.instances(index, from)
+
+  for (let s = from + 1; s <= step; s++) {
     const events = Engine.stepEvents(index, s)
     const after = Engine.instances(index, s)
 
     if (events.includes('boxDestroyed') || events.includes('fizzled')) {
+      counts = new Map(counts)
+
       for (const box of after.boxes) {
         const was = before.boxes[box.index]
         const backAtStart = !box.carried && (box.x === box.startX) && (box.y === box.startY)
@@ -1207,6 +1215,7 @@ function destructionCounts(index, step) {
       }
     }
 
+    destructions.set(`${index}:${s}`, counts)
     before = after
   }
 

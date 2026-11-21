@@ -4,11 +4,12 @@
 // part of the game; it is never built or shipped with it.
 //
 //   ChamberEngine.ready                     resolves once every sprite is decoded
-//   ChamberEngine.chambers                  [{name, width, height, steps}]
+//   ChamberEngine.chambers                  [{name, width, height, steps, board}]
 //   ChamberEngine.grid(index)               what each tile holds, as the screen shows it
 //   ChamberEngine.instances(index, step)    every element, box and the subject in a state
 //   ChamberEngine.render(canvas, index, tileSize, options)
 //   ChamberEngine.stepEvents(index, step)   what happened in the step that led to a state
+//   ChamberEngine.actionsOf(index)          the recorded solution's actions
 //   ChamberEngine.play(targets, index, tileSize, options)   the recorded solution replayed with the game's animation
 //
 // Besides the game's chambers and the playground, `chambers` lists line-up boards (`board` names
@@ -127,7 +128,7 @@ const BOARDS: Listing[] = [
 type RenderOptions = {
   step?: number // Actions of the recorded solution played before drawing; 0, the settled start, by default
   surfaceDetail?: boolean // Whether the game's own surface detail (floor and walls) is drawn; true by default
-  hooks?: Record<string, ((...parts: never[]) => unknown) | undefined> // The page's own drawing, see engine/patch_sources.py: floor, walls, skin, afterTile
+  hooks?: Record<string, ((...parts: never[]) => unknown) | undefined> // The page's own drawing, see engine/patch_sources.py: floor, walls, skin, hide, afterTile
 }
 
 const LIST: Listing[] = [

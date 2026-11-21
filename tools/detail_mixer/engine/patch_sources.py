@@ -12,7 +12,10 @@ game's own files are never touched:
                        draw over the floor, and over the walls before their
                        shadow is made (the 'floor' and 'walls' hooks)
   tile_painter.ts      lets the page hand back another image for a sprite
-                       drawn on a tile with drawSprite() (the 'skin' hook)
+                       (the 'skin' hook): drawn on a tile with drawSprite(),
+                       turned by any angle, shrinking or in pieces, its
+                       `path` saying which; and leave out a sprite drawn on a
+                       tile, shadow and all (the 'hide' hook)
   element_drawings.ts  lets the page draw over each joined tile (a wall, a
                        blocked wall, an open ditch) right after its four
                        quarters (the 'afterTile' hook)
