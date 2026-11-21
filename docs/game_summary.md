@@ -140,5 +140,5 @@ Every chamber is closed in by walls (or blocked walls, emitters, receivers, door
 
 - **Loading screen:** the first screen of every visit; it loads the sounds and images, then waits for Start.
 - **Home screen:** a menu on the wall of a test-room photo: Play (the chambers, each with its best time, a figure that turns green once completed, and a map preview of the chamber), Settings (sound effects, music, controls and reset progress; the controls are Default, the arrows with A, D, Space and Shift, or Custom keys set one by one; the mouse plays no part in the game) and About (links, the changelog and feedback).
-- **Chamber screen:** the chamber over a blurred test-room photo, with the side panel beside it.
+- **Chamber screen:** the chamber on a dark stage, lit a little behind it, with the side panel beside it.
 - Desktop only: phones and tablets get a notice instead of the game.

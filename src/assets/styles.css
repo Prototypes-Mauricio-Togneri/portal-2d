@@ -33,6 +33,9 @@
   /* Chamber backdrop, matching the game's canvas */
   --color-chamber: rgba(32, 32, 32, 1);
 
+  /* Chamber screen's stage at its darkest, at its edges, round the chamber */
+  --color-stage-edge: rgba(15, 17, 19, 1);
+
   /* Typography */
   --font-display: 'Oxanium', 'Helvetica Neue', Arial, sans-serif;
   --font-body: 'Chakra Petch', 'Helvetica Neue', Arial, sans-serif;

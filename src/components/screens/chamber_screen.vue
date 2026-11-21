@@ -503,7 +503,7 @@ onBeforeUnmount(() => {
       <PerformanceView v-if="PerformanceView !== null" ref="performanceView" />
     </aside>
 
-    <div ref="stage" class="chamber-stage room">
+    <div ref="stage" class="chamber-stage">
       <canvas ref="canvas" class="chamber-canvas"></canvas>
     </div>
 
@@ -553,7 +553,7 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
-/* Side rail: chamber sign and controls on a light panel, casting a soft shadow on the room. It
+/* Side rail: chamber sign and controls on a light panel, casting a soft shadow on the stage. It
    never shows a scrollbar; a window too short for it still scrolls it with the wheel */
 .chamber-rail {
   position: relative;
@@ -622,10 +622,9 @@ onBeforeUnmount(() => {
   line-height: 1;
 }
 
-/* Stage holding the game canvas, on the room's back wall */
+/* Stage holding the game canvas: a dark graphite room, so the chamber, its lasers and its portals
+   stand out, lit a little in its middle, behind the chamber, and darkest at its edges */
 .chamber-stage {
-  position: relative;
-  isolation: isolate;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -633,18 +632,9 @@ onBeforeUnmount(() => {
   min-height: 0;
   padding: 2rem;
   overflow: hidden;
-}
-
-/* The room, blurred so the eye stays on the chamber; it reaches past the stage so the blur's
-   faded edges are clipped away */
-.chamber-stage::before {
-  content: '';
-  position: absolute;
-  inset: -2rem;
-  z-index: -1;
-  pointer-events: none;
-  background: inherit;
-  filter: blur(0.25rem);
+  background:
+    radial-gradient(ellipse closest-side at center, rgba(var(--color-white-rgb), 0.08), rgba(var(--color-white-rgb), 0) 50%),
+    radial-gradient(ellipse closest-side at center, var(--color-ink) 50%, var(--color-stage-edge));
 }
 
 /* The script sets its size to the drawing alone, so the border goes outside it */
