@@ -8,7 +8,9 @@ import ditchGrateUrl from '@/assets/audio/sound/ditch_grate.mp3'
 import doorCloseUrl from '@/assets/audio/sound/door_close.mp3'
 import doorOpenUrl from '@/assets/audio/sound/door_open.mp3'
 import errorUrl from '@/assets/audio/sound/error.mp3'
-import fizzlerUrl from '@/assets/audio/sound/fizzler.mp3'
+import fizzleUrl from '@/assets/audio/sound/fizzle.mp3'
+import fizzlerOffUrl from '@/assets/audio/sound/fizzler_off.mp3'
+import fizzlerOnUrl from '@/assets/audio/sound/fizzler_on.mp3'
 import laserOffUrl from '@/assets/audio/sound/laser_off.mp3'
 import laserOnUrl from '@/assets/audio/sound/laser_on.mp3'
 import lightBarrierOffUrl from '@/assets/audio/sound/light_barrier_off.mp3'
@@ -35,7 +37,7 @@ export class Sound {
   static readonly BUTTON_ON = new Sound(buttonOnUrl, 0.27) // Button pressed down
   static readonly BUTTON_OFF = new Sound(buttonOffUrl, 0.56) // Button released
   static readonly BOX = new Sound(boxUrl, 0.05) // Box picked up or put down
-  static readonly FIZZLER = new Sound(fizzlerUrl, 0.27) // Subject entered an active fizzler
+  static readonly FIZZLE = new Sound(fizzleUrl, 0.27) // Subject entered an active fizzler
   static readonly CROSS = new Sound(crossUrl, 0.35) // Subject went through a portal
   static readonly DOOR_OPEN = new Sound(doorOpenUrl, 0.15) // Door or exit opened
   static readonly DOOR_CLOSE = new Sound(doorCloseUrl, 0.15) // Door or exit closed
@@ -48,6 +50,8 @@ export class Sound {
   static readonly LIGHT_BARRIER_ON = new Sound(lightBarrierOnUrl, 0.15) // A light barrier switched on by a link
   static readonly LASER_OFF = new Sound(laserOffUrl, 0.33) // A laser switched off by a link
   static readonly LASER_ON = new Sound(laserOnUrl, 0.37) // A laser switched on by a link
+  static readonly FIZZLER_OFF = new Sound(fizzlerOffUrl, 0.63) // A fizzler switched off by a link
+  static readonly FIZZLER_ON = new Sound(fizzlerOnUrl, 0.12) // A fizzler switched on by a link
   static readonly MENU_MOVE = new Sound(menuMoveUrl, 0.17) // A menu's or dialog's highlight moved (arrow keys, Tab or the pointer), a menu stepped into or back out of with the arrow keys, or Escape or Backspace stepped back, closed a dialog or opened or closed the pause menu; played by the screens, not the game
   static readonly MENU_ACCEPT = new Sound(menuAcceptUrl, 0.15) // A menu row or dialog button pressed (Enter, Space or a click), a setting changed or a key bound; played by the screens, not the game
   static readonly START = new Sound(startUrl, 0.31) // Chamber picked on the home screen; played by the screens, not the game

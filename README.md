@@ -17,7 +17,6 @@ The game already reports these events, but they play no sound:
 
 These have an animation but no event and no sound:
 
-- A fizzler field forming or crumbling away when it's switched on or off
 - An emitter switching on or off, and a ray bouncing off a mirror box (new elements)
 
 These are silent in general:

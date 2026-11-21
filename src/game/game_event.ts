@@ -28,6 +28,8 @@ export type GameEvent =
   | 'lightBarrierSwitchedOn'
   | 'laserSwitchedOff'
   | 'laserSwitchedOn'
+  | 'fizzlerSwitchedOff'
+  | 'fizzlerSwitchedOn'
   | 'receiverLit'
   | 'receiverUnlit'
 
@@ -60,6 +62,8 @@ export const GameEvent = {
   LIGHT_BARRIER_SWITCHED_ON: 'lightBarrierSwitchedOn', // A light barrier switched on, by a link
   LASER_SWITCHED_OFF: 'laserSwitchedOff', // A laser switched off, by a link
   LASER_SWITCHED_ON: 'laserSwitchedOn', // A laser switched on, by a link
+  FIZZLER_SWITCHED_OFF: 'fizzlerSwitchedOff', // A fizzler switched off, by a link
+  FIZZLER_SWITCHED_ON: 'fizzlerSwitchedOn', // A fizzler switched on, by a link
   RECEIVER_LIT: 'receiverLit', // A ray reached a receiver, which acts on its links as a button going down
   RECEIVER_UNLIT: 'receiverUnlit', // A receiver no ray reaches any more went dark, which acts on its links as a button coming up
 } as const

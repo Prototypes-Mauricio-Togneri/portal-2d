@@ -4,25 +4,30 @@ import {defineElement} from '@/game/rules/element_definition'
 import type {StateDraft} from '@/game/rules/state_draft'
 
 /**
- * Turns a fizzler off, when a link unblocks it.
+ * Turns a fizzler off, when a link unblocks it, reporting it only if it was on.
  * @param draft - The step's state
  * @param index - The fizzler's index in the chamber's fizzler list
  */
 function turnFizzlerOff(draft: StateDraft, index: number): void {
-  draft.setBlocked('fizzler', index, false)
+  if (draft.setBlocked('fizzler', index, false)) {
+    draft.emit(GameEvent.FIZZLER_SWITCHED_OFF)
+  }
 }
 
 /**
- * Turns a fizzler on, when a link blocks it, closing a portal on any wall
- * side facing its tile. Such a portal opened while the fizzler was off,
- * since one that is on stops shots and keeps the subject from shooting.
+ * Turns a fizzler on, when a link blocks it, reporting it only if it was
+ * off, and closing a portal on any wall side facing its tile. Such a portal
+ * opened while the fizzler was off, since one that is on stops shots and
+ * keeps the subject from shooting.
  * @param draft - The step's state
  * @param index - The fizzler's index in the chamber's fizzler list
  */
 function turnFizzlerOn(draft: StateDraft, index: number): void {
   const position = draft.chamber.positionOf('fizzler', index)
 
-  draft.setBlocked('fizzler', index, true)
+  if (draft.setBlocked('fizzler', index, true)) {
+    draft.emit(GameEvent.FIZZLER_SWITCHED_ON)
+  }
 
   if (draft.closePortalsFacing(position.x, position.y)) {
     draft.emit(GameEvent.PORTAL_FIZZLED)
@@ -73,6 +78,8 @@ export const FIZZLER_ELEMENT = defineElement<BlockableData>()({
   events: [
     GameEvent.FIZZLED,
     GameEvent.PORTAL_FIZZLED,
+    GameEvent.FIZZLER_SWITCHED_OFF,
+    GameEvent.FIZZLER_SWITCHED_ON,
   ],
   hooks: {
     subjectInside: applyFizzlerRule,

@@ -89,7 +89,7 @@ export class Level {
     [GameEvent.BOX_PICKED_UP]: Sound.BOX,
     [GameEvent.BOX_PUT_DOWN]: Sound.BOX,
     [GameEvent.BOX_DESTROYED]: null,
-    [GameEvent.FIZZLED]: Sound.FIZZLER,
+    [GameEvent.FIZZLED]: Sound.FIZZLE,
     [GameEvent.PORTAL_FIZZLED]: null,
     [GameEvent.CROSSED]: Sound.CROSS,
     [GameEvent.DOOR_OPENED]: Sound.DOOR_OPEN,
@@ -108,6 +108,8 @@ export class Level {
     [GameEvent.LIGHT_BARRIER_SWITCHED_ON]: Sound.LIGHT_BARRIER_ON,
     [GameEvent.LASER_SWITCHED_OFF]: Sound.LASER_OFF,
     [GameEvent.LASER_SWITCHED_ON]: Sound.LASER_ON,
+    [GameEvent.FIZZLER_SWITCHED_OFF]: Sound.FIZZLER_OFF,
+    [GameEvent.FIZZLER_SWITCHED_ON]: Sound.FIZZLER_ON,
     [GameEvent.RECEIVER_LIT]: null,
     [GameEvent.RECEIVER_UNLIT]: null,
   }
