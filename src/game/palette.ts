@@ -4,9 +4,9 @@
  * missed shot's ripple in each portal's colour, the antlines' dots, unlit
  * and lit, each with its border, an emitter's ray, from its dark rim to its
  * white-hot core, the mirror marked on a carried mirror box, the open exit's
- * shadow, and the surface detail laid over the floor and the walls' tops,
- * its tones and its wear marks, each drawn faint (how faint is the
- * drawing's to say). Everything else is drawn from the sprites' files,
+ * shadow, the surface detail laid over the floor and the walls' tops,
+ * its tones and its wear marks, and the element detail laid over the
+ * elements' sprites, each drawn faint (how faint is the drawing's to say). Everything else is drawn from the sprites' files,
  * whose meaning colours are listed in docs/sprites.md. The background and
  * the portals' colours are mirrored by hand in the CSS tokens on `:root` in
  * `src/assets/styles.css`, and the portals' colours in the sprites too, as
@@ -41,6 +41,10 @@ export const PALETTE = {
   wallScratch: 'rgba(238, 241, 248, 1)', // A scratch on a wall's top, bright on the grey
   surfaceLight: 'rgba(255, 255, 255, 1)', // What lightens a surface: the open floor far from every wall, the lit edge of a scratch or a crack on the floor, a wall plate or patch a shade lighter
   surfaceDark: 'rgba(0, 0, 0, 1)', // What darkens a wall: a plate or patch a shade darker, the shaded edge of a scratch
+  elementWarm: 'rgba(255, 186, 110, 1)', // The element detail (docs/sprites.md): an element tinted a little warmer than the next
+  elementCool: 'rgba(110, 150, 255, 1)', // An element tinted a little cooler than the next
+  gratePolish: 'rgba(206, 210, 216, 1)', // A band of a grate's bars rubbed paler where feet cross it
+  grateScratch: 'rgba(226, 230, 236, 1)', // A scratch on a grate's frame, bright on the steel
 } as const
 
 /**

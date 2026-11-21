@@ -950,7 +950,8 @@ input[type="range"]:focus-visible,
   // ---------- Building the controls ----------
 
   function buildControls() {
-    $('chamber').innerHTML = Engine.chambers.map((chamber, index) => `<option value="${index}">${chamber.name} (${chamber.width} × ${chamber.height})</option>`).join('')
+    // The chambers only, not the element mixer's line-up boards the engine lists after them
+    $('chamber').innerHTML = Engine.chambers.map((chamber, index) => chamber.board ? '' : `<option value="${index}">${chamber.name} (${chamber.width} × ${chamber.height})</option>`).join('')
     $('presets').innerHTML = PRESETS.map((preset) => `<button type="button" class="preset" data-preset="${preset.id}">${preset.name}</button>`).join('')
 
     $('groups').innerHTML = GROUPS.map((group) => {

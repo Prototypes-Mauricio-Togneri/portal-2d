@@ -13,6 +13,7 @@ import type {SpriteName} from '@/game/sprite_set'
  * placed where it was last drawn.
  */
 export type DestroyedBox = {
+  readonly index: number // Which box it is, its index in the chamber's box list, so it keeps its look as it goes
   readonly x: number // Column of its middle, in tiles
   readonly y: number // Row of its middle, in tiles
   readonly size: number // Its side, as a share of a tile
@@ -63,6 +64,7 @@ export function findDestroyedBoxes(before: RulesState, after: RulesState, events
     const sprite = boxSprite(chamber, index, facing)
 
     destroyed.push({
+      index: index,
       x: x + 0.5 + (DELTAS[facing].dx * ahead),
       y: y + 0.5 + (DELTAS[facing].dy * ahead),
       size: carried ? CARRIED_BOX_SIZE : 1,

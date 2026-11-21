@@ -1,4 +1,5 @@
 import {type DestroyedBox, findDestroyedBoxes} from '@/game/destroyed_boxes'
+import {type ElementLook, lookOf} from '@/game/element_detail'
 import type {GameEvent} from '@/game/game_event'
 import type {RulesState} from '@/game/rules/rules_state'
 import type {TilePainter} from '@/game/tile_painter'
@@ -13,6 +14,13 @@ const HANG_SHARE = 0.12
 const SMALLEST_SCALE = 0.25
 
 /**
+ * A box falling, with the look of its own it keeps as it falls.
+ */
+type FallingBox = DestroyedBox & {
+  readonly look: ElementLook | null // Its look (element_detail), or null for the sprite as it is
+}
+
+/**
  * The boxes the latest step dropped into ditches that opened under them,
  * drawn falling over a short time: each hangs a moment, then drops ever
  * faster, shrinking towards the middle of the pit and fading into its
@@ -20,7 +28,7 @@ const SMALLEST_SCALE = 0.25
  * have already sent each box back to its start, where it is drawn at once.
  */
 export class BoxFall {
-  private falls: readonly DestroyedBox[] = [] // The boxes falling, empty when none is
+  private falls: readonly FallingBox[] = [] // The boxes falling, empty when none is
   private startTime = 0 // When they started to fall, in milliseconds on the frame clock
 
   /**
@@ -32,7 +40,10 @@ export class BoxFall {
    * @param time - Now, in milliseconds on the frame clock
    */
   start(before: RulesState, after: RulesState, events: readonly GameEvent[], time: number): void {
-    const falls = findDestroyedBoxes(before, after, events).filter((box) => box.fell)
+    const falls = findDestroyedBoxes(before, after, events).filter((box) => box.fell).map((box) => ({
+      ...box,
+      look: lookOf(after.chamber, 'box', box.index),
+    }))
 
     if (falls.length > 0) {
       this.falls = falls
@@ -81,7 +92,7 @@ export class BoxFall {
       const middleY = box.tile.y + 0.5
 
       painter.drawClippedToTile(box.tile, () => {
-        painter.drawSpriteShrunk(box.sprite, box.x + ((middleX - box.x) * fallen), box.y + ((middleY - box.y) * fallen), box.size, box.way, 1 - ((1 - SMALLEST_SCALE) * fallen), 1 - fallen)
+        painter.drawSpriteShrunk(box.sprite, box.x + ((middleX - box.x) * fallen), box.y + ((middleY - box.y) * fallen), box.size, box.way, 1 - ((1 - SMALLEST_SCALE) * fallen), 1 - fallen, 0, box.look)
       })
     }
   }

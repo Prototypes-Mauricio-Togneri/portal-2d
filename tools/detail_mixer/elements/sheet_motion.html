@@ -46,9 +46,12 @@ Engine.ready.then(() => {
   const x = Number(query.get('x') ?? 0)
   const row = Number(query.get('y') ?? 0)
   const reach = Number(query.get('r') ?? 2)
-  const settings = PRESETS.find((preset) => preset.id === (query.get('preset') ?? 'bold')).make()
-  settings.choices.carried = 'worn'
-  for (const key of Object.keys(settings.share)) settings.share[key] = 100
+  // preset=none draws the game's own look on both strips, the first through the mock-up's engine kept from before (engine_mockup.js) when it is loaded
+  const settings = (query.get('preset') === 'none') ? null : PRESETS.find((preset) => preset.id === (query.get('preset') ?? 'bold')).make()
+  if (settings !== null) {
+    settings.choices.carried = 'worn'
+    for (const key of Object.keys(settings.share)) settings.share[key] = 100
+  }
   const canvases = [document.createElement('canvas'), document.createElement('canvas')]
   const strips = [document.createElement('div'), document.createElement('div')]
   strips.forEach((strip, i) => { strip.className = 'strip'; document.body.append(i === 0 ? 'Original' : 'With detail', strip) })

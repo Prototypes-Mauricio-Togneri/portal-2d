@@ -1,5 +1,6 @@
 import type {PositionData} from '@/game/chamber_data'
 import {DELTAS, Direction} from '@/game/direction'
+import {type ElementLook, lookedSprite} from '@/game/element_detail'
 import {PALETTE} from '@/game/palette'
 import {type ScaledSprite, scaledShadow, scaledSprite, shadowBlur} from '@/game/sprite_scaling'
 import {quarterRect, RAISED_SPRITES, type SpriteName, type TileQuarter} from '@/game/sprite_set'
@@ -370,9 +371,24 @@ export class TilePainter {
    * @param x - Column, part way between two while something glides
    * @param y - Row, part way between two while something glides
    * @param way - The way it is turned to face, from facing up as drawn; up by default
+   * @param look - The look of its own laid over it (element_detail), or null (the default) for the sprite as it is
    */
-  drawSprite(name: SpriteName, x: number, y: number, way: Direction = Direction.UP): void {
-    this.drawSized(name, Math.round(x * this.tileSize), Math.round(this.tileTop(y)), this.tileSize, way)
+  drawSprite(name: SpriteName, x: number, y: number, way: Direction = Direction.UP, look: ElementLook | null = null): void {
+    this.drawSized(name, Math.round(x * this.tileSize), Math.round(this.tileTop(y)), this.tileSize, way, look)
+  }
+
+  /**
+   * Draws an image the size of a tile over a tile, as drawn: one made from
+   * the sprites, such as an open pit's tile with its sides shaded. Nothing
+   * is drawn while only shadows are painted.
+   * @param image - The image, a tile's size
+   * @param x - Column
+   * @param y - Row
+   */
+  drawTileImage(image: HTMLCanvasElement, x: number, y: number): void {
+    if (this.pass !== 'shadows') {
+      this.context.drawImage(image, x * this.tileSize, this.tileTop(y))
+    }
   }
 
   /**
@@ -386,8 +402,9 @@ export class TilePainter {
    * @param x - Column, part way between two while something glides
    * @param y - Row, part way between two while something glides
    * @param angle - How far it is turned from facing up as drawn, in radians, clockwise on the canvas: a quarter turn to the right is π/2
+   * @param look - The look of its own laid over it, which turns with it, or null (the default) for the sprite as it is
    */
-  drawSpriteRotated(name: SpriteName, x: number, y: number, angle: number): void {
+  drawSpriteRotated(name: SpriteName, x: number, y: number, angle: number, look: ElementLook | null = null): void {
     const size = this.tileSize
     const sprite = scaledSprite(name, size)
 
@@ -404,7 +421,7 @@ export class TilePainter {
     }
 
     if (this.pass !== 'shadows') {
-      this.drawRotated(sprite, middleX, middleY, size, angle)
+      this.drawRotated((look === null) ? sprite : lookedSprite(name, size, sprite, look), middleX, middleY, size, angle)
     }
   }
 
@@ -511,8 +528,9 @@ export class TilePainter {
    * @param scale - How far it has shrunk, as a share of that side; over 1 when it has grown
    * @param opacity - How opaque it is drawn, from 0 (not at all) to 1
    * @param pivotY - How far below the sprite's middle, as drawn facing up, the point it shrinks about lies, in tiles: 0 (the default) for its middle, less than 0 for a point above it
+   * @param look - The look of its own laid over it, or null (the default) for the sprite as it is
    */
-  drawSpriteShrunk(name: SpriteName, x: number, y: number, size: number, way: Direction, scale: number, opacity: number, pivotY = 0): void {
+  drawSpriteShrunk(name: SpriteName, x: number, y: number, size: number, way: Direction, scale: number, opacity: number, pivotY = 0, look: ElementLook | null = null): void {
     if ((this.pass === 'shadows') || (scale <= 0) || (opacity <= 0)) {
       return
     }
@@ -536,7 +554,7 @@ export class TilePainter {
       // Scaled about the pivot, which stays where it is
       this.context.translate(0, pivot)
       this.context.scale(scale, scale)
-      this.context.drawImage(sprite.image, -(side / 2) - sprite.margin, -(side / 2) - sprite.margin - pivot)
+      this.context.drawImage(((look === null) ? sprite : lookedSprite(name, side, sprite, look)).image, -(side / 2) - sprite.margin, -(side / 2) - sprite.margin - pivot)
     } finally {
       this.context.restore()
     }
@@ -555,8 +573,9 @@ export class TilePainter {
    * @param way - The way it is turned to face, from facing up as drawn
    * @param piecesAcross - Pieces across its tile; its overhang adds more
    * @param place - Where each piece is drawn
+   * @param look - The look of its own laid over it, so its pieces show it, or null (the default) for the sprite as it is
    */
-  drawSpritePieces(name: SpriteName, x: number, y: number, size: number, way: Direction, piecesAcross: number, place: PiecePlacer): void {
+  drawSpritePieces(name: SpriteName, x: number, y: number, size: number, way: Direction, piecesAcross: number, place: PiecePlacer, look: ElementLook | null = null): void {
     if (this.pass === 'shadows') {
       return
     }
@@ -568,7 +587,7 @@ export class TilePainter {
       return
     }
 
-    const image = sprite.image
+    const image = ((look === null) ? sprite : lookedSprite(name, side, sprite, look)).image
     const columns = Math.max(1, Math.round(piecesAcross * image.width / side))
     const rows = Math.max(1, Math.round(piecesAcross * image.height / side))
     const turn = TURNS[way]
@@ -669,8 +688,9 @@ export class TilePainter {
    * @param top - The square's top edge, in whole pixels
    * @param size - The square's side, in pixels
    * @param way - The way it is turned to face, from facing up as drawn
+   * @param look - The look of its own laid over the sprite, never its shadow, which its shape makes, or null for the sprite as it is
    */
-  private drawSized(name: SpriteName, left: number, top: number, size: number, way: Direction): void {
+  private drawSized(name: SpriteName, left: number, top: number, size: number, way: Direction, look: ElementLook | null): void {
     const sprite = scaledSprite(name, size)
 
     if (sprite === null) {
@@ -684,7 +704,7 @@ export class TilePainter {
     }
 
     if (this.pass !== 'shadows') {
-      this.drawTurned(sprite, left, top, size, way)
+      this.drawTurned((look === null) ? sprite : lookedSprite(name, size, sprite, look), left, top, size, way)
     }
   }
 

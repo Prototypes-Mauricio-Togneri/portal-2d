@@ -148,6 +148,16 @@ const PLATE_SALT = 40
 const WALL_PATCH_SALT = 50
 
 const softLayers = new Map<string, HTMLCanvasElement>() // Every soft layer painted so far, by which it is and its chamber's size and number, the most recently used last
+const keptDistances = new Map<string, Float32Array>() // Every chamber's wall distances worked out so far, for the room light at a tile, by the chamber's size and number, the most recently used last
+
+/**
+ * How much of the floor's room light falls on a tile's middle: of its
+ * darkening towards the walls, and of its lift in the open.
+ */
+export type RoomLight = {
+  readonly wallShade: number // Share of the darkening towards the walls, from 0 to 1
+  readonly openLift: number // Share of the lift in the open, from 0 to 1
+}
 
 /**
  * A chamber's soft layer, painted the first time it is asked for and kept:
@@ -239,6 +249,52 @@ function wallDistances(chamber: CompiledChamber): Float32Array {
 
   // A sample beside a wall lies half a sample from its edge, not a whole one from its first sample's middle
   return steps.map((step) => Math.max(step - 0.5, 0) / SAMPLES_PER_TILE)
+}
+
+/**
+ * How much of the floor's room light falls on a tile's middle, from the
+ * same distances to the walls the floor's soft layer is painted with, so
+ * what stands on the floor is lit as the floor round it. The distances are
+ * worked out once per chamber and kept, as the soft layers are.
+ * @param chamber - The chamber
+ * @param x - Column
+ * @param y - Row
+ * @returns The shares of the floor's darkening and lift there
+ */
+export function roomLightAt(chamber: CompiledChamber, x: number, y: number): RoomLight {
+  const key = `${chamber.width}x${chamber.height}:${chamberSeed(chamber)}`
+  const distances = keptDistances.get(key) ?? wallDistances(chamber)
+
+  // Asked for again, it moves to the end of the line
+  keptDistances.delete(key)
+  keptDistances.set(key, distances)
+
+  if (keptDistances.size > KEPT_SOFT_LAYERS) {
+    const oldest = keptDistances.keys().next()
+
+    if (oldest.done !== true) {
+      keptDistances.delete(oldest.value)
+    }
+  }
+
+  // The four samples round the tile's middle
+  const width = chamber.width * SAMPLES_PER_TILE
+  const across = (x * SAMPLES_PER_TILE) + (SAMPLES_PER_TILE / 2)
+  const down = ((chamber.height - 1 - y) * SAMPLES_PER_TILE) + (SAMPLES_PER_TILE / 2)
+  let total = 0
+
+  for (let sampleDown = down - 1; sampleDown <= down; sampleDown++) {
+    for (let sampleAcross = across - 1; sampleAcross <= across; sampleAcross++) {
+      total += distances[(sampleDown * width) + sampleAcross] ?? Number.POSITIVE_INFINITY
+    }
+  }
+
+  const distance = total / 4
+
+  return {
+    wallShade: Math.exp(-distance / WALL_SHADE_REACH),
+    openLift: smoothStep(OPEN_LIFT_FROM, OPEN_LIFT_FULL, distance),
+  }
 }
 
 /**

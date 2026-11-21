@@ -1,6 +1,7 @@
 import {findDestroyedBoxes} from '@/game/destroyed_boxes'
 import {DELTAS, type Direction} from '@/game/direction'
 import {boxSprite} from '@/game/element_drawings'
+import {type ElementLook, lookOf} from '@/game/element_detail'
 import {GameEvent} from '@/game/game_event'
 import {pieceNumber} from '@/game/piece_number'
 import {CARRIED_BOX_AHEAD, CARRIED_BOX_SIZE, PORTAL_SPRITES} from '@/game/renderer'
@@ -19,6 +20,7 @@ type Burst = {
   readonly y: number // Row of its middle, in tiles
   readonly size: number // Its side, as a share of a tile
   readonly way: Direction // The way it was turned to face
+  readonly look: ElementLook | null // A box's look of its own (element_detail), so its pieces show it, or null for the sprite as it is
   readonly seed: number // Sets its pieces' paths apart from another burst's
   readonly startTime: number // When it started breaking up, in milliseconds on the frame clock
 }
@@ -133,6 +135,7 @@ export class FizzleParticles {
           y: before.portalY(color) + 0.5,
           size: 1,
           way: side,
+          look: null,
           seed: this.burstCount++,
           startTime: time,
         })
@@ -151,6 +154,7 @@ export class FizzleParticles {
         y: after.subjectY + 0.5 + (ahead.dy * CARRIED_BOX_AHEAD),
         size: CARRIED_BOX_SIZE,
         way: sprite.way,
+        look: lookOf(after.chamber, 'box', before.carriedBox),
         seed: this.burstCount++,
         startTime: time,
       })
@@ -164,6 +168,7 @@ export class FizzleParticles {
           y: box.y,
           size: box.size,
           way: box.way,
+          look: lookOf(after.chamber, 'box', box.index),
           seed: this.burstCount++,
           startTime: time,
         })
@@ -212,7 +217,7 @@ export class FizzleParticles {
         continue
       }
 
-      painter.drawSpritePieces(burst.sprite, burst.x, burst.y, burst.size, burst.way, PIECES_ACROSS, (offsetX, offsetY, index) => placePiece(burst, progress, offsetX, offsetY, index))
+      painter.drawSpritePieces(burst.sprite, burst.x, burst.y, burst.size, burst.way, PIECES_ACROSS, (offsetX, offsetY, index) => placePiece(burst, progress, offsetX, offsetY, index), burst.look)
     }
   }
 }

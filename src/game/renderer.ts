@@ -1,6 +1,7 @@
 import {antlinesLitKey, drawAntlines} from '@/game/antline_drawing'
 import type {BoxFall} from '@/game/box_fall'
 import {DELTAS, Direction} from '@/game/direction'
+import {heldLook, lookOf} from '@/game/element_detail'
 import {drawLaserGlows, drawTurnableArrows, ELEMENT_DRAWINGS, glowStrength} from '@/game/element_drawings'
 import type {BlockedShares, ElementTransitions} from '@/game/element_transitions'
 import {drawExitShadow} from '@/game/exit_shadow'
@@ -378,12 +379,15 @@ export class Renderer {
   private drawSubject(painter: TilePainter, state: RulesState, pose: SubjectPose, angle: number | null): void {
     const sprite = (state.carriedBox === NO_BOX) ? 'subject_holding_gun' : 'subject_holding_box'
     const mirror = (state.carriedBox === NO_BOX) ? null : state.chamber.mirrorOf(state.carriedBox)
+    // A carried box keeps its look, laid over the box painted in the subject's hands
+    const boxLook = (state.carriedBox === NO_BOX) ? null : lookOf(state.chamber, 'box', state.carriedBox)
+    const look = (boxLook === null) ? null : heldLook(boxLook, CARRIED_BOX_AHEAD, CARRIED_BOX_SIZE)
 
     painter.drawClippedToTile(pose.clip, () => {
       if (angle === null) {
-        painter.drawSprite(sprite, pose.x, pose.y, pose.facing)
+        painter.drawSprite(sprite, pose.x, pose.y, pose.facing, look)
       } else {
-        painter.drawSpriteRotated(sprite, pose.x, pose.y, angle)
+        painter.drawSpriteRotated(sprite, pose.x, pose.y, angle, look)
       }
 
       if (mirror !== null) {

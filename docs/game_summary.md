@@ -4,7 +4,7 @@ A desktop puzzle game, a fan take on Valve's Portal. The player guides a test su
 
 ## The view
 
-- Seen from straight above, with no perspective: the chamber is a grid of square tiles. Walls and other raised things cast a soft shadow. The floor and the walls carry faint tone and wear, which change nothing in play, so no stretch of them looks stamped from one tile.
+- Seen from straight above, with no perspective: the chamber is a grid of square tiles. Walls and other raised things cast a soft shadow. The floor and the walls carry faint tone and wear, and the boxes, buttons, switches, arrows and ditches a faint look of their own, lit as the floor round them, none of which changes anything in play, so no stretch of them looks stamped from one tile and no two of a kind look quite alike.
 - The camera never moves: the whole chamber is always on screen, scaled to fit and centred, but its tiles never grow larger than a chamber 16 tiles each way would get, so a small chamber leaves more of the room around it. There is no scrolling and nothing outside the chamber to explore.
 - Beside the chamber, a side panel shows the chamber's sign (its number, its place in the list, a timer and an icon for each kind of element, dark for those the chamber holds) and the controls, drawn as the player's own keys.
 
@@ -64,16 +64,16 @@ Every chamber is closed in by walls (or blocked walls, emitters, receivers, door
 | 5   | Emitter          | A dark steel housing on the wall's face it fires from, with a slit lens: lit pale gold while on, dark while off |
 | 6   | Receiver         | The same housing with a round eye in place of the slit, lit pale gold while a ray reaches it, fading as it lights or goes dark |
 | 7   | Light barrier    | On: a wide see-through pale teal band across the tile, horizontal or vertical, neighbours joined, a dark connector at each end. Off: only the connectors |
-| 8   | Ditch            | Open: a deep pit, neighbours joined into one. Bridged: a steel grate over it                        |
+| 8   | Ditch            | Open: a deep pit, neighbours joined into one, its sides lighter and darker in long soft stretches. Bridged: a steel grate over it, each a shade of its own, with a band of bars rubbed paler and a scratch or two on its frame |
 | 9   | Door             | Closed: a burgundy panel with glowing pink strips and a ring. Open: plain floor                     |
 | 10  | Exit             | Closed: shaped like a door, but dark steel with white lights. Open: a gap in the outer wall, its floor darkening to black towards the chamber's edge |
 | 11  | Fizzler          | On: a see-through cobalt-blue field with sparkles, over whatever is under it, a thin steel connector along each wall it spans between, its slot lit pale. Off: only the connectors, their slots dark |
 | 12  | Laser            | On: a glowing crimson beam, horizontal or vertical, neighbours joined, an end plate at each end. Off: only the end plates |
-| 13  | Box              | A grey plated cube, a little smaller than its tile, so a button under it still shows                |
-| 14  | Mirror box       | The box with a glass bar from corner to corner in place of its disc; in the subject's hands, a line over the box shows which way it slants |
-| 15  | Button           | A round red button on a white plate; its dome lights up while pressed                               |
-| 16  | Switch           | The button's twin in yellow; doesn't show whether it was used                                       |
-| 17  | Arrow            | A grey chevron pointing its way; a turnable one, a smaller chevron on a round disc cut into the floor, swinging round when it turns |
+| 13  | Box              | A grey plated cube, a little smaller than its tile, so a button under it still shows; lit as the floor where it started, darker by a wall, a look it keeps wherever it goes, in the subject's hands too |
+| 14  | Mirror box       | The box with a glass bar from corner to corner in place of its disc, its plates a shade and a tint of their own; in the subject's hands, a line over the box shows which way it slants |
+| 15  | Button           | A round red button on a white plate, the plate and its clamps a shade of their own; its dome lights up while pressed |
+| 16  | Switch           | The button's twin in yellow, its plate a shade of its own; doesn't show whether it was used        |
+| 17  | Arrow            | A grey chevron pointing its way, its paint a shade of its own; a turnable one, a smaller chevron on a round disc cut into the floor, swinging round when it turns |
 | 18  | Subject          | A painted test subject in an orange jumpsuit, portal gun pointing the way it faces; while carrying a box, it holds the box out in front instead |
 | 19  | Portal           | A glowing blue or orange oval on the wall's edge facing the floor                                   |
 | 20  | Ray              | A narrow pale gold beam with a dark rim and a white-hot core, glowing steadily, from the emitter's face to whatever stops it; it bends under a mirror box |

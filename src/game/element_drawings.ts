@@ -1,4 +1,5 @@
 import {Direction, WAY_ANGLES} from '@/game/direction'
+import {lookOf, pitTile} from '@/game/element_detail'
 import type {BlockedShares} from '@/game/element_transitions'
 import {pieceNumber} from '@/game/piece_number'
 import {type BeamKind, type BeamOrientation, type CompiledChamber, NO_ELEMENT} from '@/game/rules/compiled_chamber'
@@ -226,6 +227,29 @@ function drawJoinedTile(painter: TilePainter, name: SpriteName, joins: JoinTest,
 }
 
 /**
+ * Draws an open pit's tile, joined to the open ditches round it, from the
+ * tile kept with its sides shaded (element_detail), each quarter from the
+ * strip tile its neighbours pick.
+ * @param painter - Paints on the canvas
+ * @param chamber - The chamber
+ * @param joins - Whether a tile is an open ditch
+ * @param x - Column
+ * @param y - Row
+ */
+function drawPitTile(painter: TilePainter, chamber: CompiledChamber, joins: JoinTest, x: number, y: number): void {
+  const tile = pitTile(chamber, x, y, {
+    topLeft: stripTileFor(joins, x, y, 'topLeft'),
+    topRight: stripTileFor(joins, x, y, 'topRight'),
+    bottomLeft: stripTileFor(joins, x, y, 'bottomLeft'),
+    bottomRight: stripTileFor(joins, x, y, 'bottomRight'),
+  }, painter.blockSize)
+
+  if (tile !== null) {
+    painter.drawTileImage(tile, x, y)
+  }
+}
+
+/**
  * Which way a door, the exit or a fizzler is turned: its sprite is drawn
  * with the walls on its left and right, and given a quarter turn when it
  * spans its gap from top to bottom (the rules' gapSpan()).
@@ -365,7 +389,7 @@ function drawArrows(painter: TilePainter, state: RulesState): void {
     const direction = chamber.directionOf('arrow', i)
 
     if ((direction !== null) && (chamber.turnedDirectionOf('arrow', i) === null)) {
-      painter.drawSprite('arrow', position.x, position.y, direction)
+      painter.drawSprite('arrow', position.x, position.y, direction, lookOf(chamber, 'arrow', i))
     }
   }
 }
@@ -416,13 +440,14 @@ export function drawTurnableArrows(painter: TilePainter, state: RulesState, shar
     const position = chamber.positionOf('arrow', i)
     const share = (shares === null) ? null : shares('arrow', i)
     const way = state.pointingWay('arrow', i)
+    const look = lookOf(chamber, 'arrow', i)
 
-    painter.drawSprite('turntable', position.x, position.y)
+    painter.drawSprite('turntable', position.x, position.y, Direction.UP, look)
 
     if (share !== null) {
-      painter.drawSpriteRotated('turntable_arrow', position.x, position.y, turningAngle(turned, own, share))
+      painter.drawSpriteRotated('turntable_arrow', position.x, position.y, turningAngle(turned, own, share), look)
     } else if (way !== null) {
-      painter.drawSprite('turntable_arrow', position.x, position.y, way)
+      painter.drawSprite('turntable_arrow', position.x, position.y, way, look)
     }
   }
 }
@@ -568,14 +593,15 @@ function drawDitches(painter: TilePainter, state: RulesState, shares: BlockedSha
   for (let i = 0; i < chamber.countOf('ditch'); i++) {
     const position = chamber.positionOf('ditch', i)
     const share = shareOf(i)
+    const look = lookOf(chamber, 'ditch', i)
 
     if (share !== null) {
-      drawJoinedTile(painter, 'ditch', joins, position.x, position.y)
-      painter.drawTileSlid(position.x, position.y, grateSide(chamber, position.x, position.y), false, share, () => painter.drawSprite('ditch_bridged', position.x, position.y))
+      drawPitTile(painter, chamber, joins, position.x, position.y)
+      painter.drawTileSlid(position.x, position.y, grateSide(chamber, position.x, position.y), false, share, () => painter.drawSprite('ditch_bridged', position.x, position.y, Direction.UP, look))
     } else if (state.isBlocked('ditch', i)) {
-      drawJoinedTile(painter, 'ditch', joins, position.x, position.y)
+      drawPitTile(painter, chamber, joins, position.x, position.y)
     } else {
-      painter.drawSprite('ditch_bridged', position.x, position.y)
+      painter.drawSprite('ditch_bridged', position.x, position.y, Direction.UP, look)
     }
   }
 }
@@ -689,7 +715,7 @@ function drawButtons(painter: TilePainter, state: RulesState): void {
   for (let i = 0; i < chamber.countOf('button'); i++) {
     const position = chamber.positionOf('button', i)
 
-    painter.drawSprite(state.isButtonPressed(i) ? 'button_pressed' : 'button_up', position.x, position.y)
+    painter.drawSprite(state.isButtonPressed(i) ? 'button_pressed' : 'button_up', position.x, position.y, Direction.UP, lookOf(chamber, 'button', i))
   }
 }
 
@@ -719,7 +745,7 @@ function drawSwitches(painter: TilePainter, state: RulesState): void {
   for (let i = 0; i < chamber.countOf('switch'); i++) {
     const position = chamber.positionOf('switch', i)
 
-    painter.drawSprite('switch', position.x, position.y)
+    painter.drawSprite('switch', position.x, position.y, Direction.UP, lookOf(chamber, 'switch', i))
   }
 }
 
@@ -771,7 +797,7 @@ function drawBoxes(painter: TilePainter, state: RulesState): void {
 
     const sprite = boxSprite(state.chamber, i)
 
-    painter.drawSprite(sprite.name, state.boxX(i), state.boxY(i), sprite.way)
+    painter.drawSprite(sprite.name, state.boxX(i), state.boxY(i), sprite.way, lookOf(state.chamber, 'box', i))
   }
 }
 

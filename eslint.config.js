@@ -214,6 +214,8 @@ export default withVueTs(
             '@/game/surface_noise',
             '@/game/surface_tone',
             '@/game/wear_marks',
+            '@/game/element_parts',
+            '@/game/element_detail',
           ],
           patterns: [
             '@/chambers/*',
@@ -272,6 +274,8 @@ export default withVueTs(
             '@/game/surface_noise',
             '@/game/surface_tone',
             '@/game/wear_marks',
+            '@/game/element_parts',
+            '@/game/element_detail',
           ],
           patterns: [
             '@/chambers/*',

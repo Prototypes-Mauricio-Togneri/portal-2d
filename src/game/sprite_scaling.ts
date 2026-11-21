@@ -3,12 +3,13 @@ import {spriteOf} from '@/game/sprite_sources'
 import {quarterRect, SPRITE_SHAPES, SPRITE_TILE_SIZE, STRIP_TILES, type SpriteName, TILE_QUARTERS} from '@/game/sprite_set'
 
 // Each sprite shrunk once to a tile size on screen and kept, so a frame only
-// copies pixels, and the shared drop shadow of each raised sprite, made once
-// from its shape at that size. Shared by every canvas the chamber is drawn
-// on: the level's and each home menu map's. A strip is shrunk quarter by
-// quarter, each on its own, so no quarter's pixels bleed into another's: a
-// tile's quarters come from different strip tiles, and side by side they must
-// meet without a seam
+// copies pixels; the shared drop shadow of each raised sprite, made once
+// from its shape at that size; and the images made from them, each
+// element's own look and each open pit tile (element_detail). Shared by
+// every canvas the chamber is drawn on: the level's and each home menu
+// map's. A strip is shrunk quarter by quarter, each on its own, so no
+// quarter's pixels bleed into another's: a tile's quarters come from
+// different strip tiles, and side by side they must meet without a seam
 
 /**
  * A sprite shrunk to a tile size.
@@ -37,6 +38,7 @@ const SHADOW_REACH = 1.5
 
 const scaledBySize = new Map<number, Map<SpriteName, ScaledSprite | null>>() // Every sprite shrunk so far, by tile size, the most recently used size last
 const shadowsBySize = new Map<number, Map<SpriteName, ScaledSprite | null>>() // Every shadow made so far, by tile size, the most recently used size last
+const imagesBySize = new Map<number, Map<string, HTMLCanvasElement>>() // Every other image made from the sprites so far (each element's own look, each open pit tile), by tile size, the most recently used size last, so it goes with its size's sprites
 
 /**
  * Makes a canvas with a 2D context.
@@ -166,9 +168,9 @@ function makeShadow(name: SpriteName, tileSize: number): ScaledSprite | null {
  * are kept.
  * @param store - The images kept, by tile size
  * @param tileSize - Side of a tile, in canvas pixels
- * @returns The images kept for that size, by sprite
+ * @returns The images kept for that size, by sprite or by key
  */
-function keptAt(store: Map<number, Map<SpriteName, ScaledSprite | null>>, tileSize: number): Map<SpriteName, ScaledSprite | null> {
+function keptAt<Key, Image>(store: Map<number, Map<Key, Image>>, tileSize: number): Map<Key, Image> {
   let images = store.get(tileSize)
 
   if (images === undefined) {
@@ -209,6 +211,26 @@ export function scaledSprite(name: SpriteName, tileSize: number): ScaledSprite |
   }
 
   return sprites.get(name) ?? null
+}
+
+/**
+ * An image made from the sprites for a tile size, made the first time it is
+ * asked for and kept with that size's sprites, so it is let go of with them.
+ * @param tileSize - Side of a tile, in canvas pixels
+ * @param key - What sets it apart from every other image kept for that size
+ * @param make - Makes it
+ * @returns The image
+ */
+export function keptImage(tileSize: number, key: string, make: () => HTMLCanvasElement): HTMLCanvasElement {
+  const images = keptAt(imagesBySize, tileSize)
+  let image = images.get(key)
+
+  if (image === undefined) {
+    image = make()
+    images.set(key, image)
+  }
+
+  return image
 }
 
 /**
