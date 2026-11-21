@@ -26,6 +26,8 @@ export type GameEvent =
   | 'ditchSwitched'
   | 'lightBarrierSwitchedOff'
   | 'lightBarrierSwitchedOn'
+  | 'laserSwitchedOff'
+  | 'laserSwitchedOn'
   | 'receiverLit'
   | 'receiverUnlit'
 
@@ -56,6 +58,8 @@ export const GameEvent = {
   DITCH_SWITCHED: 'ditchSwitched', // A ditch switched, by a link, to be bridged or to open
   LIGHT_BARRIER_SWITCHED_OFF: 'lightBarrierSwitchedOff', // A light barrier switched off, by a link
   LIGHT_BARRIER_SWITCHED_ON: 'lightBarrierSwitchedOn', // A light barrier switched on, by a link
+  LASER_SWITCHED_OFF: 'laserSwitchedOff', // A laser switched off, by a link
+  LASER_SWITCHED_ON: 'laserSwitchedOn', // A laser switched on, by a link
   RECEIVER_LIT: 'receiverLit', // A ray reached a receiver, which acts on its links as a button going down
   RECEIVER_UNLIT: 'receiverUnlit', // A receiver no ray reaches any more went dark, which acts on its links as a button coming up
 } as const

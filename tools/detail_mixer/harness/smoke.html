@@ -78,7 +78,7 @@ function demoSkin(sprite) {
 
 // The 'afterTile' hook: drawn over a joined tile in a frame on its top left corner
 function demoAfterTile(tile) {
-  if (tile.name !== 'ditch') {
+  if (tile.name !== 'wall') {
     return
   }
 
@@ -93,7 +93,7 @@ Engine.ready.then(() => {
 
   show('1. As the game draws it now (surface detail on)', {})
   show('2. surfaceDetail: false, the floor and walls as they were before', {surfaceDetail: false})
-  show('3. skin hook (boxes, buttons, switches, arrows, bridged ditches) and afterTile hook (open ditches), loud on purpose', {hooks: {skin: demoSkin, afterTile: demoAfterTile}})
+  show('3. skin hook (boxes, buttons, switches, arrows, bridged ditches) and afterTile hook (walls), loud on purpose', {hooks: {skin: demoSkin, afterTile: demoAfterTile}})
   show(`4. step ${middle} of ${listing.steps} of the recorded solution, with the same hooks`, {step: middle, hooks: {skin: demoSkin, afterTile: demoAfterTile}})
   show('5. floor and walls hooks: a red line over the floor, a green one over the walls', {hooks: {
     floor: (ctx, tileSize) => { ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; ctx.fillRect(0, tileSize * 4.4, tileSize * listing.width, tileSize * 0.2) },

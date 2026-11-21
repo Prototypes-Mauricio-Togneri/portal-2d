@@ -9,6 +9,8 @@ import doorCloseUrl from '@/assets/audio/sound/door_close.mp3'
 import doorOpenUrl from '@/assets/audio/sound/door_open.mp3'
 import errorUrl from '@/assets/audio/sound/error.mp3'
 import fizzlerUrl from '@/assets/audio/sound/fizzler.mp3'
+import laserOffUrl from '@/assets/audio/sound/laser_off.mp3'
+import laserOnUrl from '@/assets/audio/sound/laser_on.mp3'
 import lightBarrierOffUrl from '@/assets/audio/sound/light_barrier_off.mp3'
 import lightBarrierOnUrl from '@/assets/audio/sound/light_barrier_on.mp3'
 import menuAcceptUrl from '@/assets/audio/sound/menu_accept.mp3'
@@ -44,6 +46,8 @@ export class Sound {
   static readonly DITCH_GRATE = new Sound(ditchGrateUrl, 0.12) // A ditch's grate slid in or out, a link bridging or opening it
   static readonly LIGHT_BARRIER_OFF = new Sound(lightBarrierOffUrl, 0.33) // A light barrier switched off by a link
   static readonly LIGHT_BARRIER_ON = new Sound(lightBarrierOnUrl, 0.15) // A light barrier switched on by a link
+  static readonly LASER_OFF = new Sound(laserOffUrl, 0.33) // A laser switched off by a link
+  static readonly LASER_ON = new Sound(laserOnUrl, 0.37) // A laser switched on by a link
   static readonly MENU_MOVE = new Sound(menuMoveUrl, 0.17) // A menu's or dialog's highlight moved (arrow keys, Tab or the pointer), a menu stepped into or back out of with the arrow keys, or Escape or Backspace stepped back, closed a dialog or opened or closed the pause menu; played by the screens, not the game
   static readonly MENU_ACCEPT = new Sound(menuAcceptUrl, 0.15) // A menu row or dialog button pressed (Enter, Space or a click), a setting changed or a key bound; played by the screens, not the game
   static readonly START = new Sound(startUrl, 0.31) // Chamber picked on the home screen; played by the screens, not the game

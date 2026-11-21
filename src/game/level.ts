@@ -106,6 +106,8 @@ export class Level {
     [GameEvent.DITCH_SWITCHED]: Sound.DITCH_GRATE,
     [GameEvent.LIGHT_BARRIER_SWITCHED_OFF]: Sound.LIGHT_BARRIER_OFF,
     [GameEvent.LIGHT_BARRIER_SWITCHED_ON]: Sound.LIGHT_BARRIER_ON,
+    [GameEvent.LASER_SWITCHED_OFF]: Sound.LASER_OFF,
+    [GameEvent.LASER_SWITCHED_ON]: Sound.LASER_ON,
     [GameEvent.RECEIVER_LIT]: null,
     [GameEvent.RECEIVER_UNLIT]: null,
   }

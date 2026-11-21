@@ -16,9 +16,11 @@ game's own files are never touched:
                        turned by any angle, shrinking or in pieces, its
                        `path` saying which; and leave out a sprite drawn on a
                        tile, shadow and all (the 'hide' hook)
-  element_drawings.ts  lets the page draw over each joined tile (a wall, a
-                       blocked wall, an open ditch) right after its four
-                       quarters (the 'afterTile' hook)
+  element_drawings.ts  lets the page draw over each joined tile (a wall or a
+                       blocked wall) right after its four quarters (the
+                       'afterTile' hook); an open ditch, now drawn whole from
+                       the game's own pit tile with its sides shaded
+                       (element_detail), is not reached
 
 Every change is an exact text replacement that must match once. When the game
 moves on and one no longer matches, this script stops and names it: open the
