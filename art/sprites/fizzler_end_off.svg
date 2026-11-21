@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    A fizzler's connector, its slot dark (docs/sprites.md): a thin dark steel
+    plate along the whole left edge of the tile, where the field meets the
+    wall. Drawn at both ends of each run of fizzlers, on or off, under
+    fizzler_end_on, so the two must match but for the slot and its glow.
+    Drawn at the left end of a field running left to right; the game turns it
+    to each end.
+  -->
+
+  <!-- The plate -->
+  <rect x="0" y="0" width="20" height="256" fill="rgb(50, 55, 61)"/>
+
+  <!-- The slot, dark -->
+  <rect x="11" y="14" width="8" height="228" rx="1" fill="rgb(36, 48, 96)"/>
+</svg>

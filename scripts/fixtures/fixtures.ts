@@ -19,6 +19,7 @@ import carriedBoxLink from '@scripts/fixtures/carried_box_link.json'
 import crossingLasers from '@scripts/fixtures/crossing_lasers.json'
 import exitAndDitch from '@scripts/fixtures/exit_and_ditch.json'
 import exitButton from '@scripts/fixtures/exit_button.json'
+import fizzlerConnector from '@scripts/fixtures/fizzler_connector.json'
 import fizzlerShot from '@scripts/fixtures/fizzler_shot.json'
 import fizzlersInARow from '@scripts/fixtures/fizzlers_in_a_row.json'
 import lightBarrier from '@scripts/fixtures/light_barrier.json'
@@ -141,7 +142,7 @@ export const FIXTURES: readonly Fixture[] = [
   },
   {
     name: 'portal_onto_fizzler_fizzles_at_once',
-    behaviour: 'Coming out of a portal into a fizzler that the crossing itself switches on, by leaving the button that held it off, fizzles in the same step, so stepping off at once still loses both portals.',
+    behaviour: 'Coming out of a portal into a fizzler that the crossing itself switches on, by leaving the button that held it off, fizzles in the same step, so stepping off at once still loses both portals. The portal is on the wall at the end of the fizzler\'s way through, which has no connector.',
     chamber: portalOntoFizzler,
     actions: [
       'blue',
@@ -416,7 +417,7 @@ export const FIXTURES: readonly Fixture[] = [
   },
   {
     name: 'fizzler_on_closes_portal_facing_it',
-    behaviour: 'A portal shot past a fizzler while it is off, onto the wall behind it, closes when the fizzler switches on.',
+    behaviour: 'A portal shot past a fizzler while it is off, onto the wall behind it at the end of its way through, which has no connector, closes when the fizzler switches on.',
     chamber: portalOntoFizzler,
     actions: [
       'blue',
@@ -427,6 +428,26 @@ export const FIXTURES: readonly Fixture[] = [
       moves: 1,
       portals: 1,
       finalHash: 'adeb77c9',
+    },
+  },
+  {
+    name: 'no_portal_behind_fizzler_connector',
+    behaviour: 'The walls a fizzler\'s field spans its gap between, behind its connectors, take no portal, on or off: from inside a fizzler that is off, a shot at either misses, while the wall at the end of its way through takes one.',
+    chamber: fizzlerConnector,
+    actions: [
+      'up',
+      'turnLeft',
+      'blue',
+      'turnRight',
+      'blue',
+      'turnUp',
+      'blue',
+    ],
+    expected: {
+      completed: false,
+      moves: 1,
+      portals: 1,
+      finalHash: 'be68497f',
     },
   },
   {

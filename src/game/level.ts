@@ -104,6 +104,8 @@ export class Level {
     [GameEvent.ARROW_TURNED]: Sound.TURNABLE_ARROW,
     [GameEvent.BLOCKED_WALL_SWITCHED]: Sound.BLOCKED_WALL,
     [GameEvent.DITCH_SWITCHED]: Sound.DITCH_GRATE,
+    [GameEvent.LIGHT_BARRIER_SWITCHED_OFF]: Sound.LIGHT_BARRIER_OFF,
+    [GameEvent.LIGHT_BARRIER_SWITCHED_ON]: Sound.LIGHT_BARRIER_ON,
     [GameEvent.RECEIVER_LIT]: null,
     [GameEvent.RECEIVER_UNLIT]: null,
   }

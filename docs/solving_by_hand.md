@@ -223,6 +223,7 @@ The script proves the route plays. To make it the chamber's recorded solution, p
   - an emitter or a receiver, on any face;
   - a face looking onto a door or the exit, open or closed;
   - the face of the wall at either end of a run of lasers or light barriers, on or off (behind the end plate; a wall alongside the run still takes one);
+  - the face of either wall a fizzler's field spans between, on or off (behind its connector; the wall at the end of its way through still takes one);
   - the chamber's edge;
   - a face of a wall tile that already holds a portal on that face or a neighbouring one (only the opposite face is still free).
 - Shots never go through portals; rays do.
@@ -286,7 +287,7 @@ A portal hop from region P to region Q needs two things, both done from P:
 
 Then walking into the second face brings the subject out in Q. Build the hop graph next to the walking graph. Shots that pass lasers, ditches and boxes often reach far: a single row or column can join regions at opposite ends of the chamber.
 
-Look hardest at the long sightlines that end in a blocked wall, at the chamber's edge, behind an end plate, or beside a door or the exit. Those are the designer closing a line on purpose; every one of them is a hop that doesn't exist, and they are what the puzzle is built from.
+Look hardest at the long sightlines that end in a blocked wall, at the chamber's edge, behind an end plate or a fizzler's connector, or beside a door or the exit. Those are the designer closing a line on purpose; every one of them is a hop that doesn't exist, and they are what the puzzle is built from.
 
 ### 4. Find the cuts
 
@@ -366,7 +367,7 @@ When every crossing is ruled out with a reason, the argument holds for every ord
 1. **The map is upside down.** y grows upwards: the map prints the highest row first, and "up" is towards it.
 2. **A field left out is blocked.** A door, laser, fizzler or exit without `blocked` starts closed or on, and an emitter starts on.
 3. **Lasers don't stop shots; light barriers and fizzlers do while on.** A pocket sealed by lasers is reachable by portal; one sealed by light barriers may not be.
-4. **Faces that refuse a portal.** Check the end plate, the door or exit beside the wall, the neighbouring face of a wall already holding a portal, and blocked walls: four misses that look like hits on the map.
+4. **Faces that refuse a portal.** Check the end plate or a fizzler's connector, the door or exit beside the wall, the neighbouring face of a wall already holding a portal, and blocked walls: four misses that look like hits on the map.
 5. **A box blocks a crossing onto its tile.** A box left on a button can make a portal face looking onto that button unusable.
 6. **Walking through a fizzler drops both portals**, including the one that was meant to lead back.
 7. **A carried box can't shoot.** Every shot of a carrying phase has to happen before the pick-up, or after a put-down.

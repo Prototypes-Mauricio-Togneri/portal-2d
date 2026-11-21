@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!--
+    A fizzler's connector while the fizzler is on (docs/sprites.md): a thin
+    dark steel plate along the whole left edge of the tile, where the field
+    meets the wall, with a pale slot down its length the field leaves from,
+    its light spilling a little way into the field. Drawn at the left end of
+    a field running left to right; the game turns it to each end of each run
+    of fizzlers, as a laser's end plate. It must match fizzler_end_off but
+    for the slot and its glow, since the game draws one over the other while
+    the field crumbles away or forms.
+  -->
+  <defs>
+    <!-- The light spilling into the field, fading out from the plate -->
+    <linearGradient id="glow" gradientUnits="userSpaceOnUse" x1="20" y1="0" x2="45" y2="0">
+      <stop offset="0" stop-color="rgb(214, 228, 255)" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="rgb(214, 228, 255)" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Glow, starting under the plate's inner edge so no seam shows -->
+  <rect x="19" y="0" width="26" height="256" fill="url(#glow)"/>
+
+  <!-- The plate -->
+  <rect x="0" y="0" width="20" height="256" fill="rgb(50, 55, 61)"/>
+
+  <!-- The slot, 1 px in from the plate's inner edge and 14 px short of each end -->
+  <rect x="11" y="14" width="8" height="228" rx="1" fill="rgb(214, 228, 255)"/>
+</svg>

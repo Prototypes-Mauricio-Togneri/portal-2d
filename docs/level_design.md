@@ -70,7 +70,7 @@ Arrows are the exception: an arrow a link turns may turn under the subject. The 
 
 ## Portals
 
-12. Some wall sides never take a portal: those facing a door or the exit, those behind the end plate of a run of lasers or light barriers, every face of an emitter or a receiver, and, on a wall tile that already holds a portal, every side but the opposite one. Don't plan a route that needs one.
+12. Some wall sides never take a portal: those facing a door or the exit, those behind the end plate of a run of lasers or light barriers, those behind a fizzler's connectors, every face of an emitter or a receiver, and, on a wall tile that already holds a portal, every side but the opposite one. Don't plan a route that needs one. Which walls a fizzler's connectors face is decided by what lies beside it (`docs/elements.md`, shooting), so placing a wall, a door, a ditch, a light barrier or another fizzler next to one can turn it, and with it which walls refuse portals: check the connectors in the game after changing a fizzler's surroundings.
 13. A fizzler switching on closes a portal facing it, so a portal in front of a fizzler lasts only while the fizzler is off, and a portal on a blocked wall lasts only while the wall isn't blocked, closing without a sound. While the subject stands in a fizzler that is on, the portal keys do nothing, without a sound, so don't put one where the player would stand to aim.
 14. Shots fly over lasers and ditches, even on or open, and over boxes, buttons, switches, arrows and rays; only a wall, a closed door or exit, and a fizzler or a light barrier that is on stop one. Check which wall sides each part of the chamber can shoot, since a portal can skip a laser, a ditch or a one-way passage.
 

@@ -84,7 +84,7 @@ export const NO_ELEMENT = -1
 /** What cellOf answers outside the chamber */
 const OUTSIDE = -1
 
-/** The way a laser or a light barrier runs when a wall on each side of its tile ends its run, behind its end plate */
+/** The way a laser, a light barrier or a fizzler's field runs when a wall on each side of its tile ends its run, behind its end plate or connector */
 const BEAM_ALONG_SIDE: Readonly<Record<Direction, BeamOrientation>> = {
   [Direction.UP]: 'V',
   [Direction.DOWN]: 'V',
@@ -100,6 +100,15 @@ const DEVICE_KINDS = [
   'emitter',
   'receiver',
 ] as const
+
+/** The element types that, besides walls, line a gap that a door, the exit or a fizzler fills */
+const GAP_SIDE_KINDS: readonly PlacedKind[] = [
+  'door',
+  'exit',
+  'fizzler',
+  'lightBarrier',
+  'ditch',
+]
 
 /**
  * Reads a box's mirror.
@@ -441,9 +450,11 @@ export class CompiledChamber {
   /**
    * Whether a portal can ever open on one side of a wall: the wall can take
    * portals, and the tile that side faces holds no door or exit, since the
-   * walls beside a doorway never take one, open or closed, and no laser or
-   * light barrier running towards the wall, since the wall at the end of a
-   * run, behind its end plate, never takes one either, on or off.
+   * walls beside a doorway never take one, open or closed, no laser or light
+   * barrier running towards the wall, since the wall at the end of a run,
+   * behind its end plate, never takes one either, on or off, and no fizzler
+   * whose field spans its gap towards the wall, since the wall behind its
+   * connector never takes one, on or off.
    * @param x - Column of the wall
    * @param y - Row of the wall
    * @param side - The side, the way it faces
@@ -455,8 +466,44 @@ export class CompiledChamber {
     const along = BEAM_ALONG_SIDE[side]
     const doorway = (this.elementAt('door', facedX, facedY) !== NO_ELEMENT) || (this.elementAt('exit', facedX, facedY) !== NO_ELEMENT)
     const runEnd = this.hasBeamAt('laser', facedX, facedY, along) || this.hasBeamAt('lightBarrier', facedX, facedY, along)
+    const connector = (this.elementAt('fizzler', facedX, facedY) !== NO_ELEMENT) && (this.gapSpan(facedX, facedY) === along)
 
-    return this.canTakePortals(x, y) && (!doorway) && (!runEnd)
+    return this.canTakePortals(x, y) && (!doorway) && (!runEnd) && (!connector)
+  }
+
+  /**
+   * Which way a door, the exit or a fizzler on a tile spans the gap it
+   * fills: from the wall on its left to the one on its right, unless more
+   * of what lines a gap lies above and below it than left and right. It is
+   * drawn turned that way, and a fizzler has a connector at each end of its
+   * span, where no fizzler continues it, on whose wall no portal opens.
+   * @param x - Column
+   * @param y - Row
+   * @returns H when it spans left to right, V when it spans top to bottom
+   */
+  gapSpan(x: number, y: number): BeamOrientation {
+    const across = Number(this.linesGap(x - 1, y)) + Number(this.linesGap(x + 1, y))
+    const along = Number(this.linesGap(x, y + 1)) + Number(this.linesGap(x, y - 1))
+
+    return (along > across) ? 'V' : 'H'
+  }
+
+  /**
+   * Whether a tile lines a gap: a wall inside the chamber, blocked or not,
+   * an emitter or a receiver, or a door, the exit, a fizzler, a light
+   * barrier or a ditch, in any state. Outside the chamber counts as open: a
+   * door's or the exit's way through in the chamber's edge leads out of it.
+   * @param x - Column
+   * @param y - Row
+   * @returns True when it lines a gap
+   */
+  private linesGap(x: number, y: number): boolean {
+    // isWall answers wall outside the edge, so the edge is ruled out first
+    if (this.cellOf(x, y) === OUTSIDE) {
+      return false
+    }
+
+    return this.isWall(x, y) || GAP_SIDE_KINDS.some((kind) => this.elementAt(kind, x, y) !== NO_ELEMENT)
   }
 
   /**

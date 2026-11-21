@@ -519,7 +519,7 @@ Written by a fact-finding agent that read the drawing code in full at commit `24
 - `drawBackdropCover` (173-182): the `floorMarks` elements, i.e. plain arrows (174); then a separate layer `structure = painter.createLayer()` (176) gets the walls (178), `drawWallTone` (179) and `drawWallWear` (180), and is laid down with the walls' one-mass shadow by `painter.drawLayer(structure, true)` (181).
 - `drawBackdrop` (194-198) is exported and runs the three in order.
 
-**Backdrop cache** (`Renderer.backdropOf`, `renderer.ts:303-343`): one per `Renderer` (field at 259), redrawn when `backdrop.chamber !== state.chamber` (object identity) or the tile size differs (308). A chamber with antlines keeps `floor` and `cover` on canvases of their own (310-320) and only recomposes them when the lit key changes (334-340, `composeBackdrop` 208-212). `Level.load` builds a new `CompiledChamber` each time (`level.ts:171`), so every load and reset redraws the backdrop.
+**Backdrop cache** (`Renderer.backdropOf`, `renderer.ts:303-343`): one per `Renderer` (field at 259), redrawn when `backdrop.chamber !== state.chamber` (object identity) or the tile size differs (308). A chamber with antlines keeps `floor` and `cover` on canvases of their own (310-320) and only recomposes them when the lit key changes (334-340, `composeBackdrop` 208-212). `Level.load` builds a new `CompiledChamber` each time (`level.ts:173`), so every load and reset redraws the backdrop.
 
 **How `Renderer.render` walks a frame** (`renderer.ts:581-626`):
 1. Returns if the tile size is 0 (583-585).
@@ -551,7 +551,7 @@ Written by a fact-finding agent that read the drawing code in full at commit `24
 
 **A second code-over-pixels drawing now exists.** While the state is completed, the subject's layer is drawn on a canvas of its own (`subjectLayerOf`, `renderer.ts:487-504`), `drawExitShadow(own, state.chamber, 'source-atop')` darkens only the pixels already painted there, and the layer is laid down (`drawLayerUnderExitShadow`, 471-478; `TilePainter.erase`, `tile_painter.ts:248-250`). `stretchSoftLayer` uses the same `source-atop` on the walls' layer (`surface_tone.ts:295-297`).
 
-**Reduced motion and standalone renders.** `Level.render` passes `time = null` under `prefers-reduced-motion` (`level.ts:344`); the map and gallery call `render(state)` with every other argument defaulted. With no time: `shares` is null (590), nothing falls (607), nothing breaks up (619).
+**Reduced motion and standalone renders.** `Level.render` passes `time = null` under `prefers-reduced-motion` (`level.ts:346`); the map and gallery call `render(state)` with every other argument defaulted. With no time: `shares` is null (590), nothing falls (607), nothing breaks up (619).
 
 
 ### A1.2 Sprite scaling and caching (`src/game/sprite_scaling.ts`)
@@ -625,7 +625,7 @@ Common to all ten:
 - **Layer:** none of its own. Drawn every frame right after the backdrop copy, so over the walls' shadow and under `blockers` and everything above. Not in a shadow pass.
 - **What decides it:** skipped unless both `turnedDirectionOf` and `directionOf` are set (411-413). `pointingWay` gives the turned way while the arrow is unblocked, else its own way (`src/game/rules/state_reader.ts:285-289`). Arrows start blocked (`arrow.ts:60`).
 - **Turned:** quarter turns at rest. While turning, any angle: `turningAngle` (380-393) goes from the turned way's angle at share 0 to the own way's at share 1, the short way round; `drawSpriteRotated` uses `ctx.rotate(angle)` about the tile's middle (`tile_painter.ts:390-409`, `drawRotated` 700-712).
-- **Transition:** kind `arrow`, 300 ms, eased (`element_transitions.ts:57-60`; cubic ease-out, 207). A change starts from where the chevron is drawn (`from = this.blockedAt(...) ?? (1 - to)`, 141) and lasts 300 ms × the remaining share (149). Started from `Level.playStep` (`level.ts:612-614`). The rules report `ARROW_TURNED` (`arrow.ts:19`), which now plays `Sound.TURNABLE_ARROW` (`level.ts:104`).
+- **Transition:** kind `arrow`, 300 ms, eased (`element_transitions.ts:57-60`; cubic ease-out, 207). A change starts from where the chevron is drawn (`from = this.blockedAt(...) ?? (1 - to)`, 141) and lasts 300 ms × the remaining share (149). Started from `Level.playStep` (`level.ts:614-616`). The rules report `ARROW_TURNED` (`arrow.ts:19`), which now plays `Sound.TURNABLE_ARROW` (`level.ts:104`).
 - **Shadow:** none.
 - **Identity at the draw site:** `i` (loop at 407), `position.x`, `position.y` (415), `own`, `turned`.
 - **Elsewhere:** nowhere else. Map and gallery draw it at `pointingWay` (`docs/sprites.md:223`). Specimen: one at (3, 2), own way up, turned way right; pointing up in "everything on" and right in "everything off" (`gallery_layouts.ts:246-251`, button link at 257).
@@ -664,8 +664,8 @@ Common to all ten:
   - drawn right after the `blockers` layer (`renderer.ts:607-609`), so over the ditch and its sliding grate and under fixtures, items and the subject.
   - If the ditch is bridged again by the end of the step, the box breaks up instead (`destroyed_boxes.ts:30-33`).
 - **Sent back by a link** (`sendBoxBack`, `box.ts:12-16`): `sendBoxToStart` with no event. No burst, no fall; it simply is drawn on its start tile from the next frame. The same holds for a box pushed off that start tile by the chain in `sendBoxToStart` (`state_draft.ts:179-186`; `docs/elements.md:150`: "Nothing reports it").
-- **In every case** the box is drawn at its start at once by `drawBoxes`, since the state already has it there (`docs/sprites.md:163`). Along a slide "at once" means when the subject reaches that tile: the level queues the effects as beats (`level.ts:550-592`) and the renderer draws `shownState` meanwhile.
-- **Reduced motion, load, reset:** none of these effects start under reduced motion (`level.ts:611`); a load clears them (188-193).
+- **In every case** the box is drawn at its start at once by `drawBoxes`, since the state already has it there (`docs/sprites.md:163`). Along a slide "at once" means when the subject reaches that tile: the level queues the effects as beats (`level.ts:552-594`) and the renderer draws `shownState` meanwhile.
+- **Reduced motion, load, reset:** none of these effects start under reduced motion (`level.ts:613`); a load clears them (190-195).
 - **Chamber completed while carrying:** the subject's layer, painted box included, is drawn on its own canvas and darkened by the exit shadow (`renderer.ts:471-478, 600-601`).
 - **What the effects know about the box.** `DestroyedBox` (`destroyed_boxes.ts:15-23`) and `Burst` (`fizzle_particles.ts:16-24`) carry a sprite name, place, size and way, but no box index. The index exists only where they are built (`chamber.boxStarts.forEach((start, index)`, `destroyed_boxes.ts:48`; `before.carriedBox`, `fizzle_particles.ts:146`). A burst's `seed` is a running counter, `this.burstCount++` (136, 154, 167), not the box.
 - **Ambiguous: boxes destroyed "from the hands" by a put-down.** `findDestroyedBoxes` has a branch for a box that was carried before the step (52): it requires the subject not to have moved (`putDownInPlace`, 54), looks for the destroying element at the box's tile before the step, which for a carried box is the subject's own tile (50-51, 55), and places the effect at that tile plus `CARRIED_BOX_AHEAD` at `CARRIED_BOX_SIZE` (61-68). The docs describe this as a box "the subject puts down there" (`docs/sprites.md:159, 163, 231`). But the present rules put a box down only on the tile faced, and only where a move could step now (`step.ts:609-614, 647-656`; `docs/elements.md:134`), and a fixture pins that a box is never put down on an open ditch (`scripts/fixtures/fixtures.ts:622`). My reading, not verified by running: this branch can fire only when a box is put down ahead and destroyed there within the same step while the subject's own tile also holds a door, ditch, laser or light barrier; otherwise such a box gets no effect at all.
@@ -1087,26 +1087,26 @@ At the tile sizes the game uses (Part B), in screen pixels:
 #### C.1 `Level` (`src/game/level.ts`)
 
 ```ts
-constructor(canvas: HTMLCanvasElement, bindings: KeyBindings, screenWidth: number, screenHeight: number)   // line 150
+constructor(canvas: HTMLCanvasElement, bindings: KeyBindings, screenWidth: number, screenHeight: number)   // line 152
 ```
 
 Public members, all a host page can use:
 
 | # | Member | Line | What it does |
 |---|--------|------|--------------|
-| 1 | `load(chamberData: ChamberData): void` | 164 | Loads and settles the chamber, draws it, resets clock and counters. The first call starts the frame loop. Throws when the rules reject the chamber. Also used for reset |
-| 2 | `paused` (get and set) | 209, 218 | While paused nothing updates and keydown is ignored; resuming forgets every key |
-| 3 | `onCompleted: (() => void) \| null` | 111 | Called once per load when the chamber is completed; after a walk out of the exit, only once the subject is out of sight |
-| 4 | `resize(screenWidth, screenHeight): void` | 307 | Refits the chamber and redraws |
-| 5 | `dispose(): void` | 319 | Stops the frame loop and removes every listener, for good |
-| 6 | `started`, `elapsedHundredths`, `moves`, `portalsPlaced` (getters) | 233, 242, 252, 260 | The clock and the counters |
-| 7 | `createReplay(): ReplayData` | 272 | The run since the last load as a replay; throws when it does not replay the same way |
-| 8 | `frameStats: FrameStats \| null` | 112 | Development timing; leave null |
+| 1 | `load(chamberData: ChamberData): void` | 166 | Loads and settles the chamber, draws it, resets clock and counters. The first call starts the frame loop. Throws when the rules reject the chamber. Also used for reset |
+| 2 | `paused` (get and set) | 211, 220 | While paused nothing updates and keydown is ignored; resuming forgets every key |
+| 3 | `onCompleted: (() => void) \| null` | 113 | Called once per load when the chamber is completed; after a walk out of the exit, only once the subject is out of sight |
+| 4 | `resize(screenWidth, screenHeight): void` | 309 | Refits the chamber and redraws |
+| 5 | `dispose(): void` | 321 | Stops the frame loop and removes every listener, for good |
+| 6 | `started`, `elapsedHundredths`, `moves`, `portalsPlaced` (getters) | 235, 244, 254, 262 | The clock and the counters |
+| 7 | `createReplay(): ReplayData` | 274 | The run since the last load as a replay; throws when it does not replay the same way |
+| 8 | `frameStats: FrameStats \| null` | 114 | Development timing; leave null |
 
 - **There is no public way to hand `Level` an action or to read its state.** Presses come only from its private `Input`.
-- **`Level` drives its own frame loop.** The first `load` calls `run()` (line 669), which runs one frame at once and then calls `requestAnimationFrame` every frame (line 722) until `dispose`. A frame that throws ends the loop.
-- One press is taken per frame, and taking a press ends the step still being drawn at once (lines 433-441). Once the chamber is completed, waiting presses are dropped (line 431).
-- It also listens to `visibilitychange` on `document` (line 154).
+- **`Level` drives its own frame loop.** The first `load` calls `run()` (line 671), which runs one frame at once and then calls `requestAnimationFrame` every frame (line 724) until `dispose`. A frame that throws ends the loop.
+- One press is taken per frame, and taking a press ends the step still being drawn at once (lines 435-443). Once the chamber is completed, waiting presses are dropped (line 433).
+- It also listens to `visibilitychange` on `document` (line 156).
 
 **Canvas sizing**
 - `screenWidth` and `screenHeight` are the area available, in canvas pixels. The app passes page pixels times `devicePixelRatio` (`src/components/screens/chamber_screen.vue:426-429`).
@@ -1119,7 +1119,7 @@ Public members, all a host page can use:
 
 #### C.2 `Input` and the key bindings
 
-- `Input` is created inside the `Level` constructor (`level.ts:153`). It adds `keyup`, `keydown` and `blur` listeners on `window`, bubbling phase (`src/game/input.ts:75-77`), and removes them in `dispose` (`:134-138`).
+- `Input` is created inside the `Level` constructor (`level.ts:155`). It adds `keyup`, `keydown` and `blur` listeners on `window`, bubbling phase (`src/game/input.ts:75-77`), and removes them in `dispose` (`:134-138`).
 - There is no focus requirement on the canvas: any key event that reaches `window` counts. In an iframe, that iframe's window needs the keyboard.
 - Keys are read by `event.code` (`:152`). It also reads `event.repeat`, `event.altKey`, `event.metaKey`, `event.ctrlKey` and `event.key`.
 - It calls `preventDefault` on bound keys that have a browser default (arrows, Space and others, `:26-40,229-235`).
@@ -1149,15 +1149,15 @@ export const ARROW_KEY_BINDINGS: KeyBindings = {
 | # | Module | What it creates | Who imports it |
 |---|--------|-----------------|----------------|
 | 1 | `src/game/audio_sources.ts` | `createAudioPlayer(url)` makes `new Audio(url)` with `preload = 'none'` (lines 15-23) | `sound.ts`, `music.ts`, and the app's preloader |
-| 2 | `src/game/sound.ts` | 18 `Sound` objects as static fields, each with its own audio element, made when the module loads (lines 28-45); imports 18 `.mp3` files (lines 1-19) | `level.ts:24`, components, `services/settings.ts` |
+| 2 | `src/game/sound.ts` | 20 `Sound` objects as static fields, each with its own audio element, made when the module loads (lines 30-49); imports 20 `.mp3` files (lines 1-21) | `level.ts:24`, components, `services/settings.ts` |
 | 3 | `src/game/music.ts` | 2 `Music` objects, made when the module loads (lines 54, 59); imports 2 `.mp3` files | Only `src/services/settings.ts` |
 
-- **When no file was handed over:** nothing downloads until a sound first plays; then the element fetches its own address. A refused `play()` is swallowed (`sound.ts:68-70`). Only the app's preloader hands files over (`useAudioFile`, `src/services/asset_preloader.ts:141`).
-- **`Level` plays sounds** for the events of every step and of the settled start on `load` (`level.ts:85-109,196,374-380`). It uses 15 of the 18: all but `MENU_MOVE`, `MENU_ACCEPT` and `START`.
-- **Silent without stubbing:** `Sound.enabled = false` makes every `play()` return at once (`sound.ts:26,62-64`), so nothing downloads or plays. The 18 files are still bundled.
-- **To keep the files out of the bundle:** alias `@/game/sound` to a stub that exports a `Sound` with those 15 static members, each with a `play()`. Aliasing only `@/game/audio_sources` is not enough, because `sound.ts` itself imports the `.mp3` files.
+- **When no file was handed over:** nothing downloads until a sound first plays; then the element fetches its own address. A refused `play()` is swallowed (`sound.ts:72-74`). Only the app's preloader hands files over (`useAudioFile`, `src/services/asset_preloader.ts:141`).
+- **`Level` plays sounds** for the events of every step and of the settled start on `load` (`level.ts:85-111,198,376-382`). It uses 17 of the 20: all but `MENU_MOVE`, `MENU_ACCEPT` and `START`.
+- **Silent without stubbing:** `Sound.enabled = false` makes every `play()` return at once (`sound.ts:28,66-68`), so nothing downloads or plays. The 20 files are still bundled.
+- **To keep the files out of the bundle:** alias `@/game/sound` to a stub that exports a `Sound` with those 17 static members, each with a `play()`. Aliasing only `@/game/audio_sources` is not enough, because `sound.ts` itself imports the `.mp3` files.
 - `music.ts` is not reached from `Level`, so it needs no stub unless the entry imports `src/services/settings.ts`.
-- Sizes: the 18 sounds total 223,083 bytes; the two music tracks 3,425,086 bytes.
+- Sizes: the 20 sounds total 258,278 bytes; the two music tracks 3,425,086 bytes.
 
 #### C.4 Vite-specific and app-specific code in `src/game/`
 
@@ -1166,9 +1166,9 @@ export const ARROW_KEY_BINDINGS: KeyBindings = {
 | 1 | `sprite_sources.ts:40-44` | `import.meta.glob('@/assets/images/chamber/*', {eager: true, import: 'default', query: '?url'})` | Build with Vite, with the `@` alias defined. A library build inlines the files as data URLs |
 | 2 | `sprite_sources.ts:51` | `import.meta.env.DEV` | Replaced by Vite at build time |
 | 3 | `sprite_sources.ts:178-190` | `loadSprites()` fetches each address, then `createImageBitmap` | Works when fetch of a data URL is allowed; the existing tool replaces it with a direct decode because its target page may not fetch |
-| 4 | `sound.ts:1-19`, `music.ts:1-2` | `.mp3` imports as addresses | Inlined, or stubbed as in C.3 |
+| 4 | `sound.ts:1-21`, `music.ts:1-2` | `.mp3` imports as addresses | Inlined, or stubbed as in C.3 |
 | 5 | Every file | The `@` alias for `src/` (`vite.config.ts:9`, `tsconfig.app.json`) | Define it |
-| 6 | `level.ts:152,154`, `input.ts:75-77`, `tile_painter.ts:164`, `sprite_scaling.ts:49` | `window`, `document`, `requestAnimationFrame`, `performance`, `createImageBitmap`, `Audio` | Needs a browser |
+| 6 | `level.ts:154,156`, `input.ts:75-77`, `tile_painter.ts:164`, `sprite_scaling.ts:49` | `window`, `document`, `requestAnimationFrame`, `performance`, `createImageBitmap`, `Audio` | Needs a browser |
 
 - `src/game/` never imports Vue, the services, the components or the chamber files. The entry must import the chamber JSON (and any solution JSON) itself.
 - Nothing in `src/game/` uses `localStorage` or `navigator`.
@@ -1208,17 +1208,17 @@ start(from: RulesState, to: RulesState, events: readonly GameEvent[], path: read
 render(state, transition = null, time = null, fizzle = null, changes = null, ripple = null, fall = null, openings = null, turn = null): void
 ```
 
-1. Create once: `new Renderer(canvas, w, h, minimumTiles)` and `setSize(width, height)` (`renderer.ts:271,290`), plus `new StepAnimation()`, `FizzleParticles`, `ElementTransitions`, `MissRipple`, `BoxFall`, `PortalOpenings` and `SubjectTurn` (`level.ts:124-130`).
-2. For each action: `result = step(chamber, state, action)`. If `result.state !== state`, call `animation.start(state, result.state, result.events, result.path, walkOut, time)` (`level.ts:504-506`).
-3. Start the side effects for that step (`level.ts:610-635`): `changes.start(before, after, time)`; `fizzle.start(before, after, events, time, joining)` on a fizzle or a destroyed box; `fall.start(before, after, events, time)` on a destroyed box; `openings.start(after, events, time)` on a portal opened; `ripple.start(after, colour, time)` on a refused shot. `SubjectTurn` needs no start.
-4. Every frame: `renderer.render(state, animation.transitionAt(time), time, fizzle, changes, ripple, fall, openings, turn)` (`level.ts:344`), where `state` is the state after the step and `time` is the frame's `requestAnimationFrame` time.
+1. Create once: `new Renderer(canvas, w, h, minimumTiles)` and `setSize(width, height)` (`renderer.ts:271,290`), plus `new StepAnimation()`, `FizzleParticles`, `ElementTransitions`, `MissRipple`, `BoxFall`, `PortalOpenings` and `SubjectTurn` (`level.ts:126-132`).
+2. For each action: `result = step(chamber, state, action)`. If `result.state !== state`, call `animation.start(state, result.state, result.events, result.path, walkOut, time)` (`level.ts:506-508`).
+3. Start the side effects for that step (`level.ts:612-637`): `changes.start(before, after, time)`; `fizzle.start(before, after, events, time, joining)` on a fizzle or a destroyed box; `fall.start(before, after, events, time)` on a destroyed box; `openings.start(after, events, time)` on a portal opened; `ripple.start(after, colour, time)` on a refused shot. `SubjectTurn` needs no start.
+4. Every frame: `renderer.render(state, animation.transitionAt(time), time, fizzle, changes, ripple, fall, openings, turn)` (`level.ts:346`), where `state` is the state after the step and `time` is the frame's `requestAnimationFrame` time.
 
 - `transitionAt(time)` returns a `StepTransition` (`from`, `to`, `events`, `path`, `progress`, `walkOut`, `beyond`; `step_animation.ts:12-20`) or null once the step is over.
 - The renderer uses the transition only when its `to` is the very state passed (`renderer.ts:587`, `subject_pose.ts:50`).
 - Passing `null` for `time` holds everything still; every parameter after `state` is optional.
-- `walkOut` is the way out of the chamber for the step that completes it, or null. `Level` works it out in a private method (`level.ts:528-540`) from `exitOuterSide(chamber)` (`src/game/exit_shadow.ts:22`). Null is accepted and draws the last step like any other.
+- `walkOut` is the way out of the chamber for the step that completes it, or null. `Level` works it out in a private method (`level.ts:530-542`) from `exitOuterSide(chamber)` (`src/game/exit_shadow.ts:22`). Null is accepted and draws the last step like any other.
 - Timing: a plain step takes 120 ms; a slide 60 ms per tile; a walk out 180 ms per tile (`step_animation.ts:37,40,43`).
-- A slide's sounds and effects are held back tile by tile in `Level` (`level.ts:550-592`); a standalone replay that wants this has to copy it.
+- A slide's sounds and effects are held back tile by tile in `Level` (`level.ts:552-594`); a standalone replay that wants this has to copy it.
 
 Simplest still-frame path: `new Renderer(canvas, tile * width, tile * height)`, `setSize`, then `render(state)` for any state along the replay (`src/game/chamber_preview.ts:16-27`).
 
@@ -1226,7 +1226,7 @@ Simplest still-frame path: `new Renderer(canvas, tile * width, tile * height)`, 
 Not a tested path. From the code: dispatching `new KeyboardEvent('keydown', {code: 'ArrowUp'})` on `window` queues a press, and presses queue in order. A turn action needs a `ShiftLeft` keydown before the arrow and a keyup after. Because each press taken ends the step being drawn, a watchable replay must space them out by more than a step's 120 ms (longer for slides).
 
 #### C.8 Reduced motion
-- Read in one place in the game: `window.matchMedia('(prefers-reduced-motion: reduce)')` in the `Level` constructor (`level.ts:152`), kept as a `MediaQueryList`.
-- Its `.matches` is read each time it matters: when drawing (line 344, passing `null` as the time), when a step would be drawn over time (line 491), before starting any effect (line 611), and when deciding whether to draw every frame (line 712).
+- Read in one place in the game: `window.matchMedia('(prefers-reduced-motion: reduce)')` in the `Level` constructor (`level.ts:154`), kept as a `MediaQueryList`.
+- Its `.matches` is read each time it matters: when drawing (line 346, passing `null` as the time), when a step would be drawn over time (line 493), before starting any effect (line 613), and when deciding whether to draw every frame (line 714).
 - The renderer never reads the setting itself; a `null` time is how it is told to hold still.
 - The only other uses are CSS rules (`src/assets/styles.css:342`, `src/components/screens/home_screen.vue:1273`).
