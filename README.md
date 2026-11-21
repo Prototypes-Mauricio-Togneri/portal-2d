@@ -2,7 +2,7 @@
 
 ## TODO
 
-- Fix problem with controls not fitting in left panel
+- Sync all audio volume
 - show hints for tutorial
   - how to shot portals
   - show a hint when standing on a button
