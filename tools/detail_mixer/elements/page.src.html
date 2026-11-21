@@ -1345,6 +1345,7 @@ input[type="range"]:focus-visible,
   let dragging = false // Whether the divider is being dragged
   let player = null // The replay running on the chamber, or null
   let playHooks = {key: '', hooks: [null, null]} // The hooks the replay last drew a step with, reused while the step and settings stay
+  let playSettings = '' // The settings the replay was started with: its backdrop (floor arrows, floor marks) is drawn once, so other settings start it again
   const jumpsKept = new Map() // Each chamber's moments that matter, found once
   const lineupKept = new Map() // Each original line-up drawing, kept by board and size
 
@@ -1572,11 +1573,12 @@ input[type="range"]:focus-visible,
 
     const tile = tileSize(chamberInfo(state.chamber))
     const chamber = state.chamber
+    const floor = state.floor === 'on'
     const hooksAt = (which) => (step) => {
-      const key = `${chamber}:${step}:${JSON.stringify(state.settings)}`
+      const key = `${chamber}:${step}:${floor}:${JSON.stringify(state.settings)}`
 
       if (playHooks.key !== key) {
-        playHooks = {key: key, hooks: [hooksFor(chamber, step, null), hooksFor(chamber, step, state.settings)]}
+        playHooks = {key: key, hooks: [hooksFor(chamber, step, null, null, floor), hooksFor(chamber, step, state.settings, null, floor)]}
       }
 
       return playHooks.hooks[which]
@@ -1587,7 +1589,7 @@ input[type="range"]:focus-visible,
       {canvas: after, hooksAt: hooksAt(1)},
     ], chamber, tile, {
       from: state.step,
-      surfaceDetail: state.floor === 'on',
+      surfaceDetail: floor,
       speed: Number(state.speed),
       pause: 260,
       onStep: (step) => {
@@ -1596,9 +1598,10 @@ input[type="range"]:focus-visible,
       },
       onEnd: () => {
         stopPlaying()
-        save()
+        refresh(false)
       },
     })
+    playSettings = JSON.stringify(state.settings)
     $('play').setAttribute('aria-pressed', 'true')
     $('play').textContent = 'Stop'
     syncScrubber()
@@ -1827,14 +1830,17 @@ input[type="range"]:focus-visible,
     const rows = ROWS_OF[thing] ?? [2]
     const edge = Math.round(margin * tile)
 
+    const rowHeight = tile + (2 * edge)
+
     target.width = (count * tile) + (2 * edge)
-    target.height = (rows.length * tile) + (2 * edge)
+    target.height = rows.length * rowHeight
 
     const ctx = target.getContext('2d')
 
     ctx.fillStyle = 'rgba(32, 32, 32, 1)'
     ctx.fillRect(0, 0, target.width, target.height)
-    rows.forEach((row, i) => ctx.drawImage(board, ((1 + first) * tile) - edge, (row * tile) - edge, (count * tile) + (2 * edge), tile + (2 * edge), 0, i * tile, (count * tile) + (2 * edge), tile + (2 * edge)))
+    // Each row with its own margin above and below, stacked so none covers another
+    rows.forEach((row, i) => ctx.drawImage(board, ((1 + first) * tile) - edge, (row * tile) - edge, (count * tile) + (2 * edge), rowHeight, 0, i * rowHeight, (count * tile) + (2 * edge), rowHeight))
     showAt(target)
   }
 
@@ -1946,6 +1952,12 @@ input[type="range"]:focus-visible,
 
     frame = requestAnimationFrame(() => {
       frame = 0
+
+      if ((player !== null) && (JSON.stringify(state.settings) !== playSettings)) {
+        // The replay's backdrop was drawn with the settings it started with: start it again from here
+        startPlaying()
+      }
+
       drawMain()
       applyView()
       syncScrubber()

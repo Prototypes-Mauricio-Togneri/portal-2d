@@ -9,7 +9,8 @@ import doorCloseUrl from '@/assets/audio/sound/door_close.mp3'
 import doorOpenUrl from '@/assets/audio/sound/door_open.mp3'
 import errorUrl from '@/assets/audio/sound/error.mp3'
 import fizzlerUrl from '@/assets/audio/sound/fizzler.mp3'
-import menuButtonUrl from '@/assets/audio/sound/menu_button.mp3'
+import menuAcceptUrl from '@/assets/audio/sound/menu_accept.mp3'
+import menuMoveUrl from '@/assets/audio/sound/menu_move.mp3'
 import portalBlueUrl from '@/assets/audio/sound/portal_blue.mp3'
 import portalOrangeUrl from '@/assets/audio/sound/portal_orange.mp3'
 import shootUrl from '@/assets/audio/sound/shoot.mp3'
@@ -39,7 +40,8 @@ export class Sound {
   static readonly TURNABLE_ARROW = new Sound(turnableArrowUrl, 0.28) // A turnable arrow turned, by a link, to its turned way or back
   static readonly BLOCKED_WALL = new Sound(blockedWallUrl, 0.18) // A blocked wall switched, by a link, to take portals or to refuse them
   static readonly DITCH_GRATE = new Sound(ditchGrateUrl, 0.12) // A ditch's grate slid in or out, a link bridging or opening it
-  static readonly MENU_BUTTON = new Sound(menuButtonUrl, 0.17) // Menu or dialog button pressed, setting changed or pause menu opened; played by the screens, not the game
+  static readonly MENU_MOVE = new Sound(menuMoveUrl, 0.17) // A menu's or dialog's highlight moved (arrow keys, Tab or the pointer), a menu stepped into or back out of with the arrow keys, or Escape or Backspace stepped back, closed a dialog or opened or closed the pause menu; played by the screens, not the game
+  static readonly MENU_ACCEPT = new Sound(menuAcceptUrl, 0.15) // A menu row or dialog button pressed (Enter, Space or a click), a setting changed or a key bound; played by the screens, not the game
   static readonly START = new Sound(startUrl, 0.31) // Chamber picked on the home screen; played by the screens, not the game
 
   private readonly audio: HTMLAudioElement // The element that plays this effect

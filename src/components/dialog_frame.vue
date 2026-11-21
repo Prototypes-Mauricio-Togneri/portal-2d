@@ -49,7 +49,7 @@ function moveFocus(offset: number): void {
     return
   }
   nextButton.focus()
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_MOVE.play()
 }
 
 /**
@@ -97,7 +97,7 @@ function handleKeydown(event: KeyboardEvent): void {
  */
 function handleActionClick(event: MouseEvent): void {
   if (event.target instanceof Element && event.target.closest('button') !== null) {
-    Sound.MENU_BUTTON.play()
+    Sound.MENU_ACCEPT.play()
   }
 }
 

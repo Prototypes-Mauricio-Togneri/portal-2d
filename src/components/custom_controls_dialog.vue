@@ -125,7 +125,7 @@ function bind(gameKey: GameKey, key: BoundKey): void {
   refusedKey.value = null
   const swapNote = swapped === undefined ? '' : `. ${swapped.label} moved to ${getKeyLabel(previousKey).name}`
   controlStatus.value = `${control?.label ?? 'Key'} set to ${getKeyLabel(key).name}${swapNote}`
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_ACCEPT.play()
 }
 
 /**

@@ -1149,15 +1149,15 @@ export const ARROW_KEY_BINDINGS: KeyBindings = {
 | # | Module | What it creates | Who imports it |
 |---|--------|-----------------|----------------|
 | 1 | `src/game/audio_sources.ts` | `createAudioPlayer(url)` makes `new Audio(url)` with `preload = 'none'` (lines 15-23) | `sound.ts`, `music.ts`, and the app's preloader |
-| 2 | `src/game/sound.ts` | 17 `Sound` objects as static fields, each with its own audio element, made when the module loads (lines 27-43); imports 17 `.mp3` files (lines 1-18) | `level.ts:24`, components, `services/settings.ts` |
+| 2 | `src/game/sound.ts` | 18 `Sound` objects as static fields, each with its own audio element, made when the module loads (lines 28-45); imports 18 `.mp3` files (lines 1-19) | `level.ts:24`, components, `services/settings.ts` |
 | 3 | `src/game/music.ts` | 2 `Music` objects, made when the module loads (lines 54, 59); imports 2 `.mp3` files | Only `src/services/settings.ts` |
 
-- **When no file was handed over:** nothing downloads until a sound first plays; then the element fetches its own address. A refused `play()` is swallowed (`sound.ts:66-68`). Only the app's preloader hands files over (`useAudioFile`, `src/services/asset_preloader.ts:141`).
-- **`Level` plays sounds** for the events of every step and of the settled start on `load` (`level.ts:85-109,196,374-380`). It uses 15 of the 17: all but `MENU_BUTTON` and `START`.
-- **Silent without stubbing:** `Sound.enabled = false` makes every `play()` return at once (`sound.ts:25,60-62`), so nothing downloads or plays. The 17 files are still bundled.
+- **When no file was handed over:** nothing downloads until a sound first plays; then the element fetches its own address. A refused `play()` is swallowed (`sound.ts:68-70`). Only the app's preloader hands files over (`useAudioFile`, `src/services/asset_preloader.ts:141`).
+- **`Level` plays sounds** for the events of every step and of the settled start on `load` (`level.ts:85-109,196,374-380`). It uses 15 of the 18: all but `MENU_MOVE`, `MENU_ACCEPT` and `START`.
+- **Silent without stubbing:** `Sound.enabled = false` makes every `play()` return at once (`sound.ts:26,62-64`), so nothing downloads or plays. The 18 files are still bundled.
 - **To keep the files out of the bundle:** alias `@/game/sound` to a stub that exports a `Sound` with those 15 static members, each with a `play()`. Aliasing only `@/game/audio_sources` is not enough, because `sound.ts` itself imports the `.mp3` files.
 - `music.ts` is not reached from `Level`, so it needs no stub unless the entry imports `src/services/settings.ts`.
-- Sizes: the 17 sounds total 218,860 bytes; the two music tracks 3,425,086 bytes.
+- Sizes: the 18 sounds total 223,083 bytes; the two music tracks 3,425,086 bytes.
 
 #### C.4 Vite-specific and app-specific code in `src/game/`
 
@@ -1166,7 +1166,7 @@ export const ARROW_KEY_BINDINGS: KeyBindings = {
 | 1 | `sprite_sources.ts:40-44` | `import.meta.glob('@/assets/images/chamber/*', {eager: true, import: 'default', query: '?url'})` | Build with Vite, with the `@` alias defined. A library build inlines the files as data URLs |
 | 2 | `sprite_sources.ts:51` | `import.meta.env.DEV` | Replaced by Vite at build time |
 | 3 | `sprite_sources.ts:178-190` | `loadSprites()` fetches each address, then `createImageBitmap` | Works when fetch of a data URL is allowed; the existing tool replaces it with a direct decode because its target page may not fetch |
-| 4 | `sound.ts:1-18`, `music.ts:1-2` | `.mp3` imports as addresses | Inlined, or stubbed as in C.3 |
+| 4 | `sound.ts:1-19`, `music.ts:1-2` | `.mp3` imports as addresses | Inlined, or stubbed as in C.3 |
 | 5 | Every file | The `@` alias for `src/` (`vite.config.ts:9`, `tsconfig.app.json`) | Define it |
 | 6 | `level.ts:152,154`, `input.ts:75-77`, `tile_painter.ts:164`, `sprite_scaling.ts:49` | `window`, `document`, `requestAnimationFrame`, `performance`, `createImageBitmap`, `Audio` | Needs a browser |
 

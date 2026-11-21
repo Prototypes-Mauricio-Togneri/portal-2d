@@ -26,7 +26,7 @@ const labelId = useId()
 function toggle(): void {
   enabled.value = !enabled.value
   void nextTick(() => {
-    Sound.MENU_BUTTON.play()
+    Sound.MENU_ACCEPT.play()
   })
 }
 </script>

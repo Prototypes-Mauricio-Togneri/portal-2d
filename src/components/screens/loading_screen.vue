@@ -78,7 +78,7 @@ async function preload(): Promise<void> {
  * press removes this screen before another click or key can reach Start.
  */
 function start(): void {
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_ACCEPT.play()
   emit('start')
 }
 

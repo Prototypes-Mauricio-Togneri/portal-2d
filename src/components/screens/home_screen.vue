@@ -418,7 +418,7 @@ function moveHighlight(offset: number): void {
     const nextRow = (highlightedDetail.value + offset + rowCount) % rowCount
     if (nextRow !== highlightedDetail.value) {
       highlightDetail(nextRow)
-      Sound.MENU_BUTTON.play()
+      Sound.MENU_MOVE.play()
     }
     focusRow('details', nextRow)
     return
@@ -431,7 +431,7 @@ function moveHighlight(offset: number): void {
     }
     if (nextSection.section !== highlightedSection.value) {
       highlightedSection.value = nextSection.section
-      Sound.MENU_BUTTON.play()
+      Sound.MENU_MOVE.play()
     }
     focusRow('sections', nextIndex)
     return
@@ -443,7 +443,7 @@ function moveHighlight(offset: number): void {
   const nextIndex = (highlightedItem.value + offset + count) % count
   if (nextIndex !== highlightedItem.value) {
     highlightItem(nextIndex)
-    Sound.MENU_BUTTON.play()
+    Sound.MENU_MOVE.play()
   }
   focusRow('items', nextIndex)
 }
@@ -452,8 +452,9 @@ function moveHighlight(offset: number): void {
  * Opens the highlighted section and steps into its items, with a click. Does
  * nothing with the keyboard already in the items or the third column, or on
  * Playground, which has no section.
+ * @param click - The click to play: the move sound for Right, the accept sound for Enter, Space or a click
  */
-function openHighlightedSection(): void {
+function openHighlightedSection(click: Sound): void {
   if (activeColumn.value !== 'sections' || highlightedSection.value === 'playground') {
     return
   }
@@ -464,7 +465,7 @@ function openHighlightedSection(): void {
   }
   // The item rows are new, so none has had the pointer on it yet
   pointerItem = null
-  Sound.MENU_BUTTON.play()
+  click.play()
   // The item rows are only drawn once the section is open
   void nextTick(() => {
     focusRow('items', highlightedItem.value)
@@ -487,7 +488,7 @@ function pressHighlightedSection(): void {
   }
   const tutorial = CHAMBERS.find((chamber) => chamber.id === TUTORIAL_ID)
   if (activeColumn.value !== 'sections' || highlightedSection.value !== 'play' || hasStartedAnyChamber() || tutorial === undefined) {
-    openHighlightedSection()
+    openHighlightedSection(Sound.MENU_ACCEPT)
     return
   }
   Sound.START.play()
@@ -509,7 +510,7 @@ function closeSection(): void {
   }
   openSection.value = null
   activeColumn.value = 'sections'
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_MOVE.play()
   focusRow('sections', sectionIndex(highlightedSection.value))
 }
 
@@ -517,13 +518,14 @@ function closeSection(): void {
  * Steps from the highlighted About row into its pages or changelog in the
  * third column, or from Controls into its layouts, with a click. Does nothing
  * anywhere else, or for Feedback, which has nothing there.
+ * @param click - The click to play: the move sound for Right, the accept sound for Enter, Space or a click
  */
-function openDetail(): void {
+function openDetail(click: Sound): void {
   if (activeColumn.value !== 'items' || !detailTakesKeyboard.value) {
     return
   }
   activeColumn.value = 'details'
-  Sound.MENU_BUTTON.play()
+  click.play()
   if (changelogShown.value) {
     trackChangelogOpen()
   }
@@ -533,13 +535,15 @@ function openDetail(): void {
 
 /**
  * Steps into the third column of an About or Controls row picked with the
- * mouse (or Space), just like Right. The row is highlighted first, since some
- * browsers (Safari) don't focus a clicked button, which would otherwise have done it.
+ * mouse (or Space), with the accept click. The row is highlighted first,
+ * silently, as a section picked is, since some browsers (Safari) don't focus a
+ * clicked button, which would otherwise have done it.
  * @param index - The row's index in the second column
  */
 function chooseDetailRow(index: number): void {
-  handleItemFocus(index)
-  openDetail()
+  activeColumn.value = 'items'
+  highlightItem(index)
+  openDetail(Sound.MENU_ACCEPT)
 }
 
 /**
@@ -548,9 +552,9 @@ function chooseDetailRow(index: number): void {
  */
 function stepIn(): void {
   if (activeColumn.value === 'sections') {
-    openHighlightedSection()
+    openHighlightedSection(Sound.MENU_MOVE)
   } else {
-    openDetail()
+    openDetail(Sound.MENU_MOVE)
   }
 }
 
@@ -564,7 +568,7 @@ function stepBack(): void {
     return
   }
   activeColumn.value = 'items'
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_MOVE.play()
   focusRow('items', highlightedItem.value)
 }
 
@@ -590,7 +594,7 @@ function handleSectionFocus(section: MenuSection): void {
   }
   highlightedSection.value = section
   activeColumn.value = 'sections'
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_MOVE.play()
 }
 
 /**
@@ -604,7 +608,7 @@ function handleItemFocus(index: number): void {
   }
   activeColumn.value = 'items'
   highlightItem(index)
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_MOVE.play()
 }
 
 /**
@@ -627,7 +631,7 @@ function handleSectionPointerMove(section: MenuSection, event: PointerEvent): vo
   }
   highlightedSection.value = section
   activeColumn.value = 'sections'
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_MOVE.play()
   focusRow('sections', sectionIndex(section), true)
 }
 
@@ -668,7 +672,7 @@ function handleItemPointerMove(index: number, event: PointerEvent): void {
   }
   activeColumn.value = 'items'
   highlightItem(index)
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_MOVE.play()
   focusRow('items', index, true)
 }
 
@@ -699,7 +703,7 @@ function handleDetailFocus(index: number): void {
   }
   activeColumn.value = 'details'
   highlightDetail(index)
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_MOVE.play()
 }
 
 /**
@@ -717,7 +721,7 @@ function handleDetailPointerMove(index: number, event: PointerEvent): void {
   }
   activeColumn.value = 'details'
   highlightDetail(index)
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_MOVE.play()
   focusRow('details', index, true)
 }
 
@@ -730,15 +734,15 @@ function handleChangelogFocus(): void {
     return
   }
   activeColumn.value = 'details'
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_MOVE.play()
   trackChangelogOpen()
 }
 
 /**
  * Puts the layout picked in the Controls column (Enter, Space or a click) in
- * use, with a click; picking Custom also opens its dialog. The row is
- * highlighted first, as for a row stepped into, since some browsers (Safari)
- * don't focus a clicked button.
+ * use, with the accept click; picking Custom also opens its dialog. The row is
+ * highlighted first, silently, as for a row stepped into, since some browsers
+ * (Safari) don't focus a clicked button.
  * @param index - The row's index in the third column
  */
 function chooseLayout(index: number): void {
@@ -746,13 +750,14 @@ function chooseLayout(index: number): void {
   if (entry === undefined) {
     return
   }
-  handleDetailFocus(index)
+  activeColumn.value = 'details'
+  highlightDetail(index)
   chooseControlLayout(entry.layout)
   controlStatus.value = `Controls set to ${entry.label}`
   if (entry.layout === ControlLayout.CUSTOM) {
     controlsDialogOpen.value = true
   }
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_ACCEPT.play()
 }
 
 /**
@@ -764,11 +769,11 @@ function closeControlsDialog(): void {
 }
 
 /**
- * Asks whether to reset the progress, with a click, as opening the pause menu does.
+ * Asks whether to reset the progress, with the accept click.
  */
 function openResetDialog(): void {
   resetDialogOpen.value = true
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_ACCEPT.play()
 }
 
 /**
@@ -833,7 +838,7 @@ function handleKeydown(event: KeyboardEvent): void {
       } else {
         closeControlsDialog()
       }
-      Sound.MENU_BUTTON.play()
+      Sound.MENU_MOVE.play()
     }
     return
   }

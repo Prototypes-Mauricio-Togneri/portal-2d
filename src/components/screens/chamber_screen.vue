@@ -172,7 +172,7 @@ function setPaused(paused: boolean): void {
 function openPause(): void {
   setPaused(true)
   dialog.value = 'pause'
-  Sound.MENU_BUTTON.play()
+  Sound.MENU_MOVE.play()
 }
 
 /**
@@ -371,15 +371,15 @@ function handleKeydown(event: KeyboardEvent): void {
       break
     case 'pause':
       resume()
-      Sound.MENU_BUTTON.play()
+      Sound.MENU_MOVE.play()
       break
     case 'confirm-reset':
       dialog.value = 'pause'
-      Sound.MENU_BUTTON.play()
+      Sound.MENU_MOVE.play()
       break
     case 'confirm-exit':
       cancelExit()
-      Sound.MENU_BUTTON.play()
+      Sound.MENU_MOVE.play()
       break
     case 'completed':
       break

@@ -137,7 +137,8 @@ const PATHS = {
   buttonPlateRing: memo(() => { const path = new Path2D(); addCircle(path, 103.2); addCircle(path, 74.9, true); return path }),
   buttonNotClamps: memo(() => { const path = new Path2D(); addPolygon(path, rectPoints(-10, -10, 266, 266)); BUTTON_CLAMPS.forEach((clamp) => addPolygon(path, clamp)); return path }),
   buttonClamps: memo(() => { const path = new Path2D(); BUTTON_CLAMPS.forEach((clamp) => addPolygon(path, clamp)); return path }),
-  buttonNeutral: memo(() => { const path = new Path2D(); addCircle(path, 110); addCircle(path, 74.9, true); BUTTON_CLAMPS.forEach((clamp) => addPolygon(path, clamp)); return path }),
+  // The clamps alternate in winding: each is turned to wind as the outer circle does, so the nonzero rule keeps it whole
+  buttonNeutral: memo(() => { const path = new Path2D(); addCircle(path, 110); addCircle(path, 74.9, true); BUTTON_CLAMPS.forEach((clamp, i) => addPolygon(path, (i % 2 === 0) ? [...clamp].reverse() : clamp)); return path }),
   // The turntable: the disc's face inside its lit lip, and the cut round it
   discFace: memo(() => { const path = new Path2D(); addCircle(path, 91.8); return path }),
   // The grate (ditch_bridged.svg): frame, bars, slots
@@ -1386,7 +1387,7 @@ function destroyedBoxWho(index, step, settings, sprite) {
 }
 
 /** The page's hooks for one drawing of a chamber in a state with some settings, or null settings for the original. */
-function hooksFor(index, step, settings, capture = null) {
+function hooksFor(index, step, settings, capture = null, surfaceDetail = true) {
   const info = chamberInfo(index)
   const listing = Engine.chambers[index]
   const hooks = {}
@@ -1459,7 +1460,7 @@ function hooksFor(index, step, settings, capture = null) {
     }
   }
 
-  if (settings.choices.floorWear === 'on') {
+  if ((settings.choices.floorWear === 'on') && surfaceDetail) {
     hooks.floor = floorUnderHook(info, settings)
   }
 
@@ -1471,7 +1472,7 @@ function drawChamber(canvas, index, tileSize, settings, options = {}) {
   Engine.render(canvas, index, tileSize, {
     step: options.step ?? 0,
     surfaceDetail: options.surfaceDetail !== false,
-    hooks: hooksFor(index, options.step ?? 0, settings, options.capture ?? null),
+    hooks: hooksFor(index, options.step ?? 0, settings, options.capture ?? null, options.surfaceDetail !== false),
   })
 }
 
