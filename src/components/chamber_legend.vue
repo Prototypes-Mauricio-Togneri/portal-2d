@@ -4,14 +4,17 @@
  * both portals and interacting, each on the key the player has bound to it,
  * and Escape for the pause dialog, each with what it does. The keys show what
  * the player's keyboard prints on them, and arrow keys a small triangle
- * pointing their way.
+ * pointing their way. Its heading folds the list away and opens it again,
+ * which is remembered between visits.
  */
 import {computed, onMounted} from 'vue'
 import KeyCap from '@/components/key_cap.vue'
 import {GameKey} from '@/game/game_key'
 import type {BoundKey} from '@/game/key_bindings'
+import {Sound} from '@/game/sound'
 import {keyBindings} from '@/services/key_bindings'
 import {getKeyLabel, type KeyLabel, refreshKeyLabels} from '@/services/key_labels'
+import {legendOpen} from '@/services/settings'
 
 /** A key shown in the legend: its label, and whether it is drawn as a spacebar. */
 type LegendKey = KeyLabel & {
@@ -45,94 +48,128 @@ const keys = computed(() => ({
   [GameKey.INTERACT]: legendKey(GameKey.INTERACT),
 }))
 
+/**
+ * Folds the list away under its heading, or opens it again, with a click.
+ */
+function toggleLegend(): void {
+  legendOpen.value = !legendOpen.value
+  Sound.MENU_ACCEPT.play()
+}
+
 // The player may have switched keyboard layouts since the labels were read
 onMounted(refreshKeyLabels)
 </script>
 
 <template>
   <section class="legend" aria-labelledby="legend-heading">
-    <h2 id="legend-heading" class="legend-heading ruled-label">Controls<span class="legend-heading-mark" aria-hidden="true"></span></h2>
-    <dl class="legend-list">
-      <div class="legend-row">
-        <dt class="arrow-keys">
-          <KeyCap class="arrow-up" :bound-key="keys.up.key" :aria-label="keys.up.name" />
-          <KeyCap class="arrow-left" :bound-key="keys.left.key" :aria-label="keys.left.name" />
-          <KeyCap class="arrow-down" :bound-key="keys.down.key" :aria-label="keys.down.name" />
-          <KeyCap class="arrow-right" :bound-key="keys.right.key" :aria-label="keys.right.name" />
-        </dt>
-        <dd class="legend-action">
-          <span class="action-name">Move</span>
-          <span class="action-detail">Navigate the chamber</span>
-        </dd>
+    <h2 id="legend-heading">
+      <!-- A click doesn't take the keyboard, so a key pressed in play can't fold it by accident -->
+      <button
+        class="legend-toggle ruled-label"
+        type="button"
+        :aria-expanded="legendOpen"
+        aria-controls="legend-body"
+        @mousedown.prevent
+        @click="toggleLegend"
+      >
+        Controls<span class="legend-heading-mark" aria-hidden="true"></span>
+        <svg class="legend-chevron" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 15 L12 9 L18 15" />
+        </svg>
+      </button>
+    </h2>
+    <div
+      id="legend-body"
+      class="legend-body"
+      :class="{
+        'legend-body-folded': !legendOpen,
+      }"
+      :inert="!legendOpen"
+    >
+      <div class="legend-clip">
+        <dl class="legend-list">
+          <div class="legend-row">
+            <dt class="arrow-keys">
+              <KeyCap class="arrow-up" :bound-key="keys.up.key" :aria-label="keys.up.name" />
+              <KeyCap class="arrow-left" :bound-key="keys.left.key" :aria-label="keys.left.name" />
+              <KeyCap class="arrow-down" :bound-key="keys.down.key" :aria-label="keys.down.name" />
+              <KeyCap class="arrow-right" :bound-key="keys.right.key" :aria-label="keys.right.name" />
+            </dt>
+            <dd class="legend-action">
+              <span class="action-name">Move</span>
+              <span class="action-detail">Navigate the chamber</span>
+            </dd>
+          </div>
+          <div class="legend-row">
+            <dt>
+              <KeyCap
+                :class="{
+                  'keycap-wide': keys.turn.wide,
+                }"
+                :bound-key="keys.turn.key"
+                :aria-label="keys.turn.name"
+              />
+            </dt>
+            <dd class="legend-action">
+              <span class="action-name">Turn in place</span>
+              <span class="action-detail">Hold it, then a move key, to face that way</span>
+            </dd>
+          </div>
+          <div class="legend-row">
+            <dt>
+              <KeyCap
+                :class="{
+                  'keycap-wide': keys.blue.wide,
+                }"
+                :bound-key="keys.blue.key"
+                :aria-label="keys.blue.name"
+              />
+            </dt>
+            <dd class="legend-action legend-action-blue">
+              <span class="action-name">Blue portal</span>
+              <span class="action-detail">Shoot a blue portal</span>
+            </dd>
+          </div>
+          <div class="legend-row">
+            <dt>
+              <KeyCap
+                :class="{
+                  'keycap-wide': keys.orange.wide,
+                }"
+                :bound-key="keys.orange.key"
+                :aria-label="keys.orange.name"
+              />
+            </dt>
+            <dd class="legend-action legend-action-orange">
+              <span class="action-name">Orange portal</span>
+              <span class="action-detail">Shoot an orange portal</span>
+            </dd>
+          </div>
+          <div class="legend-row">
+            <dt>
+              <KeyCap
+                :class="{
+                  'keycap-wide': keys.interact.wide,
+                }"
+                :bound-key="keys.interact.key"
+                :aria-label="keys.interact.name"
+              />
+            </dt>
+            <dd class="legend-action">
+              <span class="action-name">Interact</span>
+              <span class="action-detail">Use switches, pick up and drop boxes</span>
+            </dd>
+          </div>
+          <div class="legend-row">
+            <dt><kbd class="keycap">Esc</kbd></dt>
+            <dd class="legend-action">
+              <span class="action-name">Pause</span>
+              <span class="action-detail">Open the pause menu</span>
+            </dd>
+          </div>
+        </dl>
       </div>
-      <div class="legend-row">
-        <dt>
-          <KeyCap
-            :class="{
-              'keycap-wide': keys.turn.wide,
-            }"
-            :bound-key="keys.turn.key"
-            :aria-label="keys.turn.name"
-          />
-        </dt>
-        <dd class="legend-action">
-          <span class="action-name">Turn in place</span>
-          <span class="action-detail">Hold it, then a move key, to face that way</span>
-        </dd>
-      </div>
-      <div class="legend-row">
-        <dt>
-          <KeyCap
-            :class="{
-              'keycap-wide': keys.blue.wide,
-            }"
-            :bound-key="keys.blue.key"
-            :aria-label="keys.blue.name"
-          />
-        </dt>
-        <dd class="legend-action legend-action-blue">
-          <span class="action-name">Blue portal</span>
-          <span class="action-detail">Shoot a blue portal</span>
-        </dd>
-      </div>
-      <div class="legend-row">
-        <dt>
-          <KeyCap
-            :class="{
-              'keycap-wide': keys.orange.wide,
-            }"
-            :bound-key="keys.orange.key"
-            :aria-label="keys.orange.name"
-          />
-        </dt>
-        <dd class="legend-action legend-action-orange">
-          <span class="action-name">Orange portal</span>
-          <span class="action-detail">Shoot an orange portal</span>
-        </dd>
-      </div>
-      <div class="legend-row">
-        <dt>
-          <KeyCap
-            :class="{
-              'keycap-wide': keys.interact.wide,
-            }"
-            :bound-key="keys.interact.key"
-            :aria-label="keys.interact.name"
-          />
-        </dt>
-        <dd class="legend-action">
-          <span class="action-name">Interact</span>
-          <span class="action-detail">Use switches, pick up and drop boxes</span>
-        </dd>
-      </div>
-      <div class="legend-row">
-        <dt><kbd class="keycap">Esc</kbd></dt>
-        <dd class="legend-action">
-          <span class="action-name">Pause</span>
-          <span class="action-detail">Open the pause menu</span>
-        </dd>
-      </div>
-    </dl>
+    </div>
   </section>
 </template>
 
@@ -140,16 +177,28 @@ onMounted(refreshKeyLabels)
 .legend {
   display: flex;
   flex-direction: column;
-  gap: 1.75rem;
 }
 
-/* Section sign: the label between a slanted blue mark and an orange one, then its rule */
-.legend-heading {
+/* Section sign, and the button that folds the list away: the label between a slanted blue mark and
+   an orange one, then its rule, and at the rule's end an arrow, pointing up while the list shows
+   and down while it is folded */
+.legend-toggle {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
   font-size: 1.0625rem;
   letter-spacing: 0.22em;
+  text-align: left;
+  cursor: pointer;
 }
 
-.legend-heading::before,
+.legend-toggle::after {
+  transition: background-color 120ms ease;
+}
+
+.legend-toggle::before,
 .legend-heading-mark {
   content: '';
   flex: none;
@@ -158,7 +207,7 @@ onMounted(refreshKeyLabels)
   transform: skewX(-24deg);
 }
 
-.legend-heading::before {
+.legend-toggle::before {
   margin-right: -0.25rem;
   background: var(--color-blue);
 }
@@ -168,13 +217,61 @@ onMounted(refreshKeyLabels)
   background: var(--color-orange);
 }
 
+/* Placed after the rule, which the ruled label draws last */
+.legend-chevron {
+  order: 1;
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-left: -0.375rem;
+  fill: none;
+  stroke: var(--color-ink-muted);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 240ms var(--ease-out), stroke 120ms ease;
+}
+
+.legend-toggle[aria-expanded='false'] .legend-chevron {
+  transform: rotate(180deg);
+}
+
+.legend-toggle:hover::after {
+  background: var(--color-ink);
+}
+
+.legend-toggle:hover .legend-chevron {
+  stroke: var(--color-ink);
+}
+
+/* Folding: the body's one row eases between the list's height and none. The body reaches past the
+   legend's sides and foot by as much as the list is padded, so the keys' shadows aren't cut off */
+.legend-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  margin: 0 -0.75rem -0.75rem;
+  transition: grid-template-rows 240ms var(--ease-out);
+}
+
+.legend-body-folded {
+  grid-template-rows: 0fr;
+}
+
+/* What clips the list: unpadded, so nothing holds the row open once it is folded */
+.legend-clip {
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* One key column shared by every row, as wide as the arrow cluster or the widest key bound,
-   so the dividers stay in line whatever the keys */
+   so the dividers stay in line whatever the keys. The space under the heading is its top
+   padding, so it folds away with the list */
 .legend-list {
   display: grid;
-  grid-template-columns: minmax(8.25rem, max-content) 1fr;
+  grid-template-columns: minmax(7.25rem, max-content) 1fr;
   column-gap: 1.125rem;
-  row-gap: 1.5rem;
+  row-gap: 0.75rem;
+  padding: 1.125rem 0.75rem 0.75rem;
 }
 
 .legend-row {
@@ -220,24 +317,29 @@ onMounted(refreshKeyLabels)
 }
 
 .action-name {
-  font-size: 1.0625rem;
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1.25;
 }
 
 .action-detail {
   color: var(--color-ink-muted);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-style: italic;
   line-height: 1.3;
+}
+
+/* The legend's keys are a little lower than the shared key cap */
+.legend-row .keycap {
+  height: 2rem;
 }
 
 /* Inverted-T cluster of the four move keys; a long label widens its column */
 .legend-row .arrow-keys {
   display: grid;
-  grid-template-columns: repeat(3, minmax(2.5rem, max-content));
-  grid-template-rows: repeat(2, 2.25rem);
-  gap: 0.375rem;
+  grid-template-columns: repeat(3, minmax(2.25rem, max-content));
+  grid-template-rows: repeat(2, 2rem);
+  gap: 0.25rem;
 }
 
 .arrow-keys .keycap {
@@ -267,6 +369,6 @@ onMounted(refreshKeyLabels)
 
 /* Space is drawn as a bar across the key column */
 .keycap-wide {
-  min-width: 8.25rem;
+  min-width: 7.25rem;
 }
 </style>

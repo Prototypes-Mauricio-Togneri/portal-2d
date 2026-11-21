@@ -1,5 +1,7 @@
 /**
- * Sound and music preferences, kept in localStorage and applied to the game audio.
+ * Sound and music preferences, kept in localStorage and applied to the game
+ * audio, and whether the chamber screen's controls legend is open, kept the
+ * same way.
  */
 import {ref, watch} from 'vue'
 import {gameMusic, menuMusic} from '@/game/music'
@@ -12,6 +14,7 @@ export type MusicTrack = 'menu' | 'game'
 
 const SOUND_STORAGE_KEY = 'portal-2d.sound-enabled'
 const MUSIC_STORAGE_KEY = 'portal-2d.music-enabled'
+const LEGEND_STORAGE_KEY = 'portal-2d.legend-open'
 
 const MUSIC_TRACKS: Record<MusicTrack, Music> = {
   menu: menuMusic,
@@ -88,6 +91,12 @@ watch(musicEnabled, (enabled) => {
   writePreference(MUSIC_STORAGE_KEY, enabled)
   applyMusic()
   trackSettingChange('music', enabled)
+})
+
+export const legendOpen = ref(readPreference(LEGEND_STORAGE_KEY)) // Whether the chamber screen shows its controls, or has them folded away under their heading
+
+watch(legendOpen, (open) => {
+  writePreference(LEGEND_STORAGE_KEY, open)
 })
 
 /**

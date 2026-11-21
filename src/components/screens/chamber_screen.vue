@@ -480,23 +480,23 @@ onBeforeUnmount(() => {
           role="timer"
           aria-labelledby="sign-time-label"
         >
-          <svg
-            class="sign-time-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.75"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M9.5 2.5h5M12 2.5v3M18.5 6.5l1.25-1.25M12 10v4.25" />
-            <circle cx="12" cy="14" r="7.5" />
-          </svg>
-          <span class="sign-time-reading">
+          <span class="sign-time-caption">
+            <svg
+              class="sign-time-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M9.5 2.5h5M12 2.5v3M18.5 6.5l1.25-1.25M12 10v4.25" />
+              <circle cx="12" cy="14" r="7.5" />
+            </svg>
             <span id="sign-time-label" class="sign-time-label">Time</span>
-            <span ref="timeReadout" class="sign-time-value">00:00.00</span>
           </span>
+          <span ref="timeReadout" class="sign-time-value">00:00.00</span>
         </div>
       </ChamberSign>
       <ChamberLegend />
@@ -561,7 +561,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding: 1.75rem 1.375rem;
+  padding: 1.375rem;
   border-right: 1px solid var(--color-rule);
   background: var(--color-panel);
   box-shadow: 0.25rem 0 1.5rem rgba(var(--color-ink-rgb), 0.12);
@@ -569,14 +569,16 @@ onBeforeUnmount(() => {
   scrollbar-width: none;
 }
 
-/* The clock, on the chamber sign beside the place in the list: stopwatch, small caption and digits in
-   the sign face, whose digits share one width, so the readout never shifts (the body face's digits
-   vary and have no tabular form); dimmed until the first key starts it. Caption and digits share a
-   baseline, and the stopwatch's dial and the caption are raised to the middle of the digits */
+/* The clock, at the end of the chamber sign's number line: digits in the sign face, whose digits
+   share one width, so the readout never shifts (the body face's digits vary and have no tabular
+   form), under a stopwatch and a small caption; dimmed until the first key starts it. Only the
+   digits are in the flow, so they sit on the number's baseline, their foot level with the
+   number's; the caption rides above them, right-aligned */
 .sign-time {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: flex-end;
   transition: opacity 160ms ease;
 }
 
@@ -584,43 +586,40 @@ onBeforeUnmount(() => {
   opacity: 0.55;
 }
 
+.sign-time-caption {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.375rem;
+}
+
 .sign-time-icon {
-  position: relative;
-  top: -0.09375rem; /* Centres the dial, below the crown, on the digits */
   flex: none;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1rem;
+  height: 1rem;
   color: var(--color-ink-muted);
 }
 
-.sign-time-reading {
-  position: relative;
-  top: 0.125rem;
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  line-height: 1;
-}
-
 .sign-time-label {
-  position: relative;
-  top: -0.15625rem; /* Lifts the shorter capitals from the shared baseline to the middle of the digits */
   color: var(--color-ink-muted);
   font-size: 0.8125rem;
   font-style: italic;
   font-weight: 600;
   letter-spacing: 0.2em;
+  line-height: 1;
   text-transform: uppercase;
 }
 
 .sign-time-value {
-  position: relative;
-  top: -0.0625rem; /* A hair above the shared baseline; the reading as a whole is set lower, see above */
   font-family: var(--font-display);
   font-size: 1.125rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   letter-spacing: 0.04em;
+  line-height: 1;
 }
 
 /* Stage holding the game canvas, on the room's back wall */

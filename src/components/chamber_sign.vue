@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
  * The chamber's sign at the top of the chamber screen's rail, a white plate
- * framed in grey: the chamber's number, its place in the list beside whatever
- * the screen puts in the slot (the clock), a rule, then two rows of
+ * framed in grey: the chamber's number with its place in the list against it
+ * and, at the end of that line, whatever the screen puts in the slot (the
+ * clock), a rule, then two rows of
  * pictograms, one for each kind of element a chamber can hold, dark when this
  * chamber has it and faint when it hasn't. A mirror box is listed among the
  * boxes, so its pictogram is the one special case: dark when any box holds a
@@ -128,12 +129,14 @@ function formatSignNumber(chamberNumber: number | null): string {
 
 <template>
   <div class="chamber-sign">
-    <h1 class="sign-number">
-      <span class="visually-hidden">{{ heading }}</span>
-      <span aria-hidden="true">{{ signNumber }}</span>
-    </h1>
-    <div class="sign-meta">
-      <span class="sign-fraction" aria-hidden="true">{{ signNumber }}/{{ lastNumber }}</span>
+    <div class="sign-head">
+      <div class="sign-place">
+        <h1 class="sign-number">
+          <span class="visually-hidden">{{ heading }}</span>
+          <span aria-hidden="true">{{ signNumber }}</span>
+        </h1>
+        <span class="sign-fraction" aria-hidden="true">/{{ lastNumber }}</span>
+      </div>
       <slot></slot>
     </div>
     <div class="sign-rule"></div>
@@ -160,9 +163,9 @@ function formatSignNumber(chamberNumber: number | null): string {
 .chamber-sign {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  padding: 1.375rem 1.25rem;
+  gap: 0.625rem;
+  margin-bottom: 0.25rem;
+  padding: 1.125rem 1.25rem;
   border: 0.125rem solid var(--color-ink-muted);
   background: var(--color-white);
   box-shadow: 0 0.375rem 1rem rgba(var(--color-ink-rgb), 0.12);
@@ -173,26 +176,31 @@ function formatSignNumber(chamberNumber: number | null): string {
 .sign-number {
   margin-left: -0.07em;
   font-family: var(--font-display);
-  font-size: 10.5rem;
+  font-size: 6.5rem;
   font-weight: 300;
   letter-spacing: -0.03em;
   line-height: 0.74;
   font-variant-numeric: tabular-nums;
 }
 
-/* The place in the list on the left, the slot's clock on the right */
-.sign-meta {
+/* One line on the number's baseline: the number with its place in the list against it, and the
+   slot's clock at the end */
+.sign-head {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 1rem;
-  min-height: 1.375rem;
-  margin-top: 0.5rem;
+  gap: 0.75rem;
+}
+
+.sign-place {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
 }
 
 .sign-fraction {
   font-family: var(--font-display);
-  font-size: 1.375rem;
+  font-size: 2rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1;

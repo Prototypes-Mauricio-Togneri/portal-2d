@@ -23,7 +23,7 @@
        'http://127.0.0.1:8765/harness/your_timing_page.html'
 
    Timings from headless Chrome without a GPU are rough and slow; for figures
-   to keep, time in a real Chrome (docs/element_detail_brief.md says how).
+   to keep, time in a real Chrome (the folder's README.md says how).
 """
 
 import functools
