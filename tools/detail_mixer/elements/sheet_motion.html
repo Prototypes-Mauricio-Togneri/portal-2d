@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Element detail in motion</title>
+<style>
+  body { margin: 0; padding: 10px; background: rgba(32, 32, 32, 1); color: rgba(220, 220, 220, 1); font: 13px sans-serif; }
+  .strip { display: flex; gap: 4px; margin: 4px 0 12px; }
+  canvas { display: block; }
+  pre { margin: 0; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<!-- A recorded step replayed with the game's animation, in slow motion, cut into frames round a tile:
+     harness/shot.sh 'elements/sheet_motion.html?c=1&s=40&x=5&y=3&r=2' build/motion.png 1600 900
+     c the chamber, s the step whose action is drawn, x and y the tile (from the top) the frames are cut round, r how many tiles round it;
+     with list=1 it lists each chamber's steps where a box is destroyed, an arrow turns, a box is first carried -->
+<img src="/wait?ms=6000" alt="" hidden>
+<script src="../build/engine.js"></script>
+<script src="config.js"></script>
+<script src="effects.js"></script>
+<script>
+const query = new URLSearchParams(location.search)
+Engine.ready.then(() => {
+  if (query.get('list') !== null) {
+    const out = document.createElement('pre')
+    Engine.chambers.forEach((chamber, index) => {
+      if (chamber.steps === 0) return
+      const found = []
+      let before = Engine.instances(index, 0)
+      for (let s = 1; s <= chamber.steps; s++) {
+        const now = Engine.instances(index, s)
+        const events = Engine.stepEvents(index, s)
+        const tags = events.filter((event) => ['boxDestroyed', 'fizzled', 'arrowTurned', 'boxPickedUp', 'boxPutDown', 'ditchSwitched'].includes(event))
+        if (tags.length > 0) found.push(`${s}:${tags.join('+')}@${now.subject.x},${now.subject.row}`)
+        before = now
+      }
+      out.textContent += `${index} ${chamber.name}: ${found.join(' ')}\n`
+    })
+    document.body.append(out)
+    return
+  }
+  const index = Number(query.get('c') ?? 1)
+  const target = Number(query.get('s') ?? 1)
+  const tile = Number(query.get('t') ?? 63)
+  const x = Number(query.get('x') ?? 0)
+  const row = Number(query.get('y') ?? 0)
+  const reach = Number(query.get('r') ?? 2)
+  const settings = PRESETS.find((preset) => preset.id === (query.get('preset') ?? 'bold')).make()
+  settings.choices.carried = 'worn'
+  for (const key of Object.keys(settings.share)) settings.share[key] = 100
+  const canvases = [document.createElement('canvas'), document.createElement('canvas')]
+  const strips = [document.createElement('div'), document.createElement('div')]
+  strips.forEach((strip, i) => { strip.className = 'strip'; document.body.append(i === 0 ? 'Original' : 'With detail', strip) })
+  let taken = -1
+  let frames = 0
+  Engine.play([
+    {canvas: canvases[0], hooksAt: (step) => hooksFor(index, step, null)},
+    {canvas: canvases[1], hooksAt: (step) => hooksFor(index, step, settings)},
+  ], index, tile, {from: target - 1, speed: 0.12, pause: 0, onStep: (step) => { if (step === target) taken = 0 }})
+  const grab = () => {
+    if (taken >= 0) {
+      taken++
+      if (taken % 3 === 1 && frames < 12) {
+        frames++
+        canvases.forEach((canvas, i) => {
+          const cut = document.createElement('canvas')
+          const side = ((2 * reach) + 1) * tile
+          cut.width = side
+          cut.height = side
+          cut.getContext('2d').drawImage(canvas, (x - reach) * tile, (row - reach) * tile, side, side, 0, 0, side, side)
+          strips[i].append(cut)
+        })
+      }
+    }
+    if (frames < 12) requestAnimationFrame(grab)
+  }
+  requestAnimationFrame(grab)
+}).catch((error) => { document.body.textContent = String(error.stack || error) })
+</script>
+</body>
+</html>

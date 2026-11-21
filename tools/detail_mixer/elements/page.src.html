@@ -1,0 +1,2212 @@
+<title>Element Detail Mixer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;600;700&family=Chakra+Petch:wght@400;500;600&display=swap">
+<style>
+/* Layout: the first mixer's test bench (chamber left, a signage rail of lamps and sliders right) on the facility's seamed wall, then the line-up bench where instances stand side by side with their meaning gauges */
+:root {
+  --wall: rgba(226, 230, 233, 1);
+  --seam: rgba(194, 201, 206, 0.55);
+  --panel: rgba(247, 248, 249, 1);
+  --field: rgba(255, 255, 255, 1);
+  --rule: rgba(194, 201, 206, 1);
+  --ink: rgba(29, 35, 39, 1);
+  --ink-muted: rgba(86, 97, 105, 1);
+  --bar: rgba(29, 35, 39, 0.88);
+  --bar-ink: rgba(255, 255, 255, 1);
+  --blue: rgba(40, 140, 220, 1);
+  --blue-deep: rgba(22, 98, 160, 1);
+  --blue-glow: rgba(40, 140, 220, 0.3);
+  --good: rgba(26, 150, 98, 1);
+  --fair: rgba(196, 140, 10, 1);
+  --poor: rgba(200, 52, 42, 1);
+  --chamber: rgba(32, 32, 32, 1);
+  --chamber-ink: rgba(226, 230, 233, 1);
+  --chamber-tag: rgba(0, 0, 0, 0.55);
+  --grip: rgba(255, 255, 255, 1);
+  --grip-ink: rgba(29, 35, 39, 1);
+  --font-display: 'Oxanium', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Chakra Petch', 'Helvetica Neue', Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --wall: rgba(20, 23, 26, 1);
+    --seam: rgba(52, 59, 64, 0.6);
+    --panel: rgba(31, 35, 39, 1);
+    --field: rgba(41, 46, 51, 1);
+    --rule: rgba(64, 72, 78, 1);
+    --ink: rgba(232, 236, 239, 1);
+    --ink-muted: rgba(158, 169, 176, 1);
+    --bar: rgba(232, 236, 239, 0.94);
+    --bar-ink: rgba(20, 23, 26, 1);
+    --blue: rgba(72, 164, 238, 1);
+    --blue-deep: rgba(136, 198, 247, 1);
+    --blue-glow: rgba(72, 164, 238, 0.35);
+    --good: rgba(64, 206, 140, 1);
+    --fair: rgba(240, 190, 60, 1);
+    --poor: rgba(250, 104, 92, 1);
+    --chamber: rgba(10, 11, 12, 1);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --wall: rgba(20, 23, 26, 1);
+  --seam: rgba(52, 59, 64, 0.6);
+  --panel: rgba(31, 35, 39, 1);
+  --field: rgba(41, 46, 51, 1);
+  --rule: rgba(64, 72, 78, 1);
+  --ink: rgba(232, 236, 239, 1);
+  --ink-muted: rgba(158, 169, 176, 1);
+  --bar: rgba(232, 236, 239, 0.94);
+  --bar-ink: rgba(20, 23, 26, 1);
+  --blue: rgba(72, 164, 238, 1);
+  --blue-deep: rgba(136, 198, 247, 1);
+  --blue-glow: rgba(72, 164, 238, 0.35);
+  --good: rgba(64, 206, 140, 1);
+  --fair: rgba(240, 190, 60, 1);
+  --poor: rgba(250, 104, 92, 1);
+  --chamber: rgba(10, 11, 12, 1);
+  color-scheme: dark;
+}
+
+/* ============================================
+   Page
+   ============================================ */
+
+body {
+  background-color: var(--wall);
+  background-image: linear-gradient(var(--seam) 1px, transparent 1px), linear-gradient(90deg, var(--seam) 1px, transparent 1px);
+  background-size: 14rem 14rem;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 100rem;
+  margin: 0 auto;
+  padding-block: 2rem 4rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.masthead {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.eyebrow {
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.lede {
+  max-width: 70ch;
+  color: var(--ink-muted);
+  font-size: 1.05rem;
+}
+
+/* A label followed by a rule, as on the game's signs */
+.ruled {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.ruled::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ink-muted);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.section > p {
+  max-width: 76ch;
+  color: var(--ink-muted);
+}
+
+/* ============================================
+   My pick: the recommendation, under a blue band
+   ============================================ */
+
+.pick {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 2fr);
+  gap: 1rem 2.5rem;
+  padding: 1.25rem 1.5rem 1.4rem;
+  border: 1px solid var(--rule);
+  border-top: 0.375rem solid var(--blue);
+  background: var(--panel);
+}
+
+.pick h2 {
+  margin-bottom: 0.4rem;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pick-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.pick-aside {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+.reasons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem 1.5rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reasons h3 {
+  margin-bottom: 0.2rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.reasons p {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+/* ============================================
+   Bench: the chamber beside its controls
+   ============================================ */
+
+.bench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 25rem;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.bench-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem 1.25rem;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.control select,
+.segments button,
+.tool {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  background: var(--field);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.segments {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.segments button,
+.tool {
+  cursor: pointer;
+}
+
+.segments button + button {
+  border-left: 0;
+}
+
+.segments button[aria-pressed="true"] {
+  border-color: var(--ink);
+  background: var(--bar);
+  color: var(--bar-ink);
+}
+
+.tool:hover:not(:disabled),
+.segments button:not([aria-pressed="true"]):hover {
+  border-color: var(--blue-deep);
+  color: var(--blue-deep);
+}
+
+.tool:disabled {
+  color: var(--ink-muted);
+  cursor: default;
+  opacity: 0.55;
+}
+
+button:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+input[type="range"]:focus-visible,
+.divider:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* The chamber's dark backdrop; a chamber wider than it scrolls inside it, never the page */
+.stage {
+  display: flex;
+  min-height: 14rem;
+  padding: 2.4rem 1rem 1rem;
+  overflow: auto;
+  border: 1px solid var(--rule);
+  background: var(--chamber);
+}
+
+.stage-note {
+  margin: auto;
+  color: var(--chamber-ink);
+}
+
+.stack {
+  position: relative;
+  flex: none;
+  margin: 0 auto;
+  line-height: 0;
+  touch-action: pan-y;
+}
+
+.stack canvas {
+  display: block;
+}
+
+#before {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.tag {
+  position: absolute;
+  top: -1.75rem;
+  padding: 0.15rem 0.5rem;
+  background: var(--chamber-tag);
+  color: var(--chamber-ink);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.tag-before {
+  left: 0;
+}
+
+.tag-after {
+  right: 0;
+}
+
+/* The divider between the original and the chamber with detail */
+.divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2.5rem;
+  margin-left: -1.25rem;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1px);
+  width: 2px;
+  background: var(--blue);
+  box-shadow: 0 0 0 1px var(--chamber-tag);
+}
+
+.divider::after {
+  content: '\25C2\00A0\25B8';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2.5rem;
+  height: 1.6rem;
+  border: 1px solid var(--rule);
+  border-bottom-width: 0.1875rem;
+  border-radius: 0.375rem;
+  background: var(--grip);
+  color: var(--grip-ink);
+  font-size: 0.85rem;
+  line-height: 1.5rem;
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+.caption {
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+}
+
+/* The state scrubber: a slider over the recorded solution, with the moments that matter */
+.scrub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 0.85rem;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+}
+
+.scrub-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.scrub-row input[type="range"] {
+  flex: 1 1 14rem;
+  min-width: 0;
+  margin: 0;
+  accent-color: var(--blue);
+}
+
+.scrub-count {
+  min-width: 8.5rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.scrub-label {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.jumps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.jumps .tool {
+  height: 2rem;
+  padding: 0 0.6rem;
+  font-size: 0.85rem;
+}
+
+.jumps .tool[aria-current="true"] {
+  border-color: var(--ink);
+  background: var(--bar);
+  color: var(--bar-ink);
+}
+
+.scrub-speed {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+
+.scrub-speed select {
+  height: 2.25rem;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  background: var(--field);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+#play[aria-pressed="true"] {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: var(--bar-ink);
+}
+
+.scrub-note {
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+
+/* ============================================
+   Rail: combinations, choices, then one panel per thing
+   ============================================ */
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  padding: 1rem 1.1rem 1.25rem;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+}
+
+.rail-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.rail-group > .ruled {
+  margin-bottom: 0.5rem;
+}
+
+.presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 0.4rem;
+}
+
+.preset {
+  padding: 0.45rem 0.6rem;
+  border: 0.125rem solid var(--ink);
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.preset:hover {
+  border-color: var(--blue-deep);
+  color: var(--blue-deep);
+}
+
+.preset[aria-pressed="true"] {
+  border-color: var(--ink);
+  background: var(--bar);
+  color: var(--bar-ink);
+}
+
+.preset-what {
+  min-height: 2.6em;
+  margin-top: 0.5rem;
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+}
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.rail-group > .ruled + .choice {
+  border-top: 0;
+  padding-top: 0.1rem;
+}
+
+.choice-name {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.choice .segments button {
+  height: 2rem;
+  padding: 0 0.6rem;
+  font-size: 0.85rem;
+}
+
+.choice-what {
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+
+.pool select {
+  height: 2rem;
+  margin-left: 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  background: var(--field);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+/* One panel per thing, its layers inside */
+.thing {
+  border-top: 1px solid var(--ink-muted);
+}
+
+.thing > summary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.6rem 0 0.3rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.thing > summary::-webkit-details-marker {
+  display: none;
+}
+
+.thing > summary::before {
+  content: '\25B8';
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+}
+
+.thing[open] > summary::before {
+  content: '\25BE';
+}
+
+.thing-name {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.thing-count {
+  margin-left: auto;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.thing-keep {
+  padding: 0 0 0.4rem 1.2rem;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+}
+
+.thing-keep b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.tech {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0 0.55rem 1.2rem;
+  border-top: 1px solid var(--rule);
+}
+
+.tech-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+
+/* A lamp, as beside the game's control layouts: an unlit ring, lit blue when its row is on */
+.lamp-input {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  opacity: 0;
+}
+
+.lamp {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  border: 0.125rem solid var(--ink-muted);
+  border-radius: 50%;
+}
+
+.lamp-input:checked + .lamp,
+.thumb[aria-pressed="true"] .lamp {
+  border-color: var(--blue);
+  background: var(--blue);
+  box-shadow: 0 0 0 0.25rem var(--blue-glow);
+}
+
+.lamp-input:focus-visible + .lamp {
+  outline: 2px solid var(--ink);
+  outline-offset: 0.3rem;
+}
+
+.tech-name {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tech-kind {
+  margin-left: auto;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tech-what {
+  padding-left: 1.6rem;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.tech-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding-left: 1.6rem;
+}
+
+.tech:not(.is-on) .tech-sliders {
+  opacity: 0.6;
+}
+
+.slider {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) 3rem;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+}
+
+.slider input {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  accent-color: var(--blue);
+}
+
+.slider output {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ============================================
+   Line-up: a dozen of one thing, original against detail
+   ============================================ */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.tabs button {
+  height: 2.25rem;
+  padding: 0 0.8rem;
+  border: 0.125rem solid var(--ink);
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.tabs button[aria-pressed="true"] {
+  background: var(--bar);
+  color: var(--bar-ink);
+}
+
+.tabs button:not([aria-pressed="true"]):hover {
+  border-color: var(--blue-deep);
+  color: var(--blue-deep);
+}
+
+.lineup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24rem;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.lineup-views {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.plate {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+}
+
+.plate-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+}
+
+.plate-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.plate-note {
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow-x: auto;
+  padding: 0.5rem;
+  background: var(--chamber);
+}
+
+.view canvas {
+  display: block;
+  flex: none;
+}
+
+.view-label {
+  color: var(--chamber-ink);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.sizes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 0.75rem;
+  overflow-x: auto;
+  background: var(--chamber);
+}
+
+.size {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+}
+
+.size canvas {
+  display: block;
+}
+
+.size figcaption {
+  color: var(--chamber-ink);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.instance-pick {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+
+.instance-pick select {
+  height: 2rem;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  background: var(--field);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+/* Meaning checks: one gauge per thing that carries meaning */
+.checks {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check {
+  display: grid;
+  grid-template-columns: 0.85rem minmax(0, 1fr) auto;
+  gap: 0.15rem 0.6rem;
+  align-items: baseline;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.check:first-child {
+  border-top: 0;
+}
+
+.check-lamp {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--ink-muted);
+}
+
+.check[data-verdict="good"] .check-lamp {
+  background: var(--good);
+}
+
+.check[data-verdict="fair"] .check-lamp {
+  background: var(--fair);
+}
+
+.check[data-verdict="poor"] .check-lamp {
+  background: var(--poor);
+}
+
+.check-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.check-thing {
+  color: var(--ink-muted);
+  font-weight: 500;
+}
+
+.check-value {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.check-note {
+  grid-column: 2 / 4;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+/* ============================================
+   Each one on its own
+   ============================================ */
+
+.alone {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: 1rem;
+}
+
+.thumb {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.thumb:hover {
+  border-color: var(--blue-deep);
+}
+
+.thumb[aria-pressed="true"] {
+  border-color: var(--ink);
+}
+
+.thumb-view {
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--chamber);
+}
+
+.thumb canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.thumb-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0 0.2rem 0.1rem;
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.thumb-value {
+  margin-left: auto;
+  color: var(--ink-muted);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================
+   Your combination
+   ============================================ */
+
+.handoff {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 64rem;
+  padding: 1.1rem 1.25rem 1.25rem;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+}
+
+.handoff textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 16rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  background: var(--field);
+  color: var(--ink);
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.handoff-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.button-sign {
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  border: 0.125rem solid var(--blue);
+  border-radius: 0;
+  background: var(--blue);
+  color: var(--bar-ink);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.button-sign:hover {
+  border-color: var(--blue-deep);
+  background: var(--blue-deep);
+}
+
+.status {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+/* ============================================
+   Narrow windows
+   ============================================ */
+
+@media (min-width: 72.01rem) {
+  /* Beside the chamber the rail stays in view and scrolls on its own */
+  .rail {
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 1rem);
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+  }
+}
+
+@media (max-width: 72rem) {
+  .bench,
+  .lineup,
+  .pick {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+</style>
+
+<div class="page">
+  <header class="masthead">
+    <p class="eyebrow">Portal 2D &middot; element look</p>
+    <h1>Element detail mixer</h1>
+    <p class="lede">Wear and tone for the ten element sprites, so no two boxes, buttons, switches, arrows or ditches look alike. Every layer is drawn in code over your existing sprites by the game&rsquo;s own renderer, only where a sprite already has pixels, so shapes and shadows stay as they are.</p>
+  </header>
+
+  <section class="pick" aria-labelledby="pick-title">
+    <div class="pick-left">
+      <div>
+        <h2 id="pick-title">My pick</h2>
+        <p>Tone and room light on every instance, then fine wear on most of them, kept to the plain metal and paint. The page opens on it, on the playground, the one chamber with all seven things.</p>
+      </div>
+      <p class="pick-aside">Left out of it: dust, the domes&rsquo; finish and the mirror&rsquo;s glass. Try &ldquo;Faint, everywhere&rdquo; for your floor&rsquo;s own recipe applied to things.</p>
+    </div>
+    <ul class="reasons">
+      <li>
+        <h3>Tone tells them apart</h3>
+        <p>At 45 px a scratch is one pixel. A box a shade warmer than its neighbour still reads from across the chamber, so tone does most of the work.</p>
+      </li>
+      <li>
+        <h3>Wear on the plain parts only</h3>
+        <p>Plates, clamps, blocks, paint and pit sides take the wear. Red, yellow and the mirror are put back as drawn after it; the meaning checks below measure what is left.</p>
+      </li>
+      <li>
+        <h3>Most, not all</h3>
+        <p>Each kind of wear lands on half to four in five instances, so the marks vary from one to the next instead of repeating.</p>
+      </li>
+    </ul>
+  </section>
+
+  <div class="bench">
+    <div class="bench-main">
+      <div class="toolbar">
+        <label class="control">Chamber
+          <select id="chamber"></select>
+        </label>
+        <label class="control">Tile size
+          <select id="tile">
+            <option value="game">As in the game</option>
+            <option value="23">23 px</option>
+            <option value="45">45 px</option>
+            <option value="50">50 px</option>
+            <option value="63">63 px</option>
+            <option value="100">100 px</option>
+            <option value="126">126 px</option>
+          </select>
+        </label>
+        <div class="control" role="group" aria-label="View">View
+          <div class="segments" id="view">
+            <button type="button" data-view="split">Split</button>
+            <button type="button" data-view="after">With detail</button>
+            <button type="button" data-view="before">Original</button>
+          </div>
+        </div>
+        <div class="control" role="group" aria-label="Floor and wall detail">Floor detail
+          <div class="segments" id="floor">
+            <button type="button" data-floor="on">On</button>
+            <button type="button" data-floor="off">Off</button>
+          </div>
+        </div>
+        <div class="control">Placement
+          <button type="button" class="tool" id="shuffle">Shuffle</button>
+        </div>
+      </div>
+
+      <div class="stage" id="stage">
+        <p class="stage-note" id="stage-note">Loading the game&rsquo;s sprites&hellip;</p>
+        <div class="stack" id="stack" hidden>
+          <canvas id="after"></canvas>
+          <canvas id="before"></canvas>
+          <span class="tag tag-before" id="tag-before">Original</span>
+          <span class="tag tag-after" id="tag-after">With detail</span>
+          <div class="divider" id="divider" role="slider" tabindex="0" aria-label="Divider between the original and the chamber with detail" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"></div>
+        </div>
+      </div>
+      <p class="caption" id="caption"></p>
+
+      <div class="scrub" id="scrub">
+        <div class="scrub-row">
+          <span class="scrub-label">State</span>
+          <button type="button" class="tool" id="step-back" aria-label="One step back">&#9666;</button>
+          <input type="range" id="step" min="0" max="0" step="1" value="0" aria-label="Step along the recorded solution">
+          <button type="button" class="tool" id="step-on" aria-label="One step on">&#9656;</button>
+          <output class="scrub-count" id="step-out"></output>
+          <button type="button" class="tool" id="play">Play</button>
+          <label class="scrub-speed">Speed <select id="speed">
+            <option value="1">As in the game</option>
+            <option value="0.5">Half</option>
+            <option value="0.2">A fifth</option>
+          </select></label>
+        </div>
+        <div class="jumps" id="jumps"></div>
+        <p class="scrub-note" id="scrub-note"></p>
+      </div>
+    </div>
+
+    <aside class="rail" aria-label="Detail layers">
+      <div class="rail-group">
+        <h2 class="ruled">Combinations</h2>
+        <div class="presets" id="presets"></div>
+        <p class="preset-what" id="preset-what"></p>
+      </div>
+      <div class="rail-group">
+        <h2 class="ruled">Choices</h2>
+        <div id="choices"></div>
+      </div>
+      <div class="rail-group">
+        <h2 class="ruled">Layers</h2>
+        <div id="things"></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="section" aria-labelledby="lineup-title">
+    <h2 class="ruled" id="lineup-title">Line-up</h2>
+    <p>Twelve of one thing side by side on the real floor, each with its own look. Do any two look the same? Can you still tell what each one is? Buttons show the same twelve looks released and pressed; the boxes that hold the bottom row down are hidden.</p>
+    <div class="tabs" id="lineup-tabs" role="group" aria-label="Thing to line up"></div>
+    <div class="lineup">
+      <div class="lineup-views">
+        <div class="plate">
+          <div class="plate-head"><h3 class="plate-title">At 45 px</h3><p class="plate-note">Chamber 1 on your screen</p></div>
+          <div class="view"><span class="view-label">Original</span><canvas id="line-45-before"></canvas><span class="view-label">With detail</span><canvas id="line-45-after"></canvas></div>
+        </div>
+        <div class="plate">
+          <div class="plate-head"><h3 class="plate-title">At 110 px</h3><p class="plate-note">The first five, close up</p></div>
+          <div class="view"><span class="view-label">Original</span><canvas id="line-big-before"></canvas><span class="view-label">With detail</span><canvas id="line-big-after"></canvas></div>
+        </div>
+        <div class="plate">
+          <div class="plate-head">
+            <h3 class="plate-title">Sizes</h3>
+            <p class="plate-note">One instance at every size the game draws it: the menu&rsquo;s map, the chambers, and twice that at pixel ratio 2.</p>
+            <label class="instance-pick">Instance <select id="instance"></select></label>
+          </div>
+          <div class="sizes" id="sizes"></div>
+        </div>
+      </div>
+      <div class="plate">
+        <div class="plate-head"><h3 class="plate-title">Meaning checks</h3><p class="plate-note" id="checks-note">Measured on every line-up at 45 px, worst instance.</p></div>
+        <ul class="checks" id="checks"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="alone-title">
+    <h2 class="ruled" id="alone-title">Each one on its own</h2>
+    <p id="alone-note">The first four of the line-up with a single layer on, at the strength set in the rail and on every instance, so there is something to see. Select one to switch it on or off in the mix.</p>
+    <div class="alone" id="alone"></div>
+  </section>
+
+  <section class="section" aria-labelledby="handoff-title">
+    <h2 class="ruled" id="handoff-title">Your combination</h2>
+    <div class="handoff">
+      <p>Once it looks right, copy these settings and paste them back to Claude, or send screenshots of the rail: every value there is printed as a number.</p>
+      <textarea id="summary" readonly aria-label="Settings of the current combination"></textarea>
+      <div class="handoff-row">
+        <button type="button" class="button-sign" id="copy">Copy settings</button>
+        <p class="status" id="copy-status" role="status"></p>
+      </div>
+      <p class="status">Each instance&rsquo;s look comes from one seed, its kind and its number in the chamber (never a box&rsquo;s tile), so it keeps its look wherever it goes and at any size. No sprite file changes.</p>
+    </div>
+  </section>
+</div>
+
+<script src="engine.js"></script>
+<script>
+/*__INCLUDE config.js__*/
+/*__INCLUDE effects.js__*/
+
+// ============================================================
+// The page: controls, the split view, the scrubber, the line-up
+// ============================================================
+
+(function () {
+  const $ = (id) => document.getElementById(id)
+  const stageNote = $('stage-note')
+
+  if (window.ChamberEngine === undefined) {
+    stageNote.textContent = 'The chamber renderer did not load, so nothing can be drawn. Reload the page.'
+
+    return
+  }
+
+  const STORE = 'element-detail-mixer.v1'
+  const STAGE = [1486, 900] // The game's stage on your screen, in CSS pixels: a 1920 × 1080 window less the rail and the browser's bars
+  const MINIMUM_TILES = 16 // The game sizes tiles as if a chamber were at least this many tiles each way
+  const SIZES = [23, 45, 50, 63, 100, 126] // Tile sizes the game draws at: the menu's map, the chambers, and pixel ratio 2
+  const BOARD_OF = {box: 'box', mirror: 'box_mirror', button: 'button', switch: 'switch', arrow: 'arrow', turntable: 'turntable', pit: 'ditch', grate: 'ditch'}
+  const ROWS_OF = {button: [2, 4], pit: [2], grate: [4]} // The board rows each thing's line-up shows, from the top
+  const ratio = Math.max(1, window.devicePixelRatio || 1)
+  const stage = $('stage')
+  const stack = $('stack')
+  const before = $('before')
+  const after = $('after')
+  const divider = $('divider')
+  const keyOf = (key) => key.replace('.', '-')
+  const playground = Engine.chambers.findIndex((chamber) => chamber.name === 'Playground')
+
+  const state = {
+    chamber: playground,
+    tile: 'game',
+    view: 'split',
+    split: 50,
+    floor: 'on',
+    step: 0,
+    lineup: 'box',
+    instance: 0,
+    speed: '1',
+    closed: [],
+    settings: PRESETS.find((preset) => preset.id === 'pick').make(),
+  }
+
+  let beforeKey = '' // Which chamber, size and state the original was last drawn for
+  let frame = 0 // The pending redraw, or 0
+  let slowTimer = 0 // The pending line-up and checks redraw, or 0
+  let thumbTimer = 0 // The pending single-layer redraw, or 0
+  let dragging = false // Whether the divider is being dragged
+  let player = null // The replay running on the chamber, or null
+  let playHooks = {key: '', hooks: [null, null]} // The hooks the replay last drew a step with, reused while the step and settings stay
+  const jumpsKept = new Map() // Each chamber's moments that matter, found once
+  const lineupKept = new Map() // Each original line-up drawing, kept by board and size
+
+  // ---------- Stored between visits, for convenience only ----------
+
+  function restore() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORE) ?? 'null')
+
+      if ((stored === null) || (typeof stored !== 'object')) {
+        return
+      }
+
+      if (Number.isInteger(stored.chamber) && (stored.chamber >= 0) && (stored.chamber < Engine.chambers.length)) {
+        state.chamber = stored.chamber
+      }
+
+      if (['game', ...SIZES.map(String)].includes(stored.tile)) {
+        state.tile = stored.tile
+      }
+
+      if (['split', 'after', 'before'].includes(stored.view)) {
+        state.view = stored.view
+      }
+
+      if (['on', 'off'].includes(stored.floor)) {
+        state.floor = stored.floor
+      }
+
+      if ((typeof stored.split === 'number') && (stored.split >= 0) && (stored.split <= 100)) {
+        state.split = stored.split
+      }
+
+      if (Number.isInteger(stored.step) && (stored.step >= 0)) {
+        state.step = Math.min(stored.step, Engine.chambers[state.chamber].steps)
+      }
+
+      if (THINGS.some((thing) => thing.id === stored.lineup)) {
+        state.lineup = stored.lineup
+      }
+
+      if (['1', '0.5', '0.2'].includes(stored.speed)) {
+        state.speed = stored.speed
+      }
+
+      if (Number.isInteger(stored.instance) && (stored.instance >= 0) && (stored.instance < 12)) {
+        state.instance = stored.instance
+      }
+
+      if (Array.isArray(stored.closed)) {
+        state.closed = stored.closed.filter((id) => THINGS.some((thing) => thing.id === id))
+      }
+
+      const settings = baseSettings()
+      const from = stored.settings ?? {}
+
+      if (Number.isInteger(from.seed)) {
+        settings.seed = from.seed
+      }
+
+      for (const layer of LAYERS) {
+        const key = layer.key
+
+        settings.on[key] = from.on?.[key] === true
+
+        if (Number.isFinite(from.amount?.[key])) {
+          settings.amount[key] = Math.min(100, Math.max(0, Math.round(from.amount[key])))
+        }
+
+        if (Number.isFinite(from.share?.[key])) {
+          settings.share[key] = Math.min(100, Math.max(0, Math.round(from.share[key])))
+        }
+      }
+
+      for (const choice of CHOICES) {
+        if (choice.options.some((option) => option.id === from.choices?.[choice.id])) {
+          settings.choices[choice.id] = from.choices[choice.id]
+        }
+      }
+
+      if (POOL_SIZES.includes(from.pool)) {
+        settings.pool = from.pool
+      }
+
+      state.settings = settings
+    } catch (_error) {
+      // Nothing stored that can be read: start from my pick
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORE, JSON.stringify(state))
+    } catch (_error) {
+      // Storage is blocked: the page works without it
+    }
+  }
+
+  // ---------- Sizes ----------
+
+  function gameTile(info) {
+    return Math.max(8, Math.min(Math.trunc((STAGE[0] * ratio) / Math.max(MINIMUM_TILES, info.W)), Math.trunc((STAGE[1] * ratio) / Math.max(MINIMUM_TILES, info.H))))
+  }
+
+  function tileSize(info) {
+    return (state.tile === 'game') ? gameTile(info) : Number(state.tile)
+  }
+
+  function showAt(canvas) {
+    canvas.style.width = `${canvas.width / ratio}px`
+    canvas.style.height = `${canvas.height / ratio}px`
+  }
+
+  // ---------- Building the controls ----------
+
+  function buildControls() {
+    const option = (chamber, index) => `<option value="${index}">${chamber.name} (${chamber.width} × ${chamber.height})</option>`
+    const listed = Engine.chambers.map((chamber, index) => ({chamber: chamber, index: index}))
+
+    $('chamber').innerHTML = `<optgroup label="Chambers">${listed.filter((entry) => entry.chamber.board === null).map((entry) => option(entry.chamber, entry.index)).join('')}</optgroup>`
+      + `<optgroup label="Line-ups">${listed.filter((entry) => entry.chamber.board !== null).map((entry) => option(entry.chamber, entry.index)).join('')}</optgroup>`
+    $('presets').innerHTML = PRESETS.map((preset) => `<button type="button" class="preset" data-preset="${preset.id}">${preset.name}</button>`).join('')
+
+    $('choices').innerHTML = CHOICES.map((choice) => {
+      const buttons = choice.options.map((entry) => `<button type="button" data-choice="${choice.id}" data-option="${entry.id}">${entry.name}</button>`).join('')
+      const pool = (choice.id === 'alike') ? `<label class="pool" id="pool-wrap">of <select id="pool">${POOL_SIZES.map((size) => `<option value="${size}">${size} looks</option>`).join('')}</select></label>` : ''
+
+      return `<div class="choice"><span class="choice-name">${choice.name}</span><div class="segments">${buttons}${pool}</div><p class="choice-what" id="choice-what-${choice.id}"></p></div>`
+    }).join('')
+
+    $('things').innerHTML = THINGS.map((thing) => {
+      const rows = LAYERS.filter((layer) => layer.thing === thing.id).map((layer) => {
+        const id = keyOf(layer.key)
+        const share = (layer.type === 'tone') ? '' : `<label class="slider"><span>Share</span><input type="range" id="share-${id}" data-role="share" data-key="${layer.key}" min="0" max="100" step="5"><output id="share-out-${id}"></output></label>`
+
+        return `<div class="tech" id="tech-${id}">
+          <label class="tech-head"><input type="checkbox" class="lamp-input" id="on-${id}" data-role="on" data-key="${layer.key}"><span class="lamp" aria-hidden="true"></span><span class="tech-name">${layer.name}</span><span class="tech-kind">${(layer.type === 'tone') ? 'every one' : 'wear'}</span></label>
+          <p class="tech-what">${layer.what}</p>
+          <div class="tech-sliders">
+            <label class="slider"><span>Strength</span><input type="range" id="amount-${id}" data-role="amount" data-key="${layer.key}" min="0" max="100" step="5"><output id="amount-out-${id}"></output></label>
+            ${share}
+          </div>
+        </div>`
+      }).join('')
+
+      return `<details class="thing" id="thing-${thing.id}" data-thing="${thing.id}"><summary><span class="thing-name">${thing.name}</span><span class="thing-count" id="count-${thing.id}"></span></summary><p class="thing-keep"><b>Kept as drawn:</b> ${thing.keep}</p>${rows}</details>`
+    }).join('')
+
+    for (const thing of THINGS) {
+      $(`thing-${thing.id}`).open = !state.closed.includes(thing.id)
+    }
+
+    $('lineup-tabs').innerHTML = THINGS.map((thing) => `<button type="button" data-lineup="${thing.id}">${thing.name}</button>`).join('')
+    $('instance').innerHTML = Array.from({length: 12}, (_unused, i) => `<option value="${i}">${i + 1}</option>`).join('')
+  }
+
+  // ---------- The moments that matter along a recorded solution ----------
+
+  function jumpsOf(index) {
+    if (jumpsKept.has(index)) {
+      return jumpsKept.get(index)
+    }
+
+    const steps = Engine.chambers[index].steps
+    const found = [{id: 'start', name: 'Start', step: 0}]
+
+    if (steps > 0) {
+      const start = Engine.instances(index, 0)
+      const pressedAtStart = new Set(start.elements.filter((element) => (element.kind === 'button') && element.pressed).map((element) => element.index))
+      const openAtStart = new Set(start.elements.filter((element) => (element.kind === 'ditch') && element.blocked).map((element) => element.index))
+      const wayAtStart = new Map(start.elements.filter((element) => element.kind === 'arrow').map((element) => [element.index, element.pointing]))
+      const first = {carried: null, pressed: null, bridged: null, turned: null, destroyed: null, completed: null}
+      let previous = start
+
+      for (let s = 1; s <= steps; s++) {
+        const now = Engine.instances(index, s)
+        const events = Engine.stepEvents(index, s)
+
+        first.carried ??= (now.subject.carriedBox !== null) ? s : null
+        first.pressed ??= now.elements.some((element) => (element.kind === 'button') && element.pressed && !pressedAtStart.has(element.index)) ? s : null
+        first.bridged ??= now.elements.some((element) => (element.kind === 'ditch') && !element.blocked && openAtStart.has(element.index)) ? s : null
+        first.turned ??= now.elements.some((element) => (element.kind === 'arrow') && (element.pointing !== wayAtStart.get(element.index))) ? s : null
+        first.destroyed ??= (events.includes('boxDestroyed') || (events.includes('fizzled') && (previous.subject.carriedBox !== null))) ? s : null
+        first.completed ??= now.completed ? s : null
+        previous = now
+      }
+
+      const names = {carried: 'Box carried', pressed: 'Button pressed', bridged: 'Ditch bridged', turned: 'Arrow turned', destroyed: 'Box destroyed', completed: 'Completed'}
+
+      for (const id of Object.keys(names)) {
+        found.push({id: id, name: names[id], step: first[id]})
+      }
+    }
+
+    jumpsKept.set(index, found)
+
+    return found
+  }
+
+  // ---------- Motion ----------
+
+  function stopPlaying() {
+    if (player !== null) {
+      player.stop()
+      player = null
+      beforeKey = ''
+    }
+
+    $('play').setAttribute('aria-pressed', 'false')
+    $('play').textContent = 'Play'
+  }
+
+  function startPlaying() {
+    const listing = Engine.chambers[state.chamber]
+
+    if (listing.steps === 0) {
+      return
+    }
+
+    stopPlaying()
+
+    if (state.step >= listing.steps) {
+      state.step = 0
+    }
+
+    const tile = tileSize(chamberInfo(state.chamber))
+    const chamber = state.chamber
+    const hooksAt = (which) => (step) => {
+      const key = `${chamber}:${step}:${JSON.stringify(state.settings)}`
+
+      if (playHooks.key !== key) {
+        playHooks = {key: key, hooks: [hooksFor(chamber, step, null), hooksFor(chamber, step, state.settings)]}
+      }
+
+      return playHooks.hooks[which]
+    }
+
+    player = Engine.play([
+      {canvas: before, hooksAt: hooksAt(0)},
+      {canvas: after, hooksAt: hooksAt(1)},
+    ], chamber, tile, {
+      from: state.step,
+      surfaceDetail: state.floor === 'on',
+      speed: Number(state.speed),
+      pause: 260,
+      onStep: (step) => {
+        state.step = step
+        syncScrubber()
+      },
+      onEnd: () => {
+        stopPlaying()
+        save()
+      },
+    })
+    $('play').setAttribute('aria-pressed', 'true')
+    $('play').textContent = 'Stop'
+    syncScrubber()
+  }
+
+  // ---------- Drawing the chamber ----------
+
+  function drawMain() {
+    if (player !== null) {
+      // The replay draws the chamber every frame, with the settings as they are
+      return
+    }
+
+    const info = chamberInfo(state.chamber)
+    const tile = tileSize(info)
+    const listing = Engine.chambers[state.chamber]
+    const step = Math.min(state.step, listing.steps)
+    const options = {step: step, surfaceDetail: state.floor === 'on'}
+    const key = `${state.chamber}:${tile}:${step}:${state.floor}`
+
+    if (beforeKey !== key) {
+      drawChamber(before, state.chamber, tile, null, options)
+      beforeKey = key
+    }
+
+    drawChamber(after, state.chamber, tile, state.settings, options)
+    showAt(before)
+    showAt(after)
+    stack.style.width = `${after.width / ratio}px`
+    stageNote.hidden = true
+    stack.hidden = false
+
+    const game = gameTile(info)
+    const size = `${info.W} × ${info.H} tiles at ${tile} px each`
+    const how = (state.tile !== 'game') ? `; the game draws this chamber at ${game} px on your screen` : ', the size the game draws it on your screen'
+
+    $('caption').textContent = `${size}${how}. ${(state.view === 'split') ? 'Drag the divider, or select it and use the arrow keys: the original is on its left.' : ''}`
+  }
+
+  function applyView() {
+    const split = state.view === 'split'
+
+    before.hidden = state.view === 'after'
+    before.style.clipPath = split ? `inset(0 ${100 - state.split}% 0 0)` : 'none'
+    divider.hidden = !split
+    divider.style.left = `${state.split}%`
+    divider.setAttribute('aria-valuenow', String(Math.round(state.split)))
+    $('tag-before').hidden = state.view === 'after'
+    $('tag-after').hidden = state.view === 'before'
+
+    for (const button of $('view').querySelectorAll('button')) {
+      button.setAttribute('aria-pressed', String(button.dataset.view === state.view))
+    }
+
+    for (const button of $('floor').querySelectorAll('button')) {
+      button.setAttribute('aria-pressed', String(button.dataset.floor === state.floor))
+    }
+  }
+
+  function syncScrubber() {
+    const listing = Engine.chambers[state.chamber]
+    const steps = listing.steps
+    const slider = $('step')
+
+    slider.max = String(steps)
+    slider.value = String(Math.min(state.step, steps))
+    slider.disabled = steps === 0
+    $('play').disabled = steps === 0
+    $('speed').value = state.speed
+    $('step-back').disabled = (steps === 0) || (state.step <= 0)
+    $('step-on').disabled = (steps === 0) || (state.step >= steps)
+    $('step-out').textContent = (steps === 0) ? 'Start only' : `Step ${Math.min(state.step, steps)} of ${steps}`
+
+    const jumps = jumpsOf(state.chamber)
+
+    $('jumps').innerHTML = jumps.map((jump) => `<button type="button" class="tool" data-jump="${jump.step ?? ''}" ${(jump.step === null) ? 'disabled' : ''} aria-current="${jump.step === state.step}">${jump.name}${((jump.step !== null) && (jump.step > 0)) ? ` · ${jump.step}` : ''}</button>`).join('')
+
+    if (steps === 0) {
+      $('scrub-note').textContent = (listing.board !== null) ? 'A line-up has no recorded solution: it shows its start.' : 'The playground has no recorded solution, so only its start can be shown. Pick a chamber to step through one.'
+    } else {
+      const missing = jumps.filter((jump) => jump.step === null).map((jump) => jump.name.toLowerCase())
+
+      $('scrub-note').textContent = `Each step plays one action of the chamber’s recorded solution with the game’s rules. The buttons jump to the first time each thing happens${(missing.length > 0) ? `; never along this solution: ${missing.join(', ')}` : ''}. Play replays it from here with the game’s own animation: boxes breaking up and falling, chevrons and the subject turning, grates sliding.`
+    }
+  }
+
+  // ---------- The rail ----------
+
+  /** The settings that matter when telling two combinations apart: everything but where the marks land. */
+  function lookOf(settings) {
+    return JSON.stringify([settings.on, settings.amount, settings.share, settings.choices, settings.pool])
+  }
+
+  function syncControls() {
+    const settings = state.settings
+
+    $('chamber').value = String(state.chamber)
+    $('tile').value = state.tile
+
+    for (const layer of LAYERS) {
+      const id = keyOf(layer.key)
+
+      $(`on-${id}`).checked = settings.on[layer.key]
+      $(`tech-${id}`).classList.toggle('is-on', settings.on[layer.key])
+      $(`amount-${id}`).value = String(settings.amount[layer.key])
+      $(`amount-out-${id}`).textContent = String(settings.amount[layer.key])
+
+      if (layer.type !== 'tone') {
+        $(`share-${id}`).value = String(settings.share[layer.key])
+        $(`share-out-${id}`).textContent = `${settings.share[layer.key]} %`
+      }
+    }
+
+    for (const thing of THINGS) {
+      const all = LAYERS.filter((layer) => layer.thing === thing.id)
+      const on = all.filter((layer) => settings.on[layer.key]).length
+
+      $(`count-${thing.id}`).textContent = `${on} of ${all.length} on`
+    }
+
+    for (const choice of CHOICES) {
+      const chosen = settings.choices[choice.id]
+
+      for (const button of $('choices').querySelectorAll(`button[data-choice="${choice.id}"]`)) {
+        button.setAttribute('aria-pressed', String(button.dataset.option === chosen))
+      }
+
+      $(`choice-what-${choice.id}`).textContent = choice.options.find((entry) => entry.id === chosen).what
+    }
+
+    $('pool').value = String(settings.pool)
+    $('pool-wrap').hidden = settings.choices.alike !== 'pool'
+
+    const look = lookOf(settings)
+    let current = null
+
+    for (const button of $('presets').querySelectorAll('button')) {
+      const preset = PRESETS.find((candidate) => candidate.id === button.dataset.preset)
+      const pressed = lookOf(preset.make()) === look
+
+      button.setAttribute('aria-pressed', String(pressed))
+
+      if (pressed) {
+        current = preset
+      }
+    }
+
+    $('preset-what').textContent = (current === null) ? 'Your own combination.' : current.what
+
+    for (const button of $('lineup-tabs').querySelectorAll('button')) {
+      button.setAttribute('aria-pressed', String(button.dataset.lineup === state.lineup))
+    }
+
+    $('instance').value = String(state.instance)
+    $('summary').value = summary()
+    $('copy-status').textContent = ''
+  }
+
+  function summary() {
+    const settings = state.settings
+    const lines = [`Element detail settings (placement seed ${settings.seed})`]
+    const formulas = []
+
+    for (const thing of THINGS) {
+      const parts = LAYERS.filter((layer) => (layer.thing === thing.id) && settings.on[layer.key]).map((layer) => {
+        formulas.push(`  ${thing.name} ${layer.name.toLowerCase()}: ${layer.formula}`)
+
+        return `${layer.name.toLowerCase()} ${settings.amount[layer.key]}${(layer.type === 'tone') ? '' : ` on ${settings.share[layer.key]} %`}`
+      })
+
+      lines.push(`${thing.name}: ${(parts.length > 0) ? parts.join(', ') : 'nothing'}`)
+    }
+
+    const chosen = CHOICES.map((choice) => {
+      const entry = choice.options.find((candidate) => candidate.id === settings.choices[choice.id])
+      return `${choice.name.toLowerCase()}: ${entry.name.toLowerCase()}${((choice.id === 'alike') && (entry.id === 'pool')) ? ` of ${settings.pool}` : ''}`
+    })
+
+    lines.push(`Choices: ${chosen.join('; ')}`)
+
+    if (formulas.length > 0) {
+      lines.push('How each strength is drawn (a = strength / 100):', ...formulas)
+    }
+
+    const on = LAYERS.filter((layer) => settings.on[layer.key])
+
+    lines.push(JSON.stringify({
+      seed: settings.seed,
+      on: on.map((layer) => layer.key),
+      amount: Object.fromEntries(on.map((layer) => [layer.key, settings.amount[layer.key]])),
+      share: Object.fromEntries(on.filter((layer) => layer.type !== 'tone').map((layer) => [layer.key, settings.share[layer.key]])),
+      choices: settings.choices,
+      pool: settings.pool,
+    }))
+
+    return lines.join('\n')
+  }
+
+  // ---------- The line-up, the sizes, the checks ----------
+
+  function boardIndex(thing) {
+    return Engine.chambers.findIndex((chamber) => chamber.board === BOARD_OF[thing])
+  }
+
+  /** A board drawn once at a size, as the game draws it or with the settings. */
+  function boardAt(thing, tile, settings) {
+    const index = boardIndex(thing)
+    const key = `${index}:${tile}`
+
+    if ((settings === null) && lineupKept.has(key)) {
+      return lineupKept.get(key)
+    }
+
+    const canvas = document.createElement('canvas')
+    drawChamber(canvas, index, tile, settings)
+
+    if (settings === null) {
+      lineupKept.set(key, canvas)
+    }
+
+    return canvas
+  }
+
+  /** Copies some of a board's instances, row by row, onto a canvas: columns from the first instance's. */
+  function cropInstances(target, board, thing, tile, first, count, margin = 0) {
+    const rows = ROWS_OF[thing] ?? [2]
+    const edge = Math.round(margin * tile)
+
+    target.width = (count * tile) + (2 * edge)
+    target.height = (rows.length * tile) + (2 * edge)
+
+    const ctx = target.getContext('2d')
+
+    ctx.fillStyle = 'rgba(32, 32, 32, 1)'
+    ctx.fillRect(0, 0, target.width, target.height)
+    rows.forEach((row, i) => ctx.drawImage(board, ((1 + first) * tile) - edge, (row * tile) - edge, (count * tile) + (2 * edge), tile + (2 * edge), 0, i * tile, (count * tile) + (2 * edge), tile + (2 * edge)))
+    showAt(target)
+  }
+
+  function drawLineup() {
+    const thing = state.lineup
+    const settings = state.settings
+    const full = (target, board) => {
+      target.width = board.width
+      target.height = board.height
+      target.getContext('2d').drawImage(board, 0, 0)
+      showAt(target)
+    }
+
+    full($('line-45-before'), boardAt(thing, 45, null))
+    full($('line-45-after'), boardAt(thing, 45, settings))
+    cropInstances($('line-big-before'), boardAt(thing, 110, null), thing, 110, 0, 5)
+    cropInstances($('line-big-after'), boardAt(thing, 110, settings), thing, 110, 0, 5)
+
+    $('sizes').innerHTML = ''
+
+    for (const size of SIZES) {
+      const figure = document.createElement('figure')
+      const was = document.createElement('canvas')
+      const now = document.createElement('canvas')
+      const caption = document.createElement('figcaption')
+
+      figure.className = 'size'
+      cropInstances(was, boardAt(thing, size, null), thing, size, state.instance, 1, 0.2)
+      cropInstances(now, boardAt(thing, size, settings), thing, size, state.instance, 1, 0.2)
+      caption.textContent = `${size} px`
+      figure.append(was, now, caption)
+      $('sizes').append(figure)
+    }
+  }
+
+  function drawChecks() {
+    const checks = meaningChecks(state.settings, 45)
+    const thingName = (id) => THINGS.find((thing) => thing.id === id).name
+    const shown = (check) => `${(check.unit === '%') ? Math.round(check.value) : check.value.toFixed(1)} ${check.unit}`
+
+    $('checks').innerHTML = checks.map((check) => `<li class="check" data-verdict="${check.verdict}">
+      <span class="check-lamp" role="img" aria-label="${check.verdict}"></span>
+      <span class="check-name"><span class="check-thing">${thingName(check.thing)}:</span> ${check.name}</span>
+      <span class="check-value">${shown(check)}</span>
+      <span class="check-note">${check.note}</span>
+    </li>`).join('')
+  }
+
+  // ---------- Each layer on its own ----------
+
+  function buildAlone() {
+    const layers = LAYERS.filter((layer) => layer.thing === state.lineup)
+
+    $('alone').innerHTML = [{key: 'original', name: 'Original'}, ...layers].map((entry) => `<button type="button" class="thumb" data-thumb="${entry.key}" aria-pressed="false">
+        <span class="thumb-view"><canvas id="thumb-${keyOf(entry.key)}" width="8" height="6"></canvas></span>
+        <span class="thumb-label"><span class="lamp" aria-hidden="true"></span>${entry.name}<span class="thumb-value" id="thumb-value-${keyOf(entry.key)}"></span></span>
+      </button>`).join('')
+  }
+
+  function syncAlone() {
+    const settings = state.settings
+
+    for (const button of $('alone').querySelectorAll('button')) {
+      const key = button.dataset.thumb
+      const on = (key === 'original') ? LAYERS.filter((layer) => layer.thing === state.lineup).every((layer) => !settings.on[layer.key]) : settings.on[key]
+
+      button.setAttribute('aria-pressed', String(on))
+
+      if (key !== 'original') {
+        $(`thumb-value-${keyOf(key)}`).textContent = `strength ${settings.amount[key]}`
+      }
+    }
+  }
+
+  function drawNextThumb() {
+    const thing = state.lineup
+    const tile = 63
+
+    for (const button of $('alone').querySelectorAll('button')) {
+      const key = button.dataset.thumb
+      const settings = (key === 'original') ? null : settingsFrom([[key, state.settings.amount[key], 100]])
+
+      if (settings !== null) {
+        settings.seed = state.settings.seed
+        settings.choices = {...state.settings.choices}
+      }
+
+      const look = `${thing}:${JSON.stringify(settings)}`
+
+      if (button.dataset.key === look) {
+        continue
+      }
+
+      cropInstances($(`thumb-${keyOf(key)}`), boardAt(thing, tile, settings), thing, tile, 0, 4)
+      button.dataset.key = look
+      // One view at a time, so the page stays responsive while they are drawn
+      thumbTimer = setTimeout(drawNextThumb, 0)
+
+      return
+    }
+  }
+
+  // ---------- Keeping everything in step ----------
+
+  function refresh(slowToo = true) {
+    if (frame !== 0) {
+      return
+    }
+
+    frame = requestAnimationFrame(() => {
+      frame = 0
+      drawMain()
+      applyView()
+      syncScrubber()
+      syncControls()
+      syncAlone()
+      save()
+
+      if (slowToo) {
+        clearTimeout(slowTimer)
+        clearTimeout(thumbTimer)
+        slowTimer = setTimeout(() => {
+          drawLineup()
+          drawChecks()
+          thumbTimer = setTimeout(drawNextThumb, 50)
+        }, 180)
+      }
+    })
+  }
+
+  function setSplit(value) {
+    state.split = Math.min(100, Math.max(0, value))
+    applyView()
+  }
+
+  function setStep(value) {
+    stopPlaying()
+    state.step = Math.min(Engine.chambers[state.chamber].steps, Math.max(0, value))
+    refresh(false)
+  }
+
+  function wire() {
+    $('play').addEventListener('click', () => {
+      if (player === null) {
+        startPlaying()
+      } else {
+        stopPlaying()
+        refresh(false)
+      }
+    })
+
+    $('speed').addEventListener('change', (event) => {
+      state.speed = event.target.value
+
+      if (player !== null) {
+        startPlaying()
+      }
+
+      save()
+    })
+
+    $('chamber').addEventListener('change', (event) => {
+      stopPlaying()
+      state.chamber = Number(event.target.value)
+      state.step = 0
+      refresh(false)
+    })
+
+    $('tile').addEventListener('change', (event) => {
+      stopPlaying()
+      state.tile = event.target.value
+      refresh(false)
+    })
+
+    $('view').addEventListener('click', (event) => {
+      const button = event.target.closest('button')
+
+      if (button !== null) {
+        state.view = button.dataset.view
+        refresh(false)
+      }
+    })
+
+    $('floor').addEventListener('click', (event) => {
+      const button = event.target.closest('button')
+
+      if (button !== null) {
+        stopPlaying()
+        state.floor = button.dataset.floor
+        refresh(false)
+      }
+    })
+
+    $('shuffle').addEventListener('click', () => {
+      state.settings.seed = 1 + Math.floor(Math.random() * 9999)
+      refresh()
+    })
+
+    $('step').addEventListener('input', (event) => setStep(Number(event.target.value)))
+    $('step-back').addEventListener('click', () => setStep(state.step - 1))
+    $('step-on').addEventListener('click', () => setStep(state.step + 1))
+
+    $('jumps').addEventListener('click', (event) => {
+      const button = event.target.closest('button')
+
+      if ((button !== null) && (button.dataset.jump !== '')) {
+        setStep(Number(button.dataset.jump))
+      }
+    })
+
+    $('presets').addEventListener('click', (event) => {
+      const button = event.target.closest('button')
+
+      if (button !== null) {
+        const seed = state.settings.seed
+
+        state.settings = PRESETS.find((preset) => preset.id === button.dataset.preset).make()
+        state.settings.seed = seed
+        refresh()
+      }
+    })
+
+    $('choices').addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-choice]')
+
+      if (button !== null) {
+        state.settings.choices[button.dataset.choice] = button.dataset.option
+        refresh()
+      }
+    })
+
+    $('pool').addEventListener('change', (event) => {
+      state.settings.pool = Number(event.target.value)
+      refresh()
+    })
+
+    $('things').addEventListener('input', (event) => {
+      const input = event.target
+      const key = input.dataset.key
+      const settings = state.settings
+
+      if (input.dataset.role === 'on') {
+        settings.on[key] = input.checked
+      } else if (input.dataset.role === 'amount') {
+        settings.amount[key] = Number(input.value)
+        // Moving a layer's slider switches it on: the change is there to be seen
+        settings.on[key] = true
+      } else if (input.dataset.role === 'share') {
+        settings.share[key] = Number(input.value)
+        settings.on[key] = true
+      } else {
+        return
+      }
+
+      refresh()
+    })
+
+    $('things').addEventListener('toggle', (event) => {
+      const panel = event.target
+
+      if (panel.dataset?.thing !== undefined) {
+        state.closed = THINGS.filter((thing) => !$(`thing-${thing.id}`).open).map((thing) => thing.id)
+        save()
+      }
+    }, true)
+
+    $('lineup-tabs').addEventListener('click', (event) => {
+      const button = event.target.closest('button')
+
+      if (button !== null) {
+        state.lineup = button.dataset.lineup
+        buildAlone()
+        refresh()
+      }
+    })
+
+    $('instance').addEventListener('change', (event) => {
+      state.instance = Number(event.target.value)
+      refresh()
+    })
+
+    $('alone').addEventListener('click', (event) => {
+      const button = event.target.closest('button')
+
+      if (button === null) {
+        return
+      }
+
+      const key = button.dataset.thumb
+
+      if (key === 'original') {
+        for (const layer of LAYERS.filter((candidate) => candidate.thing === state.lineup)) {
+          state.settings.on[layer.key] = false
+        }
+      } else {
+        state.settings.on[key] = !state.settings.on[key]
+      }
+
+      refresh()
+    })
+
+    $('copy').addEventListener('click', () => {
+      const field = $('summary')
+      const status = $('copy-status')
+      const fallBack = () => {
+        field.focus()
+        field.select()
+        status.textContent = 'Copying is blocked here. The text is selected: copy it with Ctrl+C or Cmd+C.'
+      }
+
+      if (navigator.clipboard?.writeText === undefined) {
+        fallBack()
+
+        return
+      }
+
+      navigator.clipboard.writeText(field.value).then(() => {
+        status.textContent = 'Copied.'
+      }, fallBack)
+    })
+
+    // The divider follows the pointer wherever the chamber is pressed, and the arrow keys once it is selected
+    stack.addEventListener('pointerdown', (event) => {
+      if ((state.view !== 'split') || (event.button !== 0)) {
+        return
+      }
+
+      dragging = true
+      stack.setPointerCapture(event.pointerId)
+      const box = stack.getBoundingClientRect()
+
+      setSplit(((event.clientX - box.left) / box.width) * 100)
+      event.preventDefault()
+    })
+
+    stack.addEventListener('pointermove', (event) => {
+      if (dragging) {
+        const box = stack.getBoundingClientRect()
+
+        setSplit(((event.clientX - box.left) / box.width) * 100)
+      }
+    })
+
+    for (const name of ['pointerup', 'pointercancel']) {
+      stack.addEventListener(name, () => {
+        if (dragging) {
+          dragging = false
+          save()
+        }
+      })
+    }
+
+    divider.addEventListener('keydown', (event) => {
+      const step = event.shiftKey ? 10 : 2
+      const moves = {ArrowLeft: state.split - step, ArrowRight: state.split + step, Home: 0, End: 100}
+
+      if (event.key in moves) {
+        setSplit(moves[event.key])
+        save()
+        event.preventDefault()
+      }
+    })
+  }
+
+  Engine.ready.then(() => {
+    restore()
+    buildControls()
+    buildAlone()
+    wire()
+    refresh()
+  }).catch((error) => {
+    stageNote.textContent = `The chamber could not be drawn: ${error?.message ?? error}`
+  })
+})()
+</script>

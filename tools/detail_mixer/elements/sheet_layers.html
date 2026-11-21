@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Element layers, one at a time</title>
+<style>
+  body { margin: 0; padding: 10px; background: rgba(32, 32, 32, 1); color: rgba(220, 220, 220, 1); font: 13px sans-serif; }
+  figure { margin: 0 0 8px; }
+  figcaption { padding: 2px 0; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<!-- Each layer of one thing alone on its line-up board, cropped to the first n instances:
+     harness/shot.sh 'elements/sheet_layers.html?thing=box&t=110&a=100&n=6' build/layers_box.png 1000 4000
+     thing: box, mirror, button, switch, arrow, turntable, pit, grate; t the tile size; a the strength;
+     preset=pick draws the whole preset instead, once per thing -->
+<img src="/wait?ms=4000" alt="" hidden>
+<script src="../build/engine.js"></script>
+<script src="config.js"></script>
+<script src="effects.js"></script>
+<script>
+const query = new URLSearchParams(location.search)
+const tile = Number(query.get('t') ?? 110)
+const amount = Number(query.get('a') ?? 100)
+const count = Number(query.get('n') ?? 6)
+const presetId = query.get('preset')
+const BOARD_OF = {box: 'box', mirror: 'box_mirror', button: 'button', switch: 'switch', arrow: 'arrow', turntable: 'turntable', pit: 'ditch', grate: 'ditch'}
+const ROWS_OF = {button: [2, 4], pit: [2], grate: [4]}
+
+function show(caption, thing, settings) {
+  const index = Engine.chambers.findIndex((chamber) => chamber.board === BOARD_OF[thing])
+  const full = document.createElement('canvas')
+  drawChamber(full, index, tile, settings)
+  const rows = ROWS_OF[thing] ?? [2]
+  const canvas = document.createElement('canvas')
+  canvas.width = count * tile
+  canvas.height = rows.length * tile
+  rows.forEach((row, i) => canvas.getContext('2d').drawImage(full, tile, row * tile, count * tile, tile, 0, i * tile, count * tile, tile))
+  const figure = document.createElement('figure')
+  const text = document.createElement('figcaption')
+  text.textContent = caption
+  figure.append(text, canvas)
+  document.body.append(figure)
+}
+
+Engine.ready.then(() => {
+  if (presetId !== null) {
+    const settings = PRESETS.find((preset) => preset.id === presetId).make()
+    for (const thing of THINGS) {
+      show(`${thing.name}: original`, thing.id, null)
+      show(`${thing.name}: ${presetId}`, thing.id, settings)
+    }
+    return
+  }
+  const thing = query.get('thing') ?? 'box'
+  show('original', thing, null)
+  for (const layer of LAYERS.filter((candidate) => candidate.thing === thing)) {
+    const settings = settingsFrom([[layer.key, amount, 100]])
+    show(`${layer.name} at ${amount}`, thing, settings)
+  }
+}).catch((error) => { document.body.textContent = String(error.stack || error) })
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Line-up boards</title>
+<style>
+  body { margin: 0; padding: 10px; background: rgba(32, 32, 32, 1); color: rgba(220, 220, 220, 1); font: 13px sans-serif; }
+  figure { margin: 0 0 10px; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<!-- Every line-up board as the game draws it, at t px (default 110): harness/shot.sh 'elements/sheet_boards.html?t=110' build/boards.png 1600 4000 -->
+<img src="/wait?ms=4000" alt="" hidden>
+<script src="../build/engine.js"></script>
+<script>
+const Engine = window.ChamberEngine
+const query = new URLSearchParams(location.search)
+const tile = Number(query.get('t') ?? 110)
+const only = query.get('b')
+Engine.ready.then(() => {
+  Engine.chambers.forEach((chamber, index) => {
+    if (chamber.board === null || (only !== null && chamber.board !== only)) return
+    const canvas = document.createElement('canvas')
+    const pressedBoxes = new Set()
+    if (chamber.board === 'button') {
+      for (const box of Engine.instances(index, 0).boxes) pressedBoxes.add(`${box.x},${box.y}`)
+    }
+    Engine.render(canvas, index, tile, {hooks: {hide: (sprite) => sprite.name.startsWith('subject') || (sprite.name === 'box' && pressedBoxes.has(`${sprite.x},${sprite.y}`))}})
+    const figure = document.createElement('figure')
+    figure.append(chamber.name, canvas)
+    document.body.append(figure)
+  })
+}).catch((error) => { document.body.textContent = String(error.stack || error) })
+</script>
+</body>
+</html>

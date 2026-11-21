@@ -121,6 +121,12 @@ function runMixerLayerHook(name: 'floor' | 'walls', painter: TilePainter, state:
 # ---------- tile_painter.ts: another image for a sprite drawn on a tile ----------
 
 patch('tile_painter.ts', [
+    # The skin hook reached from the three paths that draw a sprite off its tile: a chevron or the subject turning, a box falling, a sprite breaking up
+    ('skin in drawSpriteRotated', '''      this.drawRotated(sprite, middleX, middleY, size, angle)''', '''      this.drawRotated(mixerSkinnedOff(name, size, sprite, {x: x, y: y, rows: this.rows, way: Direction.UP, path: 'rotated', angle: angle}), middleX, middleY, size, angle)'''),
+    ('skin in drawSpriteShrunk', '''      this.context.drawImage(sprite.image, -(side / 2) - sprite.margin, -(side / 2) - sprite.margin - pivot)''', '''      this.context.drawImage(mixerSkinnedOff(name, side, sprite, {x: x - (size / 2), y: y - (size / 2), rows: this.rows, way: way, path: 'shrunk', angle: null}).image, -(side / 2) - sprite.margin, -(side / 2) - sprite.margin - pivot)'''),
+    ('skin in drawSpritePieces', '''    const image = sprite.image
+''', '''    const image = mixerSkinnedOff(name, side, sprite, {x: x - (size / 2), y: y - (size / 2), rows: this.rows, way: way, path: 'pieces', angle: null}).image
+'''),
     ('skin helpers', '''export class TilePainter {''', '''/** Mixer only: what the 'skin' hook is told about the sprite being drawn */
 type MixerSprite = {
   name: SpriteName // The sprite
@@ -131,6 +137,8 @@ type MixerSprite = {
   way: Direction // The way it is turned
   image: HTMLCanvasElement // The sprite shrunk to the tile size, with any overhang: never draw on it, copy it
   margin: number // Its overhang on every side, in canvas pixels
+  path: 'tile' | 'rotated' | 'shrunk' | 'pieces' // Which drawing asks: on its tile (drawSprite), turned by any angle, shrinking as it falls, or breaking into pieces
+  angle: number | null // How far it is turned by any angle, for 'rotated', in radians clockwise
 }
 
 let mixerTile: {x: number, y: number, row: number} | null = null // Mixer only: the tile of the sprite drawSprite() is drawing
@@ -155,6 +163,39 @@ function mixerSkinned(name: SpriteName, size: number, way: Direction, sprite: Sc
     way: way,
     image: sprite.image,
     margin: sprite.margin,
+    path: 'tile',
+    angle: null,
+  })
+
+  return ((image === null) || (image === undefined)) ? sprite : {
+    image: image,
+    margin: sprite.margin,
+  }
+}
+
+/**
+ * Mixer only: the image the page hands back for a sprite drawn off the plain path: turned by any
+ * angle, shrinking or in pieces. Its tile is where its square's bottom left corner lies, in tiles,
+ * so part way between two for a box breaking up from the subject's hands.
+ */
+function mixerSkinnedOff(name: SpriteName, size: number, sprite: ScaledSprite, where: {x: number, y: number, rows: number, way: Direction, path: 'rotated' | 'shrunk' | 'pieces', angle: number | null}): ScaledSprite {
+  const skin = ''' + MIXER + '''?.hooks?.skin as ((sprite: MixerSprite) => HTMLCanvasElement | null | undefined) | undefined
+
+  if (skin === undefined) {
+    return sprite
+  }
+
+  const image = skin({
+    name: name,
+    tileSize: size,
+    x: where.x,
+    y: where.y,
+    row: where.rows - 1 - where.y,
+    way: where.way,
+    image: sprite.image,
+    margin: sprite.margin,
+    path: where.path,
+    angle: where.angle,
   })
 
   return ((image === null) || (image === undefined)) ? sprite : {
@@ -193,6 +234,24 @@ export class TilePainter {'''),
     }
 ''', '''    if (this.pass !== 'shadows') {
       this.drawTurned(mixerSkinned(name, size, way, sprite), left, top, size, way)
+    }
+'''),
+    # The 'hide' hook: a sprite drawn on a tile with drawSprite() left out, shadow and all (a board's subject, a box holding a button down)
+    ('hide in drawSized', '''    const shadow = (RAISED_SPRITES.has(name) && (this.pass !== 'sprites')) ? scaledShadow(name, size) : null
+
+    if (shadow !== null) {
+      this.drawTurned(shadow, left, top, size, way)
+    }
+''', '''    const hide = ''' + MIXER + '''?.hooks?.hide as ((sprite: {name: SpriteName, x: number, y: number, row: number}) => boolean) | undefined
+
+    if ((hide !== undefined) && (mixerTile !== null) && hide({name: name, ...mixerTile})) {
+      return
+    }
+
+    const shadow = (RAISED_SPRITES.has(name) && (this.pass !== 'sprites')) ? scaledShadow(name, size) : null
+
+    if (shadow !== null) {
+      this.drawTurned(shadow, left, top, size, way)
     }
 '''),
 ])
